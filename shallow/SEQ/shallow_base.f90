@@ -120,15 +120,14 @@
       PCF = PI*PI*A*A/(EL*EL)
      
 !     INITIAL VALUES OF THE STREAM FUNCTION AND P
-      DO J=1,NP1
-         DO I=1,MP1
-            PSI(I,J) = A*SIN((I-.5)*DI)*SIN((J-.5)*DJ)
-            P(I,J) = PCF*(COS(2.*(I-1)*DI)   & 
-                 +COS(2.*(J-1)*DJ))+50000.
-         END DO
-      END DO
+
+      CALL init_stream_fn(PSI, NP1, MP1, A, DI, DJ)
+
+      CALL init_pressure(P, NP1, MP1, PCF, DI, DJ)
 
 !     INITIALIZE VELOCITIES
+
+!CALL init_velocities()
       DO J=1,N
          DO I=1,M
             U(I+1,J) = -(PSI(I+1,J+1)-PSI(I+1,J))/DY
@@ -138,15 +137,15 @@
      
 !     PERIODIC CONTINUATION
       DO J=1,N
-         U(1,J) = U(M+1,J)
-         V(M+1,J+1) = V(1,J+1)
+         U(1,J) = U(MP1,J)
+         V(MP1,J+1) = V(1,J+1)
       END DO
       DO I=1,M
-         U(I+1,N+1) = U(I+1,1)
-         V(I,1) = V(I,N+1)
+         U(I+1,NP1) = U(I+1,1)
+         V(I,1) = V(I,NP1)
       END DO
-      U(1,N+1) = U(M+1,1)
-      V(M+1,1) = V(1,N+1)
+      U(1,NP1) = U(MP1,1)
+      V(MP1,1) = V(1,NP1)
       DO J=1,NP1
          DO I=1,MP1
             UOLD(I,J) = U(I,J)
@@ -348,28 +347,29 @@
     
 !           PERIODIC CONTINUATION
             DO J=1,N
-               UOLD(M+1,J) = UOLD(1,J)
-               VOLD(M+1,J) = VOLD(1,J)
-               POLD(M+1,J) = POLD(1,J)
-               U(M+1,J) = U(1,J)
-               V(M+1,J) = V(1,J)
-               P(M+1,J) = P(1,J)
+               UOLD(MP1,J) = UOLD(1,J)
+               VOLD(MP1,J) = VOLD(1,J)
+               POLD(MP1,J) = POLD(1,J)
+               U(MP1,J) = U(1,J)
+               V(MP1,J) = V(1,J)
+               P(MP1,J) = P(1,J)
             END DO
             DO I=1,M
-               UOLD(I,N+1) = UOLD(I,1)
-               VOLD(I,N+1) = VOLD(I,1)
-               POLD(I,N+1) = POLD(I,1)
-               U(I,N+1) = U(I,1)
-               V(I,N+1) = V(I,1)
-               P(I,N+1) = P(I,1)
+               UOLD(I,NP1) = UOLD(I,1)
+               VOLD(I,NP1) = VOLD(I,1)
+               POLD(I,NP1) = POLD(I,1)
+               U(I,NP1) = U(I,1)
+               V(I,NP1) = V(I,1)
+               P(I,NP1) = P(I,1)
             END DO
-            UOLD(M+1,N+1) = UOLD(1,1)
-            VOLD(M+1,N+1) = VOLD(1,1)
-            POLD(M+1,N+1) = POLD(1,1)
-            U(M+1,N+1) = U(1,1)
-            V(M+1,N+1) = V(1,1)
-            P(M+1,N+1) = P(1,1)
-         else
+            UOLD(MP1,NP1) = UOLD(1,1)
+            VOLD(MP1,NP1) = VOLD(1,1)
+            POLD(MP1,NP1) = POLD(1,1)
+            U(MP1,NP1) = U(1,1)
+            V(MP1,NP1) = V(1,1)
+            P(MP1,NP1) = P(1,1)
+
+         ELSE ! ncycle == 1
 
             TDT = TDT+TDT
 
@@ -390,7 +390,7 @@
             call system_clock(count=c2, count_rate=r, count_max=max)
             T310 = dble(c2 - T310)/dble(r)
 
-         endif
+         ENDIF ! ncycle > 1
 
       End do
 
@@ -415,11 +415,49 @@
       DEALLOCATE( u, v, p, unew, vnew, pnew, uold, vold, pold )
       DEALLOCATE( cu, cv, z, h, psi ) 
 
-      END PROGRAM shallow
+    CONTAINS
 
-      
-!     Check error code
-      subroutine check(status, text)
+      !===================================================
+
+      SUBROUTINE init_stream_fn(psi, idim1, idim2, A, DI, DJ)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: psi
+        REAL(KIND=8), INTENT(in) :: A, DI, DJ
+        INTEGER,      INTENT(in) :: idim1, idim2
+        ! Locals
+        INTEGER :: I,J
+
+        DO J=1, idim1
+           DO I=1, idim2
+              PSI(I,J) = A*SIN((I-.5)*DI)*SIN((J-.5)*DJ)
+           END DO
+        END DO
+
+      END SUBROUTINE init_stream_fn
+
+      !===================================================
+
+      SUBROUTINE init_pressure(p, idim1, idim2, pcf, di, dj)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: p
+        REAL(KIND=8), INTENT(in) :: pcf, di, dj
+        INTEGER,      INTENT(in) :: idim1, idim2
+
+        DO J=1,idim1
+           DO I=1,idim2
+              P(I,J) = PCF*(COS(2.*(I-1)*DI)   & 
+                   +COS(2.*(J-1)*DJ))+50000.
+           END DO
+        END DO
+
+      END SUBROUTINE init_pressure
+
+    END PROGRAM shallow
+
+    !===================================================
+
+    ! Check error code
+    subroutine check(status, text)
       implicit none
       
       integer, intent(in) :: status
@@ -433,6 +471,7 @@
 
       end subroutine check
 
+      !===================================================
 
       subroutine check_err(iret)
       integer iret
@@ -443,6 +482,7 @@
       endif
       end subroutine
 
+      !===================================================
 
       subroutine netcdf_setup(file,m,n,ncid,t_id,p_id,u_id,v_id,istart,icount)
 !     Input args: file, m, n
@@ -524,7 +564,8 @@
       
 !     end of netCDF definitions
       end subroutine netcdf_setup
- 
+
+      !===================================================
      
       subroutine my_ncwrite(id,varid,istart,icount,var,m,n,t_id,t_val)
 !     Input args: id, varid,istart,icount,var,m,n,t_id,t_val
