@@ -132,9 +132,9 @@
       U(2:MP1,NP1) = U(2:MP1,1)
       U(1    ,NP1) = U(MP1  ,1)
 
-      V(MP1,2:NP1) = V(1,2:NP1)
-      V(1:M,1) = V(1:M,NP1)
-      V(MP1,1) = V(1,NP1)
+      V(MP1,2:NP1) = V(1,  2:NP1)
+      V(1:M,1)     = V(1:M,NP1)
+      V(MP1,1)     = V(1,  NP1)
 
       ! Initialise fields that will hold data at previous time step
       CALL copy_field(U, UOLD)
@@ -198,22 +198,21 @@
          T100 = dble(c2-T100)/dble(r)
 
 !        PERIODIC CONTINUATION
-         DO J=1,N
-            CU(1,J) = CU(MP1,J)
-            CV(MP1,J+1) = CV(1,J+1)
-            Z(1,J+1) = Z(MP1,J+1)
-            H(MP1,J) = H(1,J)
-         END DO
-         DO I=1,M
-            CU(I+1,NP1) = CU(I+1,1)
-            CV(I,1) = CV(I,NP1)
-            Z(I+1,1) = Z(I+1,NP1)
-            H(I,NP1) = H(I,1)
-         END DO
-         CU(1,NP1) = CU(MP1,1)
-         CV(MP1,1) = CV(1,NP1)
-         Z(1,1) = Z(MP1,NP1)
-         H(MP1,NP1) = H(1,1)
+         CU(1,    1:N) = CU(MP1,  1:N)
+         CU(2:MP1,NP1) = CU(2:MP1,1)
+         CU(1,    NP1) = CU(MP1,  1)
+
+         H(MP1,1:N) = H(1,  1:N)
+         H(1:M,NP1) = H(1:M,1)
+         H(MP1,NP1) = H(1,  1)
+
+         CV(MP1,2:NP1) = CV(1,  2:NP1)
+         CV(1:M,1    ) = CV(1:M,NP1)
+         CV(MP1,1    ) = CV(1,  NP1)
+
+         Z(1,    2:NP1) = Z(MP1,  2:NP1)
+         Z(2:MP1,1)     = Z(2:MP1,NP1)
+         Z(1,    1)     = Z(MP1,  NP1)
      
 !        COMPUTE NEW VALUES U,V AND P
          TDTS8 = TDT/8.
@@ -240,19 +239,18 @@
          T200 = dble(c2 -T200)/dble(r)
 
 !        PERIODIC CONTINUATION
-         DO J=1,N
-            UNEW(1,J) = UNEW(MP1,J)
-            VNEW(MP1,J+1) = VNEW(1,J+1)
-            PNEW(MP1,J) = PNEW(1,J)
-         END DO
-         DO I=1,M
-            UNEW(I+1,NP1) = UNEW(I+1,1)
-            VNEW(I,1) = VNEW(I,NP1)
-            PNEW(I,NP1) = PNEW(I,1)
-         END DO
-         UNEW(1,NP1) = UNEW(MP1,1)
-         VNEW(MP1,1) = VNEW(1,NP1)
-         PNEW(MP1,NP1) = PNEW(1,1)
+
+         UNEW(1,    1:N) = UNEW(MP1,  1:N)
+         UNEW(2:MP1,NP1) = UNEW(2:MP1,1)
+         UNEW(1  ,  NP1) = UNEW(MP1,  1)
+
+         VNEW(MP1,2:NP1) = VNEW(1,  2:NP1)
+         VNEW(1:M,1)     = VNEW(1:M,NP1)
+         VNEW(MP1,1)     = VNEW(1,  NP1)
+
+         PNEW(MP1,1:N) = PNEW(1,  1:N)
+         PNEW(1:M,NP1) = PNEW(1:M,1)
+         PNEW(MP1,NP1) = PNEW(1,  1)
          
 
          TIME = TIME + DT
