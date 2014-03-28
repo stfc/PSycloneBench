@@ -126,7 +126,7 @@
             P(I,J) = PCF*(COS(2.*(I-1)*DI)   & 
                  +COS(2.*(J-1)*DJ))+50000.
          END DO
- 50   END DO
+      END DO
 
 !     INITIALIZE VELOCITIES
       DO J=1,N
@@ -134,17 +134,17 @@
             U(I+1,J) = -(PSI(I+1,J+1)-PSI(I+1,J))/DY
             V(I,J+1) = (PSI(I+1,J+1)-PSI(I,J+1))/DX
          END DO
- 60   END DO
+      END DO
      
 !     PERIODIC CONTINUATION
       DO J=1,N
          U(1,J) = U(M+1,J)
          V(M+1,J+1) = V(1,J+1)
- 70   END DO
+      END DO
       DO I=1,M
          U(I+1,N+1) = U(I+1,1)
          V(I,1) = V(I,N+1)
- 75   END DO
+      END DO
       U(1,N+1) = U(M+1,1)
       V(M+1,1) = V(1,N+1)
       DO J=1,NP1
@@ -153,7 +153,7 @@
             VOLD(I,J) = V(I,J)
             POLD(I,J) = P(I,J)
          END DO
- 86   END DO
+      END DO
      
 !     PRINT INITIAL VALUES
       IF (l_out) THEN 
@@ -206,7 +206,7 @@
                H(I,J) = P(I,J)+.25*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)     & 
                     +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
             END DO
- 100     END DO
+         END DO
 
          call system_clock(count=c2,count_rate=r,count_max=max)
          T100 = dble(c2-T100)/dble(r)
@@ -217,13 +217,13 @@
             CV(M+1,J+1) = CV(1,J+1)
             Z(1,J+1) = Z(M+1,J+1)
             H(M+1,J) = H(1,J)
- 110     END DO
+         END DO
          DO I=1,M
             CU(I+1,N+1) = CU(I+1,1)
             CV(I,1) = CV(I,N+1)
             Z(I+1,1) = Z(I+1,N+1)
             H(I,N+1) = H(I,1)
- 115     END DO
+         END DO
          CU(1,N+1) = CU(M+1,1)
          CV(M+1,1) = CV(1,N+1)
          Z(1,1) = Z(M+1,N+1)
@@ -248,7 +248,7 @@
                PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I+1,J)-CU(I,J))   & 
                    -TDTSDY*(CV(I,J+1)-CV(I,J))
             END DO
- 200     END DO
+         END DO
 
          call system_clock(count=c2, count_rate=r, count_max=max)
          T200 = dble(c2 -T200)/dble(r)
@@ -258,12 +258,12 @@
             UNEW(1,J) = UNEW(M+1,J)
             VNEW(M+1,J+1) = VNEW(1,J+1)
             PNEW(M+1,J) = PNEW(1,J)
- 210     END DO
+         END DO
          DO I=1,M
             UNEW(I+1,N+1) = UNEW(I+1,1)
             VNEW(I,1) = VNEW(I,N+1)
             PNEW(I,N+1) = PNEW(I,1)
- 215     END DO
+         END DO
          UNEW(1,N+1) = UNEW(M+1,1)
          VNEW(M+1,1) = VNEW(1,N+1)
          PNEW(M+1,N+1) = PNEW(1,1)
@@ -341,7 +341,7 @@
                   V(I,J) = VNEW(I,J)
                   P(I,J) = PNEW(I,J)
                END DO
- 300        END DO
+            END DO
 
             call system_clock(count=c2,count_rate=r, count_max=max)
             T300 = dble(c2 - T300)/dble(r)
@@ -354,7 +354,7 @@
                U(M+1,J) = U(1,J)
                V(M+1,J) = V(1,J)
                P(M+1,J) = P(1,J)
- 320        END DO
+            END DO
             DO I=1,M
                UOLD(I,N+1) = UOLD(I,1)
                VOLD(I,N+1) = VOLD(I,1)
@@ -362,7 +362,7 @@
                U(I,N+1) = U(I,1)
                V(I,N+1) = V(I,1)
                P(I,N+1) = P(I,1)
- 325        END DO
+            END DO
             UOLD(M+1,N+1) = UOLD(1,1)
             VOLD(M+1,N+1) = VOLD(1,1)
             POLD(M+1,N+1) = POLD(1,1)
@@ -371,7 +371,7 @@
             P(M+1,N+1) = P(1,1)
          else
 
- 310        TDT = TDT+TDT
+            TDT = TDT+TDT
 
             call system_clock(count=c1, count_rate=r,count_max=max)
             T310 = c1
@@ -385,7 +385,7 @@
                   V(I,J) = VNEW(I,J)
                   P(I,J) = PNEW(I,J)
                END DO
- 400        END DO
+            END DO
 
             call system_clock(count=c2, count_rate=r, count_max=max)
             T310 = dble(c2 - T310)/dble(r)
@@ -396,8 +396,17 @@
 
 !  ** End of time loop ** 
 
-!     Close the netCDF file
+      WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
+           itmax, SUM(PNEW(:,:))
+      WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E15.7)") &
+           itmax,SUM(UNEW(:,:))
+      WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E15.7)") &
+           itmax,SUM(VNEW(:,:))
+
+ !     Close the netCDF file
+
       IF (l_out) THEN 
+
          iret = nf_close(ncid)
          call check_err(iret)
       ENDIF
