@@ -45,8 +45,7 @@
       LOGICAL :: l_out   ! produce output  
       NAMELIST/io_control/ l_out
 
-      INTEGER :: m_len, n_len       ! array sizes
-      INTEGER :: mp1, np1           ! m+1 and n+1
+      INTEGER :: mp1, np1           ! m+1 and n+1 == array extents
 
       ! solution arrays
       REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::                & 
@@ -85,21 +84,6 @@
       READ(unit=input_unit, nml=io_control, iostat=ierr)
         CALL check(ierr, "read "//nml_name)
 
-!     Set up arrays
-      m_len = m+1
-      n_len = n+1
-
-      ALLOCATE( u(m_len,n_len), v(m_len,n_len), p(m_len,n_len) ) 
-      ALLOCATE( unew(m_len,n_len), vnew(m_len,n_len), pnew(m_len,n_len) ) 
-      ALLOCATE( uold(m_len,n_len), vold(m_len,n_len), pold(m_len,n_len) )
-      ALLOCATE( cu(m_len,n_len), cv(m_len,n_len) ) 
-      ALLOCATE( z(m_len,n_len), h(m_len,n_len), psi(m_len,n_len) ) 
- 
-!     Prepare netCDF file to receive model output data
-      IF (l_out) THEN 
-         call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id,istart,icount)
-      ENDIF
-
 !     NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
 !     CYCLE AFTER WHICH IT IS RESET TO DT+DT.
       DT = 90.
@@ -118,6 +102,19 @@
       DI = TPI/M
       DJ = TPI/N
       PCF = PI*PI*A*A/(EL*EL)
+
+ !     Set up arrays
+
+      ALLOCATE( u(MP1,NP1), v(MP1,NP1), p(MP1,NP1) ) 
+      ALLOCATE( unew(MP1,NP1), vnew(MP1,NP1), pnew(MP1,NP1) ) 
+      ALLOCATE( uold(MP1,NP1), vold(MP1,NP1), pold(MP1,NP1) )
+      ALLOCATE( cu(MP1,NP1), cv(MP1,NP1) ) 
+      ALLOCATE( z(MP1,NP1), h(MP1,NP1), psi(MP1,NP1) ) 
+
+!     Prepare netCDF file to receive model output data
+      IF (l_out) THEN 
+         call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id,istart,icount)
+      ENDIF
      
 !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
@@ -127,14 +124,9 @@
 
 !     INITIALIZE VELOCITIES
 
-!CALL init_velocities()
-      DO J=1,N
-         DO I=1,M
-            U(I+1,J) = -(PSI(I+1,J+1)-PSI(I+1,J))/DY
-            V(I,J+1) = (PSI(I+1,J+1)-PSI(I,J+1))/DX
-         END DO
-      END DO
-     
+      CALL init_velocity_u(u, psi, m, n, dy)
+      CALL init_velocity_v(v, psi, m, n, dx)
+
 !     PERIODIC CONTINUATION
       DO J=1,N
          U(1,J) = U(MP1,J)
@@ -451,6 +443,42 @@
         END DO
 
       END SUBROUTINE init_pressure
+
+      !===================================================
+
+      SUBROUTINE init_velocity_u(u, psi, m, n, dy)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: u
+        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: psi
+        INTEGER, INTENT(in) :: m, n
+        REAL(KIND=8), INTENT(in) :: dy
+        ! Locals
+        INTEGER :: I, J
+
+        DO J=1,N
+           DO I=2,M+1
+              U(I,J) = -(PSI(I,J+1)-PSI(I,J))/DY
+           END DO
+        END DO
+      END SUBROUTINE init_velocity_u
+
+      !===================================================
+
+      SUBROUTINE init_velocity_v(v, psi, m, n, dx)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: v
+        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: psi
+        INTEGER, INTENT(in) :: m, n
+        REAL(KIND=8), INTENT(in) :: dx
+        ! Locals
+        INTEGER :: I, J
+
+        DO J=1,N
+           DO I=1,M
+              V(I,J+1) = (PSI(I+1,J+1)-PSI(I,J+1))/DX
+           END DO
+        END DO
+      END SUBROUTINE init_velocity_v
 
     END PROGRAM shallow
 
