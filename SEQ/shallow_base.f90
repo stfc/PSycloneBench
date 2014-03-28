@@ -118,9 +118,9 @@
      
 !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
-      CALL init_stream_fn(PSI, NP1, MP1, A, DI, DJ)
+      CALL init_stream_fn(PSI, A, DI, DJ)
 
-      CALL init_pressure(P, NP1, MP1, PCF, DI, DJ)
+      CALL init_pressure(P, PCF, DI, DJ)
 
 !     INITIALIZE VELOCITIES
 
@@ -128,23 +128,18 @@
       CALL init_velocity_v(v, psi, m, n, dx)
 
 !     PERIODIC CONTINUATION
-      DO J=1,N
-         U(1,J) = U(MP1,J)
-         V(MP1,J+1) = V(1,J+1)
-      END DO
-      DO I=1,M
-         U(I+1,NP1) = U(I+1,1)
-         V(I,1) = V(I,NP1)
-      END DO
-      U(1,NP1) = U(MP1,1)
+      U(1    ,1:N) = U(MP1  ,1:N)
+      U(2:MP1,NP1) = U(2:MP1,1)
+      U(1    ,NP1) = U(MP1  ,1)
+
+      V(MP1,2:NP1) = V(1,2:NP1)
+      V(1:M,1) = V(1:M,NP1)
       V(MP1,1) = V(1,NP1)
-      DO J=1,NP1
-         DO I=1,MP1
-            UOLD(I,J) = U(I,J)
-            VOLD(I,J) = V(I,J)
-            POLD(I,J) = P(I,J)
-         END DO
-      END DO
+
+      ! Initialise fields that will hold data at previous time step
+      CALL copy_field(U, UOLD)
+      CALL copy_field(V, VOLD)
+      CALL copy_field(P, POLD)
      
 !     PRINT INITIAL VALUES
       IF (l_out) THEN 
@@ -204,21 +199,21 @@
 
 !        PERIODIC CONTINUATION
          DO J=1,N
-            CU(1,J) = CU(M+1,J)
-            CV(M+1,J+1) = CV(1,J+1)
-            Z(1,J+1) = Z(M+1,J+1)
-            H(M+1,J) = H(1,J)
+            CU(1,J) = CU(MP1,J)
+            CV(MP1,J+1) = CV(1,J+1)
+            Z(1,J+1) = Z(MP1,J+1)
+            H(MP1,J) = H(1,J)
          END DO
          DO I=1,M
-            CU(I+1,N+1) = CU(I+1,1)
-            CV(I,1) = CV(I,N+1)
-            Z(I+1,1) = Z(I+1,N+1)
-            H(I,N+1) = H(I,1)
+            CU(I+1,NP1) = CU(I+1,1)
+            CV(I,1) = CV(I,NP1)
+            Z(I+1,1) = Z(I+1,NP1)
+            H(I,NP1) = H(I,1)
          END DO
-         CU(1,N+1) = CU(M+1,1)
-         CV(M+1,1) = CV(1,N+1)
-         Z(1,1) = Z(M+1,N+1)
-         H(M+1,N+1) = H(1,1)
+         CU(1,NP1) = CU(MP1,1)
+         CV(MP1,1) = CV(1,NP1)
+         Z(1,1) = Z(MP1,NP1)
+         H(MP1,NP1) = H(1,1)
      
 !        COMPUTE NEW VALUES U,V AND P
          TDTS8 = TDT/8.
@@ -246,18 +241,18 @@
 
 !        PERIODIC CONTINUATION
          DO J=1,N
-            UNEW(1,J) = UNEW(M+1,J)
-            VNEW(M+1,J+1) = VNEW(1,J+1)
-            PNEW(M+1,J) = PNEW(1,J)
+            UNEW(1,J) = UNEW(MP1,J)
+            VNEW(MP1,J+1) = VNEW(1,J+1)
+            PNEW(MP1,J) = PNEW(1,J)
          END DO
          DO I=1,M
-            UNEW(I+1,N+1) = UNEW(I+1,1)
-            VNEW(I,1) = VNEW(I,N+1)
-            PNEW(I,N+1) = PNEW(I,1)
+            UNEW(I+1,NP1) = UNEW(I+1,1)
+            VNEW(I,1) = VNEW(I,NP1)
+            PNEW(I,NP1) = PNEW(I,1)
          END DO
-         UNEW(1,N+1) = UNEW(M+1,1)
-         VNEW(M+1,1) = VNEW(1,N+1)
-         PNEW(M+1,N+1) = PNEW(1,1)
+         UNEW(1,NP1) = UNEW(MP1,1)
+         VNEW(MP1,1) = VNEW(1,NP1)
+         PNEW(MP1,NP1) = PNEW(1,1)
          
 
          TIME = TIME + DT
@@ -411,16 +406,22 @@
 
       !===================================================
 
-      SUBROUTINE init_stream_fn(psi, idim1, idim2, A, DI, DJ)
+      SUBROUTINE init_stream_fn(psi, A, DI, DJ)
         IMPLICIT none
         REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: psi
         REAL(KIND=8), INTENT(in) :: A, DI, DJ
-        INTEGER,      INTENT(in) :: idim1, idim2
         ! Locals
+        INTEGER :: idim1, idim2
         INTEGER :: I,J
 
-        DO J=1, idim1
-           DO I=1, idim2
+        idim1 = SIZE(p, 1)
+        idim2 = SIZE(p, 2)
+
+        ! di = 2Pi/(Extent of mesh in x)
+        ! dj = 2Pi/(Extent of mesh in y)
+
+        DO J=1, idim2
+           DO I=1, idim1
               PSI(I,J) = A*SIN((I-.5)*DI)*SIN((J-.5)*DJ)
            END DO
         END DO
@@ -429,14 +430,24 @@
 
       !===================================================
 
-      SUBROUTINE init_pressure(p, idim1, idim2, pcf, di, dj)
+      SUBROUTINE init_pressure(p, pcf, di, dj)
         IMPLICIT none
         REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: p
         REAL(KIND=8), INTENT(in) :: pcf, di, dj
-        INTEGER,      INTENT(in) :: idim1, idim2
+        INTEGER :: idim1, idim2
+        INTEGER :: i, j
 
-        DO J=1,idim1
-           DO I=1,idim2
+        idim1 = SIZE(p, 1)
+        idim2 = SIZE(p, 2)
+        ! di = 2Pi/(Extent of mesh in x)
+        ! dj = 2Pi/(Extent of mesh in y)
+        ! Fields have one extra row and column than the mesh
+        ! extent. Presumably because e.g. velocity fields are
+        ! offset from pressure but this not dealt with that
+        ! explicitly. Only field(1:m,1:n) is sent to be
+        ! written to the netcdf file.
+        DO J=1,idim2
+           DO I=1,idim1
               P(I,J) = PCF*(COS(2.*(I-1)*DI)   & 
                    +COS(2.*(J-1)*DJ))+50000.
            END DO
@@ -450,11 +461,12 @@
         IMPLICIT none
         REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: u
         REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: psi
-        INTEGER, INTENT(in) :: m, n
+        INTEGER,      INTENT(in) :: m, n
         REAL(KIND=8), INTENT(in) :: dy
         ! Locals
         INTEGER :: I, J
 
+        ! dy is a property of the mesh
         DO J=1,N
            DO I=2,M+1
               U(I,J) = -(PSI(I,J+1)-PSI(I,J))/DY
@@ -473,12 +485,24 @@
         ! Locals
         INTEGER :: I, J
 
-        DO J=1,N
+        ! dx is a property of the mesh
+        DO J=2,N+1
            DO I=1,M
-              V(I,J+1) = (PSI(I+1,J+1)-PSI(I,J+1))/DX
+              V(I,J) = (PSI(I+1,J)-PSI(I,J))/DX
            END DO
         END DO
       END SUBROUTINE init_velocity_v
+
+      !===================================================
+
+      SUBROUTINE copy_field(field_in, field_out)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: field_in
+        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: field_out
+        
+        field_out(:,:) = field_in(:,:)
+        
+      END SUBROUTINE copy_field
 
     END PROGRAM shallow
 
