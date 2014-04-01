@@ -178,21 +178,9 @@
          T100 = c1
 
          CALL compute_cu(CU, P, U)
-
          CALL compute_cv(CV, P, V)
-
-         DO J=1,N
-            DO I=1,M
-               Z(I+1,J+1) =(FSDX*(V(I+1,J+1)-V(I,J+1))-FSDY*(U(I+1,J+1) & 
-                    -U(I+1,J)))/(P(I,J)+P(I+1,J)+P(I+1,J+1)+P(I,J+1))
-            END DO
-         END DO
-         DO J=1,N
-            DO I=1,M
-               H(I,J) = P(I,J)+.25*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)     & 
-                    +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
-            END DO
-         END DO
+         CALL compute_z(z, P, U, V, FSDX, FSDY)
+         CALL compute_h(h, P, U, V)
 
          call system_clock(count=c2,count_rate=r,count_max=max)
          T100 = dble(c2-T100)/dble(r)
@@ -597,13 +585,58 @@
         idim1 = SIZE(cv, 1) - 1
         idim2 = SIZE(cv, 2) - 1
 
-         DO J=2,idim2+1
-            DO I=1,idim1
-               CV(I,J) = .5*(P(I,J)+P(I,J-1))*V(I,J)
-            END DO
-         END DO
+        DO J=2,idim2+1
+           DO I=1,idim1
+              CV(I,J) = .5*(P(I,J)+P(I,J-1))*V(I,J)
+           END DO
+        END DO
 
-       END SUBROUTINE compute_cv
+      END SUBROUTINE compute_cv
+
+      !===================================================
+
+      SUBROUTINE compute_z(z, p, u, v, fsdx, fsdy)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: z
+        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: p, u, v
+        REAL(KIND=8), INTENT(in)                  :: fsdx, fsdy
+        ! Locals
+        INTEGER :: I, J
+        INTEGER :: idim1, idim2
+
+        idim1 = SIZE(z, 1) - 1
+        idim2 = SIZE(z, 2) - 1
+
+        DO J=2,idim2+1
+           DO I=2,idim1+1
+              Z(I,J) =(FSDX*(V(I,J)-V(I-1,J))-FSDY*(U(I,J) & 
+                   -U(I,J-1)))/(P(I-1,J-1)+P(I,J-1)+P(I,J)+P(I-1,J))
+           END DO
+        END DO
+
+      END SUBROUTINE compute_z
+
+      !===================================================
+
+      SUBROUTINE compute_h(h, p, u, v)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: h
+        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: p, u, v
+        ! Locals
+        INTEGER :: I, J
+        INTEGER :: idim1, idim2
+
+        idim1 = SIZE(z, 1) - 1
+        idim2 = SIZE(z, 2) - 1
+
+        DO J=1,idim2
+           DO I=1,idim1
+              H(I,J) = P(I,J)+.25*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)     & 
+                    +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
+           END DO
+        END DO
+
+      END SUBROUTINE compute_h
 
     END PROGRAM shallow
 
