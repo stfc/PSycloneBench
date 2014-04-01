@@ -196,11 +196,8 @@
          CALL apply_bcs_u(CU)
          CALL apply_bcs_p(H)
          CALL apply_bcs_v(CV)
+         CALL apply_bcs_z(Z)
 
-         Z(1,    2:NP1) = Z(MP1,  2:NP1)
-         Z(2:MP1,1)     = Z(2:MP1,NP1)
-         Z(1,    1)     = Z(MP1,  NP1)
-     
 !        COMPUTE NEW VALUES U,V AND P
          TDTS8 = TDT/8.
          TDTSDX = TDT/DX
@@ -368,9 +365,10 @@
         M = MP1 - 1
         N = NP1 - 1
 
+        ! Last col = first col
         field(MP1,1:N) = field(1,  1:N)
-        field(1:M,NP1) = field(1:M,1)
-        field(MP1,NP1) = field(1,  1)
+        ! Last row = first row
+        field(1:MP1,NP1) = field(1:MP1,1)
 
       END SUBROUTINE apply_bcs_p
 
@@ -411,6 +409,25 @@
         field(MP1,1:NP1) = field(1,  1:NP1)
 
       END SUBROUTINE apply_bcs_v
+
+      !===================================================
+
+      SUBROUTINE apply_bcs_z(field)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field
+        INTEGER :: M, MP1, N, NP1
+
+        MP1 = SIZE(field, 1)
+        NP1 = SIZE(field, 2)
+        M = MP1 - 1
+        N = NP1 - 1
+
+        ! First col = last col
+        field(1,    2:NP1) = field(MP1,  2:NP1)
+        ! First row = last row
+        field(1:MP1,1)     = field(1:MP1,NP1)
+
+      END SUBROUTINE apply_bcs_z
  
       !===================================================
 
