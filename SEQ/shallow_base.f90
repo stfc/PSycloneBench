@@ -296,11 +296,12 @@
                   UOLD(I,J) = U(I,J)+ALPHA*(UNEW(I,J)-2.*U(I,J)+UOLD(I,J))
                   VOLD(I,J) = V(I,J)+ALPHA*(VNEW(I,J)-2.*V(I,J)+VOLD(I,J))
                   POLD(I,J) = P(I,J)+ALPHA*(PNEW(I,J)-2.*P(I,J)+POLD(I,J))
-                  U(I,J) = UNEW(I,J)
-                  V(I,J) = VNEW(I,J)
-                  P(I,J) = PNEW(I,J)
                END DO
             END DO
+
+            CALL copy_field(UNEW, U)
+            CALL copy_field(VNEW, V)
+            CALL copy_field(PNEW, P)
 
             call system_clock(count=c2,count_rate=r, count_max=max)
             T300 = dble(c2 - T300)/dble(r)
@@ -312,16 +313,13 @@
             call system_clock(count=c1, count_rate=r,count_max=max)
             T310 = c1
 
-            DO J=1,NP1
-               DO I=1,MP1
-                  UOLD(I,J) = U(I,J)
-                  VOLD(I,J) = V(I,J)
-                  POLD(I,J) = P(I,J)
-                  U(I,J) = UNEW(I,J)
-                  V(I,J) = VNEW(I,J)
-                  P(I,J) = PNEW(I,J)
-               END DO
-            END DO
+            CALL copy_field(U, UOLD)
+            CALL copy_field(V, VOLD)
+            CALL copy_field(P, POLD)
+
+            CALL copy_field(UNEW, U)
+            CALL copy_field(VNEW, V)
+            CALL copy_field(PNEW, P)
 
             call system_clock(count=c2, count_rate=r, count_max=max)
             T310 = dble(c2 - T310)/dble(r)
