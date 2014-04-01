@@ -291,13 +291,9 @@
             call system_clock(count=c1,count_rate=r,count_max=max)
             T300 = c1
 
-            DO J=1,NP1
-               DO I=1,MP1
-                  UOLD(I,J) = U(I,J)+ALPHA*(UNEW(I,J)-2.*U(I,J)+UOLD(I,J))
-                  VOLD(I,J) = V(I,J)+ALPHA*(VNEW(I,J)-2.*V(I,J)+VOLD(I,J))
-                  POLD(I,J) = P(I,J)+ALPHA*(PNEW(I,J)-2.*P(I,J)+POLD(I,J))
-               END DO
-            END DO
+            CALL time_smooth(U, UNEW, UOLD, ALPHA)
+            CALL time_smooth(V, VNEW, VOLD, ALPHA)
+            CALL time_smooth(P, PNEW, POLD, ALPHA)
 
             CALL copy_field(UNEW, U)
             CALL copy_field(VNEW, V)
@@ -526,6 +522,29 @@
         field_out(:,:) = field_in(:,:)
         
       END SUBROUTINE copy_field
+
+      !===================================================
+
+      SUBROUTINE time_smooth(field, field_new, field_old, ALPHA)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: field
+        REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: field_new
+        REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field_old
+        REAL(KIND=8), INTENT(in) :: ALPHA
+        ! Locals
+        INTEGER :: i, j
+        INTEGER :: idim1, idim2
+
+        idim1 = SIZE(field, 1)
+        idim2 = SIZE(field, 2)
+
+        DO J=1,idim2
+           DO I=1,idim1
+              field_old(I,J) = field(I,J)+ALPHA*(field_new(I,J)-2.*field(I,J)+field_old(I,J))
+           END DO
+        END DO
+
+      END SUBROUTINE time_smooth
 
     END PROGRAM shallow
 
