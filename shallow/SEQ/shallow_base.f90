@@ -177,12 +177,21 @@
          call system_clock(count=c1, count_rate=r,count_max=max)
          T100 = c1
 
+         CALL compute_cu(CU, P, U)
+
          DO J=1,N
             DO I=1,M
-               CU(I+1,J) = .5*(P(I+1,J)+P(I,J))*U(I+1,J)
                CV(I,J+1) = .5*(P(I,J+1)+P(I,J))*V(I,J+1)
+            END DO
+         END DO
+         DO J=1,N
+            DO I=1,M
                Z(I+1,J+1) =(FSDX*(V(I+1,J+1)-V(I,J+1))-FSDY*(U(I+1,J+1) & 
                     -U(I+1,J)))/(P(I,J)+P(I+1,J)+P(I+1,J+1)+P(I,J+1))
+            END DO
+         END DO
+         DO J=1,N
+            DO I=1,M
                H(I,J) = P(I,J)+.25*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)     & 
                     +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
             END DO
@@ -211,9 +220,17 @@
                UNEW(I+1,J) = UOLD(I+1,J)+                                     &
                    TDTS8*(Z(I+1,J+1)+Z(I+1,J))*(CV(I+1,J+1)+CV(I,J+1)+CV(I,J) &
                    +CV(I+1,J))-TDTSDX*(H(I+1,J)-H(I,J))                       
+            END DO
+         END DO
+         DO J=1,N
+            DO I=1,M
                VNEW(I,J+1) = VOLD(I,J+1)-TDTS8*(Z(I+1,J+1)+Z(I,J+1)) & 
                    *(CU(I+1,J+1)+CU(I,J+1)+CU(I,J)+CU(I+1,J))        & 
                    -TDTSDY*(H(I,J+1)-H(I,J))
+            END DO
+         END DO
+         DO J=1,N
+            DO I=1,M
                PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I+1,J)-CU(I,J))   & 
                    -TDTSDY*(CV(I,J+1)-CV(I,J))
             END DO
@@ -540,11 +557,34 @@
 
         DO J=1,idim2
            DO I=1,idim1
-              field_old(I,J) = field(I,J)+ALPHA*(field_new(I,J)-2.*field(I,J)+field_old(I,J))
+              field_old(I,J) = field(I,J)+ &
+                ALPHA*(field_new(I,J)-2.*field(I,J)+field_old(I,J))
            END DO
         END DO
 
       END SUBROUTINE time_smooth
+
+      !===================================================
+
+      SUBROUTINE compute_cu(cu, p, u)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: cu
+        REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: p
+        REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: u
+        ! Locals
+        INTEGER :: I, J
+        INTEGER :: idim1, idim2
+
+        idim1 = SIZE(cu, 1) - 1
+        idim2 = SIZE(cu, 2) - 1
+
+         DO J=1,idim1
+            DO I=2,idim2+1
+               CU(I,J) = .5*(P(I,J)+P(I-1,J))*U(I,J)
+            END DO
+         END DO
+
+      END SUBROUTINE compute_cu
 
     END PROGRAM shallow
 
