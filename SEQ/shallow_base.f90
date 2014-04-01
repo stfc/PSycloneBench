@@ -119,7 +119,6 @@
 !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
       CALL init_stream_fn(PSI, A, DI, DJ)
-
       CALL init_pressure(P, PCF, DI, DJ)
 
 !     INITIALIZE VELOCITIES
@@ -128,13 +127,8 @@
       CALL init_velocity_v(v, psi, m, n, dx)
 
 !     PERIODIC CONTINUATION
-      U(1    ,1:N) = U(MP1  ,1:N)
-      U(2:MP1,NP1) = U(2:MP1,1)
-      U(1    ,NP1) = U(MP1  ,1)
-
-      V(MP1,2:NP1) = V(1,  2:NP1)
-      V(1:M,1)     = V(1:M,NP1)
-      V(MP1,1)     = V(1,  NP1)
+      CALL apply_bcs_u(U)
+      CALL apply_bcs_v(V)
 
       ! Initialise fields that will hold data at previous time step
       CALL copy_field(U, UOLD)
@@ -198,17 +192,10 @@
          T100 = dble(c2-T100)/dble(r)
 
 !        PERIODIC CONTINUATION
-         CU(1,    1:N) = CU(MP1,  1:N)
-         CU(2:MP1,NP1) = CU(2:MP1,1)
-         CU(1,    NP1) = CU(MP1,  1)
 
-         H(MP1,1:N) = H(1,  1:N)
-         H(1:M,NP1) = H(1:M,1)
-         H(MP1,NP1) = H(1,  1)
-
-         CV(MP1,2:NP1) = CV(1,  2:NP1)
-         CV(1:M,1    ) = CV(1:M,NP1)
-         CV(MP1,1    ) = CV(1,  NP1)
+         CALL apply_bcs_u(CU)
+         CALL apply_bcs_p(H)
+         CALL apply_bcs_v(CV)
 
          Z(1,    2:NP1) = Z(MP1,  2:NP1)
          Z(2:MP1,1)     = Z(2:MP1,NP1)
@@ -240,18 +227,9 @@
 
 !        PERIODIC CONTINUATION
 
-         UNEW(1,    1:N) = UNEW(MP1,  1:N)
-         UNEW(2:MP1,NP1) = UNEW(2:MP1,1)
-         UNEW(1  ,  NP1) = UNEW(MP1,  1)
-
-         VNEW(MP1,2:NP1) = VNEW(1,  2:NP1)
-         VNEW(1:M,1)     = VNEW(1:M,NP1)
-         VNEW(MP1,1)     = VNEW(1,  NP1)
-
-         PNEW(MP1,1:N) = PNEW(1,  1:N)
-         PNEW(1:M,NP1) = PNEW(1:M,1)
-         PNEW(MP1,NP1) = PNEW(1,  1)
-         
+         CALL apply_bcs_u(UNEW)
+         CALL apply_bcs_v(VNEW)
+         CALL apply_bcs_p(PNEW)
 
          TIME = TIME + DT
 
@@ -316,8 +294,8 @@
             call system_clock(count=c1,count_rate=r,count_max=max)
             T300 = c1
 
-            DO J=1,N
-               DO I=1,M
+            DO J=1,NP1
+               DO I=1,MP1
                   UOLD(I,J) = U(I,J)+ALPHA*(UNEW(I,J)-2.*U(I,J)+UOLD(I,J))
                   VOLD(I,J) = V(I,J)+ALPHA*(VNEW(I,J)-2.*V(I,J)+VOLD(I,J))
                   POLD(I,J) = P(I,J)+ALPHA*(PNEW(I,J)-2.*P(I,J)+POLD(I,J))
@@ -329,30 +307,6 @@
 
             call system_clock(count=c2,count_rate=r, count_max=max)
             T300 = dble(c2 - T300)/dble(r)
-    
-!           PERIODIC CONTINUATION
-            DO J=1,N
-               UOLD(MP1,J) = UOLD(1,J)
-               VOLD(MP1,J) = VOLD(1,J)
-               POLD(MP1,J) = POLD(1,J)
-               U(MP1,J) = U(1,J)
-               V(MP1,J) = V(1,J)
-               P(MP1,J) = P(1,J)
-            END DO
-            DO I=1,M
-               UOLD(I,NP1) = UOLD(I,1)
-               VOLD(I,NP1) = VOLD(I,1)
-               POLD(I,NP1) = POLD(I,1)
-               U(I,NP1) = U(I,1)
-               V(I,NP1) = V(I,1)
-               P(I,NP1) = P(I,1)
-            END DO
-            UOLD(MP1,NP1) = UOLD(1,1)
-            VOLD(MP1,NP1) = VOLD(1,1)
-            POLD(MP1,NP1) = POLD(1,1)
-            U(MP1,NP1) = U(1,1)
-            V(MP1,NP1) = V(1,1)
-            P(MP1,NP1) = P(1,1)
 
          ELSE ! ncycle == 1
 
@@ -402,6 +356,62 @@
 
     CONTAINS
 
+      !===================================================
+
+      SUBROUTINE apply_bcs_p(field)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field
+        INTEGER :: M, MP1, N, NP1
+
+        MP1 = SIZE(field, 1)
+        NP1 = SIZE(field, 2)
+        M = MP1 - 1
+        N = NP1 - 1
+
+        field(MP1,1:N) = field(1,  1:N)
+        field(1:M,NP1) = field(1:M,1)
+        field(MP1,NP1) = field(1,  1)
+
+      END SUBROUTINE apply_bcs_p
+
+      !===================================================
+
+      SUBROUTINE apply_bcs_u(field)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field
+        INTEGER :: M, MP1, N, NP1
+
+        MP1 = SIZE(field, 1)
+        NP1 = SIZE(field, 2)
+        M = MP1 - 1
+        N = NP1 - 1
+
+        ! First col = last col
+        field(1,    1:N) = field(MP1,  1:N)
+        ! Last row = first row
+        field(1:MP1,NP1) = field(1:MP1,1)
+
+      END SUBROUTINE apply_bcs_u
+
+      !===================================================
+
+      SUBROUTINE apply_bcs_v(field)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field
+        INTEGER :: M, MP1, N, NP1
+
+        MP1 = SIZE(field, 1)
+        NP1 = SIZE(field, 2)
+        M = MP1 - 1
+        N = NP1 - 1
+
+        ! First row = last row
+        field(1:M,1    ) = field(1:M,NP1)
+        ! Last col = first col
+        field(MP1,1:NP1) = field(1,  1:NP1)
+
+      END SUBROUTINE apply_bcs_v
+ 
       !===================================================
 
       SUBROUTINE init_stream_fn(psi, A, DI, DJ)
@@ -466,7 +476,7 @@
 
         ! dy is a property of the mesh
         DO J=1,N
-           DO I=2,M+1
+           DO I=1,M+1
               U(I,J) = -(PSI(I,J+1)-PSI(I,J))/DY
            END DO
         END DO
@@ -484,7 +494,7 @@
         INTEGER :: I, J
 
         ! dx is a property of the mesh
-        DO J=2,N+1
+        DO J=1,N+1
            DO I=1,M
               V(I,J) = (PSI(I+1,J)-PSI(I,J))/DX
            END DO
