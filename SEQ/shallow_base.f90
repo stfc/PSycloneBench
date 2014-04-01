@@ -179,11 +179,8 @@
 
          CALL compute_cu(CU, P, U)
 
-         DO J=1,N
-            DO I=1,M
-               CV(I,J+1) = .5*(P(I,J+1)+P(I,J))*V(I,J+1)
-            END DO
-         END DO
+         CALL compute_cv(CV, P, V)
+
          DO J=1,N
             DO I=1,M
                Z(I+1,J+1) =(FSDX*(V(I+1,J+1)-V(I,J+1))-FSDY*(U(I+1,J+1) & 
@@ -585,6 +582,28 @@
          END DO
 
       END SUBROUTINE compute_cu
+
+      !===================================================
+
+      SUBROUTINE compute_cv(cv, p, v)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: cv
+        REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: p
+        REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: v
+        ! Locals
+        INTEGER :: I, J
+        INTEGER :: idim1, idim2
+
+        idim1 = SIZE(cv, 1) - 1
+        idim2 = SIZE(cv, 2) - 1
+
+         DO J=2,idim2+1
+            DO I=1,idim1
+               CV(I,J) = .5*(P(I,J)+P(I,J-1))*V(I,J)
+            END DO
+         END DO
+
+       END SUBROUTINE compute_cv
 
     END PROGRAM shallow
 
