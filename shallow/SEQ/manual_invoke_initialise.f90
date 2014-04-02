@@ -2,6 +2,8 @@ MODULE manual_invoke_initialise
   IMPLICIT none
   PRIVATE
 
+  !> Amplitude of initial oscillations in stream function
+  !! Used by invoke_init_stream_fn_kernel()
   REAL(KIND=8), PARAMETER :: A = 1.0E6
   REAL(KIND=8)  :: PCF
   REAL(KIND=8)  :: PI, TPI
@@ -17,7 +19,7 @@ CONTAINS
 
   !===================================================
 
-  !< Set-up parameters related to the model domain which
+  !> \brief Set-up parameters related to the model domain which
   !! are stored in this module.
   SUBROUTINE invoke_init_model_params_kernel(dx, m, n)
     IMPLICIT none
@@ -64,7 +66,9 @@ CONTAINS
 
     SUBROUTINE init_stream_fn_code(i, j, psi)
       IMPLICIT none
+      !> The grid point (column) to act on
       INTEGER,      INTENT(in)                  :: i, j
+      !> Array holding the stream function values
       REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: psi
 
       ! di = 2Pi/(Extent of mesh in x)
