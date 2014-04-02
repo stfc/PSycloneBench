@@ -17,6 +17,8 @@ CONTAINS
 
   !===================================================
 
+  !< Set-up parameters related to the model domain which
+  !! are stored in this module.
   SUBROUTINE invoke_init_model_params_kernel(dx, m, n)
     IMPLICIT none
     REAL(KIND=8), INTENT(in) :: dx

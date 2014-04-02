@@ -28,3 +28,6 @@ shallow_base.o: $(MODULES)
 
 clean: 
 	rm -f *.o *.mod *.MOD $(EXECS)
+
+docs:
+	doxygen shallow.doxy.config
