@@ -14,7 +14,7 @@ LDFLAGS = -L/usr/lib64 -lnetcdf -lnetcdff
 #EXECS = join_files shallow_base shallow_parallel
 EXECS = shallow_base
 
-MODULES = manual_invoke_initialise.o
+MODULES = shallow_IO.o manual_invoke_initialise.o
 
 all: $(EXECS)
 
