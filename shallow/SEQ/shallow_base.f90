@@ -32,93 +32,90 @@ PROGRAM shallow
 !     - Don't write wrap-around points to NetCDF file.
 !     - Use 8-byte reals. 
 
-  USE initialise
+  USE manual_invoke_initialise
   IMPLICIT NONE
 
-      INCLUDE 'netcdf.inc'
+  INCLUDE 'netcdf.inc'
 
-      INTEGER :: m, n    ! global domain size
-      INTEGER :: itmax   ! number of timesteps
-      INTEGER :: mprint  ! frequency of output    
-      NAMELIST/global_domain/ m, n, itmax, mprint
+  INTEGER :: m, n    ! global domain size
+  INTEGER :: itmax   ! number of timesteps
+  INTEGER :: mprint  ! frequency of output    
+  NAMELIST/global_domain/ m, n, itmax, mprint
 
-      LOGICAL :: l_out   ! produce output  
-      NAMELIST/io_control/ l_out
+  LOGICAL :: l_out   ! produce output  
+  NAMELIST/io_control/ l_out
 
-      INTEGER :: mp1, np1           ! m+1 and n+1 == array extents
+  INTEGER :: mp1, np1           ! m+1 and n+1 == array extents
 
-      ! solution arrays
-      REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::                & 
+  ! solution arrays
+  REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::                & 
                              u, v, p, unew, vnew, pnew,           & 
                              uold, vold, pold, cu, cv, z, h, psi  
 
-      REAL(KIND=8) :: dt, tdt, dx, dy, a, alpha, el, pi, tpi, di, dj, pcf, & 
-                      tdts8, tdtsdx, tdtsdy, fsdx, fsdy
-      INTEGER :: mnmin, ncycle
-      INTEGER :: i
+  REAL(KIND=8) :: dt, tdt, dx, dy, alpha, & 
+                  tdts8, tdtsdx, tdtsdy, fsdx, fsdy
+  INTEGER :: mnmin, ncycle
+  INTEGER :: i
    
-      ! timer variables 
-      REAL(KIND=8) :: mfs100, mfs200, mfs300, mfs310, & 
-                      t100, t200, t300, t310,         & 
-                      tstart, ctime, tcyc, time, ptime
-      INTEGER :: c1, c2, r, max
+  ! timer variables 
+  REAL(KIND=8) :: mfs100, mfs200, mfs300, mfs310, & 
+                  t100, t200, t300, t310,         & 
+                  tstart, ctime, tcyc, time, ptime
+  INTEGER :: c1, c2, r, max
      
-      ! NetCDF variables
-      INTEGER :: ncid, t_id, p_id, u_id, v_id, iret, t_val
-      INTEGER, DIMENSION(3) :: istart, icount 
-      CHARACTER (LEN=13) :: ncfile = "shallowdat.nc"
+  ! NetCDF variables
+  INTEGER :: ncid, t_id, p_id, u_id, v_id, iret, t_val
+  INTEGER, DIMENSION(3) :: istart, icount 
+  CHARACTER (LEN=13) :: ncfile = "shallowdat.nc"
  
-      ! namelist input 
-      CHARACTER (LEN=8) :: nml_name = "namelist" 
-      INTEGER :: input_unit = 99
-      INTEGER :: ierr
+  ! namelist input 
+  CHARACTER (LEN=8) :: nml_name = "namelist" 
+  INTEGER :: input_unit = 99
+  INTEGER :: ierr
 
-!  ** Initialisations ** 
+  !  ** Initialisations ** 
 
-!     Read in namelist 
-      OPEN(unit=input_unit, file=nml_name, status='old',iostat=ierr)
-        CALL check(ierr, "open "//nml_name)
-      READ(unit=input_unit, nml=global_domain, iostat=ierr)
-        CALL check(ierr, "read "//nml_name)
-      READ(unit=input_unit, nml=io_control, iostat=ierr)
-        CALL check(ierr, "read "//nml_name)
+  !     Read in namelist 
+  OPEN(unit=input_unit, file=nml_name, status='old',iostat=ierr)
+  CALL check(ierr, "open "//nml_name)
+  READ(unit=input_unit, nml=global_domain, iostat=ierr)
+  CALL check(ierr, "read "//nml_name)
+  READ(unit=input_unit, nml=io_control, iostat=ierr)
+  CALL check(ierr, "read "//nml_name)
 
-!     NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
-!     CYCLE AFTER WHICH IT IS RESET TO DT+DT.
-      DT = 90.
-      TDT = DT
+  ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
+  ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
+  DT = 90.
+  TDT = DT
  
-      DX = 1.E5
-      DY = 1.E5
-      A = 1.E6
-      ALPHA = .001
+  DX = 1.E5
+  DY = 1.E5
 
-      MP1 = M+1
-      NP1 = N+1
-      EL = N*DX
-      PI = 4.*ATAN(1.)
-      TPI = PI+PI
-      DI = TPI/M
-      DJ = TPI/N
-      PCF = PI*PI*A*A/(EL*EL)
+  ! Parameter for time smoothing
+  ALPHA = .001
 
- !     Set up arrays
+  MP1 = M+1
+  NP1 = N+1
 
-      ALLOCATE( u(MP1,NP1), v(MP1,NP1), p(MP1,NP1) ) 
-      ALLOCATE( unew(MP1,NP1), vnew(MP1,NP1), pnew(MP1,NP1) ) 
-      ALLOCATE( uold(MP1,NP1), vold(MP1,NP1), pold(MP1,NP1) )
-      ALLOCATE( cu(MP1,NP1), cv(MP1,NP1) ) 
-      ALLOCATE( z(MP1,NP1), h(MP1,NP1), psi(MP1,NP1) ) 
+  CALL invoke_init_model_params_kernel(DX, M, N)
 
-!     Prepare netCDF file to receive model output data
-      IF (l_out) THEN 
-         call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id,istart,icount)
-      ENDIF
+  !     Set up arrays
+
+  ALLOCATE( u(MP1,NP1), v(MP1,NP1), p(MP1,NP1) ) 
+  ALLOCATE( unew(MP1,NP1), vnew(MP1,NP1), pnew(MP1,NP1) ) 
+  ALLOCATE( uold(MP1,NP1), vold(MP1,NP1), pold(MP1,NP1) )
+  ALLOCATE( cu(MP1,NP1), cv(MP1,NP1) ) 
+  ALLOCATE( z(MP1,NP1), h(MP1,NP1), psi(MP1,NP1) ) 
+
+  !     Prepare netCDF file to receive model output data
+  IF (l_out) THEN 
+     call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id,istart,icount)
+  ENDIF
      
 !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
-      CALL init_stream_fn(PSI, A, DI, DJ)
-      CALL init_pressure(P, PCF, DI, DJ)
+      CALL invoke_init_stream_fn_kernel(PSI)
+      CALL init_pressure(P)
 
 !     INITIALIZE VELOCITIES
 
