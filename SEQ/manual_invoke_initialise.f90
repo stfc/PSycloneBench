@@ -1,38 +1,84 @@
-MODULE initialise
+MODULE manual_invoke_initialise
   IMPLICIT none
+  PRIVATE
+
+  REAL(KIND=8), PARAMETER :: A = 1.0E6
+  REAL(KIND=8)  :: PCF
+  REAL(KIND=8)  :: PI, TPI
+  REAL(KIND=8)  :: di, dj
+
+  PUBLIC invoke_init_model_params_kernel
+  PUBLIC invoke_init_stream_fn_kernel
+  PUBLIC init_pressure
+  PUBLIC init_velocity_u
+  PUBLIC init_velocity_v
 
 CONTAINS
 
   !===================================================
 
-  SUBROUTINE init_stream_fn(psi, A, DI, DJ)
+  SUBROUTINE invoke_init_model_params_kernel(dx, m, n)
+    IMPLICIT none
+    REAL(KIND=8), INTENT(in) :: dx
+    INTEGER,      INTENT(in) :: m, n
+    ! Locals
+    REAL(KIND=8)  :: EL
+
+    PI =  4.*ATAN(1.)
+    TPI = PI + PI
+
+    di = TPI/m
+    dj = TPI/n
+
+    ! Extent in x of model domain
+    EL = m*dx
+
+    PCF = PI*PI*A*A/(EL*EL)
+
+  END SUBROUTINE invoke_init_model_params_kernel
+
+  !===================================================
+
+  SUBROUTINE invoke_init_stream_fn_kernel(psi)
     IMPLICIT none
     REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: psi
-    REAL(KIND=8), INTENT(in) :: A, DI, DJ
     ! Locals
     INTEGER :: idim1, idim2
-    INTEGER :: I,J
+    INTEGER :: i, j
 
     idim1 = SIZE(psi, 1)
     idim2 = SIZE(psi, 2)
 
-    ! di = 2Pi/(Extent of mesh in x)
-    ! dj = 2Pi/(Extent of mesh in y)
-
+    ! Loop over 'columns'
     DO J=1, idim2
-       DO I=1, idim1
-          PSI(I,J) = A*SIN((I-.5)*DI)*SIN((J-.5)*DJ)
-       END DO
+      DO I=1, idim1
+
+        CALL init_stream_fn_code(i, j, psi)
+
+      END DO
     END DO
 
-  END SUBROUTINE init_stream_fn
+  CONTAINS
+
+    SUBROUTINE init_stream_fn_code(i, j, psi)
+      IMPLICIT none
+      INTEGER,      INTENT(in)                  :: i, j
+      REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: psi
+
+      ! di = 2Pi/(Extent of mesh in x)
+      ! dj = 2Pi/(Extent of mesh in y)
+
+      PSI(I,J) = A*SIN((I-.5)*DI)*SIN((J-.5)*DJ)
+
+    END SUBROUTINE init_stream_fn_code
+
+  END SUBROUTINE invoke_init_stream_fn_kernel
 
   !===================================================
 
-  SUBROUTINE init_pressure(p, pcf, di, dj)
+  SUBROUTINE init_pressure(p)
     IMPLICIT none
     REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: p
-    REAL(KIND=8), INTENT(in) :: pcf, di, dj
     INTEGER :: idim1, idim2
     INTEGER :: i, j
 
@@ -92,4 +138,4 @@ CONTAINS
     END DO
   END SUBROUTINE init_velocity_v
 
-END MODULE initialise
+END MODULE manual_invoke_initialise
