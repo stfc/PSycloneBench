@@ -55,7 +55,7 @@
       REAL(KIND=8) :: dt, tdt, dx, dy, a, alpha, el, pi, tpi, di, dj, pcf, & 
                       tdts8, tdtsdx, tdtsdy, fsdx, fsdy
       INTEGER :: mnmin, ncycle
-      INTEGER :: i, j
+      INTEGER :: i
    
       ! timer variables 
       REAL(KIND=8) :: mfs100, mfs200, mfs300, mfs310, & 
@@ -201,20 +201,8 @@
          T200 = c1
 
          CALL compute_unew(unew, uold, z, cv, h, TDTS8, TDTSDX)
-
-         DO J=1,N
-            DO I=1,M
-               VNEW(I,J+1) = VOLD(I,J+1)-TDTS8*(Z(I+1,J+1)+Z(I,J+1)) & 
-                   *(CU(I+1,J+1)+CU(I,J+1)+CU(I,J)+CU(I+1,J))        & 
-                   -TDTSDY*(H(I,J+1)-H(I,J))
-            END DO
-         END DO
-         DO J=1,N
-            DO I=1,M
-               PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I+1,J)-CU(I,J))   & 
-                   -TDTSDY*(CV(I,J+1)-CV(I,J))
-            END DO
-         END DO
+         CALL compute_vnew(vnew, vold, z, cu, h, TDTS8, TDTSDY)
+         CALL compute_pnew(pnew, pold, cu, cv, TDTSDX, TDTSDY)
 
          call system_clock(count=c2, count_rate=r, count_max=max)
          T200 = dble(c2 -T200)/dble(r)
@@ -648,14 +636,60 @@
         idim2 = SIZE(z, 2) - 1
 
         DO J=1,idim2
-           DO I=2,idim1+1
-              UNEW(I,J) = UOLD(I,J)+                                        &
-                   TDTS8*(Z(I,J+1)+Z(I,J))*(CV(I,J+1)+CV(I-1,J+1)+CV(I-1,J) &
-                   +CV(I,J))-TDTSDX*(H(I,J)-H(I-1,J))                       
-           END DO
+          DO I=2,idim1+1
+            UNEW(I,J) = UOLD(I,J)+                                        &
+                 TDTS8*(Z(I,J+1)+Z(I,J))*(CV(I,J+1)+CV(I-1,J+1)+CV(I-1,J) &
+                        +CV(I,J))-TDTSDX*(H(I,J)-H(I-1,J))
+          END DO
         END DO
 
       END SUBROUTINE compute_unew
+
+      !===================================================
+
+      SUBROUTINE compute_vnew(vnew, vold, z, cu, h, tdts8, tdtsdy)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: vnew
+        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: vold, z, cu, h
+        REAL(KIND=8), INTENT(in)                  :: tdts8, tdtsdy
+        ! Locals
+        INTEGER :: I, J
+        INTEGER :: idim1, idim2
+
+        idim1 = SIZE(z, 1) - 1
+        idim2 = SIZE(z, 2) - 1
+
+         DO J=2,idim2+1
+            DO I=1,idim1
+               VNEW(I,J) = VOLD(I,J)-TDTS8*(Z(I+1,J)+Z(I,J)) & 
+                   *(CU(I+1,J)+CU(I,J)+CU(I,J-1)+CU(I+1,J-1))        & 
+                   -TDTSDY*(H(I,J)-H(I,J-1))
+            END DO
+         END DO
+       END SUBROUTINE compute_vnew
+
+      !===================================================
+
+      SUBROUTINE compute_pnew(pnew, pold, cu, cv, tdtsdx, tdtsdy)
+        IMPLICIT none
+        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: pnew
+        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: pold, cu, cv
+        REAL(KIND=8), INTENT(in)                  :: tdtsdx, tdtsdy
+        ! Locals
+        INTEGER :: I, J
+        INTEGER :: idim1, idim2
+
+        idim1 = SIZE(z, 1) - 1
+        idim2 = SIZE(z, 2) - 1
+
+        DO J=1,idim2
+          DO I=1,idim1
+            PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I+1,J)-CU(I,J))   & 
+                   -TDTSDY*(CV(I,J+1)-CV(I,J))
+          END DO
+        END DO
+
+      END SUBROUTINE compute_pnew
 
     END PROGRAM shallow
 
