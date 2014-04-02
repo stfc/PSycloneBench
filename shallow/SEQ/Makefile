@@ -14,15 +14,14 @@ LDFLAGS = -L/usr/lib64 -lnetcdf -lnetcdff
 #EXECS = join_files shallow_base shallow_parallel
 EXECS = shallow_base
 
+MODULES = initialise.o
+
 all: $(EXECS)
 
-shallow_parallel.o: parallel_mod.o
-
-shallow_parallel: shallow_parallel.o
-	$(F90) $(F90FLAGS) -o $@ $^ parallel_mod.o $(LDFLAGS)
+shallow_base.o: $(MODULES)
 
 %: %.o 
-	$(F90) $(F90FLAGS) -o $@ $^ $(LDFLAGS)
+	$(F90) $(F90FLAGS) -o $@ $< $(MODULES) $(LDFLAGS)
 
 %.o: %.f90
 	$(F90) $(F90FLAGS) -c $<
