@@ -31,31 +31,23 @@ PROGRAM shallow
 !     - Only write to netcdf at mprint timesteps.
 !     - Don't write wrap-around points to NetCDF file.
 !     - Use 8-byte reals. 
+!
+!     This version heavily modified as part of the GOcean-2D project
+!     with the mantra "all computation must occur in a kernel."
+!     Andrew Porter, April 2014
 
+  USE shallow_IO
   USE manual_invoke_initialise
   IMPLICIT NONE
 
-  INCLUDE 'netcdf.inc'
-
-  INTEGER :: m, n    ! global domain size
-  INTEGER :: itmax   ! number of timesteps
-  INTEGER :: mprint  ! frequency of output    
-  NAMELIST/global_domain/ m, n, itmax, mprint
-
-  LOGICAL :: l_out   ! produce output  
-  NAMELIST/io_control/ l_out
-
-  INTEGER :: mp1, np1           ! m+1 and n+1 == array extents
-
   ! solution arrays
   REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::                & 
-                             u, v, p, unew, vnew, pnew,           & 
+                             u, v, p, unew, vnew, pnew,       & 
                              uold, vold, pold, cu, cv, z, h, psi  
 
   REAL(KIND=8) :: dt, tdt, dx, dy, alpha, & 
                   tdts8, tdtsdx, tdtsdy, fsdx, fsdy
-  INTEGER :: mnmin, ncycle
-  INTEGER :: i
+  INTEGER :: ncycle
    
   ! timer variables 
   REAL(KIND=8) :: mfs100, mfs200, mfs300, mfs310, & 
@@ -63,25 +55,10 @@ PROGRAM shallow
                   tstart, ctime, tcyc, time, ptime
   INTEGER :: c1, c2, r, max
      
-  ! NetCDF variables
-  INTEGER :: ncid, t_id, p_id, u_id, v_id, iret, t_val
-  INTEGER, DIMENSION(3) :: istart, icount 
-  CHARACTER (LEN=13) :: ncfile = "shallowdat.nc"
- 
-  ! namelist input 
-  CHARACTER (LEN=8) :: nml_name = "namelist" 
-  INTEGER :: input_unit = 99
-  INTEGER :: ierr
-
   !  ** Initialisations ** 
+  CALL read_namelist()
 
-  !     Read in namelist 
-  OPEN(unit=input_unit, file=nml_name, status='old',iostat=ierr)
-  CALL check(ierr, "open "//nml_name)
-  READ(unit=input_unit, nml=global_domain, iostat=ierr)
-  CALL check(ierr, "read "//nml_name)
-  READ(unit=input_unit, nml=io_control, iostat=ierr)
-  CALL check(ierr, "read "//nml_name)
+  ! All computation must occur in a kernel!
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
@@ -108,45 +85,32 @@ PROGRAM shallow
   ALLOCATE( z(MP1,NP1), h(MP1,NP1), psi(MP1,NP1) ) 
 
   !     Prepare netCDF file to receive model output data
+  IF (l_out) call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id, &
+                               istart,icount)
+     
+  !     INITIAL VALUES OF THE STREAM FUNCTION AND P
+
+  CALL invoke_init_stream_fn_kernel(PSI)
+  CALL init_pressure(P)
+
+  !     INITIALIZE VELOCITIES
+
+  CALL init_velocity_u(u, psi, m, n, dy)
+  CALL init_velocity_v(v, psi, m, n, dx)
+
+  !     PERIODIC CONTINUATION
+  CALL apply_bcs_u(U)
+  CALL apply_bcs_v(V)
+
+  ! Initialise fields that will hold data at previous time step
+  CALL copy_field(U, UOLD)
+  CALL copy_field(V, VOLD)
+  CALL copy_field(P, POLD)
+     
+  !     PRINT INITIAL VALUES
   IF (l_out) THEN 
-     call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id,istart,icount)
-  ENDIF
-     
-!     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
-      CALL invoke_init_stream_fn_kernel(PSI)
-      CALL init_pressure(P)
-
-!     INITIALIZE VELOCITIES
-
-      CALL init_velocity_u(u, psi, m, n, dy)
-      CALL init_velocity_v(v, psi, m, n, dx)
-
-!     PERIODIC CONTINUATION
-      CALL apply_bcs_u(U)
-      CALL apply_bcs_v(V)
-
-      ! Initialise fields that will hold data at previous time step
-      CALL copy_field(U, UOLD)
-      CALL copy_field(V, VOLD)
-      CALL copy_field(P, POLD)
-     
-!     PRINT INITIAL VALUES
-      IF (l_out) THEN 
-         WRITE(6,390) N,M,DX,DY,DT,ALPHA
- 390     FORMAT(" NUMBER OF POINTS IN THE X DIRECTION",I8,/    & 
-                " NUMBER OF POINTS IN THE Y DIRECTION",I8,/    & 
-                " GRID SPACING IN THE X DIRECTION    ",F8.0,/  & 
-                " GRID SPACING IN THE Y DIRECTION    ",F8.0,/  & 
-                " TIME STEP                          ",F8.0,/  & 
-                " TIME FILTER PARAMETER              ",F8.3)
-         MNMIN = MIN0(M,N)
-         WRITE(6,391) (P(I,I),I=1,MNMIN)
- 391     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF P ' //,(8E15.6))
-         WRITE(6,392) (U(I,I),I=1,MNMIN)
- 392     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF U ' //,(8E15.6))
-         WRITE(6,393) (V(I,I),I=1,MNMIN)
- 393     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF V ' //,(8E15.6))
+     CALL print_initial_values(n,m,dx,dy,dt,alpha, p, u, v)
 
 !        Write intial values of p, u, and v into a netCDF file   
          t_val = 0   
@@ -162,171 +126,165 @@ PROGRAM shallow
       T310 = 1.
       TIME = 0.
 
-
-!  ** Start of time loop ** 
+      !  ** Start of time loop ** 
       DO ncycle=1,itmax
     
-!        COMPUTE CAPITAL U, CAPITAL V, Z AND H
-         FSDX = 4./DX
-         FSDY = 4./DY
+        !        COMPUTE CAPITAL U, CAPITAL V, Z AND H
+        FSDX = 4./DX
+        FSDY = 4./DY
 
-         call system_clock(count=c1, count_rate=r,count_max=max)
-         T100 = c1
+        call system_clock(count=c1, count_rate=r,count_max=max)
+        T100 = c1
 
-         CALL compute_cu(CU, P, U)
-         CALL compute_cv(CV, P, V)
-         CALL compute_z(z, P, U, V, FSDX, FSDY)
-         CALL compute_h(h, P, U, V)
+        CALL compute_cu(CU, P, U)
+        CALL compute_cv(CV, P, V)
+        CALL compute_z(z, P, U, V, FSDX, FSDY)
+        CALL compute_h(h, P, U, V)
 
-         call system_clock(count=c2,count_rate=r,count_max=max)
-         T100 = dble(c2-T100)/dble(r)
+        call system_clock(count=c2,count_rate=r,count_max=max)
+        T100 = dble(c2-T100)/dble(r)
 
-!        PERIODIC CONTINUATION
+        !        PERIODIC CONTINUATION
 
-         CALL apply_bcs_u(CU)
-         CALL apply_bcs_p(H)
-         CALL apply_bcs_v(CV)
-         CALL apply_bcs_z(Z)
+        CALL apply_bcs_u(CU)
+        CALL apply_bcs_p(H)
+        CALL apply_bcs_v(CV)
+        CALL apply_bcs_z(Z)
 
-!        COMPUTE NEW VALUES U,V AND P
-         TDTS8 = TDT/8.
-         TDTSDX = TDT/DX
-         TDTSDY = TDT/DY
+        !        COMPUTE NEW VALUES U,V AND P
+        TDTS8 = TDT/8.
+        TDTSDX = TDT/DX
+        TDTSDY = TDT/DY
 
-         call system_clock(count=c1, count_rate=r, count_max=max)
-         T200 = c1
+        call system_clock(count=c1, count_rate=r, count_max=max)
+        T200 = c1
 
-         CALL compute_unew(unew, uold, z, cv, h, TDTS8, TDTSDX)
-         CALL compute_vnew(vnew, vold, z, cu, h, TDTS8, TDTSDY)
-         CALL compute_pnew(pnew, pold, cu, cv, TDTSDX, TDTSDY)
+        CALL compute_unew(unew, uold, z, cv, h, TDTS8, TDTSDX)
+        CALL compute_vnew(vnew, vold, z, cu, h, TDTS8, TDTSDY)
+        CALL compute_pnew(pnew, pold, cu, cv, TDTSDX, TDTSDY)
 
-         call system_clock(count=c2, count_rate=r, count_max=max)
-         T200 = dble(c2 -T200)/dble(r)
+        call system_clock(count=c2, count_rate=r, count_max=max)
+        T200 = dble(c2 -T200)/dble(r)
 
-!        PERIODIC CONTINUATION
+        !        PERIODIC CONTINUATION
 
-         CALL apply_bcs_u(UNEW)
-         CALL apply_bcs_v(VNEW)
-         CALL apply_bcs_p(PNEW)
+        CALL apply_bcs_u(UNEW)
+        CALL apply_bcs_v(VNEW)
+        CALL apply_bcs_p(PNEW)
 
-         TIME = TIME + DT
+        TIME = TIME + DT
 
-         IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
+        IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
             
-            PTIME = TIME/3600.
-            WRITE(6,350) NCYCLE,PTIME
- 350        FORMAT(//' CYCLE NUMBER',I5,' MODEL TIME IN  HOURS', F6.2)
-            WRITE(6,355) (PNEW(I,I),I=1,MNMIN)
- 355        FORMAT(/' DIAGONAL ELEMENTS OF P ' //(8E15.6))
-            WRITE(6,360) (UNEW(I,I),I=1,MNMIN)
- 360        FORMAT(/' DIAGONAL ELEMENTS OF U ' //(8E15.6))
-            WRITE(6,365) (VNEW(I,I),I=1,MNMIN)
- 365        FORMAT(/' DIAGONAL ELEMENTS OF V ' //(8E15.6))
+          PTIME = TIME/3600.
+          WRITE(6,"(//' CYCLE NUMBER',I5,' MODEL TIME IN  HOURS', F6.2)") &
+                NCYCLE,PTIME
 
-!           jr added MFS310--don't know what actual mult factor should be
-!           jr changed divide by 1 million to divide by 100K since system_clock
-!           jr resolution is millisec rather than cpu_time's 10 millisec
-            MFS310 = 0.0
-            MFS100 = 0.0
-            MFS200 = 0.0
-            MFS300 = 0.0
-            IF (T310 .GT. 0) MFS310 = 24.*M*N/T310/1.D5
-            IF (T100 .GT. 0) MFS100 = 24.*M*N/T100/1.D5
-            IF (T200 .GT. 0) MFS200 = 26.*M*N/T200/1.D5
-            IF (T300 .GT. 0) MFS300 = 15.*M*N/T300/1.D5
+          CALL print_diagonals(pnew, unew, vnew)
 
-            call system_clock(count=c2, count_rate=r,count_max=max)
-            CTIME = dble(c2 - TSTART)/dble(r)
-            TCYC = CTIME/FLOAT(NCYCLE)
+          ! jr added MFS310--don't know what actual mult factor should be
+          ! jr changed divide by 1 million to divide by 100K since system_clock
+          ! jr resolution is millisec rather than cpu_time's 10 millisec
+          MFS310 = 0.0
+          MFS100 = 0.0
+          MFS200 = 0.0
+          MFS300 = 0.0
+          IF (T310 .GT. 0) MFS310 = 24.*M*N/T310/1.D5
+          IF (T100 .GT. 0) MFS100 = 24.*M*N/T100/1.D5
+          IF (T200 .GT. 0) MFS200 = 26.*M*N/T200/1.D5
+          IF (T300 .GT. 0) MFS300 = 15.*M*N/T300/1.D5
+          
+          call system_clock(count=c2, count_rate=r,count_max=max)
+          CTIME = dble(c2 - TSTART)/dble(r)
+          TCYC = CTIME/FLOAT(NCYCLE)
 
-            WRITE(6,375) NCYCLE,CTIME,TCYC,T310,MFS310,T200,MFS200,T300,MFS300
- 375        FORMAT(' CYCLE NUMBER',I5,' TOTAL COMPUTER TIME', D15.6,   & 
-                   ' TIME PER CYCLE', D15.6, /                           & 
-                   ' TIME AND MEGAFLOPS FOR LOOP 310 ', D15.6,2x,D6.1/   & 
-                   ' TIME AND MEGAFLOPS FOR LOOP 200 ', D15.6,2x,D6.1/   & 
-                   ' TIME AND MEGAFLOPS FOR LOOP 300 ', D15.6,2x,D6.1/ )
+          WRITE(6,375) NCYCLE,CTIME,TCYC,T310,MFS310,T200,MFS200,T300,MFS300
+375       FORMAT(' CYCLE NUMBER',I5,' TOTAL COMPUTER TIME', D15.6,   & 
+                 ' TIME PER CYCLE', D15.6, /                           & 
+                 ' TIME AND MEGAFLOPS FOR LOOP 310 ', D15.6,2x,D6.1/   & 
+                 ' TIME AND MEGAFLOPS FOR LOOP 200 ', D15.6,2x,D6.1/   & 
+                 ' TIME AND MEGAFLOPS FOR LOOP 300 ', D15.6,2x,D6.1/ )
 
-!           Append calculated values of p, u, and v to netCDF file
-            istart(3) = ncycle/mprint + 1
-            t_val = ncycle
+          !           Append calculated values of p, u, and v to netCDF file
+          istart(3) = ncycle/mprint + 1
+          t_val = ncycle
 
-!           Shape of record to be written (one ncycle at a time)
-            call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
-            call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
-            call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
+          !           Shape of record to be written (one ncycle at a time)
+          call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
+          call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
+          call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
 
-         endif
+       endif
 
-!        Write out time if last timestep
-         IF (ncycle .EQ. itmax) THEN 
-            call system_clock(count=c2, count_rate=r,count_max=max)
-            CTIME = dble(c2 - TSTART)/dble(r)
-            WRITE(6,376) ctime  
- 376        FORMAT('system_clock time ', F15.6)
-         ENDIF
-
-
-!        TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
-         IF(NCYCLE .GT. 1) then
-
-            call system_clock(count=c1,count_rate=r,count_max=max)
-            T300 = c1
-
-            CALL time_smooth(U, UNEW, UOLD, ALPHA)
-            CALL time_smooth(V, VNEW, VOLD, ALPHA)
-            CALL time_smooth(P, PNEW, POLD, ALPHA)
-
-            CALL copy_field(UNEW, U)
-            CALL copy_field(VNEW, V)
-            CALL copy_field(PNEW, P)
-
-            call system_clock(count=c2,count_rate=r, count_max=max)
-            T300 = dble(c2 - T300)/dble(r)
-
-         ELSE ! ncycle == 1
-
-            TDT = TDT+TDT
-
-            call system_clock(count=c1, count_rate=r,count_max=max)
-            T310 = c1
-
-            CALL copy_field(U, UOLD)
-            CALL copy_field(V, VOLD)
-            CALL copy_field(P, POLD)
-
-            CALL copy_field(UNEW, U)
-            CALL copy_field(VNEW, V)
-            CALL copy_field(PNEW, P)
-
-            call system_clock(count=c2, count_rate=r, count_max=max)
-            T310 = dble(c2 - T310)/dble(r)
-
-         ENDIF ! ncycle > 1
-
-      End do
-
-!  ** End of time loop ** 
-
-      WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax, SUM(PNEW(:,:))
-      WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax,SUM(UNEW(:,:))
-      WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax,SUM(VNEW(:,:))
-
- !     Close the netCDF file
-
-      IF (l_out) THEN 
-
-         iret = nf_close(ncid)
-         call check_err(iret)
+       !        Write out time if last timestep
+       IF (ncycle .EQ. itmax) THEN 
+         call system_clock(count=c2, count_rate=r,count_max=max)
+         CTIME = dble(c2 - TSTART)/dble(r)
+         WRITE(6,376) ctime  
+376      FORMAT('system_clock time ', F15.6)
       ENDIF
 
-!     Free memory
-      DEALLOCATE( u, v, p, unew, vnew, pnew, uold, vold, pold )
-      DEALLOCATE( cu, cv, z, h, psi ) 
 
-    CONTAINS
+      !        TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
+      IF(NCYCLE .GT. 1) then
+
+         call system_clock(count=c1,count_rate=r,count_max=max)
+         T300 = c1
+
+         CALL time_smooth(U, UNEW, UOLD, ALPHA)
+         CALL time_smooth(V, VNEW, VOLD, ALPHA)
+         CALL time_smooth(P, PNEW, POLD, ALPHA)
+
+         CALL copy_field(UNEW, U)
+         CALL copy_field(VNEW, V)
+         CALL copy_field(PNEW, P)
+
+         call system_clock(count=c2,count_rate=r, count_max=max)
+         T300 = dble(c2 - T300)/dble(r)
+
+      ELSE ! ncycle == 1
+
+         TDT = TDT+TDT
+
+         call system_clock(count=c1, count_rate=r,count_max=max)
+         T310 = c1
+
+         CALL copy_field(U, UOLD)
+         CALL copy_field(V, VOLD)
+         CALL copy_field(P, POLD)
+         
+         CALL copy_field(UNEW, U)
+         CALL copy_field(VNEW, V)
+         CALL copy_field(PNEW, P)
+
+         call system_clock(count=c2, count_rate=r, count_max=max)
+         T310 = dble(c2 - T310)/dble(r)
+
+      ENDIF ! ncycle > 1
+
+   END DO
+
+   !  ** End of time loop ** 
+
+   WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
+           itmax, SUM(PNEW(:,:))
+   WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E15.7)") &
+           itmax,SUM(UNEW(:,:))
+   WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E15.7)") &
+           itmax,SUM(VNEW(:,:))
+
+   !     Close the netCDF file
+
+   IF (l_out) THEN 
+     iret = nf_close(ncid)
+     call check_err(iret)
+  ENDIF
+
+  !     Free memory
+  DEALLOCATE( u, v, p, unew, vnew, pnew, uold, vold, pold )
+  DEALLOCATE( cu, cv, z, h, psi ) 
+
+CONTAINS
 
       !===================================================
 
@@ -616,121 +574,3 @@ PROGRAM shallow
       endif
 
       end subroutine check
-
-      !===================================================
-
-      subroutine check_err(iret)
-      integer iret
-      include 'netcdf.inc'
-      if(iret .ne. NF_NOERR) then
-         print *, nf_strerror(iret)
-         stop
-      endif
-      end subroutine
-
-      !===================================================
-
-      subroutine netcdf_setup(file,m,n,ncid,t_id,p_id,u_id,v_id,istart,icount)
-!     Input args: file, m, n
-!     Output args: ncid,t_id,p_id,u_id,v_id,istart,icount)
-      character(len=*) file
-      integer m,n
-!     declarations for netCDF library
-      include 'netcdf.inc'
-!     error status return
-      integer iret
-!     netCDF id
-      integer ncid
-!     dimension ids
-      integer m_dim
-      integer n_dim
-      integer time_dim      
-!     variable ids
-      integer t_id
-      integer p_id
-      integer u_id
-      integer v_id
-!     rank (number of dimensions) for each variable
-      integer p_rank, u_rank, v_rank
-      parameter (p_rank = 3)
-      parameter (u_rank = 3)
-      parameter (v_rank = 3)
-!     variable shapes
-      integer t_dims(1)
-      integer p_dims(p_rank)
-      integer u_dims(u_rank)
-      integer v_dims(v_rank)
-      integer istart(p_rank)
-      integer icount(p_rank)
-      
-!     enter define mode
-      iret = nf_create(file, NF_CLOBBER,ncid)
-      call check_err(iret)
-!     define dimensions
-      iret = nf_def_dim(ncid, 'm', m, m_dim)
-      call check_err(iret)
-      iret = nf_def_dim(ncid, 'n', n, n_dim)
-      call check_err(iret)
-!     time is an unlimited dimension so that any number of
-!     records can be added
-      iret = nf_def_dim(ncid, 'time', NF_UNLIMITED, time_dim)
-      call check_err(iret)
-!     define coordinate variable for time      
-      t_dims(1) = time_dim
-      iret = nf_def_var(ncid, 'time', NF_INT, 1, t_dims, t_id)
-      call check_err(iret)
-!     define variables
-      p_dims(1) = m_dim
-      p_dims(2) = n_dim
-      p_dims(3) = time_dim
-      iret = nf_def_var(ncid, 'p', NF_DOUBLE, p_rank, p_dims, p_id)
-      call check_err(iret)
-      u_dims(1) = m_dim
-      u_dims(2) = n_dim
-      u_dims(3) = time_dim
-      iret = nf_def_var(ncid, 'u', NF_DOUBLE, u_rank, u_dims, u_id)
-      call check_err(iret)
-      v_dims(1) = m_dim
-      v_dims(2) = n_dim
-      v_dims(3) = time_dim
-      iret = nf_def_var(ncid, 'v', NF_DOUBLE, v_rank, v_dims, v_id)
-      call check_err(iret)
-!     start netCDF write at the first (1,1,1) position of the array
-      istart(1) = 1
-      istart(2) = 1
-      istart(3) = 1
-!     shape of record to be written (one ncycle at a time)
-      icount(1) = m
-      icount(2) = n
-      icount(3) = 1
-      
-!     leave define mode
-      iret = nf_enddef(ncid)
-      call check_err(iret)
-      
-!     end of netCDF definitions
-      end subroutine netcdf_setup
-
-      !===================================================
-     
-      subroutine my_ncwrite(id,varid,istart,icount,var,m,n,t_id,t_val)
-!     Input args: id, varid,istart,icount,var,m,n,t_id,t_val
-!     Write a whole array out to the netCDF file
-      integer id,varid,iret
-      integer icount(3)
-      integer istart(3)
-      integer m,n
-      real(kind=8) var (m,n)
-      integer t_id,t_val
-      integer t_start(1), t_count(1)
-
-      iret = nf_put_vara_double(id,varid,istart,icount,var)
-      call check_err(iret)
-      
-      t_start(1) = istart(3) 
-      t_count(1) = 1
-      iret = nf_put_vara_int(id,t_id,t_start,t_count,t_val)
-      call check_err(iret)
-
-      end subroutine my_ncwrite
-
