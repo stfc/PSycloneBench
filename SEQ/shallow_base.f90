@@ -39,6 +39,7 @@ PROGRAM shallow
   USE shallow_IO
   USE manual_invoke_initialise
   USE timing
+  USE model
   IMPLICIT NONE
 
   ! solution arrays
@@ -48,18 +49,18 @@ PROGRAM shallow
 
   REAL(KIND=8) :: dt, tdt, dx, dy, alpha, & 
                   tdts8, tdtsdx, tdtsdy, fsdx, fsdy
-  REAL(KIND=8) :: usum, vsum, psum
 
+  !> Checksum used for each array
+  REAL(KIND=8) :: csum
+
+  !> Loop counter for time-stepping loop
   INTEGER :: ncycle
    
   !> Integer tags for timers
   INTEGER :: idxt0, idxt1
 
   !  ** Initialisations ** 
-
-  CALL timer_init()
-
-  CALL read_namelist()
+  CALL model_init()
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
@@ -87,9 +88,6 @@ PROGRAM shallow
   ALLOCATE( uold(MP1,NP1), vold(MP1,NP1), pold(MP1,NP1) )
   ALLOCATE( cu(MP1,NP1), cv(MP1,NP1) ) 
   ALLOCATE( z(MP1,NP1), h(MP1,NP1), psi(MP1,NP1) ) 
-
-  !     Prepare netCDF file to receive model output data
-  CALL model_write_init()
 
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
@@ -122,7 +120,7 @@ PROGRAM shallow
   !  ** Start of time loop ** 
   DO ncycle=1,itmax
     
-    !        COMPUTE CAPITAL U, CAPITAL V, Z AND H
+    ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
 
     CALL timer_start('Compute c{u,v},z,h', idxt1)
 
@@ -133,14 +131,14 @@ PROGRAM shallow
 
     CALL timer_stop(idxt1)
 
-    !        PERIODIC CONTINUATION
+    ! PERIODIC CONTINUATION
 
     CALL apply_bcs_u(CU)
     CALL apply_bcs_p(H)
     CALL apply_bcs_v(CV)
     CALL apply_bcs_z(Z)
 
-    !        COMPUTE NEW VALUES U,V AND P
+    ! COMPUTE NEW VALUES U,V AND P
     TDTS8 = TDT/8.
     TDTSDX = TDT/DX
     TDTSDY = TDT/DY
@@ -153,7 +151,7 @@ PROGRAM shallow
 
     CALL timer_stop(idxt1)
 
-    !        PERIODIC CONTINUATION
+    ! PERIODIC CONTINUATION
 
     CALL apply_bcs_u(UNEW)
     CALL apply_bcs_v(VNEW)
@@ -164,7 +162,7 @@ PROGRAM shallow
 
     CALL model_write(ncycle, p, u, v)
 
-    !        TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
+    ! TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
     IF(NCYCLE .GT. 1) then
 
       CALL timer_start('Time smoothing',idxt1)
@@ -200,22 +198,21 @@ PROGRAM shallow
 
   CALL timer_stop(idxt0)
 
-  CALL compute_checksum(pnew, psum)
-  CALL compute_checksum(unew, usum)
-  CALL compute_checksum(vnew, vsum)
+  CALL compute_checksum(pnew, csum)
+  CALL model_write_log("('P CHECKSUM after ',I6,' steps = ',E15.7)", &
+                       itmax, csum)
 
-  WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
-        itmax, psum
-  WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E15.7)") &
-        itmax, usum
-  WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E15.7)") &
-        itmax, vsum
+  CALL compute_checksum(unew, csum)
+  CALL model_write_log("('U CHECKSUM after ',I6,' steps = ',E15.7)", &
+                       itmax, csum)
 
-  CALL model_write_finalise()
+  CALL compute_checksum(vnew, csum)
+  CALL model_write_log("('V CHECKSUM after ',I6,' steps = ',E15.7)", &
+                       itmax, csum)
 
-  CALL timer_report()
+  CALL model_finalise()
 
-  !     Free memory
+  !> Free memory \todo Move to model_finalise()
   DEALLOCATE( u, v, p, unew, vnew, pnew, uold, vold, pold )
   DEALLOCATE( cu, cv, z, h, psi ) 
 

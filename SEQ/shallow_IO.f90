@@ -3,15 +3,8 @@ MODULE shallow_io
 
   PRIVATE
 
-  INTEGER :: m, n      !< global domain size
-  INTEGER :: mp1, np1  !< m+1 and n+1 == array extents
-
-  INTEGER :: itmax   !< number of timesteps
+  LOGICAL :: l_out   !< Whether or not to produce output  
   INTEGER :: mprint  !< frequency of output    
-  LOGICAL :: l_out   !< produce output  
-
-  NAMELIST/global_domain/ m, n, itmax, mprint
-  NAMELIST/io_control/ l_out
 
   ! NetCDF variables
   INCLUDE 'netcdf.inc'
@@ -22,9 +15,7 @@ MODULE shallow_io
 
   PUBLIC read_namelist, print_initial_values, print_diagonals
   PUBLIC model_write_init, model_write, model_write_finalise
-  !> \bug These flags should not have to be exported to the main
-  !! code!
-  PUBLIC l_out, m, n, mp1, np1, itmax
+  PUBLIC model_write_log
 
 CONTAINS
 
@@ -32,13 +23,17 @@ CONTAINS
 
   !> Reads the namelist file for user-specified control 
   !! parameters
-  SUBROUTINE read_namelist
+  SUBROUTINE read_namelist(m, n, itmax)
     IMPLICIT none
-
+    INTEGER, INTENT(out) :: m, n
+    INTEGER, INTENT(out) :: itmax
     ! namelist input 
     CHARACTER (LEN=8) :: nml_name = "namelist" 
     INTEGER :: input_unit = 99
     INTEGER :: ierr
+
+    NAMELIST/global_domain/ m, n, itmax, mprint
+    NAMELIST/io_control/ l_out
 
     !     Read in namelist 
     OPEN(unit=input_unit, file=nml_name, status='old',iostat=ierr)
@@ -79,9 +74,12 @@ CONTAINS
     IMPLICIT none
     REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: p, u, v
     ! Locals
-    INTEGER :: i, mnmin
+    INTEGER :: i, mnmin, m, n
 
-    MNMIN = MIN0(M,N)
+    m = SIZE(p,1)-1
+    n = SIZE(p,2)-1
+
+    MNMIN = MIN0(m,n)
 
     WRITE(6,391) (P(I,I),I=1,MNMIN)
 391 FORMAT(/' INITIAL DIAGONAL ELEMENTS OF P ' //,(8E15.6))
@@ -94,9 +92,11 @@ CONTAINS
 
   !===================================================
   
-  SUBROUTINE model_write_init()
+  SUBROUTINE model_write_init(m, n)
     IMPLICIT none
+    INTEGER, INTENT(in) :: m, n
 
+    ! Prepare netCDF file to receive model output data
     IF (l_out) call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id, &
                                  istart,icount)
 
@@ -109,11 +109,16 @@ CONTAINS
     IMPLICIT none
     INTEGER,                      INTENT(in) :: ncycle
     REAL(KIND=8), DIMENSION(:,:), INTENT(in) :: p, u, v
+    ! Locals
+    INTEGER :: m, n
 
     IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
 
        CALL print_diagonals(p, u, v)
     
+       m = SIZE(p, 1) - 1
+       n = SIZE(p, 2) - 1
+
        !           Append calculated values of p, u, and v to netCDF file
        istart(3) = ncycle/mprint + 1
        t_val = ncycle
@@ -125,6 +130,21 @@ CONTAINS
     END IF
 
   END SUBROUTINE model_write
+
+  !===================================================
+
+  !> This routine really needs to have a list of optional
+  !! arguments - i.e. to provide a logging interface of
+  !! some sort.
+  SUBROUTINE model_write_log(fmtstr, istep, fvar)
+    IMPLICIT none
+    CHARACTER(LEN=*), INTENT(in) :: fmtstr
+    INTEGER,          INTENT(in) :: istep
+    REAL(KIND=8),     INTENT(in) :: fvar
+
+    WRITE(6,FMT=fmtstr) istep, fvar
+
+  END SUBROUTINE model_write_log
 
   !===================================================
 
