@@ -42,11 +42,6 @@ PROGRAM shallow
   USE model
   IMPLICIT NONE
 
-  ! solution arrays
-  REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::                & 
-                             u, v, p, unew, vnew, pnew,       & 
-                             uold, vold, pold, cu, cv, z, h, psi  
-
   REAL(KIND=8) :: dt, tdt, dx, dy, alpha, & 
                   tdts8, tdtsdx, tdtsdy, fsdx, fsdy
 
@@ -76,18 +71,7 @@ PROGRAM shallow
   FSDX = 4./DX
   FSDY = 4./DY
 
-  MP1 = M+1
-  NP1 = N+1
-
   CALL invoke_init_model_params_kernel(DX, M, N)
-
-  !     Set up arrays
-
-  ALLOCATE( u(MP1,NP1), v(MP1,NP1), p(MP1,NP1) ) 
-  ALLOCATE( unew(MP1,NP1), vnew(MP1,NP1), pnew(MP1,NP1) ) 
-  ALLOCATE( uold(MP1,NP1), vold(MP1,NP1), pold(MP1,NP1) )
-  ALLOCATE( cu(MP1,NP1), cv(MP1,NP1) ) 
-  ALLOCATE( z(MP1,NP1), h(MP1,NP1), psi(MP1,NP1) ) 
 
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
@@ -211,10 +195,6 @@ PROGRAM shallow
                        itmax, csum)
 
   CALL model_finalise()
-
-  !> Free memory \todo Move to model_finalise()
-  DEALLOCATE( u, v, p, unew, vnew, pnew, uold, vold, pold )
-  DEALLOCATE( cu, cv, z, h, psi ) 
 
 CONTAINS
 
