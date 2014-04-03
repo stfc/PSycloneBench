@@ -48,9 +48,11 @@ PROGRAM shallow
 
   REAL(KIND=8) :: dt, tdt, dx, dy, alpha, & 
                   tdts8, tdtsdx, tdtsdy, fsdx, fsdy
+  REAL(KIND=8) :: usum, vsum, psum
+
   INTEGER :: ncycle
    
-  !> Integer tags for timer
+  !> Integer tags for timers
   INTEGER :: idxt0, idxt1
 
   !  ** Initialisations ** 
@@ -58,8 +60,6 @@ PROGRAM shallow
   CALL timer_init()
 
   CALL read_namelist()
-
-  ! All computation must occur in a kernel!
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
@@ -71,6 +71,9 @@ PROGRAM shallow
 
   ! Parameter for time smoothing
   ALPHA = .001
+
+  FSDX = 4./DX
+  FSDY = 4./DY
 
   MP1 = M+1
   NP1 = N+1
@@ -86,9 +89,8 @@ PROGRAM shallow
   ALLOCATE( z(MP1,NP1), h(MP1,NP1), psi(MP1,NP1) ) 
 
   !     Prepare netCDF file to receive model output data
-  IF (l_out) call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id, &
-                               istart,icount)
-     
+  CALL model_write_init()
+
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
   CALL invoke_init_stream_fn_kernel(PSI)
@@ -109,16 +111,10 @@ PROGRAM shallow
   CALL copy_field(P, POLD)
      
   !     PRINT INITIAL VALUES
-  IF (l_out) THEN 
+  CALL print_initial_values(n,m,dx,dy,dt,alpha, p, u, v)
 
-    CALL print_initial_values(n,m,dx,dy,dt,alpha, p, u, v)
-
-    ! Write intial values of p, u, and v into a netCDF file   
-    t_val = 0   
-    call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
-    call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
-    call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
-  ENDIF
+  ! Write intial values of p, u, and v into a netCDF file   
+  CALL model_write(0, p, u, v)
 
   !     Start timer
   CALL timer_start('Time-stepping',idxt0)
@@ -126,111 +122,96 @@ PROGRAM shallow
   !  ** Start of time loop ** 
   DO ncycle=1,itmax
     
-     !        COMPUTE CAPITAL U, CAPITAL V, Z AND H
-     FSDX = 4./DX
-     FSDY = 4./DY
+    !        COMPUTE CAPITAL U, CAPITAL V, Z AND H
 
-     CALL timer_start('Compute c{u,v},z,h', idxt1)
+    CALL timer_start('Compute c{u,v},z,h', idxt1)
 
-     CALL compute_cu(CU, P, U)
-     CALL compute_cv(CV, P, V)
-     CALL compute_z(z, P, U, V, FSDX, FSDY)
-     CALL compute_h(h, P, U, V)
+    CALL compute_cu(CU, P, U)
+    CALL compute_cv(CV, P, V)
+    CALL compute_z(z, P, U, V, FSDX, FSDY)
+    CALL compute_h(h, P, U, V)
 
-     CALL timer_stop(idxt1)
+    CALL timer_stop(idxt1)
 
-     !        PERIODIC CONTINUATION
+    !        PERIODIC CONTINUATION
 
-     CALL apply_bcs_u(CU)
-     CALL apply_bcs_p(H)
-     CALL apply_bcs_v(CV)
-     CALL apply_bcs_z(Z)
+    CALL apply_bcs_u(CU)
+    CALL apply_bcs_p(H)
+    CALL apply_bcs_v(CV)
+    CALL apply_bcs_z(Z)
 
-     !        COMPUTE NEW VALUES U,V AND P
-     TDTS8 = TDT/8.
-     TDTSDX = TDT/DX
-     TDTSDY = TDT/DY
+    !        COMPUTE NEW VALUES U,V AND P
+    TDTS8 = TDT/8.
+    TDTSDX = TDT/DX
+    TDTSDY = TDT/DY
 
-     CALL timer_start('Compute new fields', idxt1)
+    CALL timer_start('Compute new fields', idxt1)
      
-     CALL compute_unew(unew, uold, z, cv, h, TDTS8, TDTSDX)
-     CALL compute_vnew(vnew, vold, z, cu, h, TDTS8, TDTSDY)
-     CALL compute_pnew(pnew, pold, cu, cv, TDTSDX, TDTSDY)
+    CALL compute_unew(unew, uold, z, cv, h, TDTS8, TDTSDX)
+    CALL compute_vnew(vnew, vold, z, cu, h, TDTS8, TDTSDY)
+    CALL compute_pnew(pnew, pold, cu, cv, TDTSDX, TDTSDY)
 
-     CALL timer_stop(idxt1)
+    CALL timer_stop(idxt1)
 
-     !        PERIODIC CONTINUATION
+    !        PERIODIC CONTINUATION
 
-     CALL apply_bcs_u(UNEW)
-     CALL apply_bcs_v(VNEW)
-     CALL apply_bcs_p(PNEW)
+    CALL apply_bcs_u(UNEW)
+    CALL apply_bcs_v(VNEW)
+    CALL apply_bcs_p(PNEW)
 
-     ! Time is in seconds but we never actually need it
-     !TIME = TIME + DT
+    ! Time is in seconds but we never actually need it
+    !TIME = TIME + DT
 
-     IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
-            
-        CALL print_diagonals(pnew, unew, vnew)
-          
-        !           Append calculated values of p, u, and v to netCDF file
-        istart(3) = ncycle/mprint + 1
-        t_val = ncycle
+    CALL model_write(ncycle, p, u, v)
 
-        !           Shape of record to be written (one ncycle at a time)
-        call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
-        call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
-        call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
+    !        TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
+    IF(NCYCLE .GT. 1) then
 
-     endif
+      CALL timer_start('Time smoothing',idxt1)
 
-     !        TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
-     IF(NCYCLE .GT. 1) then
+      CALL time_smooth(U, UNEW, UOLD, ALPHA)
+      CALL time_smooth(V, VNEW, VOLD, ALPHA)
+      CALL time_smooth(P, PNEW, POLD, ALPHA)
 
-       CALL timer_start('Time smoothing',idxt1)
+      CALL timer_stop(idxt1)
 
-       CALL time_smooth(U, UNEW, UOLD, ALPHA)
-       CALL time_smooth(V, VNEW, VOLD, ALPHA)
-       CALL time_smooth(P, PNEW, POLD, ALPHA)
+      CALL copy_field(UNEW, U)
+      CALL copy_field(VNEW, V)
+      CALL copy_field(PNEW, P)
 
-       CALL timer_stop(idxt1)
+    ELSE ! ncycle == 1
 
-       CALL copy_field(UNEW, U)
-       CALL copy_field(VNEW, V)
-       CALL copy_field(PNEW, P)
+      ! Make TDT actually = 2*DT
+      TDT = TDT+TDT
 
-     ELSE ! ncycle == 1
-
-       TDT = TDT+TDT
-
-       CALL copy_field(U, UOLD)
-       CALL copy_field(V, VOLD)
-       CALL copy_field(P, POLD)
+      CALL copy_field(U, UOLD)
+      CALL copy_field(V, VOLD)
+      CALL copy_field(P, POLD)
          
-       CALL copy_field(UNEW, U)
-       CALL copy_field(VNEW, V)
-       CALL copy_field(PNEW, P)
+      CALL copy_field(UNEW, U)
+      CALL copy_field(VNEW, V)
+      CALL copy_field(PNEW, P)
 
-     ENDIF ! ncycle > 1
+    ENDIF ! ncycle > 1
 
-   END DO
+  END DO
 
-   !  ** End of time loop ** 
+  !  ** End of time loop ** 
 
-   CALL timer_stop(idxt0)
+  CALL timer_stop(idxt0)
 
-   WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax, SUM(PNEW(:,:))
-   WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax,SUM(UNEW(:,:))
-   WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax,SUM(VNEW(:,:))
+  CALL compute_checksum(pnew, psum)
+  CALL compute_checksum(unew, usum)
+  CALL compute_checksum(vnew, vsum)
 
-   !     Close the netCDF file
+  WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
+        itmax, psum
+  WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E15.7)") &
+        itmax, usum
+  WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E15.7)") &
+        itmax, vsum
 
-   IF (l_out) THEN 
-     iret = nf_close(ncid)
-     call check_err(iret)
-  ENDIF
+  CALL model_write_finalise()
 
   CALL timer_report()
 
@@ -240,26 +221,37 @@ PROGRAM shallow
 
 CONTAINS
 
-      !===================================================
+  !===================================================
 
-      SUBROUTINE apply_bcs_p(field)
-        IMPLICIT none
-        REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field
-        INTEGER :: M, MP1, N, NP1
+  SUBROUTINE compute_checksum(field, val)
+    IMPLICIT none
+    REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: field
+    REAL(KIND=8), INTENT(out) :: val
 
-        MP1 = SIZE(field, 1)
-        NP1 = SIZE(field, 2)
-        M = MP1 - 1
-        N = NP1 - 1
+    val = SUM(field)
 
-        ! Last col = first col
-        field(MP1,1:N) = field(1,  1:N)
-        ! Last row = first row
-        field(1:MP1,NP1) = field(1:MP1,1)
+  END SUBROUTINE compute_checksum
 
-      END SUBROUTINE apply_bcs_p
+  !===================================================
 
-      !===================================================
+  SUBROUTINE apply_bcs_p(field)
+    IMPLICIT none
+    REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field
+    INTEGER :: M, MP1, N, NP1
+
+    MP1 = SIZE(field, 1)
+    NP1 = SIZE(field, 2)
+    M = MP1 - 1
+    N = NP1 - 1
+
+    ! Last col = first col
+    field(MP1,1:N) = field(1,  1:N)
+    ! Last row = first row
+    field(1:MP1,NP1) = field(1:MP1,1)
+
+  END SUBROUTINE apply_bcs_p
+
+  !===================================================
 
       SUBROUTINE apply_bcs_u(field)
         IMPLICIT none
