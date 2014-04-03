@@ -1,6 +1,8 @@
 MODULE shallow_io
   IMPLICIT none
 
+  PRIVATE
+
   INTEGER :: m, n      !< global domain size
   INTEGER :: mp1, np1  !< m+1 and n+1 == array extents
 
@@ -18,7 +20,15 @@ MODULE shallow_io
   INTEGER, DIMENSION(3) :: istart, icount 
   CHARACTER (LEN=13) :: ncfile = "shallowdat.nc"
 
+  PUBLIC read_namelist, print_initial_values, print_diagonals
+  PUBLIC model_write_init, model_write, model_write_finalise
+  !> \bug These flags should not have to be exported to the main
+  !! code!
+  PUBLIC l_out, m, n, mp1, np1, itmax
+
 CONTAINS
+
+  !===================================================
 
   !> Reads the namelist file for user-specified control 
   !! parameters
@@ -48,7 +58,9 @@ CONTAINS
     REAL(KIND=8), INTENT(in) :: dx, dy, dt, alpha
     REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: p, u, v
 
-    WRITE(6,390) N,M,DX,DY,DT,ALPHA
+    IF(l_out)THEN
+
+       WRITE(6,390) N,M,DX,DY,DT,ALPHA
  390     FORMAT(" NUMBER OF POINTS IN THE X DIRECTION",I8,/    & 
                 " NUMBER OF POINTS IN THE Y DIRECTION",I8,/    & 
                 " GRID SPACING IN THE X DIRECTION    ",F8.0,/  & 
@@ -56,7 +68,8 @@ CONTAINS
                 " TIME STEP                          ",F8.0,/  & 
                 " TIME FILTER PARAMETER              ",F8.3)
 
-    CALL print_diagonals(p, u, v)
+       CALL print_diagonals(p, u, v)
+    END IF
 
   END SUBROUTINE print_initial_values
 
@@ -78,6 +91,55 @@ CONTAINS
 393 FORMAT(/' INITIAL DIAGONAL ELEMENTS OF V ' //,(8E15.6))
 
   END SUBROUTINE print_diagonals
+
+  !===================================================
+  
+  SUBROUTINE model_write_init()
+    IMPLICIT none
+
+    IF (l_out) call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id, &
+                                 istart,icount)
+
+  END SUBROUTINE model_write_init
+ 
+  !===================================================
+
+  !> Write data for the current time step
+  SUBROUTINE model_write(ncycle, p, u, v)
+    IMPLICIT none
+    INTEGER,                      INTENT(in) :: ncycle
+    REAL(KIND=8), DIMENSION(:,:), INTENT(in) :: p, u, v
+
+    IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
+
+       CALL print_diagonals(p, u, v)
+    
+       !           Append calculated values of p, u, and v to netCDF file
+       istart(3) = ncycle/mprint + 1
+       t_val = ncycle
+
+       !           Shape of record to be written (one ncycle at a time)
+       call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
+       call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
+       call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
+    END IF
+
+  END SUBROUTINE model_write
+
+  !===================================================
+
+  SUBROUTINE model_write_finalise()
+    IMPLICIT none
+    INTEGER :: iret
+    
+    ! Close the netCDF file
+
+    IF (l_out) THEN 
+       iret = nf_close(ncid)
+       call check_err(iret)
+    ENDIF
+
+  END SUBROUTINE model_write_finalise
 
   !===================================================
   
