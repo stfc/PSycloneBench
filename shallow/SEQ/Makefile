@@ -14,7 +14,8 @@ LDFLAGS = -L/usr/lib64 -lnetcdf -lnetcdff
 #EXECS = join_files shallow_base shallow_parallel
 EXECS = shallow_base
 
-MODULES = model.o shallow_IO.o manual_invoke_initialise.o timing.o intel_timer_mod.o
+MODULES = model.o shallow_IO.o manual_invoke_initialise.o \
+          timing.o time_smooth.o intel_timer_mod.o mesh.o
 
 all: $(EXECS)
 
@@ -22,7 +23,7 @@ shallow_base.o: $(MODULES)
 
 timing.o: intel_timer_mod.o
 
-model.o: timing.o shallow_IO.o
+model.o: timing.o shallow_IO.o mesh.o time_smooth.o
 
 %: %.o 
 	$(F90) $(F90FLAGS) -o $@ $< $(MODULES) $(LDFLAGS)

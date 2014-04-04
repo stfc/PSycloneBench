@@ -1,4 +1,5 @@
 MODULE model
+  USE mesh
   USE shallow_IO
   USE timing, ONLY: timer_init, timer_report
   IMPLICIT none
@@ -18,18 +19,36 @@ CONTAINS
   !================================================
 
   SUBROUTINE model_init()
+    USE manual_invoke_initialise
+    USE mesh, ONLY: set_grid_extents, set_grid_spacings
+    USE time_smooth, ONLY: time_smooth_init
     IMPLICIT none
+    !> Grid spacings currently hard-wired, as in original
+    !! version of code.
+    REAL(KIND=8), PARAMETER :: dxloc=1.0E5, dyloc=1.0E5
+    !> Parameter for time smoothing
+    REAL(KIND=8), PARAMETER :: alpha_loc = .001
 
     CALL timer_init()
 
     CALL read_namelist(m,n,itmax)
 
-    !     Set up arrays
-    MP1 = M+1
-    NP1 = N+1
+    ! Set up mesh parameters
+    CALL set_grid_extents(m, n)
+    mp1 = m + 1
+    np1 = n + 1
 
+    CALL set_grid_spacings(dxloc, dyloc)
+
+    ! Allocate model arrays
     CALL model_alloc(mp1, np1)
 
+    CALL invoke_init_model_params_kernel(dxloc, m, n)
+
+    ! Initialise time-smoothing module
+    CALL time_smooth_init(alpha_loc)
+
+    ! Initialise model IO 'system'
     CALL model_write_init(m,n)
 
   END SUBROUTINE model_init

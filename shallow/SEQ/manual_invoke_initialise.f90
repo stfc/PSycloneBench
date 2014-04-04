@@ -108,31 +108,31 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE init_velocity_u(u, psi, m, n, dy)
+  SUBROUTINE init_velocity_u(u, psi, m, n)
+    USE mesh, ONLY: dy
     IMPLICIT none
     REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: u
     REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: psi
     INTEGER,      INTENT(in) :: m, n
-    REAL(KIND=8), INTENT(in) :: dy
     ! Locals
     INTEGER :: I, J
 
     ! dy is a property of the mesh
     DO J=1,N
        DO I=1,M+1
-          U(I,J) = -(PSI(I,J+1)-PSI(I,J))/DY
+          U(I,J) = -(PSI(I,J+1)-PSI(I,J))/dy
        END DO
     END DO
   END SUBROUTINE init_velocity_u
 
   !===================================================
 
-  SUBROUTINE init_velocity_v(v, psi, m, n, dx)
+  SUBROUTINE init_velocity_v(v, psi, m, n)
+    USE mesh, ONLY: dx
     IMPLICIT none
     REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: v
     REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: psi
     INTEGER, INTENT(in) :: m, n
-    REAL(KIND=8), INTENT(in) :: dx
     ! Locals
     INTEGER :: I, J
 
