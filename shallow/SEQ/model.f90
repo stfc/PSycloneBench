@@ -10,6 +10,7 @@ MODULE model
   INTEGER :: itmax   !< number of timesteps
 
   REAL(KIND=8) :: dt !< model timestep (seconds)
+  REAL(KIND=8) :: tdt !< 2xdt apart from first step when is just dt
 
   !> solution arrays
   REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::                & 
