@@ -38,7 +38,11 @@ PROGRAM shallow
 
   USE shallow_IO
   USE timing
-  USE model
+  USE model, ONLY: model_init, model_finalise, cu, cv, u, v, unew, vnew, &
+                                               uold, vold, &
+                                               p, pold, psi, pnew, z, h, &
+                                               m, n, itmax
+  USE mesh, ONLY: dx, dy
   USE manual_invoke_initialise
   USE time_smooth, ONLY: manual_invoke_time_smooth
   IMPLICIT NONE
@@ -63,12 +67,6 @@ PROGRAM shallow
   DT = 90.
   TDT = DT
  
-  !DX = 1.E5
-  !DY = 1.E5
-
-  !FSDX = 4./DX
-  !FSDY = 4./DY
-
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
   CALL invoke_init_stream_fn_kernel(PSI)
@@ -88,11 +86,6 @@ PROGRAM shallow
   CALL copy_field(V, VOLD)
   CALL copy_field(P, POLD)
      
-  !     PRINT INITIAL VALUES
-  !> \bug Move this to lower level where it can more naturally
-  !! access parameters such as alpha (hard-coded to -1 here)
-  CALL print_initial_values(n,m,dx,dy,dt,-1.0d0, p, u, v)
-
   ! Write intial values of p, u, and v into a netCDF file   
   CALL model_write(0, p, u, v)
 
@@ -155,10 +148,6 @@ PROGRAM shallow
 
       CALL timer_stop(idxt1)
 
-      CALL copy_field(UNEW, U)
-      CALL copy_field(VNEW, V)
-      CALL copy_field(PNEW, P)
-
     ELSE ! ncycle == 1
 
       ! Make TDT actually = 2*DT
@@ -167,12 +156,12 @@ PROGRAM shallow
       CALL copy_field(U, UOLD)
       CALL copy_field(V, VOLD)
       CALL copy_field(P, POLD)
-         
-      CALL copy_field(UNEW, U)
-      CALL copy_field(VNEW, V)
-      CALL copy_field(PNEW, P)
 
     ENDIF ! ncycle > 1
+
+    CALL copy_field(UNEW, U)
+    CALL copy_field(VNEW, V)
+    CALL copy_field(PNEW, P)
 
   END DO
 
