@@ -37,13 +37,14 @@ PROGRAM shallow
 !     Andrew Porter, April 2014
 
   USE shallow_IO
-  USE manual_invoke_initialise
   USE timing
   USE model
+  USE manual_invoke_initialise
+  USE time_smooth, ONLY: manual_invoke_time_smooth
   IMPLICIT NONE
 
-  REAL(KIND=8) :: dt, tdt, dx, dy, alpha, & 
-                  tdts8, tdtsdx, tdtsdy, fsdx, fsdy
+  REAL(KIND=8) :: dt, tdt, & 
+                  tdts8, tdtsdx, tdtsdy
 
   !> Checksum used for each array
   REAL(KIND=8) :: csum
@@ -62,16 +63,11 @@ PROGRAM shallow
   DT = 90.
   TDT = DT
  
-  DX = 1.E5
-  DY = 1.E5
+  !DX = 1.E5
+  !DY = 1.E5
 
-  ! Parameter for time smoothing
-  ALPHA = .001
-
-  FSDX = 4./DX
-  FSDY = 4./DY
-
-  CALL invoke_init_model_params_kernel(DX, M, N)
+  !FSDX = 4./DX
+  !FSDY = 4./DY
 
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
@@ -80,8 +76,8 @@ PROGRAM shallow
 
   !     INITIALIZE VELOCITIES
 
-  CALL init_velocity_u(u, psi, m, n, dy)
-  CALL init_velocity_v(v, psi, m, n, dx)
+  CALL init_velocity_u(u, psi, m, n)
+  CALL init_velocity_v(v, psi, m, n)
 
   !     PERIODIC CONTINUATION
   CALL apply_bcs_u(U)
@@ -93,7 +89,9 @@ PROGRAM shallow
   CALL copy_field(P, POLD)
      
   !     PRINT INITIAL VALUES
-  CALL print_initial_values(n,m,dx,dy,dt,alpha, p, u, v)
+  !> \bug Move this to lower level where it can more naturally
+  !! access parameters such as alpha (hard-coded to -1 here)
+  CALL print_initial_values(n,m,dx,dy,dt,-1.0d0, p, u, v)
 
   ! Write intial values of p, u, and v into a netCDF file   
   CALL model_write(0, p, u, v)
@@ -110,7 +108,7 @@ PROGRAM shallow
 
     CALL compute_cu(CU, P, U)
     CALL compute_cv(CV, P, V)
-    CALL compute_z(z, P, U, V, FSDX, FSDY)
+    CALL compute_z(z, P, U, V)
     CALL compute_h(h, P, U, V)
 
     CALL timer_stop(idxt1)
@@ -151,9 +149,9 @@ PROGRAM shallow
 
       CALL timer_start('Time smoothing',idxt1)
 
-      CALL time_smooth(U, UNEW, UOLD, ALPHA)
-      CALL time_smooth(V, VNEW, VOLD, ALPHA)
-      CALL time_smooth(P, PNEW, POLD, ALPHA)
+      CALL manual_invoke_time_smooth(U, UNEW, UOLD)
+      CALL manual_invoke_time_smooth(V, VNEW, VOLD)
+      CALL manual_invoke_time_smooth(P, PNEW, POLD)
 
       CALL timer_stop(idxt1)
 
@@ -298,30 +296,6 @@ CONTAINS
 
       !===================================================
 
-      SUBROUTINE time_smooth(field, field_new, field_old, ALPHA)
-        IMPLICIT none
-        REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: field
-        REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: field_new
-        REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field_old
-        REAL(KIND=8), INTENT(in) :: ALPHA
-        ! Locals
-        INTEGER :: i, j
-        INTEGER :: idim1, idim2
-
-        idim1 = SIZE(field, 1)
-        idim2 = SIZE(field, 2)
-
-        DO J=1,idim2
-           DO I=1,idim1
-              field_old(I,J) = field(I,J)+ &
-                ALPHA*(field_new(I,J)-2.*field(I,J)+field_old(I,J))
-           END DO
-        END DO
-
-      END SUBROUTINE time_smooth
-
-      !===================================================
-
       SUBROUTINE compute_cu(cu, p, u)
         IMPLICIT none
         REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: cu
@@ -366,11 +340,11 @@ CONTAINS
 
       !===================================================
 
-      SUBROUTINE compute_z(z, p, u, v, fsdx, fsdy)
+      SUBROUTINE compute_z(z, p, u, v)
+        USE mesh, ONLY: fsdx, fsdy
         IMPLICIT none
         REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: z
         REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: p, u, v
-        REAL(KIND=8), INTENT(in)                  :: fsdx, fsdy
         ! Locals
         INTEGER :: I, J
         INTEGER :: idim1, idim2
@@ -480,20 +454,3 @@ CONTAINS
       END SUBROUTINE compute_pnew
 
     END PROGRAM shallow
-
-    !===================================================
-
-    ! Check error code
-    subroutine check(status, text)
-      implicit none
-      
-      integer, intent(in) :: status
-      character (len=*)   :: text
-    
-      if (status /= 0) then
-        write(6,*) "error ", status
-        write(6,*) text
-        stop 2
-      endif
-
-      end subroutine check
