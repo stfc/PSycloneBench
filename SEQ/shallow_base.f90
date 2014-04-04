@@ -38,16 +38,11 @@ PROGRAM shallow
 
   USE shallow_IO
   USE timing
-  USE model, ONLY: model_init, model_finalise, cu, cv, u, v, unew, vnew, &
-                                               uold, vold, &
-                                               p, pold, psi, pnew, z, h, &
-                                               m, n, itmax, dt
+  USE model
   USE mesh, ONLY: dx, dy
   USE manual_invoke_initialise
   USE time_smooth, ONLY: manual_invoke_time_smooth
   IMPLICIT NONE
-
-  REAL(KIND=8) :: tdt
 
   !> Checksum used for each array
   REAL(KIND=8) :: csum
@@ -63,6 +58,7 @@ PROGRAM shallow
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
+  ! CALL set(tdt, dt)
   TDT = DT
  
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
@@ -146,6 +142,7 @@ PROGRAM shallow
     ELSE ! ncycle == 1
 
       ! Make TDT actually = 2*DT
+      ! CALL set(tdt, 2.0*dt)
       TDT = TDT+TDT
 
     ENDIF ! ncycle > 1
