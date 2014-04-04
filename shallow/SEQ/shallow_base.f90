@@ -41,14 +41,13 @@ PROGRAM shallow
   USE model, ONLY: model_init, model_finalise, cu, cv, u, v, unew, vnew, &
                                                uold, vold, &
                                                p, pold, psi, pnew, z, h, &
-                                               m, n, itmax
+                                               m, n, itmax, dt
   USE mesh, ONLY: dx, dy
   USE manual_invoke_initialise
   USE time_smooth, ONLY: manual_invoke_time_smooth
   IMPLICIT NONE
 
-  REAL(KIND=8) :: dt, tdt, & 
-                  tdts8, tdtsdx, tdtsdy
+  REAL(KIND=8) :: tdt
 
   !> Checksum used for each array
   REAL(KIND=8) :: csum
@@ -64,7 +63,6 @@ PROGRAM shallow
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
-  DT = 90.
   TDT = DT
  
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
@@ -114,15 +112,12 @@ PROGRAM shallow
     CALL apply_bcs_z(Z)
 
     ! COMPUTE NEW VALUES U,V AND P
-    TDTS8 = TDT/8.
-    TDTSDX = TDT/DX
-    TDTSDY = TDT/DY
 
     CALL timer_start('Compute new fields', idxt1)
      
-    CALL compute_unew(unew, uold, z, cv, h, TDTS8, TDTSDX)
-    CALL compute_vnew(vnew, vold, z, cu, h, TDTS8, TDTSDY)
-    CALL compute_pnew(pnew, pold, cu, cv, TDTSDX, TDTSDY)
+    CALL compute_unew(unew, uold, z, cv, h, tdt)
+    CALL compute_vnew(vnew, vold, z, cu, h, TDT)
+    CALL compute_pnew(pnew, pold, cu, cv, TDT)
 
     CALL timer_stop(idxt1)
 
@@ -374,17 +369,21 @@ CONTAINS
 
       !===================================================
 
-      SUBROUTINE compute_unew(unew, uold, z, cv, h, tdts8, tdtsdx)
+      SUBROUTINE compute_unew(unew, uold, z, cv, h, tdt)
         IMPLICIT none
         REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: unew
         REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: uold, z, cv, h
-        REAL(KIND=8), INTENT(in)                  :: tdts8, tdtsdx
+        REAL(KIND=8), INTENT(in) :: tdt
         ! Locals
         INTEGER :: I, J
         INTEGER :: idim1, idim2
+        REAL(KIND=8) :: tdts8, tdtsdx
 
         idim1 = SIZE(z, 1) - 1
         idim2 = SIZE(z, 2) - 1
+
+        tdts8 = tdt/8.0d0
+        tdtsdx = tdt/dx
 
         DO J=1,idim2
           DO I=2,idim1+1
@@ -398,17 +397,21 @@ CONTAINS
 
       !===================================================
 
-      SUBROUTINE compute_vnew(vnew, vold, z, cu, h, tdts8, tdtsdy)
+      SUBROUTINE compute_vnew(vnew, vold, z, cu, h, tdt)
         IMPLICIT none
         REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: vnew
         REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: vold, z, cu, h
-        REAL(KIND=8), INTENT(in)                  :: tdts8, tdtsdy
+        REAL(KIND=8), INTENT(in) :: tdt
         ! Locals
         INTEGER :: I, J
         INTEGER :: idim1, idim2
+        REAL(KIND=8) :: tdts8, tdtsdy
 
         idim1 = SIZE(z, 1) - 1
         idim2 = SIZE(z, 2) - 1
+
+        tdts8 = tdt/8.0d0
+        tdtsdy = tdt/dy
 
          DO J=2,idim2+1
             DO I=1,idim1
@@ -421,17 +424,21 @@ CONTAINS
 
       !===================================================
 
-      SUBROUTINE compute_pnew(pnew, pold, cu, cv, tdtsdx, tdtsdy)
+      SUBROUTINE compute_pnew(pnew, pold, cu, cv, tdt)
         IMPLICIT none
         REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: pnew
         REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: pold, cu, cv
-        REAL(KIND=8), INTENT(in)                  :: tdtsdx, tdtsdy
+        REAL(KIND=8), INTENT(in) :: tdt
         ! Locals
         INTEGER :: I, J
         INTEGER :: idim1, idim2
+        REAL(KIND=8) :: tdtsdx, tdtsdy
 
         idim1 = SIZE(z, 1) - 1
         idim2 = SIZE(z, 2) - 1
+
+        tdtsdx = tdt/dx
+        tdtsdy = tdt/dy
 
         DO J=1,idim2
           DO I=1,idim1
