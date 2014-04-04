@@ -22,6 +22,8 @@ shallow_base.o: $(MODULES)
 
 timing.o: intel_timer_mod.o
 
+model.o: timing.o shallow_IO.o
+
 %: %.o 
 	$(F90) $(F90FLAGS) -o $@ $< $(MODULES) $(LDFLAGS)
 

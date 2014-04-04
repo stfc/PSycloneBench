@@ -35,13 +35,24 @@ CONTAINS
     NAMELIST/global_domain/ m, n, itmax, mprint
     NAMELIST/io_control/ l_out
 
+    ! Initialise these vars to problem values as defense
+    ! against failure to read them properly and also
+    ! to squelch incorrect compiler warnings about them
+    ! not being assigned to.
+    m = -1
+    n = -1
+    itmax = 0
+
     !     Read in namelist 
     OPEN(unit=input_unit, file=nml_name, status='old',iostat=ierr)
+
     CALL check(ierr, "open "//nml_name)
     READ(unit=input_unit, nml=global_domain, iostat=ierr)
     CALL check(ierr, "read "//nml_name)
     READ(unit=input_unit, nml=io_control, iostat=ierr)
     CALL check(ierr, "read "//nml_name)
+
+    CLOSE(unit=input_unit)
 
   END SUBROUTINE read_namelist
 
