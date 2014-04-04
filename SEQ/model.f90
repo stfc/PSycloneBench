@@ -30,6 +30,7 @@ CONTAINS
     REAL(KIND=8), PARAMETER :: dxloc=1.0E5, dyloc=1.0E5
     !> Parameter for time smoothing
     REAL(KIND=8), PARAMETER :: alpha_loc = .001
+    !> Hardwired model time-step (seconds)
     REAL(KIND=8), PARAMETER :: dt_loc = 90.
 
     CALL timer_init()
@@ -57,6 +58,7 @@ CONTAINS
     ! Initialise model IO 'system'
     CALL model_write_init(m,n)
 
+    ! Log model parameters
     CALL print_initial_values(m,n,dxloc,dyloc, dt, alpha_loc)
 
   END SUBROUTINE model_init
