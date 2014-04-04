@@ -115,9 +115,9 @@ PROGRAM shallow
 
     CALL timer_start('Compute new fields', idxt1)
      
-    CALL compute_unew(unew, uold, z, cv, h, tdt)
-    CALL compute_vnew(vnew, vold, z, cu, h, TDT)
-    CALL compute_pnew(pnew, pold, cu, cv, TDT)
+    CALL compute_unew(unew, uold,  z, cv, h, tdt)
+    CALL compute_vnew(vnew, vold,  z, cu, h, tdt)
+    CALL compute_pnew(pnew, pold, cu, cv,    tdt)
 
     CALL timer_stop(idxt1)
 
@@ -147,10 +147,6 @@ PROGRAM shallow
 
       ! Make TDT actually = 2*DT
       TDT = TDT+TDT
-
-      CALL copy_field(U, UOLD)
-      CALL copy_field(V, VOLD)
-      CALL copy_field(P, POLD)
 
     ENDIF ! ncycle > 1
 
