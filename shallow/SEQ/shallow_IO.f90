@@ -58,11 +58,11 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE print_initial_values(n,m,dx,dy,dt,alpha,p,u,v)
+  !> Log initial parameter values
+  SUBROUTINE print_initial_values(m,n,dx,dy,dt,alpha)
     IMPLICIT none
-    INTEGER,      INTENT(in) :: n, m
+    INTEGER,      INTENT(in) :: m, n
     REAL(KIND=8), INTENT(in) :: dx, dy, dt, alpha
-    REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: p, u, v
 
     IF(l_out)THEN
 
@@ -73,14 +73,13 @@ CONTAINS
                 " GRID SPACING IN THE Y DIRECTION    ",F8.0,/  & 
                 " TIME STEP                          ",F8.0,/  & 
                 " TIME FILTER PARAMETER              ",F8.3)
-
-       CALL print_diagonals(p, u, v)
     END IF
 
   END SUBROUTINE print_initial_values
 
   !===================================================
 
+  !> Print diagonal elements of solution arrays - diagnostic
   SUBROUTINE print_diagonals(p, u, v)
     IMPLICIT none
     REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: p, u, v

@@ -4,12 +4,14 @@ MODULE model
   USE timing, ONLY: timer_init, timer_report
   IMPLICIT none
 
-  INTEGER :: m, n      !< global domain size
+  INTEGER :: m, n      !< global domain size (no. of grid pts)
   INTEGER :: mp1, np1  !< m+1 and n+1 == array extents
 
   INTEGER :: itmax   !< number of timesteps
 
-  ! solution arrays
+  REAL(KIND=8) :: dt !< model timestep (seconds)
+
+  !> solution arrays
   REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::                & 
                              u, v, p, unew, vnew, pnew,       & 
                              uold, vold, pold, cu, cv, z, h, psi  
@@ -28,6 +30,7 @@ CONTAINS
     REAL(KIND=8), PARAMETER :: dxloc=1.0E5, dyloc=1.0E5
     !> Parameter for time smoothing
     REAL(KIND=8), PARAMETER :: alpha_loc = .001
+    REAL(KIND=8), PARAMETER :: dt_loc = 90.
 
     CALL timer_init()
 
@@ -45,11 +48,16 @@ CONTAINS
 
     CALL invoke_init_model_params_kernel(dxloc, m, n)
 
+    ! Set model time-step
+    dt = dt_loc
+
     ! Initialise time-smoothing module
     CALL time_smooth_init(alpha_loc)
 
     ! Initialise model IO 'system'
     CALL model_write_init(m,n)
+
+    CALL print_initial_values(m,n,dxloc,dyloc, dt, alpha_loc)
 
   END SUBROUTINE model_init
 
