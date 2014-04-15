@@ -40,6 +40,7 @@
          REAL(wp) :: rdt                           !time step
 
          REAL(wp) :: cbfr                          !bottom friction coefficient
+         REAL(wp) :: visc                          !backgroud/constant viscosity 
 
          INTEGER  :: istp            !time stepping index
          INTEGER  :: ji, jj, jk      !temporary loop index
@@ -78,6 +79,7 @@ CONTAINS
           READ(1,*) nit000, nitend, irecord
           READ(1,*) rdt
           READ(1,*) cbfr
+          READ(1,*) visc
 
           CLOSE(1)
           
@@ -307,7 +309,7 @@ CONTAINS
               itmp2 = vt_s(ji)
               IF(itmp1 * itmp2 > 0) THEN
                 ztmp1 = e1e2t(itmp1) * sshn(itmp1) + e1e2t(itmp2) * sshn(itmp2)
-                sshn_v(ji) = 0.5_wp * ztmp1 / e1e2u(ji) 
+                sshn_v(ji) = 0.5_wp * ztmp1 / e1e2v(ji) 
               END IF
 
               IF(itmp1 <= 0) THEN
@@ -390,12 +392,12 @@ CONTAINS
 
              jue = tu_e(jie)
              juw = ji
-             u_e  = 0.5 * (un(jue) + un(juw))  !add length scale.
+             u_e  = 0.5 * (un(jue) + un(juw)) * e2t(jie)  !add length scale.
              depe = ht(jie) + sshn(jie)
 
              jue = ji
              juw = tu_w(jiw)
-             u_w = 0.5 * (un(jue) + un(juw))   !add length scale
+             u_w = 0.5 * (un(jue) + un(juw)) * e2t(jiw)   !add length scale
              depw = ht(jiw) + sshn(jiw)
 
              IF(ji <= jpiglo) THEN
@@ -403,7 +405,7 @@ CONTAINS
                deps = 0._wp                    !can be any value as v_s=0
              ELSE
                jvs = tv_s(jiw)
-               v_s  = 0.5_wp * (vn(jvs) + vn(jvs+1))   ! add length scale
+               v_s  = 0.5_wp * (vn(jvs) + vn(jvs+1)) * e1v(jvs)   ! add length scale
                deps = 0.5_wp * (hv(jvs) + hv(jvs+1))
              END IF
 
@@ -412,7 +414,7 @@ CONTAINS
                depn = 0._wp
              ELSE
                jvn = tv_n(jiw)
-               v_n  = 0.5_wp * (vn(jvn) + vn(jvn+1))
+               v_n  = 0.5_wp * (vn(jvn) + vn(jvn+1)) * e1v(jvn)
                depn = 0.5_wp * (hv(jvn) + hv(jvn+1))
              END If
 
@@ -440,12 +442,16 @@ CONTAINS
             vis = (dudx_e * (ht(jie) + sshn(jie)) - dudx_w * (ht(jiw) + sshn(jiw))) * e2u(ji)  + &
                 & (dudy_n * (hu(ji) + hu(itmp1) + sshn_u(ji) + sshn_u(itmp1)) -              &
                 &  dudy_s * (hu(ji) + hu(itmp2) + sshn_u(ji) + sshn_u(itmp2))) * e1u(ji) * 0.5_wp  
+            vis = visc * vis   !visc will be a array visc(1:jpijglou) 
+                               !for variable viscosity, such as turbulent viscosity
 
             ! -Coriolis' force (can be implemented implicitly)
-            cor = 0.25_wp * ((ff(jiw) + ff(jiw + jpiglo)) * (v_s + v_n))
+            cor = 0.25_wp * ((ff(jiw) + ff(jiw + jpiglo)) * (v_s + v_n)) * &
+                & e1u(ji) * e2u(ji) * (hu(ji) + sshn_u(ji))
 
             ! -pressure gradient
-            hpg = -g * (hu(ji) + sshn_u(ji)) * (sshn(jie) - sshn(jiw)) 
+            hpg = -g * ((ht(jie) + sshn(jie)) * sshn(jie) * e2t(jie) - &
+                &       (ht(jiw) + sshn(jiw)) * sshn(jiw) * e2t(jiw))
 
             ! -linear bottom friction (implemented implicitly.
 
@@ -462,12 +468,12 @@ CONTAINS
 
              jvn = tv_n(jin)
              jvs = ji
-             v_n  = 0.5 * (vn(jvn) + vn(jvs))  !add length scale.
+             v_n  = 0.5 * (vn(jvn) + vn(jvs)) * e1t(jin)  !add length scale.
              depn = ht(jin) + sshn(jin)
 
              jvn = ji
              jvs = tv_s(jis)
-             v_s = 0.5 * (vn(jvn) + vn(jvs))   !add length scale
+             v_s = 0.5 * (vn(jvn) + vn(jvs)) * e1t(jis)   !add length scale
              deps = ht(jis) + sshn(jis)
 
              IF(MOD(ji,jpiglo) == 1) THEN
@@ -475,7 +481,8 @@ CONTAINS
                depw = 0._wp                    !can be any value as v_s=0
              ELSE
                jvw = tu_w(jis)
-               u_w  = 0.5_wp * (un(jvw) + un(jvw+jpiglo))   ! add length scale
+               u_w = 0.25_wp * (un(jvw) + un(jvw+jpiglo)) * &
+                   &           (e2t(jvw) + e2t(jvw+jpiglo))
                depw = 0.5_wp * (hv(ji) + hv(ji-1) + sshn_v(ji) + sshn_v(ji-1))
              END IF
 
@@ -484,7 +491,8 @@ CONTAINS
                depe = 0._wp                    !can be any value as v_s=0
              ELSE
                jve = tu_e(jis)
-               u_e  = 0.5_wp * (un(jve) + un(jve+jpiglo))   ! add length scale
+               u_e = 0.25_wp * (un(jve) + un(jve+jpiglo)) * &
+                   &           (e2t(jve) + e2t(jve+jpiglo))
                depe = 0.5_wp * (hv(ji) + hv(ji+1) + sshn_v(ji) + sshn_v(ji+1))
              END IF
 
@@ -513,11 +521,17 @@ CONTAINS
                 & (dvdx_e * (hv(ji) + hv(ji + 1) + sshn_v(ji) + sshn_v(ji + 1)) -              &
                 &  dvdx_w * (hv(ji) + hv(ji - 1) + sshn_v(ji) + sshn_v(ji - 1))) * e1u(ji) * 0.5_wp  
 
+            vis = visc * vis   !visc will be a array visc(1:jpijglou) 
+                               !for variable viscosity, such as turbulent viscosity
+
+
             ! -Coriolis' force (can be implemented implicitly)
-            cor = -0.25_wp * ((ff(jis) + ff(jis - 1)) * (u_e + u_w))
+            cor = -0.25_wp * ((ff(jis) + ff(jis - 1)) * (u_e + u_w)) * &
+                & e1v(ji) * e2v(ji) * (hv(ji) + sshn_v(ji))
 
             ! -pressure gradient
-            hpg = -g * (hv(ji) + sshn_v(ji)) * (sshn(jin) - sshn(jis)) 
+            hpg = -g * ((ht(jin) + sshn(jin)) * sshn(jin) * e1t(jin) - &
+                &       (hv(jis) + sshn(jis)) * sshn(jis) * e1t(jis))
 
             ! -linear bottom friction (implemented implicitly.
 
