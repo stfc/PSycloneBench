@@ -1,4 +1,5 @@
 MODULE model
+  USE field
   USE mesh
   USE shallow_IO
   USE timing, ONLY: timer_init, timer_report
@@ -9,8 +10,10 @@ MODULE model
 
   INTEGER :: itmax   !< number of timesteps
 
-  REAL(KIND=8) :: dt !< model timestep (seconds)
-  REAL(KIND=8) :: tdt !< 2xdt apart from first step when is just dt
+  TYPE(scalar_field_type) :: dt  !< model timestep (seconds)
+!  REAL(KIND=8) :: dt
+  TYPE(scalar_field_type) :: tdt !< 2xdt apart from first step when is just dt
+!  REAL(KIND=8) :: tdt 
 
   !> solution arrays
   REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::                & 
@@ -22,7 +25,7 @@ CONTAINS
   !================================================
 
   SUBROUTINE model_init()
-    USE manual_invoke_initialise
+    USE initial_conditions, ONLY: invoke_init_model_params_kernel 
     USE mesh, ONLY: set_grid_extents, set_grid_spacings
     USE time_smooth, ONLY: time_smooth_init
     IMPLICIT none
@@ -48,10 +51,10 @@ CONTAINS
     ! Allocate model arrays
     CALL model_alloc(mp1, np1)
 
-    CALL invoke_init_model_params_kernel(dxloc, m, n)
+    CALL invoke_init_model_params_kernel(m, n)
 
     ! Set model time-step
-    dt = dt_loc
+    CALL set(dt, dt_loc)
 
     ! Initialise time-smoothing module
     CALL time_smooth_init(alpha_loc)
@@ -60,7 +63,7 @@ CONTAINS
     CALL model_write_init(m,n)
 
     ! Log model parameters
-    CALL print_initial_values(m,n,dxloc,dyloc, dt, alpha_loc)
+    CALL print_initial_values(m,n,dxloc,dyloc, dt%data, alpha_loc)
 
   END SUBROUTINE model_init
 
