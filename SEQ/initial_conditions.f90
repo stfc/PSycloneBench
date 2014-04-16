@@ -1,13 +1,14 @@
-MODULE manual_invoke_initialise
+MODULE initial_conditions
+  USE physical_params
+  USE field
   IMPLICIT none
   PRIVATE
 
   !> Amplitude of initial oscillations in stream function
   !! Used by invoke_init_stream_fn_kernel()
-  REAL(KIND=8), PARAMETER :: A = 1.0E6
-  REAL(KIND=8)  :: PCF
-  REAL(KIND=8)  :: PI, TPI
-  REAL(KIND=8)  :: di, dj
+  REAL(wp), PARAMETER :: A = 1.0E6
+  !> 2PI/{m,n}
+  REAL(wp)  :: di, dj
 
   PUBLIC invoke_init_model_params_kernel
   PUBLIC invoke_init_stream_fn_kernel
@@ -21,23 +22,13 @@ CONTAINS
 
   !> \brief Set-up parameters related to the model domain which
   !! are stored in this module.
-  SUBROUTINE invoke_init_model_params_kernel(dx, m, n)
+  SUBROUTINE invoke_init_model_params_kernel(m, n)
     IMPLICIT none
-    REAL(KIND=8), INTENT(in) :: dx
     INTEGER,      INTENT(in) :: m, n
-    ! Locals
-    REAL(KIND=8)  :: EL
-
-    PI =  4.*ATAN(1.)
-    TPI = PI + PI
 
     di = TPI/m
     dj = TPI/n
 
-    ! Extent in x of model domain
-    EL = m*dx
-
-    PCF = PI*PI*A*A/(EL*EL)
 
   END SUBROUTINE invoke_init_model_params_kernel
 
@@ -83,13 +74,25 @@ CONTAINS
   !===================================================
 
   SUBROUTINE init_pressure(p)
+    USE model, ONLY: m, dx
     IMPLICIT none
     REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: p
+!    TYPE(field_type), INTENT(out) :: p
+    ! Locals
     INTEGER :: idim1, idim2
     INTEGER :: i, j
+    !> Extent in x of model domain
+    REAL(wp) :: el
+    !> Computed amplitude of initial osciallations in
+    !! pressure field.
+    REAL(wp) :: pcf
 
     idim1 = SIZE(p, 1)
     idim2 = SIZE(p, 2)
+
+    EL = m*dx
+    PCF = PI*PI*A*A/(EL*EL)
+
     ! di = 2Pi/(Extent of mesh in x)
     ! dj = 2Pi/(Extent of mesh in y)
     ! Fields have one extra row and column than the mesh
@@ -144,4 +147,4 @@ CONTAINS
     END DO
   END SUBROUTINE init_velocity_v
 
-END MODULE manual_invoke_initialise
+END MODULE initial_conditions

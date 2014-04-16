@@ -39,8 +39,9 @@ PROGRAM shallow
   USE shallow_IO
   USE timing
   USE model
-  USE mesh, ONLY: dx, dy
-  USE manual_invoke_initialise
+  USE initial_conditions, ONLY: invoke_init_stream_fn_kernel, &
+                                init_pressure,                &
+                                init_velocity_u, init_velocity_v
   USE time_smooth, ONLY: manual_invoke_time_smooth
   IMPLICIT NONE
 
@@ -53,13 +54,14 @@ PROGRAM shallow
   !> Integer tags for timers
   INTEGER :: idxt0, idxt1
 
-  !  ** Initialisations ** 
+  !  ** Initialisations of model parameters (dt etc) ** 
   CALL model_init()
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
-  ! CALL set(tdt, dt)
-  TDT = DT
+  ! dt and tdt are prototypical fields that are actually a 
+  ! single parameter.
+  CALL copy_field(dt, tdt)
  
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
@@ -111,9 +113,9 @@ PROGRAM shallow
 
     CALL timer_start('Compute new fields', idxt1)
      
-    CALL compute_unew(unew, uold,  z, cv, h, tdt)
-    CALL compute_vnew(vnew, vold,  z, cu, h, tdt)
-    CALL compute_pnew(pnew, pold, cu, cv,    tdt)
+    CALL compute_unew(unew, uold,  z, cv, h, tdt%data)
+    CALL compute_vnew(vnew, vold,  z, cu, h, tdt%data)
+    CALL compute_pnew(pnew, pold, cu, cv,    tdt%data)
 
     CALL timer_stop(idxt1)
 
@@ -124,7 +126,7 @@ PROGRAM shallow
     CALL apply_bcs_p(PNEW)
 
     ! Time is in seconds but we never actually need it
-    !TIME = TIME + DT
+    !CALL increment(time, dt)
 
     CALL model_write(ncycle, p, u, v)
 
@@ -142,8 +144,7 @@ PROGRAM shallow
     ELSE ! ncycle == 1
 
       ! Make TDT actually = 2*DT
-      ! CALL set(tdt, 2.0*dt)
-      TDT = TDT+TDT
+      CALL increment(tdt, tdt)
 
     ENDIF ! ncycle > 1
 
@@ -259,17 +260,6 @@ CONTAINS
         field(1:MP1,1)     = field(1:MP1,NP1)
 
       END SUBROUTINE apply_bcs_z
- 
-      !===================================================
-
-      SUBROUTINE copy_field(field_in, field_out)
-        IMPLICIT none
-        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: field_in
-        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: field_out
-        
-        field_out(:,:) = field_in(:,:)
-        
-      END SUBROUTINE copy_field
 
       !===================================================
 
