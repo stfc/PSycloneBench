@@ -1,10 +1,11 @@
 MODULE time_smooth
+  USE kind_params
   IMPLICIT none
 
   PRIVATE
 
   !> Parameter for time smoothing
-  REAL(KIND=8) :: alpha
+  REAL(wp) :: alpha
 
   PUBLIC time_smooth_init, manual_invoke_time_smooth
 
@@ -16,7 +17,7 @@ CONTAINS
   !! alpha that is used in the time-smooth kernel.
   SUBROUTINE time_smooth_init(alpha_tmp)
     IMPLICIT none
-    REAL(KIND=8), INTENT(in) :: alpha_tmp
+    REAL(wp), INTENT(in) :: alpha_tmp
 
     alpha = alpha_tmp
 
@@ -28,9 +29,9 @@ CONTAINS
   !! kernel
   SUBROUTINE manual_invoke_time_smooth(field, field_new, field_old)
     IMPLICIT none
-    REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: field
-    REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: field_new
-    REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field_old
+    REAL(wp), INTENT(in), DIMENSION(:,:) :: field
+    REAL(wp), INTENT(in), DIMENSION(:,:) :: field_new
+    REAL(wp), INTENT(inout), DIMENSION(:,:) :: field_old
     ! Locals
     INTEGER :: i, j
     INTEGER :: idim1, idim2
@@ -54,10 +55,10 @@ CONTAINS
   !> Kernel to smooth supplied field in time
   SUBROUTINE time_smooth_code(i, j, field, field_new, field_old)
     IMPLICIT none
-    INTEGER,      INTENT(in)                    :: i, j
-    REAL(KIND=8), INTENT(in),    DIMENSION(:,:) :: field
-    REAL(KIND=8), INTENT(in),    DIMENSION(:,:) :: field_new
-    REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field_old
+    INTEGER,  INTENT(in)                    :: i, j
+    REAL(wp), INTENT(in),    DIMENSION(:,:) :: field
+    REAL(wp), INTENT(in),    DIMENSION(:,:) :: field_new
+    REAL(wp), INTENT(inout), DIMENSION(:,:) :: field_old
 
     field_old(i,j) = field(i,j) + &
          alpha*(field_new(i,j) - 2.*field(i,j) + field_old(i,j))
