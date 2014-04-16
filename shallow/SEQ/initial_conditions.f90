@@ -10,7 +10,7 @@ MODULE initial_conditions
   !> 2PI/{m,n}
   REAL(wp)  :: di, dj
 
-  PUBLIC invoke_init_model_params_kernel
+  PUBLIC init_initial_condition_params
   PUBLIC invoke_init_stream_fn_kernel
   PUBLIC init_pressure
   PUBLIC init_velocity_u
@@ -21,8 +21,11 @@ CONTAINS
   !===================================================
 
   !> \brief Set-up parameters related to the model domain which
-  !! are stored in this module.
-  SUBROUTINE invoke_init_model_params_kernel(m, n)
+  !! are stored in this module. We could compute these on the
+  !! fly in init_stream_fn_code() and init_pressure() and
+  !! rely on compiler magic to make sure they're not
+  !! recomputed for every grid point.
+  SUBROUTINE init_initial_condition_params(m, n)
     IMPLICIT none
     INTEGER,      INTENT(in) :: m, n
 
@@ -30,7 +33,7 @@ CONTAINS
     dj = TPI/n
 
 
-  END SUBROUTINE invoke_init_model_params_kernel
+  END SUBROUTINE init_initial_condition_params
 
   !===================================================
 
