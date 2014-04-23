@@ -32,20 +32,21 @@
 
          REAL(wp), ALLOCATABLE :: un(:),  vn(:), ua(:),  va(:)
 
-         INTEGER :: jpiglo, jpjglo, jpijglot, jpijglof, jpijglou, jpijglov
-         INTEGER :: jphgr_msh
-         INTEGER :: nit000, nitend, irecord
+         INTEGER :: jpiglo, jpjglo, jpijglot, jpijglof, jpijglou, jpijglov !dimensions of grid
+         INTEGER :: jphgr_msh                                              !type of grid
+         INTEGER :: nit000, nitend, irecord                                !start-end and record time steps
 
-         REAL(wp) :: dx, dy, dep_const
-         REAL(wp) :: rdt                           !time step
+         REAL(wp) :: dx, dy, dep_const                                     !regular grid size and constant depth
+         REAL(wp) :: rdt                                                   !time step
+                                                                    
+         REAL(wp) :: cbfr                                                  !bottom friction coefficient
+         REAL(wp) :: visc                                                  !backgroud/constant viscosity 
 
-         REAL(wp) :: cbfr                          !bottom friction coefficient
-         REAL(wp) :: visc                          !backgroud/constant viscosity 
+         INTEGER  :: istp                                                  !time stepping index
+         INTEGER  :: ji, jj, jk                                            !temporary loop index
 
-         INTEGER  :: istp            !time stepping index
-         INTEGER  :: ji, jj, jk      !temporary loop index
-         INTEGER  :: itmp1, itmp2, itmp3, itmp4, itmp5, itmp6  ! integer temporary variables
-         REAL(wp) :: ztmp1, ztmp2, ztmp3, ztmp4, ztmp5, ztmp6  ! real    temporary variables 
+         INTEGER  :: itmp1, itmp2, itmp3, itmp4, itmp5, itmp6              ! integer temporary variables
+         REAL(wp) :: rtmp1, rtmp2, rtmp3, rtmp4, rtmp5, rtmp6              ! real    temporary variables 
 
 
          !! read in model parameters and allocate memory
@@ -71,6 +72,8 @@ CONTAINS
 
         SUBROUTINE setup
           !! Read in model setup parameters
+          INTEGER :: ierr(14)
+
           OPEN(1, file='namelist', STATUS='OLD')
           REWIND(1)
           READ(1,*) jpiglo, jpjglo
@@ -83,26 +86,28 @@ CONTAINS
 
           CLOSE(1)
           
-          ALLOCATE(tt_w(jpijglot), tt_e(jpijglot), tt_n(jpijglot), tt_s(jpijglot)) 
-          ALLOCATE(tu_w(jpijglot), tu_e(jpijglot), tv_n(jpijglot), tv_s(jpijglot))
-          ALLOCATE(ut_w(jpijglou), ut_e(jpijglou), vt_n(jpijglov), vt_s(jpijglov)) 
+          ALLOCATE(tt_w(jpijglot), tt_e(jpijglot), tt_n(jpijglot), tt_s(jpijglot), STAT=ierr(1)) 
+          ALLOCATE(tu_w(jpijglot), tu_e(jpijglot), tv_n(jpijglot), tv_s(jpijglot), STAT=ierr(2))
+          ALLOCATE(ut_w(jpijglou), ut_e(jpijglou), vt_n(jpijglov), vt_s(jpijglov), STAT=ierr(3)) 
 
-          ALLOCATE(e1t(jpijglot), e2t(jpijglot), e1u(jpijglou), e2u(jpijglou))
-          ALLOCATE(e1f(jpijglot), e2f(jpijglot), e1v(jpijglov), e2v(jpijglov)) 
-          ALLOCATE(e1e2t(jpijglot),  e1e2u(jpijglou), e1e2v(jpijglov))
+          ALLOCATE(e1t(jpijglot), e2t(jpijglot), e1u(jpijglou), e2u(jpijglou), STAT=ierr(4))
+          ALLOCATE(e1f(jpijglot), e2f(jpijglot), e1v(jpijglov), e2v(jpijglov), STAT=ierr(5)) 
+          ALLOCATE(e1e2t(jpijglot), e1e2u(jpijglou), e1e2v(jpijglov), STAT=ierr(6))
 
-          ALLOCATE(gphiu(jpijglou),  gphiv(jpijglov), gphif(jpijglot))
+          ALLOCATE(gphiu(jpijglou), gphiv(jpijglov), gphif(jpijglot), STAT=ierr(7))
 
-          ALLOCATE(xt(jpijglot),  yt(jpijglot), xf(jpijglot), yf(jpijglot), ff(jpijglot))
-          ALLOCATE(xu(jpijglou),  yu(jpijglou), xv(jpijglov), yv(jpijglov))
+          ALLOCATE(xt(jpijglot), yt(jpijglot), xf(jpijglot), yf(jpijglot), ff(jpijglot), STAT=ierr(8))
+          ALLOCATE(xu(jpijglou), yu(jpijglou), xv(jpijglov), yv(jpijglov), STAT=ierr(9))
 
-          ALLOCATE(ht(jpijglot),  hu(jpijglou), hv(jpijglov), hf(jpijglot))
+          ALLOCATE(ht(jpijglot), hu(jpijglou), hv(jpijglov), hf(jpijglot), STAT=ierr(10))
 
-          ALLOCATE(sshb(jpijglot),  sshb_u(jpijglou), sshb_v(jpijglov))
-          ALLOCATE(sshn(jpijglot),  sshn_u(jpijglou), sshn_v(jpijglov))
-          ALLOCATE(ssha(jpijglot),  ssha_u(jpijglou), ssha_v(jpijglov))
+          ALLOCATE(sshb(jpijglot), sshb_u(jpijglou), sshb_v(jpijglov), STAT=ierr(11))
+          ALLOCATE(sshn(jpijglot), sshn_u(jpijglou), sshn_v(jpijglov), STAT=ierr(12))
+          ALLOCATE(ssha(jpijglot), ssha_u(jpijglou), ssha_v(jpijglov), STAT=ierr(13))
 
-          ALLOCATE(un(jpijglou),  vn(jpijglov), ua(jpijglou),  va(jpijglov))
+          ALLOCATE(un(jpijglou), vn(jpijglov), ua(jpijglou), va(jpijglov), STAT=ierr(14))
+
+          IF(ANY(ierr /= 0, 1)) STOP "in SUBROUTINE SETUP: failed to allocate arrays"
         END SUBROUTINE setup
 
 !+++++++++++++++++++++++++++++++++++
@@ -119,6 +124,7 @@ CONTAINS
           CASE(0) ! read in grid from a coordinate file
 
             ! to be added
+            STOP "It is not ready to Read in grid from a file"
 
           CASE(1)
 
@@ -141,20 +147,20 @@ CONTAINS
 
             ! -grid topo info
 
-            tt_w(1:jpijglot) = 0
-            tt_e(1:jpijglot) = 0
-            tt_n(1:jpijglot) = 0
-            tt_s(1:jpijglot) = 0
+            tt_w(1:jpijglot) = 0        !West  T-cell Neighbour of T-cell
+            tt_e(1:jpijglot) = 0        !East  T-cell Neighbour of T-cell
+            tt_n(1:jpijglot) = 0        !North T-cell Neighbour of T-cell
+            tt_s(1:jpijglot) = 0        !South T-cell Neighbour of T-cell
 
-            tu_w(1:jpijglot) = 0
-            tu_e(1:jpijglot) = 0
-            tv_n(1:jpijglot) = 0
-            tv_s(1:jpijglot) = 0
+            tu_w(1:jpijglot) = 0        !West  U-cell Neighbour of T-cell
+            tu_e(1:jpijglot) = 0        !East  U-cell Neighbour of T-cell
+            tv_n(1:jpijglot) = 0        !North V-cell Neighbour of T-cell
+            tv_s(1:jpijglot) = 0        !South V-cell Neighbour of T-cell
 
-            ut_w(1:jpijglou) = 0
-            ut_e(1:jpijglou) = 0
-            vt_n(1:jpijglov) = 0
-            vt_s(1:jpijglov) = 0
+            ut_w(1:jpijglou) = 0        !West  T-cell Neighbour of U-cell
+            ut_e(1:jpijglou) = 0        !East  T-cell Neighbour of U-cell
+            vt_n(1:jpijglov) = 0        !North T-cell Neighbour of V-cell
+            vt_s(1:jpijglov) = 0        !South T-cell Neighbour of V-cell
 
             DO ji = 1, jpijglot
               !West&East T-cell Neighbours of T-cell
@@ -239,13 +245,13 @@ CONTAINS
             END DO
             
             DO ji = 1, jpijglou
-              xu(ji) = (MOD(ji-1,jpiglo) + 1.0_wp)  * dx
-              yu(ji) = ((ji-1) / jpjglo  + 0.5_wp)  * dy
+              xu(ji) = (MOD(ji-1,jpiglo) + 1.0_wp) * dx
+              yu(ji) = ((ji-1) / jpjglo  + 0.5_wp) * dy
             END DO
 
             DO ji = 1, jpijglov
-              xv(ji) = (MOD(ji-1,jpiglo) + 0.5_wp)  * dx
-              yv(ji) = ((ji-1) / jpjglo  + 1.0_wp)  * dy
+              xv(ji) = (MOD(ji-1,jpiglo) + 0.5_wp) * dx
+              yv(ji) = ((ji-1) / jpjglo  + 1.0_wp) * dy
             END DO
 
 
@@ -291,8 +297,8 @@ CONTAINS
               itmp1 = ut_e(ji)
               itmp2 = ut_w(ji)
               IF(itmp1 * itmp2 > 0) THEN
-                ztmp1 = e1e2t(itmp1) * sshn(itmp1) + e1e2t(itmp2) * sshn(itmp2)
-                sshn_u(ji) = 0.5_wp * ztmp1 / e1e2u(ji) 
+                rtmp1 = e1e2t(itmp1) * sshn(itmp1) + e1e2t(itmp2) * sshn(itmp2)
+                sshn_u(ji) = 0.5_wp * rtmp1 / e1e2u(ji) 
               END IF
 
               IF(itmp1 <= 0) THEN
@@ -308,8 +314,8 @@ CONTAINS
               itmp1 = vt_n(ji)
               itmp2 = vt_s(ji)
               IF(itmp1 * itmp2 > 0) THEN
-                ztmp1 = e1e2t(itmp1) * sshn(itmp1) + e1e2t(itmp2) * sshn(itmp2)
-                sshn_v(ji) = 0.5_wp * ztmp1 / e1e2v(ji) 
+                rtmp1 = e1e2t(itmp1) * sshn(itmp1) + e1e2t(itmp2) * sshn(itmp2)
+                sshn_v(ji) = 0.5_wp * rtmp1 / e1e2v(ji) 
               END IF
 
               IF(itmp1 <= 0) THEN
@@ -359,11 +365,11 @@ CONTAINS
              jiw = tu_w(ji)
              jin = tv_n(ji)
              jis = tv_s(ji)
-             ztmp1 = (sshn_u(jie) + hu(jie)) * un(jie)
-             ztmp2 = (sshn_u(jiw) + hu(jiw)) * un(jiw)
-             ztmp3 = (sshn_v(jin) + hv(jin)) * vn(jin)
-             ztmp4 = (sshn_v(jis) + hv(jis)) * vn(jis)
-             ssha(ji) = sshn(ji) + (ztmp2 - ztmp1 + ztmp4 - ztmp3) / e1e2t(ji)
+             rtmp1 = (sshn_u(jie) + hu(jie)) * un(jie)
+             rtmp2 = (sshn_u(jiw) + hu(jiw)) * un(jiw)
+             rtmp3 = (sshn_v(jin) + hv(jin)) * vn(jin)
+             rtmp4 = (sshn_v(jis) + hv(jis)) * vn(jis)
+             ssha(ji) = sshn(ji) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) / e1e2t(ji)
           END DO
         END SUBROUTINE continuity
 
@@ -610,8 +616,8 @@ CONTAINS
             itmp1 = ut_e(ji)
             itmp2 = ut_w(ji)
             IF(itmp1 * itmp2 > 0) THEN
-              ztmp1 = e1e2t(itmp1) * sshn(itmp1) + e1e2t(itmp2) * sshn(itmp2)
-              sshn_u(ji) = 0.5_wp * ztmp1 / e1e2u(ji) 
+              rtmp1 = e1e2t(itmp1) * sshn(itmp1) + e1e2t(itmp2) * sshn(itmp2)
+              sshn_u(ji) = 0.5_wp * rtmp1 / e1e2u(ji) 
             END IF
 
             IF(itmp1 <= 0) THEN
@@ -627,8 +633,8 @@ CONTAINS
             itmp1 = vt_n(ji)
             itmp2 = vt_s(ji)
             IF(itmp1 * itmp2 > 0) THEN
-              ztmp1 = e1e2t(itmp1) * sshn(itmp1) + e1e2t(itmp2) * sshn(itmp2)
-              sshn_v(ji) = 0.5_wp * ztmp1 / e1e2u(ji) 
+              rtmp1 = e1e2t(itmp1) * sshn(itmp1) + e1e2t(itmp2) * sshn(itmp2)
+              sshn_v(ji) = 0.5_wp * rtmp1 / e1e2u(ji) 
             END IF
 
             IF(itmp1 <= 0) THEN
@@ -655,10 +661,10 @@ CONTAINS
 
           DO ji = 1, jpijglot
 
-            ztmp1 = 0.5_wp * (un(tu_e(ji)) + un(tu_w(ji)))
-            ztmp2 = 0.5_wp * (vn(tv_n(ji)) + vn(tv_s(ji)))
+            rtmp1 = 0.5_wp * (un(tu_e(ji)) + un(tu_w(ji)))
+            rtmp2 = 0.5_wp * (vn(tv_n(ji)) + vn(tv_s(ji)))
 
-            WRITE(1,'(2f10.3, 2f9.2, 2e8.3)') xt(ji), yt(ji), ht(ji), sshn(ji),ztmp1, ztmp2 
+            WRITE(1,'(2f10.3, 2f9.2, 2e8.3)') xt(ji), yt(ji), ht(ji), sshn(ji),rtmp1, rtmp2 
 
           END DO
           
