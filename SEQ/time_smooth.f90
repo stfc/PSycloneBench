@@ -1,13 +1,39 @@
 MODULE time_smooth
   USE kind_params
+  USE kernel_mod
+  use argument_mod
   IMPLICIT none
 
   PRIVATE
 
+  PUBLIC time_smooth_init, manual_invoke_time_smooth
+  PUBLIC time_smooth_type, time_smooth_code
+
   !> Parameter for time smoothing
   REAL(wp) :: alpha
 
-  PUBLIC time_smooth_init, manual_invoke_time_smooth
+  !> These quantities should be defined somewhere in the lfric
+  !! infrastructure but at the moment they are not!
+  !! \todo Work out where POINTWISE and DOFS should be declared.
+  INTEGER, PARAMETER :: POINTWISE = 2, DOFS = 5
+
+  !> The time smoothing operates in time rather than space
+  !! and therefore takes three fields defined on any one
+  !! of the four grid point types (T, U, V or Q).
+  !! Presumably FE should be FD for us and maybe CELLS 
+  !! should be COLUMNS?
+  TYPE, EXTENDS(kernel_type) :: time_smooth_type
+     TYPE(arg), DIMENSION(3) :: meta_args = &
+          (/ arg(READ, EVERY, POINTWISE),     &
+             arg(READ, EVERY, POINTWISE),     &
+             arg(READWRITE , EVERY, POINTWISE)      &
+           /)
+     !> We only have one value per grid point and that means
+     !! we have a single DOF per grid point.
+     INTEGER :: ITERATES_OVER = DOFS
+  CONTAINS
+    procedure, nopass :: code => time_smooth_code
+  END type time_smooth_type
 
 CONTAINS
 

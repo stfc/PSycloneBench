@@ -25,9 +25,9 @@ CONTAINS
   !! fly in init_stream_fn_code() and init_pressure() and
   !! rely on compiler magic to make sure they're not
   !! recomputed for every grid point.
-  SUBROUTINE init_initial_condition_params(m, n)
+  SUBROUTINE init_initial_condition_params()
+    USE model, ONLY: m, n
     IMPLICIT none
-    INTEGER,      INTENT(in) :: m, n
 
     di = TPI/m
     dj = TPI/n
