@@ -245,13 +245,13 @@ CONTAINS
             END DO
             
             DO ji = 1, jpijglou
-              xu(ji) = (MOD(ji-1,jpiglo) + 1.0_wp) * dx
-              yu(ji) = ((ji-1) / jpjglo  + 0.5_wp) * dy
+              xu(ji) = (MOD(ji-1, jpiglo+1) + 0.0_wp) * dx
+              yu(ji) = ((ji-1) / (jpiglo+1) + 0.5_wp) * dy
             END DO
 
             DO ji = 1, jpijglov
               xv(ji) = (MOD(ji-1,jpiglo) + 0.5_wp) * dx
-              yv(ji) = ((ji-1) / jpjglo  + 1.0_wp) * dy
+              yv(ji) = ((ji-1) / jpjglo  + 0.0_wp) * dy
             END DO
 
 
@@ -264,7 +264,7 @@ CONTAINS
             END DO
 
             DO ji = 1, jpijglot
-              ht(ji) =  dep_const
+              ht(ji) = dep_const
             END DO
             
             DO ji = 1, jpijglou
