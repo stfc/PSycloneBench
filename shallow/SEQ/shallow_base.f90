@@ -39,9 +39,7 @@ PROGRAM shallow
   USE shallow_IO
   USE timing
   USE model
-  USE initial_conditions, ONLY: invoke_init_stream_fn_kernel, &
-                                init_pressure,                &
-                                init_velocity_u, init_velocity_v
+  USE initial_conditions
   USE time_smooth, ONLY: manual_invoke_time_smooth
   IMPLICIT NONE
 
@@ -65,6 +63,7 @@ PROGRAM shallow
  
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
+  CALL init_initial_condition_params()
   CALL invoke_init_stream_fn_kernel(PSI)
   CALL init_pressure(P)
 

@@ -25,7 +25,6 @@ CONTAINS
   !================================================
 
   SUBROUTINE model_init()
-    USE initial_conditions, ONLY: init_initial_condition_params 
     USE mesh, ONLY: set_grid_extents, set_grid_spacings
     USE time_smooth, ONLY: time_smooth_init
     IMPLICIT none
@@ -50,8 +49,6 @@ CONTAINS
 
     ! Allocate model arrays
     CALL model_alloc(mp1, np1)
-
-    CALL init_initial_condition_params(m, n)
 
     ! Set model time-step
     CALL set(dt, dt_loc)
