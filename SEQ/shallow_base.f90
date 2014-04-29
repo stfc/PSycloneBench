@@ -41,6 +41,7 @@ PROGRAM shallow
   USE model
   USE initial_conditions
   USE time_smooth, ONLY: manual_invoke_time_smooth
+  USE compute_unew, ONLY: manual_invoke_compute_unew
   IMPLICIT NONE
 
   !> Checksum used for each array
@@ -68,7 +69,7 @@ PROGRAM shallow
   CALL init_pressure(P)
 
   !     INITIALIZE VELOCITIES
-
+ 
   CALL init_velocity_u(u, psi, m, n)
   CALL init_velocity_v(v, psi, m, n)
 
@@ -112,7 +113,7 @@ PROGRAM shallow
 
     CALL timer_start('Compute new fields', idxt1)
      
-    CALL compute_unew(unew, uold,  z, cv, h, tdt%data)
+    CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt%data)
     CALL compute_vnew(vnew, vold,  z, cu, h, tdt%data)
     CALL compute_pnew(pnew, pold, cu, cv,    tdt%data)
 
@@ -348,34 +349,6 @@ CONTAINS
         END DO
 
       END SUBROUTINE compute_h
-
-      !===================================================
-
-      SUBROUTINE compute_unew(unew, uold, z, cv, h, tdt)
-        IMPLICIT none
-        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: unew
-        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: uold, z, cv, h
-        REAL(KIND=8), INTENT(in) :: tdt
-        ! Locals
-        INTEGER :: I, J
-        INTEGER :: idim1, idim2
-        REAL(KIND=8) :: tdts8, tdtsdx
-
-        idim1 = SIZE(z, 1) - 1
-        idim2 = SIZE(z, 2) - 1
-
-        tdts8 = tdt/8.0d0
-        tdtsdx = tdt/dx
-
-        DO J=1,idim2
-          DO I=2,idim1+1
-            UNEW(I,J) = UOLD(I,J)+                                        &
-                 TDTS8*(Z(I,J+1)+Z(I,J))*(CV(I,J+1)+CV(I-1,J+1)+CV(I-1,J) &
-                        +CV(I,J))-TDTSDX*(H(I,J)-H(I-1,J))
-          END DO
-        END DO
-
-      END SUBROUTINE compute_unew
 
       !===================================================
 

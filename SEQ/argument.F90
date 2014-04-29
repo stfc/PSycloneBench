@@ -44,6 +44,8 @@ integer, public, parameter :: CG(3) = [1,2,3]
 integer, public, parameter :: DG(0:3) = [0,1,2,3]
 integer, public, parameter :: R=0
 integer, public, parameter :: EVERY=1
+! The four types of point on an Arakawa C-grid
+integer, public, parameter :: CU=1, CV=2, CT=3, CF=4
 
 public :: arg
 public :: READ, WRITE, READWRITE, INC
