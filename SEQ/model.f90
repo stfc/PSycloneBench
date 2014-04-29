@@ -15,10 +15,83 @@ MODULE model
   TYPE(scalar_field_type) :: tdt !< 2xdt apart from first step when is just dt
 !  REAL(KIND=8) :: tdt 
 
-  !> solution arrays
-  REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::                & 
-                             u, v, p, unew, vnew, pnew,       & 
-                             uold, vold, pold, cu, cv, z, h, psi  
+  ! solution arrays
+  ! Fields are allocated with extents (M+1,N+1).
+  ! Presumably the extra row and column are needed for periodic BCs.
+
+  ! The finite-difference variables are defined on the mesh as follows:
+  !            u              u          
+  !    -------->-----P,H------>-----P,H
+  !    |              |              |   
+  !    |        rot   |        rot   |   
+  !v  /|\      o     /|\ v    o     /|\ v
+  !    |              |              |   
+  !    |              |              |   
+  !    -------->-----P,H------>-----P,H
+  !    |              |              |   
+  !    |        rot   |        rot   |   
+  !v  /|\      o     /|\ v    o     /|\ v
+  !    |              |              |   
+  !    |              |              |   
+  !    |------->------|------->------|   
+  !            u              u          
+
+  ! Calling the point at which P,H etc. are defined 'T' and the
+  ! point at which rotation/vorticity defined 'f' then:
+  !
+  !          f(i,j+1) v(i,j+1)  f(i+1,j+1)  v(i+1,j+1)  f(i+2,j+1)
+  !
+  !          u(i,j)   T(i,j)    u(i+1,j)    T(i+1,j)    u(i+2,j)
+  !
+  !          f(i,j)   v(i,j)    f(i+1,j)    v(i+1,j)    f...
+  !
+  !          u(i,j-1) T(i,j-1)  u(i+1,j-1)  T...        u...
+  !
+  !  So, T is dual of f.
+  !
+  ! This is consistent with the form of the original code:
+  !     DO J=1,N
+  !        DO I=1,M
+  !           CU(I+1,J) = .5*(P(I+1,J)+P(I,J))*U(I+1,J)
+  !           CV(I,J+1) = .5*(P(I,J+1)+P(I,J))*V(I,J+1)
+  !           Z(I+1,J+1) = &
+  !              (FSDX*(V(I+1,J+1)-V(I,J+1))-FSDY*(U(I+1,J+1)-U(I+1,J))) &
+  !                          /(P(I,J)+P(I+1,J)+P(I+1,J+1)+P(I,J+1))
+  !           H(I,J) = P(I,J)+.25*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)     & 
+  !                +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
+  !        END DO
+  !     END DO
+
+  !> Potential Enstrophy. Is this defined on the same mesh
+  !! points as the vorticity?
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: z
+  !> Component of vel in x at current time step
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: u
+  !> Component of vel in x at next time step
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: unew
+  !> Component of vel in x at previous time step
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: uold
+  !> Component of vel in y current time step
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: v
+  !> Component of vel in y next time step
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: vnew
+  !> Component of vel in y previous time step
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: vold
+  !> Pressure at current time step
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: p
+  !> Pressure at next time step
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: pnew
+  !> Pressure at previous time step
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: pold
+  !> Mass flux in x at u point
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: cu
+  !> Mass flux in y at v point
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: cv
+  !> H = P + 0.5(<u^2>_x + <v^2>_y), defined on the same
+  !! grid points as the pressure, P
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: h
+  !> Stream function
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: psi  
 
 CONTAINS
 
