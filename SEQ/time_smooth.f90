@@ -12,11 +12,6 @@ MODULE time_smooth
   !> Parameter for time smoothing
   REAL(wp) :: alpha
 
-  !> These quantities should be defined somewhere in the lfric
-  !! infrastructure but at the moment they are not!
-  !! \todo Work out where POINTWISE and DOFS should be declared.
-  INTEGER, PARAMETER :: POINTWISE = 2, DOFS = 5
-
   !> The time smoothing operates in time rather than space
   !! and therefore takes three fields defined on any one
   !! of the four grid point types (T, U, V or Q).

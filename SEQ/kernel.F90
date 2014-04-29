@@ -23,6 +23,12 @@ public READ, WRITE, READWRITE, INC
 public SUM, MIN, MAX
 public CG, DG, R
 
+!> These quantities should be defined somewhere in the lfric
+!! infrastructure but at the moment they are not!
+!! \todo Work out where POINTWISE and DOFS should be declared.
+INTEGER, PARAMETER :: POINTWISE = 2, DOFS = 5
+public POINTWISE, DOFS 
+
 type :: kernel_type
   private
   logical :: no_op
