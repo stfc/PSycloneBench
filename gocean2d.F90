@@ -9,26 +9,29 @@
          INTEGER, PARAMETER :: dp = SELECTED_REAL_KIND(12, 307)
          INTEGER, PARAMETER :: wp = dp
 
-         REAL(wp), PARAMETER :: g = 9.81      ! gravity constant
+         REAL(wp), PARAMETER :: pi = 3.1415926535897932_wp  
+         REAL(wp), PARAMETER :: g = 9.80665_wp              ! gravity constant
+         REAL(wp), PARAMETER :: omega = 7.292116e-05_wp     ! earth rotation speed (s^(-1))
+         REAL(wp), PARAMETER :: d2r = pi / 180._wp          ! degree to radian
 
          INTEGER, ALLOCATABLE  :: tt_w(:), tt_e(:), tt_n(:), tt_s(:) 
          INTEGER, ALLOCATABLE  :: tu_w(:), tu_e(:), tv_n(:), tv_s(:) 
          INTEGER, ALLOCATABLE  :: ut_w(:), ut_e(:), vt_n(:), vt_s(:) 
 
-         REAL(wp), ALLOCATABLE :: e1t(:),  e2t(:), e1u(:), e2u(:) 
-         REAL(wp), ALLOCATABLE :: e1f(:),  e2f(:), e1v(:), e2v(:) 
-         REAL(wp), ALLOCATABLE :: e1e2t(:),  e1e2u(:), e1e2v(:)
+         REAL(wp), ALLOCATABLE :: e1t(:), e2t(:), e1u(:), e2u(:) 
+         REAL(wp), ALLOCATABLE :: e1f(:), e2f(:), e1v(:), e2v(:) 
+         REAL(wp), ALLOCATABLE :: e1e2t(:), e1e2u(:), e1e2v(:)
 
-         REAL(wp), ALLOCATABLE :: gphiu(:),  gphiv(:), gphif(:)
+         REAL(wp), ALLOCATABLE :: gphiu(:), gphiv(:), gphif(:)
 
-         REAL(wp), ALLOCATABLE :: xt(:),  yt(:), xf(:), yf(:), ff(:)
-         REAL(wp), ALLOCATABLE :: xu(:),  yu(:), xv(:), yv(:) 
+         REAL(wp), ALLOCATABLE :: xt(:), yt(:), xf(:), yf(:), ff(:)
+         REAL(wp), ALLOCATABLE :: xu(:), yu(:), xv(:), yv(:) 
 
-         REAL(wp), ALLOCATABLE :: ht(:),  hu(:), hv(:), hf(:) 
+         REAL(wp), ALLOCATABLE :: ht(:), hu(:), hv(:), hf(:) 
 
-         REAL(wp), ALLOCATABLE :: sshb(:),  sshb_u(:), sshb_v(:)
-         REAL(wp), ALLOCATABLE :: sshn(:),  sshn_u(:), sshn_v(:)
-         REAL(wp), ALLOCATABLE :: ssha(:),  ssha_u(:), ssha_v(:)
+         REAL(wp), ALLOCATABLE :: sshb(:), sshb_u(:), sshb_v(:)
+         REAL(wp), ALLOCATABLE :: sshn(:), sshn_u(:), sshn_v(:)
+         REAL(wp), ALLOCATABLE :: ssha(:), ssha_u(:), ssha_v(:)
 
          REAL(wp), ALLOCATABLE :: un(:),  vn(:), ua(:),  va(:)
 
@@ -351,7 +354,7 @@ CONTAINS
           CALL continuity
           CALL momentum
           CALL bc(rtime)  ! open and solid boundary condition
-          CALL nxt
+          CALL next
           IF(MOD(istp, irecord) == 0)  CALL output
 
         END SUBROUTINE step
@@ -369,7 +372,7 @@ CONTAINS
              rtmp2 = (sshn_u(jiw) + hu(jiw)) * un(jiw)
              rtmp3 = (sshn_v(jin) + hv(jin)) * vn(jin)
              rtmp4 = (sshn_v(jis) + hv(jis)) * vn(jis)
-             ssha(ji) = sshn(ji) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) / e1e2t(ji)
+             ssha(ji) = sshn(ji) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * rdt / e1e2t(ji)
           END DO
         END SUBROUTINE continuity
 
@@ -452,7 +455,7 @@ CONTAINS
                                !for variable viscosity, such as turbulent viscosity
 
             ! -Coriolis' force (can be implemented implicitly)
-            cor = 0.25_wp * ((ff(jiw) + ff(jiw + jpiglo)) * (v_s + v_n)) * &
+            cor = 0.5_wp * (2._wp * omega * SIN(gphiu(ji) * d2r) * (v_s + v_n)) * &
                 & e1u(ji) * e2u(ji) * (hu(ji) + sshn_u(ji))
 
             ! -pressure gradient
@@ -532,12 +535,12 @@ CONTAINS
 
 
             ! -Coriolis' force (can be implemented implicitly)
-            cor = -0.25_wp * ((ff(jis) + ff(jis - 1)) * (u_e + u_w)) * &
+            cor = -0.25_wp * (2._wp * omega * SIN(gphiv(ji) * d2r) * (u_e + u_w)) * &
                 & e1v(ji) * e2v(ji) * (hv(ji) + sshn_v(ji))
 
             ! -pressure gradient
             hpg = -g * ((ht(jin) + sshn(jin)) * sshn(jin) * e1t(jin) - &
-                &       (hv(jis) + sshn(jis)) * sshn(jis) * e1t(jis))
+                &       (ht(jis) + sshn(jis)) * sshn(jis) * e1t(jis))
 
             ! -linear bottom friction (implemented implicitly.
 
@@ -606,7 +609,7 @@ CONTAINS
 !+++++++++++++++++++++++++++++++++++
 
 
-        SUBROUTINE nxt
+        SUBROUTINE next
           ! update the now-velocity and ssh
           sshn(1:jpijglot) = ssha(1:jpijglot)
           un(1:jpijglou)   = ua(1:jpijglou)
@@ -646,7 +649,7 @@ CONTAINS
             END If
           END DO
             
-        END SUBROUTINE nxt
+        END SUBROUTINE next
 
 !+++++++++++++++++++++++++++++++++++
 
