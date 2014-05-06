@@ -33,6 +33,7 @@
 !     - Use 8-byte reals. 
 
 
+      USE timing
       IMPLICIT NONE
 
       INCLUDE 'netcdf.inc'
@@ -59,11 +60,12 @@
       INTEGER :: i, j
    
       ! timer variables 
-      REAL(KIND=8) :: mfs100, mfs200, mfs300, mfs310, & 
-                      t100, t200, t300, t310,         & 
-                      tstart, ctime, tcyc, time, ptime
-      INTEGER :: c1, c2, r, max
-     
+      !REAL(KIND=8) :: mfs100, mfs200, mfs300, mfs310, & 
+      !                t100, t200, t300, t310,         & 
+      !                tstart, ctime, tcyc
+      !INTEGER :: c1, c2, r, max
+      REAL(KIND=8) :: time, ptime
+
       ! NetCDF variables
       INTEGER :: ncid, t_id, p_id, u_id, v_id, iret, t_val
       INTEGER, DIMENSION(3) :: istart, icount 
@@ -74,8 +76,12 @@
       INTEGER :: input_unit = 99
       INTEGER :: ierr
 
+      !> Integer tags for timers
+      INTEGER :: idxt0, idxt1
+
 
 !  ** Initialisations ** 
+      CALL timer_init()
 
 !     Read in namelist 
       OPEN(unit=input_unit, file=nml_name, status='old',iostat=ierr)
@@ -180,12 +186,14 @@
       ENDIF
 
 !     Start timer
-      call system_clock (count=c1, count_rate=r, count_max=max)
-      TSTART = c1
-      T300 = 1.
-      T310 = 1.
+!      call system_clock (count=c1, count_rate=r, count_max=max)
+!      TSTART = c1
+!      T300 = 1.
+!      T310 = 1.
       TIME = 0.
 
+      !     Start timer
+      CALL timer_start('Time-stepping',idxt0)
 
 !  ** Start of time loop ** 
       DO ncycle=1,itmax
@@ -194,8 +202,9 @@
          FSDX = 4./DX
          FSDY = 4./DY
 
-         call system_clock(count=c1, count_rate=r,count_max=max)
-         T100 = c1
+         !call system_clock(count=c1, count_rate=r,count_max=max)
+         !T100 = c1
+         CALL timer_start('Compute CU,CV,CZ,H',idxt1)
 
          DO J=1,N
             DO I=1,M
@@ -208,8 +217,9 @@
             END DO
          END DO
 
-         call system_clock(count=c2,count_rate=r,count_max=max)
-         T100 = dble(c2-T100)/dble(r)
+         CALL timer_stop(idxt1)
+         !call system_clock(count=c2,count_rate=r,count_max=max)
+         !T100 = dble(c2-T100)/dble(r)
 
 !        PERIODIC CONTINUATION
          DO J=1,N
@@ -234,8 +244,9 @@
          TDTSDX = TDT/DX
          TDTSDY = TDT/DY
 
-         call system_clock(count=c1, count_rate=r, count_max=max)
-         T200 = c1
+         !call system_clock(count=c1, count_rate=r, count_max=max)
+         !T200 = c1
+         CALL timer_start('Compute {U,V,P}NEW',idxt1)
 
          DO J=1,N
             DO I=1,M
@@ -250,8 +261,9 @@
             END DO
          END DO
 
-         call system_clock(count=c2, count_rate=r, count_max=max)
-         T200 = dble(c2 -T200)/dble(r)
+         CALL timer_stop(idxt1)
+         !call system_clock(count=c2, count_rate=r, count_max=max)
+         !T200 = dble(c2 -T200)/dble(r)
 
 !        PERIODIC CONTINUATION
          DO J=1,N
@@ -286,25 +298,25 @@
 !           jr added MFS310--don't know what actual mult factor should be
 !           jr changed divide by 1 million to divide by 100K since system_clock
 !           jr resolution is millisec rather than cpu_time's 10 millisec
-            MFS310 = 0.0
-            MFS100 = 0.0
-            MFS200 = 0.0
-            MFS300 = 0.0
-            IF (T310 .GT. 0) MFS310 = 24.*M*N/T310/1.D5
-            IF (T100 .GT. 0) MFS100 = 24.*M*N/T100/1.D5
-            IF (T200 .GT. 0) MFS200 = 26.*M*N/T200/1.D5
-            IF (T300 .GT. 0) MFS300 = 15.*M*N/T300/1.D5
+            !MFS310 = 0.0
+            !MFS100 = 0.0
+            !MFS200 = 0.0
+            !MFS300 = 0.0
+            !IF (T310 .GT. 0) MFS310 = 24.*M*N/T310/1.D5
+            !IF (T100 .GT. 0) MFS100 = 24.*M*N/T100/1.D5
+            !IF (T200 .GT. 0) MFS200 = 26.*M*N/T200/1.D5
+            !IF (T300 .GT. 0) MFS300 = 15.*M*N/T300/1.D5
 
-            call system_clock(count=c2, count_rate=r,count_max=max)
-            CTIME = dble(c2 - TSTART)/dble(r)
-            TCYC = CTIME/FLOAT(NCYCLE)
+            !call system_clock(count=c2, count_rate=r,count_max=max)
+            !CTIME = dble(c2 - TSTART)/dble(r)
+            !TCYC = CTIME/FLOAT(NCYCLE)
 
-            WRITE(6,375) NCYCLE,CTIME,TCYC,T310,MFS310,T200,MFS200,T300,MFS300
- 375        FORMAT(' CYCLE NUMBER',I5,' TOTAL COMPUTER TIME', D15.6,   & 
-                   ' TIME PER CYCLE', D15.6, /                           & 
-                   ' TIME AND MEGAFLOPS FOR LOOP 310 ', D15.6,2x,D6.1/   & 
-                   ' TIME AND MEGAFLOPS FOR LOOP 200 ', D15.6,2x,D6.1/   & 
-                   ' TIME AND MEGAFLOPS FOR LOOP 300 ', D15.6,2x,D6.1/ )
+            !WRITE(6,375) NCYCLE,CTIME,TCYC,T310,MFS310,T200,MFS200,T300,MFS300
+! 375        FORMAT(' CYCLE NUMBER',I5,' TOTAL COMPUTER TIME', D15.6,   & 
+!                   ' TIME PER CYCLE', D15.6, /                           & 
+!                   ' TIME AND MEGAFLOPS FOR LOOP 310 ', D15.6,2x,D6.1/   & 
+!                   ' TIME AND MEGAFLOPS FOR LOOP 200 ', D15.6,2x,D6.1/   & 
+!                   ' TIME AND MEGAFLOPS FOR LOOP 300 ', D15.6,2x,D6.1/ )
 
 !           Append calculated values of p, u, and v to netCDF file
             istart(3) = ncycle/mprint + 1
@@ -318,19 +330,20 @@
          endif
 
 !        Write out time if last timestep
-         IF (ncycle .EQ. itmax) THEN 
-            call system_clock(count=c2, count_rate=r,count_max=max)
-            CTIME = dble(c2 - TSTART)/dble(r)
-            WRITE(6,376) ctime  
- 376        FORMAT('system_clock time ', F15.6)
-         ENDIF
+!         IF (ncycle .EQ. itmax) THEN 
+!            call system_clock(count=c2, count_rate=r,count_max=max)
+!            CTIME = dble(c2 - TSTART)/dble(r)
+!            WRITE(6,376) ctime  
+! 376        FORMAT('system_clock time ', F15.6)
+!         ENDIF
 
 
 !        TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
          IF(NCYCLE .GT. 1) then
 
-            call system_clock(count=c1,count_rate=r,count_max=max)
-            T300 = c1
+            !call system_clock(count=c1,count_rate=r,count_max=max)
+            !T300 = c1
+            CALL timer_start('Time smooth',idxt1)
 
             DO J=1,N
                DO I=1,M
@@ -343,8 +356,9 @@
                END DO
             END DO
 
-            call system_clock(count=c2,count_rate=r, count_max=max)
-            T300 = dble(c2 - T300)/dble(r)
+            CALL timer_stop(idxt1)
+            !call system_clock(count=c2,count_rate=r, count_max=max)
+            !T300 = dble(c2 - T300)/dble(r)
     
 !           PERIODIC CONTINUATION
             DO J=1,N
@@ -373,8 +387,8 @@
 
             TDT = TDT+TDT
 
-            call system_clock(count=c1, count_rate=r,count_max=max)
-            T310 = c1
+            !call system_clock(count=c1, count_rate=r,count_max=max)
+            !T310 = c1
 
             DO J=1,NP1
                DO I=1,MP1
@@ -387,14 +401,15 @@
                END DO
             END DO
 
-            call system_clock(count=c2, count_rate=r, count_max=max)
-            T310 = dble(c2 - T310)/dble(r)
+            !call system_clock(count=c2, count_rate=r, count_max=max)
+            !T310 = dble(c2 - T310)/dble(r)
 
          endif
 
       End do
 
 !  ** End of time loop ** 
+      CALL timer_stop(idxt0)
 
       WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
            itmax, SUM(PNEW(:,:))
@@ -410,6 +425,8 @@
          iret = nf_close(ncid)
          call check_err(iret)
       ENDIF
+
+      CALL timer_report()
 
 !     Free memory
       DEALLOCATE( u, v, p, unew, vnew, pnew, uold, vold, pold )

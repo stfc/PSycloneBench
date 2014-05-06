@@ -7,14 +7,18 @@ F90FLAGS = -Wall -Wsurprising -fcheck=all -g -O0
 #F90FLAGS = -O3
 #F90FLAGS = -O3 -fopenmp
 F90FLAGS += -I/usr/include
+# For timing module in new version of code
+F90FLAGS += -I../
 
 # add -mpi=mpilog to generate mpe logging
-LDFLAGS = -L/usr/lib64 -lnetcdf -lnetcdff
+LDFLAGS = ../timing.o -L/usr/lib64 -lnetcdf -lnetcdff
 
 #EXECS = join_files shallow_base shallow_parallel
 EXECS = shallow_base
 
 all: $(EXECS)
+
+shallow_base.o: ../timing.o
 
 shallow_parallel.o: parallel_mod.o
 
