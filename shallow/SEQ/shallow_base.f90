@@ -41,6 +41,7 @@ PROGRAM shallow
   USE model
   USE initial_conditions
   USE time_smooth,  ONLY: manual_invoke_time_smooth
+  USE compute_z,    ONLY: manual_invoke_compute_z
   USE compute_h,    ONLY: manual_invoke_compute_h
   USE compute_unew, ONLY: manual_invoke_compute_unew
   USE compute_vnew, ONLY: manual_invoke_compute_vnew
@@ -101,7 +102,7 @@ PROGRAM shallow
     !CALL invoke(compute_cu_type(cu, p , u))
     CALL compute_cu(CU, P, U)
     CALL compute_cv(CV, P, V)
-    CALL compute_z(z, P, U, V)
+    CALL manual_invoke_compute_z(z, P, U, V)
     CALL manual_invoke_compute_h(h, P, U, V)
 
     CALL timer_stop(idxt1)
@@ -308,29 +309,6 @@ CONTAINS
         END DO
 
       END SUBROUTINE compute_cv
-
-      !===================================================
-
-      SUBROUTINE compute_z(z, p, u, v)
-        USE mesh, ONLY: fsdx, fsdy
-        IMPLICIT none
-        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: z
-        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: p, u, v
-        ! Locals
-        INTEGER :: I, J
-        INTEGER :: idim1, idim2
-
-        idim1 = SIZE(z, 1) - 1
-        idim2 = SIZE(z, 2) - 1
-
-        DO J=2,idim2+1
-           DO I=2,idim1+1
-              Z(I,J) =(FSDX*(V(I,J)-V(I-1,J))-FSDY*(U(I,J) & 
-                   -U(I,J-1)))/(P(I-1,J-1)+P(I,J-1)+P(I,J)+P(I-1,J))
-           END DO
-        END DO
-
-      END SUBROUTINE compute_z
 
       !===================================================
 
