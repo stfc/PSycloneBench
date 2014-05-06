@@ -40,7 +40,8 @@ PROGRAM shallow
   USE timing
   USE model
   USE initial_conditions
-  USE time_smooth, ONLY: manual_invoke_time_smooth
+  USE time_smooth,  ONLY: manual_invoke_time_smooth
+  USE compute_h,    ONLY: manual_invoke_compute_h
   USE compute_unew, ONLY: manual_invoke_compute_unew
   USE compute_vnew, ONLY: manual_invoke_compute_vnew
   USE compute_pnew, ONLY: manual_invoke_compute_pnew
@@ -101,7 +102,7 @@ PROGRAM shallow
     CALL compute_cu(CU, P, U)
     CALL compute_cv(CV, P, V)
     CALL compute_z(z, P, U, V)
-    CALL compute_h(h, P, U, V)
+    CALL manual_invoke_compute_h(h, P, U, V)
 
     CALL timer_stop(idxt1)
 
@@ -330,28 +331,6 @@ CONTAINS
         END DO
 
       END SUBROUTINE compute_z
-
-      !===================================================
-
-      SUBROUTINE compute_h(h, p, u, v)
-        IMPLICIT none
-        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: h
-        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: p, u, v
-        ! Locals
-        INTEGER :: I, J
-        INTEGER :: idim1, idim2
-
-        idim1 = SIZE(z, 1) - 1
-        idim2 = SIZE(z, 2) - 1
-
-        DO J=1,idim2
-           DO I=1,idim1
-              H(I,J) = P(I,J)+.25*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)     & 
-                    +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
-           END DO
-        END DO
-
-      END SUBROUTINE compute_h
 
       !===================================================
 
