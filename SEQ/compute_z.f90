@@ -1,16 +1,19 @@
-MODULE compute_z
-  USE kind_params
-  USE kernel_mod
+!> \brief Compute the potential vorticity, z
+!! \detail Given the current pressure and velocity fields,
+!! computes the potential voriticity.
+module compute_z
+  use kind_params
+  use kernel_mod
   use argument_mod
-  IMPLICIT none
+  implicit none
 
-  PRIVATE
+  private
 
-  PUBLIC manual_invoke_compute_z
-  PUBLIC compute_z_type, compute_z_code
+  public manual_invoke_compute_z
+  public compute_z_type, compute_z_code
 
-  TYPE, EXTENDS(kernel_type) :: compute_z_type
-     TYPE(arg), DIMENSION(6) :: meta_args =    &
+  type, extends(kernel_type) :: compute_z_type
+     type(arg), dimension(4) :: meta_args =    &
           (/ arg(WRITE, CT, POINTWISE),        & ! z
              arg(READ,  CT, POINTWISE),        & ! p
              arg(READ,  CU, POINTWISE),        & ! u
@@ -18,21 +21,23 @@ MODULE compute_z
            /)
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
-     INTEGER :: ITERATES_OVER = DOFS
-  CONTAINS
+     integer :: ITERATES_OVER = DOFS
+  contains
     procedure, nopass :: code => compute_z_code
-  END TYPE compute_z_type
+  end type compute_z_type
 
-CONTAINS
+contains
 
   !===================================================
 
-  SUBROUTINE manual_invoke_compute_z(z, p, u, v)
-    IMPLICIT none
-    REAL(wp), INTENT(out), DIMENSION(:,:) :: z
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: p, u, v
+  !> Manual implementation of the code needed to invoke
+  !! compute_z_code().
+  subroutine manual_invoke_compute_z(z, p, u, v)
+    implicit none
+    real(wp), intent(out), dimension(:,:) :: z
+    real(wp), intent(in),  dimension(:,:) :: p, u, v
     ! Locals
-    INTEGER :: I, J
+    integer :: I, J
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -78,27 +83,28 @@ CONTAINS
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
     !
 
-    DO J=2, SIZE(z, 2)
-       DO I=2, SIZE(z, 1)
+    do J=2, size(z, 2)
+       do I=2, size(z, 1)
 
-          CALL compute_z_code(i, j, z, p, u, v)
-       END DO
-    END DO
+          call compute_z_code(i, j, z, p, u, v)
+       end do
+    end do
 
-  END SUBROUTINE manual_invoke_compute_z
+  end subroutine manual_invoke_compute_z
 
   !===================================================
 
-  SUBROUTINE compute_z_code(i, j, z, p, u, v)
-    USE mesh, ONLY: fsdx, fsdy
-    IMPLICIT none
-    INTEGER, INTENT(in) :: I, J
-    REAL(wp), INTENT(out), DIMENSION(:,:) :: z
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: p, u, v
+  !> Compute the potential vorticity on the grid point (i,j)
+  subroutine compute_z_code(i, j, z, p, u, v)
+    use mesh, only: fsdx, fsdy
+    implicit none
+    integer,  intent(in) :: I, J
+    real(wp), intent(out), dimension(:,:) :: z
+    real(wp), intent(in),  dimension(:,:) :: p, u, v
 
     Z(I,J) =(FSDX*(V(I,J)-V(I-1,J))-FSDY*(U(I,J)-U(I,J-1)))/ &
                  (P(I-1,J-1)+P(I,J-1)+P(I,J)+P(I-1,J))
 
-  END SUBROUTINE compute_z_code
+  end subroutine compute_z_code
 
-END MODULE compute_z
+end module compute_z
