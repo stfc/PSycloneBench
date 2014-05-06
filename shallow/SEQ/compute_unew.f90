@@ -50,6 +50,16 @@ CONTAINS
     !  o  x  x  x
     !  o  x  x  x   j=1
 
+    ! unew(i,j) depends upon:
+    !   uold(i,j)
+    !   z(i,j+1),  z(i,j)
+    !  cv(i,j),   cv(i,j+1), cv(i-1,j+1), cv(i-1,j)
+    !   h(i,j),    h(i-1,j)
+
+    ! Swap indices, e.g. XX(i+1,j) => YY(i,j+1)
+    ! Any field on U replaced with field on V
+    ! => produces same code for the update of corresponding field on V.
+
     ! Original code looked like:
     !
     ! DO J=1,N
@@ -57,11 +67,6 @@ CONTAINS
     !     UNEW(I+1,J) = UOLD(I+1,J)+                                     &
     !         TDTS8*(Z(I+1,J+1)+Z(I+1,J))*(CV(I+1,J+1)+CV(I,J+1)+CV(I,J) &
     !        +CV(I+1,J))-TDTSDX*(H(I+1,J)-H(I,J))                       
-    !     VNEW(I,J+1) = VOLD(I,J+1)-TDTS8*(Z(I+1,J+1)+Z(I,J+1)) & 
-    !         *(CU(I+1,J+1)+CU(I,J+1)+CU(I,J)+CU(I+1,J))        & 
-    !         -TDTSDY*(H(I,J+1)-H(I,J))
-    !     PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I+1,J)-CU(I,J))   & 
-    !                 -TDTSDY*(CV(I,J+1)-CV(I,J))
     !   END DO
     ! END DO
 
