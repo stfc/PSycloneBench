@@ -46,9 +46,9 @@ contains
     ! (using x to indicate a location that is written):
     !
     ! i=1   i=M
-    !  x  x  x  x 
-    !  x  x  x  x   j=N
-    !  x  x  x  x
+    !  x  x  x  o 
+    !  x  x  x  o   j=N
+    !  x  x  x  o
     !  o  o  o  o   j=1
 
     ! Quantity CV is mass flux in y direction.
@@ -57,7 +57,6 @@ contains
     !
     !    DO J=1,N
     !      DO I=1,M
-    !           CU(I+1,J) = .5*(P(I+1,J)+P(I,J))*U(I+1,J)
     !           CV(I,J+1) = .5*(P(I,J+1)+P(I,J))*V(I,J+1)
     !      END DO
     !    END DO
