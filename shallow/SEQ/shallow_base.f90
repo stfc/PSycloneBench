@@ -353,33 +353,6 @@ CONTAINS
       END SUBROUTINE compute_h
 
       !===================================================
-!!$
-!!$      SUBROUTINE compute_vnew(vnew, vold, z, cu, h, tdt)
-!!$        IMPLICIT none
-!!$        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: vnew
-!!$        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: vold, z, cu, h
-!!$        REAL(KIND=8), INTENT(in) :: tdt
-!!$        ! Locals
-!!$        INTEGER :: I, J
-!!$        INTEGER :: idim1, idim2
-!!$        REAL(KIND=8) :: tdts8, tdtsdy
-!!$
-!!$        idim1 = SIZE(z, 1) - 1
-!!$        idim2 = SIZE(z, 2) - 1
-!!$
-!!$        tdts8 = tdt/8.0d0
-!!$        tdtsdy = tdt/dy
-!!$
-!!$         DO J=2,idim2+1
-!!$            DO I=1,idim1
-!!$               VNEW(I,J) = VOLD(I,J)-TDTS8*(Z(I+1,J)+Z(I,J)) & 
-!!$                   *(CU(I+1,J)+CU(I,J)+CU(I,J-1)+CU(I+1,J-1))        & 
-!!$                   -TDTSDY*(H(I,J)-H(I,J-1))
-!!$            END DO
-!!$         END DO
-!!$       END SUBROUTINE compute_vnew
-
-      !===================================================
 
       SUBROUTINE compute_pnew(pnew, pold, cu, cv, tdt)
         IMPLICIT none
