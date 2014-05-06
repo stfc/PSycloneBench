@@ -43,6 +43,7 @@ PROGRAM shallow
   USE time_smooth, ONLY: manual_invoke_time_smooth
   USE compute_unew, ONLY: manual_invoke_compute_unew
   USE compute_vnew, ONLY: manual_invoke_compute_vnew
+  USE compute_pnew, ONLY: manual_invoke_compute_pnew
   IMPLICIT NONE
 
   !> Checksum used for each array
@@ -117,7 +118,7 @@ PROGRAM shallow
      
     CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt%data)
     CALL manual_invoke_compute_vnew(vnew, vold,  z, cu, h, tdt%data)
-    CALL compute_pnew(pnew, pold, cu, cv,    tdt%data)
+    CALL manual_invoke_compute_pnew(pnew, pold, cu, cv,    tdt%data)
 
     CALL timer_stop(idxt1)
 
@@ -353,30 +354,5 @@ CONTAINS
       END SUBROUTINE compute_h
 
       !===================================================
-
-      SUBROUTINE compute_pnew(pnew, pold, cu, cv, tdt)
-        IMPLICIT none
-        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: pnew
-        REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: pold, cu, cv
-        REAL(KIND=8), INTENT(in) :: tdt
-        ! Locals
-        INTEGER :: I, J
-        INTEGER :: idim1, idim2
-        REAL(KIND=8) :: tdtsdx, tdtsdy
-
-        idim1 = SIZE(z, 1) - 1
-        idim2 = SIZE(z, 2) - 1
-
-        tdtsdx = tdt/dx
-        tdtsdy = tdt/dy
-
-        DO J=1,idim2
-          DO I=1,idim1
-            PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I+1,J)-CU(I,J))   & 
-                   -TDTSDY*(CV(I,J+1)-CV(I,J))
-          END DO
-        END DO
-
-      END SUBROUTINE compute_pnew
 
     END PROGRAM shallow
