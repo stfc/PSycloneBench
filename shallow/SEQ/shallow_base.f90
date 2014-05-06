@@ -41,6 +41,7 @@ PROGRAM shallow
   USE model
   USE initial_conditions
   USE time_smooth,  ONLY: manual_invoke_time_smooth
+  USE compute_cv,   ONLY: manual_invoke_compute_cv
   USE compute_z,    ONLY: manual_invoke_compute_z
   USE compute_h,    ONLY: manual_invoke_compute_h
   USE compute_unew, ONLY: manual_invoke_compute_unew
@@ -101,7 +102,7 @@ PROGRAM shallow
 
     !CALL invoke(compute_cu_type(cu, p , u))
     CALL compute_cu(CU, P, U)
-    CALL compute_cv(CV, P, V)
+    CALL manual_invoke_compute_cv(CV, P, V)
     CALL manual_invoke_compute_z(z, P, U, V)
     CALL manual_invoke_compute_h(h, P, U, V)
 
@@ -287,28 +288,6 @@ CONTAINS
          END DO
 
       END SUBROUTINE compute_cu
-
-      !===================================================
-
-      SUBROUTINE compute_cv(cv, p, v)
-        IMPLICIT none
-        REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: cv
-        REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: p
-        REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: v
-        ! Locals
-        INTEGER :: I, J
-        INTEGER :: idim1, idim2
-
-        idim1 = SIZE(cv, 1) - 1
-        idim2 = SIZE(cv, 2) - 1
-
-        DO J=2,idim2+1
-           DO I=1,idim1
-              CV(I,J) = .5*(P(I,J)+P(I,J-1))*V(I,J)
-           END DO
-        END DO
-
-      END SUBROUTINE compute_cv
 
       !===================================================
 
