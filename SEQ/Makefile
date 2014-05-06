@@ -18,7 +18,7 @@ LDFLAGS = -L/usr/lib64 -lnetcdf -lnetcdff
 EXECS = shallow_base
 
 MODULES = kind_params.o physical_params.o field.o model.o shallow_IO.o \
-          initial_conditions.o compute_h.o \
+          initial_conditions.o compute_z.o compute_h.o \
           compute_unew.o compute_vnew.o compute_pnew.o \
           timing.o time_smooth.o intel_timer_mod.o mesh.o          
 
