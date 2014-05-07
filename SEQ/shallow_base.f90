@@ -42,6 +42,7 @@ PROGRAM shallow
   USE initial_conditions
   USE time_smooth,  ONLY: manual_invoke_time_smooth
   USE apply_bcs_ct, ONLY: manual_invoke_apply_bcs_ct
+  USE apply_bcs_cu, ONLY: manual_invoke_apply_bcs_cu
   USE compute_cu,   ONLY: manual_invoke_compute_cu
   USE compute_cv,   ONLY: manual_invoke_compute_cv
   USE compute_z,    ONLY: manual_invoke_compute_z
@@ -81,7 +82,7 @@ PROGRAM shallow
   CALL init_velocity_v(v, psi, m, n)
 
   !     PERIODIC CONTINUATION
-  CALL apply_bcs_u(U)
+  CALL manual_invoke_apply_bcs_cu(U)
   CALL apply_bcs_v(V)
 
   ! Initialise fields that will hold data at previous time step
@@ -112,7 +113,7 @@ PROGRAM shallow
 
     ! PERIODIC CONTINUATION
 
-    CALL apply_bcs_u(CU)
+    CALL manual_invoke_apply_bcs_cu(CU)
     CALL manual_invoke_apply_bcs_ct(H)
     CALL apply_bcs_v(CV)
     CALL apply_bcs_z(Z)
@@ -129,7 +130,7 @@ PROGRAM shallow
 
     ! PERIODIC CONTINUATION
 
-    CALL apply_bcs_u(UNEW)
+    CALL manual_invoke_apply_bcs_cu(UNEW)
     CALL apply_bcs_v(VNEW)
     CALL manual_invoke_apply_bcs_ct(PNEW)
 
@@ -192,25 +193,6 @@ CONTAINS
     val = SUM(field)
 
   END SUBROUTINE compute_checksum
-
-  !===================================================
-
-      SUBROUTINE apply_bcs_u(field)
-        IMPLICIT none
-        REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field
-        INTEGER :: M, MP1, N, NP1
-
-        MP1 = SIZE(field, 1)
-        NP1 = SIZE(field, 2)
-        M = MP1 - 1
-        N = NP1 - 1
-
-        ! First col = last col
-        field(1,    1:N) = field(MP1,  1:N)
-        ! Last row = first row
-        field(1:MP1,NP1) = field(1:MP1,1)
-
-      END SUBROUTINE apply_bcs_u
 
       !===================================================
 
