@@ -38,17 +38,17 @@ contains
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
     ! Presumably the extra row and column are needed for periodic BCs.
-    ! We are updating the first column and last row of a quantity on CU.
+    ! We are updating the first row and last col of a quantity on CV.
     ! This looks like (using x to indicate a location that is written first
     ! and y a location that is written second):
     !
     !  i=1   i=M
-    ! _ y  y  y  y 
-    ! /|x  o  o  o   j=N 
-    ! | x  o  o  o
-    ! \ x  o  o  o
-    !  \x_ o  o  o   j=1
-    !   |\______/ 
+    !  -o  o  o  y 
+    ! / o  o  o  y   j=N 
+    ! | o  o  o  y
+    ! \ o  o  o  y
+    !  \x  x  x _y   j=1
+    !    \______/|
 
     !   vi-1j+1--fij+1---vij+1---fi+1j+1-vi+1j+1
     !   |        |       |       |        |    
