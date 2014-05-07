@@ -41,6 +41,7 @@ PROGRAM shallow
   USE model
   USE initial_conditions
   USE time_smooth,  ONLY: manual_invoke_time_smooth
+  USE apply_bcs_ct, ONLY: manual_invoke_apply_bcs_ct
   USE compute_cu,   ONLY: manual_invoke_compute_cu
   USE compute_cv,   ONLY: manual_invoke_compute_cv
   USE compute_z,    ONLY: manual_invoke_compute_z
@@ -112,7 +113,7 @@ PROGRAM shallow
     ! PERIODIC CONTINUATION
 
     CALL apply_bcs_u(CU)
-    CALL apply_bcs_p(H)
+    CALL manual_invoke_apply_bcs_ct(H)
     CALL apply_bcs_v(CV)
     CALL apply_bcs_z(Z)
 
@@ -130,7 +131,7 @@ PROGRAM shallow
 
     CALL apply_bcs_u(UNEW)
     CALL apply_bcs_v(VNEW)
-    CALL apply_bcs_p(PNEW)
+    CALL manual_invoke_apply_bcs_ct(PNEW)
 
     ! Time is in seconds but we never actually need it
     !CALL increment(time, dt)
@@ -191,25 +192,6 @@ CONTAINS
     val = SUM(field)
 
   END SUBROUTINE compute_checksum
-
-  !===================================================
-
-  SUBROUTINE apply_bcs_p(field)
-    IMPLICIT none
-    REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field
-    INTEGER :: M, MP1, N, NP1
-
-    MP1 = SIZE(field, 1)
-    NP1 = SIZE(field, 2)
-    M = MP1 - 1
-    N = NP1 - 1
-
-    ! Last col = first col
-    field(MP1,1:N) = field(1,  1:N)
-    ! Last row = first row
-    field(1:MP1,NP1) = field(1:MP1,1)
-
-  END SUBROUTINE apply_bcs_p
 
   !===================================================
 
