@@ -21,7 +21,7 @@ MODULES = kind_params.o physical_params.o field.o model.o shallow_IO.o \
           initial_conditions.o compute_cu_mod.o compute_cv_mod.o \
           compute_z.o compute_h.o \
           compute_unew.o compute_vnew.o compute_pnew.o \
-          apply_bcs_ct_mod.o \
+          apply_bcs_ct_mod.o apply_bcs_cu_mod.o \
           timing.o time_smooth.o intel_timer_mod.o mesh.o          
 
 GUNGHO_MODULES = ${UTILS_DIR}/global_parameters.o \
