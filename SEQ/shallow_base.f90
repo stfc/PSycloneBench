@@ -43,6 +43,7 @@ PROGRAM shallow
   USE time_smooth,  ONLY: manual_invoke_time_smooth
   USE apply_bcs_ct, ONLY: manual_invoke_apply_bcs_ct
   USE apply_bcs_cu, ONLY: manual_invoke_apply_bcs_cu
+  USE apply_bcs_cv, ONLY: manual_invoke_apply_bcs_cv
   USE compute_cu,   ONLY: manual_invoke_compute_cu
   USE compute_cv,   ONLY: manual_invoke_compute_cv
   USE compute_z,    ONLY: manual_invoke_compute_z
@@ -83,7 +84,7 @@ PROGRAM shallow
 
   !     PERIODIC CONTINUATION
   CALL manual_invoke_apply_bcs_cu(U)
-  CALL apply_bcs_v(V)
+  CALL manual_invoke_apply_bcs_cv(V)
 
   ! Initialise fields that will hold data at previous time step
   CALL copy_field(U, UOLD)
@@ -115,7 +116,7 @@ PROGRAM shallow
 
     CALL manual_invoke_apply_bcs_cu(CU)
     CALL manual_invoke_apply_bcs_ct(H)
-    CALL apply_bcs_v(CV)
+    CALL manual_invoke_apply_bcs_cv(CV)
     CALL apply_bcs_z(Z)
 
     ! COMPUTE NEW VALUES U,V AND P
@@ -131,7 +132,7 @@ PROGRAM shallow
     ! PERIODIC CONTINUATION
 
     CALL manual_invoke_apply_bcs_cu(UNEW)
-    CALL apply_bcs_v(VNEW)
+    CALL manual_invoke_apply_bcs_cv(VNEW)
     CALL manual_invoke_apply_bcs_ct(PNEW)
 
     ! Time is in seconds but we never actually need it
@@ -193,25 +194,6 @@ CONTAINS
     val = SUM(field)
 
   END SUBROUTINE compute_checksum
-
-      !===================================================
-
-      SUBROUTINE apply_bcs_v(field)
-        IMPLICIT none
-        REAL(KIND=8), INTENT(inout), DIMENSION(:,:) :: field
-        INTEGER :: M, MP1, N, NP1
-
-        MP1 = SIZE(field, 1)
-        NP1 = SIZE(field, 2)
-        M = MP1 - 1
-        N = NP1 - 1
-
-        ! First row = last row
-        field(1:M,1    ) = field(1:M,NP1)
-        ! Last col = first col
-        field(MP1,1:NP1) = field(1,  1:NP1)
-
-      END SUBROUTINE apply_bcs_v
 
       !===================================================
 
