@@ -1,5 +1,6 @@
+include Makefile.include.intel
 #include Makefile.include.gfortran
-include Makefile.include.ibm
+#include Makefile.include.ibm
 
 UTILS_DIR = ../../../GungHo/src/utils
 
