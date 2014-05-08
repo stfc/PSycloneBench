@@ -10,7 +10,7 @@ MODULE compute_h
   PUBLIC compute_h_type, compute_h_code
 
   TYPE, EXTENDS(kernel_type) :: compute_h_type
-     TYPE(arg), DIMENSION(6) :: meta_args =    &
+     TYPE(arg), DIMENSION(4) :: meta_args =    &
           (/ arg(WRITE, CT, POINTWISE),        & ! h
              arg(READ,  CT, POINTWISE),        & ! p
              arg(READ,  CU, POINTWISE),        & ! u

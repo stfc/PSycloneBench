@@ -10,7 +10,7 @@ MODULE compute_pnew
   PUBLIC compute_pnew_type, compute_pnew_code
 
   TYPE, EXTENDS(kernel_type) :: compute_pnew_type
-     TYPE(arg), DIMENSION(6) :: meta_args =    &
+     TYPE(arg), DIMENSION(5) :: meta_args =    &
           (/ arg(WRITE, CT, POINTWISE),        & ! pnew
              arg(READ,  CT, POINTWISE),        & ! pold
              arg(READ,  CU, POINTWISE),        & ! cu
