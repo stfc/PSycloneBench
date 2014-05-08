@@ -7,7 +7,7 @@ UTILS_DIR = ../../../GungHo/src/utils
 F90FLAGS += -I${NETCDF_INC} -I${UTILS_DIR}
 
 # add -mpi=mpilog to generate mpe logging
-LDFLAGS = -L${NETCDF_LIB} -lnetcdf -lnetcdff
+LDFLAGS = -L${NETCDF_LIB} -lnetcdff -lnetcdf
 
 #EXECS = join_files shallow_base shallow_parallel
 EXECS = shallow_base
