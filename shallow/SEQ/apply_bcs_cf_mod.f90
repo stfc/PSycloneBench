@@ -33,7 +33,7 @@ contains
     implicit none
     real(wp), intent(inout), dimension(:,:) :: field
     ! Locals
-    integer :: n, mp1, np1
+    integer :: mp1, np1
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
