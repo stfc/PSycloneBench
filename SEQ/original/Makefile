@@ -1,17 +1,11 @@
-# rpc258
-# 26 Jan 2010
-# 20 Feb 2012
-F90 = gfortran
+include ../Makefile.include
 
-F90FLAGS = -Wall -Wsurprising -fcheck=all -g -O0
-#F90FLAGS = -O3
-#F90FLAGS = -O3 -fopenmp
-F90FLAGS += -I/usr/include
+F90FLAGS += -I${NETCDF_INC}
 # For timing module in new version of code
 F90FLAGS += -I../
 
 # add -mpi=mpilog to generate mpe logging
-LDFLAGS = ../timing.o -L/usr/lib64 -lnetcdf -lnetcdff
+LDFLAGS = ../timing.o ../intel_timer_mod.o -L${NETCDF_LIB} -lnetcdf -lnetcdff
 
 #EXECS = join_files shallow_base shallow_parallel
 EXECS = shallow_base

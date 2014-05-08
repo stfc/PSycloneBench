@@ -1,6 +1,6 @@
-include Makefile.include.intel
-#include Makefile.include.gfortran
-#include Makefile.include.ibm
+# Makefile.include is a symbolic link to the desired
+# Makefile.include.<compiler> file.
+include Makefile.include
 
 UTILS_DIR = ../../../GungHo/src/utils
 
