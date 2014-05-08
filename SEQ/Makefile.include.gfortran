@@ -1,0 +1,9 @@
+# Build settings for gfortran compiler
+F90 = gfortran
+
+NETCDF_INC = /usr/include
+NETCDF_LIB = /usr/lib64
+
+F90FLAGS = -Wall -Wsurprising -fcheck=all -g -O0
+#F90FLAGS = -O3
+#F90FLAGS = -O3 -fopenmp

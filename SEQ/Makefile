@@ -1,18 +1,12 @@
-# rpc258
-# 26 Jan 2010
-# 20 Feb 2012
+#include Makefile.include.gfortran
+include Makefile.include.ibm
 
 UTILS_DIR = ../../../GungHo/src/utils
 
-F90 = gfortran
-
-F90FLAGS = -Wall -Wsurprising -fcheck=all -g -O0
-#F90FLAGS = -O3
-#F90FLAGS = -O3 -fopenmp
-F90FLAGS += -I/usr/include -I${UTILS_DIR}
+F90FLAGS += -I${NETCDF_INC} -I${UTILS_DIR}
 
 # add -mpi=mpilog to generate mpe logging
-LDFLAGS = -L/usr/lib64 -lnetcdf -lnetcdff
+LDFLAGS = -L${NETCDF_LIB} -lnetcdf -lnetcdff
 
 #EXECS = join_files shallow_base shallow_parallel
 EXECS = shallow_base
