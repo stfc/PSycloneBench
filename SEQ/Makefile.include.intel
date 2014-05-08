@@ -1,0 +1,9 @@
+# Build settings for Intel compiler
+F90 = ifort
+
+NETCDF_INC = /usr/include
+NETCDF_LIB = /usr/lib64
+
+F90FLAGS =  -g -O0
+#F90FLAGS = -O3
+#F90FLAGS = -O3 -fopenmp
