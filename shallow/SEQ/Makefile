@@ -55,7 +55,7 @@ initial_conditions.o: model.o
 	$(F90) $(F90FLAGS) -c $<
 
 clean: 
-	rm -f *.o *.mod *.MOD $(EXECS)
+	rm -f *.o *.mod *.MOD $(EXECS) *.f90~
 
 docs:
 	doxygen shallow.doxy.config
