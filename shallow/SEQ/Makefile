@@ -41,7 +41,7 @@ time_smooth.o: $(GUNGHO_MODULES)
 initial_conditions.o: model.o
 
 %: %.o 
-	$(F90) $(F90FLAGS) -o $@ $< $(GUNGHO_MODULES) $(MODULES) $(LDFLAGS)
+	$(F90) -o $@ $< $(GUNGHO_MODULES) $(MODULES) $(LDFLAGS)
 
 %.o: %.f90
 	$(F90) $(F90FLAGS) -c $<
