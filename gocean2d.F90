@@ -70,10 +70,10 @@ CONTAINS
 
 !+++++++++++++++++++++++++++++++++++
 
-        SUBROUTINE setup
-          !! Read in model setup parameters and allocate working arrays
-          INTEGER :: ierr(14)
+        SUBROUTINE grid
+          REAL(wp) :: dx, dy, dep_const
 
+          !! Read in model setup parameters and allocate working arrays
           OPEN(1, file='namelist', STATUS='OLD')
           REWIND(1)
           READ(1,*) jpiglo, jpjglo
@@ -84,47 +84,18 @@ CONTAINS
           READ(1,*) cbfr
           READ(1,*) visc
           CLOSE(1)
-          
-          ALLOCATE(tt_w(jpijglot), tt_e(jpijglot), tt_n(jpijglot), tt_s(jpijglot), STAT=ierr(1)) 
-          ALLOCATE(tu_w(jpijglot), tu_e(jpijglot), tv_n(jpijglot), tv_s(jpijglot), STAT=ierr(2))
-          ALLOCATE(ut_w(jpijglou), ut_e(jpijglou), vt_n(jpijglov), vt_s(jpijglov), STAT=ierr(3)) 
-
-          ALLOCATE(e1t(jpijglot), e2t(jpijglot), e1u(jpijglou), e2u(jpijglou), STAT=ierr(4))
-          ALLOCATE(e1f(jpijglot), e2f(jpijglot), e1v(jpijglov), e2v(jpijglov), STAT=ierr(5)) 
-          ALLOCATE(e1e2t(jpijglot), e1e2u(jpijglou), e1e2v(jpijglov), STAT=ierr(6))
-
-          ALLOCATE(gphiu(jpijglou), gphiv(jpijglov), gphif(jpijglot), STAT=ierr(7))
-
-          ALLOCATE(xt(jpijglot), yt(jpijglot), xf(jpijglot), yf(jpijglot), ff(jpijglot), STAT=ierr(8))
-          ALLOCATE(xu(jpijglou), yu(jpijglou), xv(jpijglov), yv(jpijglov), STAT=ierr(9))
-
-          ALLOCATE(ht(jpijglot), hu(jpijglou), hv(jpijglov), hf(jpijglot), STAT=ierr(10))
-
-          ALLOCATE(sshb(jpijglot), sshb_u(jpijglou), sshb_v(jpijglov), STAT=ierr(11))
-          ALLOCATE(sshn(jpijglot), sshn_u(jpijglou), sshn_v(jpijglov), STAT=ierr(12))
-          ALLOCATE(ssha(jpijglot), ssha_u(jpijglou), ssha_v(jpijglov), STAT=ierr(13))
-
-          ALLOCATE(un(jpijglou), vn(jpijglov), ua(jpijglou), va(jpijglov), STAT=ierr(14))
-
-          IF(ANY(ierr /= 0, 1)) STOP "in SUBROUTINE SETUP: failed to allocate arrays"
-        END SUBROUTINE setup
-
-!+++++++++++++++++++++++++++++++++++
-
-        SUBROUTINE grid
-          REAL(wp) :: dx, dy, dep_const
-          ! define (or read in) model grid
-
           !jphgr_msh = 0    ! read in this from a namelist file
           jphgr_msh = 1    ! define manually 
           
+          ! define (or read in) model grid
+
           SELECT CASE( jphgr_msh)
 
           CASE(0) ! read in grid from a coordinate file
 
             ! to be added
             STOP "It is not ready to Read in grid from a file"
-            CALL setup
+            CALL allocation
 
           CASE(1)
 
@@ -145,7 +116,7 @@ CONTAINS
             jpijglou = (jpiglo + 1) * jpjglo 
             jpijglov = jpiglo + (jpjglo + 1)
 
-            CALL setup
+            CALL allocation
             ! -grid topo info
 
             tt_w(1:jpijglot) = 0        !West  T-cell Neighbour of T-cell
@@ -283,6 +254,37 @@ CONTAINS
           END SELECT
 
         END SUBROUTINE grid
+
+!+++++++++++++++++++++++++++++++++++
+
+        SUBROUTINE allocation
+          !! Read in model setup parameters and allocate working arrays
+          INTEGER :: ierr(14)
+          
+          ALLOCATE(tt_w(jpijglot), tt_e(jpijglot), tt_n(jpijglot), tt_s(jpijglot), STAT=ierr(1)) 
+          ALLOCATE(tu_w(jpijglot), tu_e(jpijglot), tv_n(jpijglot), tv_s(jpijglot), STAT=ierr(2))
+          ALLOCATE(ut_w(jpijglou), ut_e(jpijglou), vt_n(jpijglov), vt_s(jpijglov), STAT=ierr(3)) 
+
+          ALLOCATE(e1t(jpijglot), e2t(jpijglot), e1u(jpijglou), e2u(jpijglou), STAT=ierr(4))
+          ALLOCATE(e1f(jpijglot), e2f(jpijglot), e1v(jpijglov), e2v(jpijglov), STAT=ierr(5)) 
+          ALLOCATE(e1e2t(jpijglot), e1e2u(jpijglou), e1e2v(jpijglov), STAT=ierr(6))
+
+          ALLOCATE(gphiu(jpijglou), gphiv(jpijglov), gphif(jpijglot), STAT=ierr(7))
+
+          ALLOCATE(xt(jpijglot), yt(jpijglot), xf(jpijglot), yf(jpijglot), ff(jpijglot), STAT=ierr(8))
+          ALLOCATE(xu(jpijglou), yu(jpijglou), xv(jpijglov), yv(jpijglov), STAT=ierr(9))
+
+          ALLOCATE(ht(jpijglot), hu(jpijglou), hv(jpijglov), hf(jpijglot), STAT=ierr(10))
+
+          ALLOCATE(sshb(jpijglot), sshb_u(jpijglou), sshb_v(jpijglov), STAT=ierr(11))
+          ALLOCATE(sshn(jpijglot), sshn_u(jpijglou), sshn_v(jpijglov), STAT=ierr(12))
+          ALLOCATE(ssha(jpijglot), ssha_u(jpijglou), ssha_v(jpijglov), STAT=ierr(13))
+
+          ALLOCATE(un(jpijglou), vn(jpijglov), ua(jpijglou), va(jpijglov), STAT=ierr(14))
+
+          IF(ANY(ierr /= 0, 1)) STOP "in SUBROUTINE ALLOCATION: failed to allocate arrays"
+        END SUBROUTINE allocation
+
 
 !+++++++++++++++++++++++++++++++++++
 
