@@ -204,7 +204,7 @@
 
          !call system_clock(count=c1, count_rate=r,count_max=max)
          !T100 = c1
-         CALL timer_start('Compute CU,CV,CZ,H',idxt1)
+         !CALL timer_start('Compute CU,CV,CZ,H',idxt1)
 
          DO J=1,N
             DO I=1,M
@@ -217,10 +217,11 @@
             END DO
          END DO
 
-         CALL timer_stop(idxt1)
+         !CALL timer_stop(idxt1)
          !call system_clock(count=c2,count_rate=r,count_max=max)
          !T100 = dble(c2-T100)/dble(r)
 
+         !CALL timer_start('PBCs',idxt1)
 !        PERIODIC CONTINUATION
          DO J=1,N
             CU(1,J) = CU(M+1,J)
@@ -239,6 +240,8 @@
          Z(1,1) = Z(M+1,N+1)
          H(M+1,N+1) = H(1,1)
      
+         !CALL timer_stop(idxt1)
+
 !        COMPUTE NEW VALUES U,V AND P
          TDTS8 = TDT/8.
          TDTSDX = TDT/DX
@@ -246,7 +249,7 @@
 
          !call system_clock(count=c1, count_rate=r, count_max=max)
          !T200 = c1
-         CALL timer_start('Compute {U,V,P}NEW',idxt1)
+         !CALL timer_start('Compute {U,V,P}NEW',idxt1)
 
          DO J=1,N
             DO I=1,M
@@ -261,10 +264,11 @@
             END DO
          END DO
 
-         CALL timer_stop(idxt1)
+         !CALL timer_stop(idxt1)
          !call system_clock(count=c2, count_rate=r, count_max=max)
          !T200 = dble(c2 -T200)/dble(r)
 
+         !CALL timer_start('PBCs',idxt1)
 !        PERIODIC CONTINUATION
          DO J=1,N
             UNEW(1,J) = UNEW(M+1,J)
@@ -279,7 +283,8 @@
          UNEW(1,N+1) = UNEW(M+1,1)
          VNEW(M+1,1) = VNEW(1,N+1)
          PNEW(M+1,N+1) = PNEW(1,1)
-         
+
+         !CALL timer_stop(idxt1)
 
          TIME = TIME + DT
 
@@ -343,7 +348,7 @@
 
             !call system_clock(count=c1,count_rate=r,count_max=max)
             !T300 = c1
-            CALL timer_start('Time smooth',idxt1)
+            !CALL timer_start('Time smooth',idxt1)
 
             DO J=1,N
                DO I=1,M
@@ -356,7 +361,7 @@
                END DO
             END DO
 
-            CALL timer_stop(idxt1)
+            !CALL timer_stop(idxt1)
             !call system_clock(count=c2,count_rate=r, count_max=max)
             !T300 = dble(c2 - T300)/dble(r)
     
