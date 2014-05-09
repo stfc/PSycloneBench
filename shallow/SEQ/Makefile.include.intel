@@ -1,9 +1,13 @@
 # Build settings for Intel compiler
 F90 = ifort
 
-NETCDF_INC = /usr/include
-NETCDF_LIB = /usr/lib64
+#NETCDF_INC = /usr/include
+#NETCDF_LIB = /usr/lib64
+NETCDF_INC = ${HOME}/MyInstalls/include
+NETCDF_LIB = ${HOME}/MyInstalls/lib
 
-F90FLAGS =  -g -O0
-#F90FLAGS = -O3
-#F90FLAGS = -O3 -fopenmp
+#F90FLAGS =  -g -O0 -check all
+F90FLAGS = -O4 -axCORE-AVX2 -fast -vec-report2
+# For output of assembler
+#-S or -Fa -fcode-asm
+
