@@ -103,7 +103,7 @@ PROGRAM shallow
     
     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
 
-    CALL timer_start('Compute c{u,v},z,h', idxt1)
+    !CALL timer_start('Compute c{u,v},z,h', idxt1)
 
     !CALL invoke(compute_cu_type(cu, p , u))
     CALL manual_invoke_compute_cu(CU, P, U)
@@ -111,30 +111,31 @@ PROGRAM shallow
     CALL manual_invoke_compute_z(z, P, U, V)
     CALL manual_invoke_compute_h(h, P, U, V)
 
-    CALL timer_stop(idxt1)
+    !CALL timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
 
+    !CALL timer_start('PBCs',idxt1)
     CALL manual_invoke_apply_bcs_cu(CU)
     CALL manual_invoke_apply_bcs_ct(H)
     CALL manual_invoke_apply_bcs_cv(CV)
     CALL manual_invoke_apply_bcs_cf(Z)
+    !CALL timer_stop(idxt1)
 
     ! COMPUTE NEW VALUES U,V AND P
 
-    CALL timer_start('Compute new fields', idxt1)
-     
+    !CALL timer_start('Compute new fields', idxt1)
     CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt%data)
     CALL manual_invoke_compute_vnew(vnew, vold,  z, cu, h, tdt%data)
     CALL manual_invoke_compute_pnew(pnew, pold, cu, cv,    tdt%data)
-
-    CALL timer_stop(idxt1)
+    !CALL timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
-
+    !CALL timer_start('PBCs',idxt1)
     CALL manual_invoke_apply_bcs_cu(UNEW)
     CALL manual_invoke_apply_bcs_cv(VNEW)
     CALL manual_invoke_apply_bcs_ct(PNEW)
+    !CALL timer_stop(idxt1)
 
     ! Time is in seconds but we never actually need it
     !CALL increment(time, dt)
@@ -144,13 +145,13 @@ PROGRAM shallow
     ! TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
     IF(NCYCLE .GT. 1) then
 
-      CALL timer_start('Time smoothing',idxt1)
+      !CALL timer_start('Time smoothing',idxt1)
 
       CALL manual_invoke_time_smooth(U, UNEW, UOLD)
       CALL manual_invoke_time_smooth(V, VNEW, VOLD)
       CALL manual_invoke_time_smooth(P, PNEW, POLD)
 
-      CALL timer_stop(idxt1)
+      !CALL timer_stop(idxt1)
 
     ELSE ! ncycle == 1
 
