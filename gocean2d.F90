@@ -52,7 +52,10 @@
          REAL(wp) :: rtmp1, rtmp2, rtmp3, rtmp4, rtmp5, rtmp6               !real    temporary variables 
 
 
-         !! read in model parameters and allocate memory and read in or setup model grid 
+         !! read in model parameters
+         CALL setup
+
+         !! allocate memory and read in or setup model grid 
          CALL grid
 
          !! setup model initial condition
@@ -70,10 +73,10 @@ CONTAINS
 
 !+++++++++++++++++++++++++++++++++++
 
-        SUBROUTINE grid
-          REAL(wp) :: dx, dy, dep_const
+        SUBROUTINE setup
 
-          !! Read in model setup parameters and allocate working arrays
+          !! Read in model setup parameters 
+
           OPEN(1, file='namelist', STATUS='OLD')
           REWIND(1)
           READ(1,*) jpiglo, jpjglo
@@ -84,10 +87,19 @@ CONTAINS
           READ(1,*) cbfr
           READ(1,*) visc
           CLOSE(1)
+
+        END SUBROUTINE setup
+
+!+++++++++++++++++++++++++++++++++++
+
+        SUBROUTINE grid
+
+          !! Allocate working arrays
+          !! Define (or read in) model grid
+
           !jphgr_msh = 0    ! read in this from a namelist file
-          jphgr_msh = 1    ! define manually 
+          !jphgr_msh = 1    ! define manually 
           
-          ! define (or read in) model grid
 
           SELECT CASE( jphgr_msh)
 
