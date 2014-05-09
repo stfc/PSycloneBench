@@ -5,18 +5,18 @@
 
          IMPLICIT NONE
 
-         INTEGER, PARAMETER :: sp = SELECTED_REAL_KIND(6, 37)
-         INTEGER, PARAMETER :: dp = SELECTED_REAL_KIND(12, 307)
-         INTEGER, PARAMETER :: wp = dp
+         INTEGER,  PARAMETER :: sp = SELECTED_REAL_KIND(6, 37)
+         INTEGER,  PARAMETER :: dp = SELECTED_REAL_KIND(12, 307)
+         INTEGER,  PARAMETER :: wp = dp
 
-         REAL(wp), PARAMETER :: pi = 3.1415926535897932_wp  
-         REAL(wp), PARAMETER :: g = 9.80665_wp              ! gravity constant
-         REAL(wp), PARAMETER :: omega = 7.292116e-05_wp     ! earth rotation speed (s^(-1))
-         REAL(wp), PARAMETER :: d2r = pi / 180._wp          ! degree to radian
+         REAL(wp), PARAMETER :: pi    = 3.1415926535897932_wp  
+         REAL(wp), PARAMETER :: g     = 9.80665_wp              ! gravity constant
+         REAL(wp), PARAMETER :: omega = 7.292116e-05_wp         ! earth rotation speed (s^(-1))
+         REAL(wp), PARAMETER :: d2r   = pi / 180._wp            ! degree to radian
 
-         INTEGER, ALLOCATABLE  :: tt_w(:), tt_e(:), tt_n(:), tt_s(:) 
-         INTEGER, ALLOCATABLE  :: tu_w(:), tu_e(:), tv_n(:), tv_s(:) 
-         INTEGER, ALLOCATABLE  :: ut_w(:), ut_e(:), vt_n(:), vt_s(:) 
+         INTEGER,  ALLOCATABLE :: tt_w(:), tt_e(:), tt_n(:), tt_s(:) 
+         INTEGER,  ALLOCATABLE :: tu_w(:), tu_e(:), tv_n(:), tv_s(:) 
+         INTEGER,  ALLOCATABLE :: ut_w(:), ut_e(:), vt_n(:), vt_s(:) 
 
          REAL(wp), ALLOCATABLE :: e1t(:), e2t(:), e1u(:), e2u(:) 
          REAL(wp), ALLOCATABLE :: e1f(:), e2f(:), e1v(:), e2v(:) 
@@ -35,27 +35,24 @@
 
          REAL(wp), ALLOCATABLE :: un(:),  vn(:), ua(:),  va(:)
 
-         INTEGER :: jpiglo, jpjglo, jpijglot, jpijglof, jpijglou, jpijglov !dimensions of grid
-         INTEGER :: jphgr_msh                                              !type of grid
-         INTEGER :: nit000, nitend, irecord                                !start-end and record time steps
+         INTEGER  :: jpiglo, jpjglo, jpijglot, jpijglof, jpijglou, jpijglov !dimensions of grid
+         INTEGER  :: jphgr_msh                                              !type of grid
+         INTEGER  :: nit000, nitend, irecord                                !start-end and record time steps
 
-         REAL(wp) :: dx, dy, dep_const                                     !regular grid size and constant depth
-         REAL(wp) :: rdt                                                   !time step
+         REAL(wp) :: dx, dy, dep_const                                      !regular grid size and constant depth
+         REAL(wp) :: rdt                                                    !time step
                                                                     
-         REAL(wp) :: cbfr                                                  !bottom friction coefficient
-         REAL(wp) :: visc                                                  !backgroud/constant viscosity 
+         REAL(wp) :: cbfr                                                   !bottom friction coefficient
+         REAL(wp) :: visc                                                   !backgroud/constant viscosity 
 
-         INTEGER  :: istp                                                  !time stepping index
-         INTEGER  :: ji, jj, jk                                            !temporary loop index
+         INTEGER  :: istp                                                   !time stepping index
+         INTEGER  :: ji, jj, jk                                             !temporary loop index
 
-         INTEGER  :: itmp1, itmp2, itmp3, itmp4, itmp5, itmp6              ! integer temporary variables
-         REAL(wp) :: rtmp1, rtmp2, rtmp3, rtmp4, rtmp5, rtmp6              ! real    temporary variables 
+         INTEGER  :: itmp1, itmp2, itmp3, itmp4, itmp5, itmp6               !integer temporary variables
+         REAL(wp) :: rtmp1, rtmp2, rtmp3, rtmp4, rtmp5, rtmp6               !real    temporary variables 
 
 
-         !! read in model parameters and allocate memory
-         CALL setup
-
-         !! read in or setup model grid 
+         !! read in model parameters and allocate memory and read in or setup model grid 
          CALL grid
 
          !! setup model initial condition
@@ -74,7 +71,7 @@ CONTAINS
 !+++++++++++++++++++++++++++++++++++
 
         SUBROUTINE setup
-          !! Read in model setup parameters
+          !! Read in model setup parameters and allocate working arrays
           INTEGER :: ierr(14)
 
           OPEN(1, file='namelist', STATUS='OLD')
@@ -86,7 +83,6 @@ CONTAINS
           READ(1,*) rdt
           READ(1,*) cbfr
           READ(1,*) visc
-
           CLOSE(1)
           
           ALLOCATE(tt_w(jpijglot), tt_e(jpijglot), tt_n(jpijglot), tt_s(jpijglot), STAT=ierr(1)) 
@@ -128,6 +124,7 @@ CONTAINS
 
             ! to be added
             STOP "It is not ready to Read in grid from a file"
+            CALL setup
 
           CASE(1)
 
@@ -144,10 +141,11 @@ CONTAINS
             jpiglo = 50
             jpjglo = 100
             jpijglot = jpiglo * jpjglo
-            jpijglof = jpijglot
+            jpijglof = (jpiglo + 1) * (jpjglo + 1)
             jpijglou = (jpiglo + 1) * jpjglo 
             jpijglov = jpiglo + (jpjglo + 1)
 
+            CALL setup
             ! -grid topo info
 
             tt_w(1:jpijglot) = 0        !West  T-cell Neighbour of T-cell
