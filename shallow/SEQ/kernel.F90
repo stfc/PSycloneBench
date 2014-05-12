@@ -14,7 +14,7 @@
 !-------------------------------------------------------------------------------
 module kernel_mod
 use argument_mod
-use lfric
+use global_parameters
 implicit none
 private
 

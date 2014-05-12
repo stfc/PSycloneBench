@@ -2,9 +2,7 @@
 # Makefile.include.<compiler> file.
 include Makefile.include
 
-UTILS_DIR = ../../../GungHo/src/utils
-
-F90FLAGS += -I${NETCDF_INC} -I${UTILS_DIR}
+F90FLAGS += -I${NETCDF_INC}
 
 # add -mpi=mpilog to generate mpe logging
 LDFLAGS = -L${NETCDF_LIB} -lnetcdff -lnetcdf
@@ -20,13 +18,9 @@ MODULES = kind_params.o physical_params.o field.o model.o shallow_IO.o \
           apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
           timing.o time_smooth.o intel_timer_mod.o mesh.o          
 
-GUNGHO_MODULES = ${UTILS_DIR}/global_parameters.o \
-                 ${UTILS_DIR}/utils.o \
-                 ${UTILS_DIR}/topology_module.o \
-                 ${UTILS_DIR}/lfric.o \
-                 ${UTILS_DIR}/debug.o \
-                 ${UTILS_DIR}/debug_c.o \
-                 argument.o kernel.o
+# My local copies of GungHo modules. Avoids attempting to build
+# the GungHo code which stretches some compilers...
+GUNGHO_MODULES = global_parameters.o argument.o kernel.o
 
 all: $(EXECS)
 
