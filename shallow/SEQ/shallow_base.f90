@@ -49,9 +49,7 @@ PROGRAM shallow
   USE compute_cv,   ONLY: manual_invoke_compute_cv
   USE compute_z,    ONLY: manual_invoke_compute_z
   USE compute_h,    ONLY: manual_invoke_compute_h
-  USE compute_unew, ONLY: manual_invoke_compute_unew
-  USE compute_vnew, ONLY: manual_invoke_compute_vnew
-  USE compute_pnew, ONLY: manual_invoke_compute_pnew
+  USE manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
   IMPLICIT NONE
 
   !> Checksum used for each array
@@ -125,9 +123,12 @@ PROGRAM shallow
     ! COMPUTE NEW VALUES U,V AND P
 
     !CALL timer_start('Compute new fields', idxt1)
-    CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt%data)
-    CALL manual_invoke_compute_vnew(vnew, vold,  z, cu, h, tdt%data)
-    CALL manual_invoke_compute_pnew(pnew, pold, cu, cv,    tdt%data)
+    CALL manual_invoke_compute_new_fields(unew, uold, vnew, vold, &
+                                          pnew, pold, &
+                                          z, cu, cv, h, tdt%data)
+    !CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt%data)
+    !CALL manual_invoke_compute_vnew(vnew, vold,  z, cu, h, tdt%data)
+    !CALL manual_invoke_compute_pnew(pnew, pold, cu, cv,    tdt%data)
     !CALL timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
