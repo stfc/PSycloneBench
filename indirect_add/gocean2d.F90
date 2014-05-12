@@ -124,6 +124,7 @@ CONTAINS
             jpijglov = jpiglo + (jpjglo + 1)
 
             CALL allocation
+
             ! -grid topo info
 
             tt_w(1:jpijglot) = 0        !West  T-cell Neighbour of T-cell
@@ -181,13 +182,13 @@ CONTAINS
 
             !Boundary cell information
             
-            ! -solid Boundary cells:   tu_w/e(:) = 0
-            !                          tv_n/s(:) = 0
-            ! -open Boundary cells:    tu_w/e(:) = -1
-            !                          tv_n/s(:) = -1
+            ! -solid Boundary cells:   tt_w/e(:) = 0
+            !                          tt_n/s(:) = 0
+            ! -open Boundary cells:    tt_w/e(:) = -1
+            !                          tt_n/s(:) = -1
 
-            ! -manually define a south open boundary (tv_s/n  -1, tu_e/w -1)
-            tv_s(1:jpiglo) = -1
+            ! -manually define a south open boundary (tt_s/n  -1, tt_e/w -1)
+            tt_s(1:jpiglo) = -1
 
             !horizontal grid cells
 
@@ -214,13 +215,13 @@ CONTAINS
             gphif(1:jpijglof) = 50._wp
 
             DO ji = 1, jpijglof
-              xf(ji) = (MOD(ji-1,jpiglo) + 1.0_wp) * dx
-              yf(ji) = ((ji-1) / jpiglo  + 1.0_wp) * dy
+              xf(ji) = MOD(ji-1, jpiglo+1) * dx
+              yf(ji) = ((ji-1) / (jpiglo + 1)  + 1.0_wp) * dy
             END DO
 
             DO ji = 1, jpijglot
               xt(ji) = (MOD(ji-1,jpiglo) + 0.5_wp) * dx
-              yt(ji) = ((ji-1) / jpjglo  + 0.5_wp) * dy
+              yt(ji) = ((ji-1) / jpiglo  + 0.5_wp) * dy
             END DO
             
             DO ji = 1, jpijglou
@@ -230,7 +231,7 @@ CONTAINS
 
             DO ji = 1, jpijglov
               xv(ji) = (MOD(ji-1,jpiglo) + 0.5_wp) * dx
-              yv(ji) = ((ji-1) / jpjglo  + 0.0_wp) * dy
+              yv(ji) = ((ji-1) / jpiglo  + 0.0_wp) * dy
             END DO
 
 
@@ -290,6 +291,7 @@ CONTAINS
           ALLOCATE(un(jpijglou), vn(jpijglov), ua(jpijglou), va(jpijglov), STAT=ierr(14))
 
           IF(ANY(ierr /= 0, 1)) STOP "in SUBROUTINE ALLOCATION: failed to allocate arrays"
+
         END SUBROUTINE allocation
 
 
