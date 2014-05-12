@@ -74,18 +74,19 @@ CONTAINS
 !+++++++++++++++++++++++++++++++++++
 
         SUBROUTINE setup
+          INTEGER :: ios
 
           !! Read in model setup parameters 
+          NAMELIST/namctl/ jpiglo, jpjglo, jphgr_msh, &
+            &              dx    , dy    , dep_const, &
+            &              nit000, nitend, irecord  , &
+            &              rdt   , cbfr  , visc
 
           OPEN(1, file='namelist', STATUS='OLD')
           REWIND(1)
-          READ(1,*) jpiglo, jpjglo
-          READ(1,*) jphgr_msh
-          READ(1,*) dx, dy, dep_const
-          READ(1,*) nit000, nitend, irecord
-          READ(1,*) rdt
-          READ(1,*) cbfr
-          READ(1,*) visc
+          READ(1, namctl, IOSTAT = ios, ERR = 901)
+901       IF(ios /= 0) STOP "err found in reading namelist file"
+
           CLOSE(1)
 
         END SUBROUTINE setup
@@ -117,12 +118,6 @@ CONTAINS
             ! -depth on each T points
             ! -grid dimension
 
-            dx        = 1000._wp
-            dy        = 1000._wp
-            dep_const =  100._wp
-
-            jpiglo = 50
-            jpjglo = 100
             jpijglot = jpiglo * jpjglo
             jpijglof = (jpiglo + 1) * (jpjglo + 1)
             jpijglou = (jpiglo + 1) * jpjglo 
