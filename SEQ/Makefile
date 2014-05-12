@@ -10,7 +10,7 @@ EXECS = shallow_base
 
 MODULES = kind_params.o physical_params.o field.o model.o shallow_IO.o \
           initial_conditions.o compute_cu_mod.o compute_cv_mod.o \
-          compute_z.o compute_h.o \
+          compute_z.o compute_h.o manual_invoke_compute_new_fields_mod.o \
           compute_unew.o compute_vnew.o compute_pnew.o \
           apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
           apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
@@ -31,6 +31,8 @@ model.o: field.o timing.o shallow_IO.o mesh.o time_smooth.o
 time_smooth.o: $(GUNGHO_MODULES)
 
 initial_conditions.o: model.o
+
+manual_invoke_compute_new_fields_mod.o: compute_unew.o compute_vnew.o compute_pnew.o
 
 %: %.o 
 	$(F90) -o $@ $< $(GUNGHO_MODULES) $(MODULES) $(LDFLAGS)
