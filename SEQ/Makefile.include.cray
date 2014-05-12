@@ -1,0 +1,11 @@
+# Build settings for cray compiler
+F90 = ftn
+
+#NETCDF_INC = /usr/include
+#NETCDF_LIB = /usr/lib64
+
+F90FLAGS =  #-g -O0 -h c99 -h noomp -h msglevel_2
+F90FLAGS = -O3 -O ipa5 -h noomp -h display_opt -rm -hpl=${PWD}/shallow_prog_lib -h wp
+#-h loop_trips=medium
+LDFLAGS = -hpl=${PWD}/shallow_prog_lib
+

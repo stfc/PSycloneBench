@@ -2,10 +2,8 @@
 # Makefile.include.<compiler> file.
 include Makefile.include
 
-F90FLAGS += -I${NETCDF_INC}
-
 # add -mpi=mpilog to generate mpe logging
-LDFLAGS = -L${NETCDF_LIB} -lnetcdff -lnetcdf
+LDFLAGS += -lnetcdff -lnetcdf
 
 #EXECS = join_files shallow_base shallow_parallel
 EXECS = shallow_base

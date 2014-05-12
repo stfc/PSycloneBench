@@ -1,11 +1,10 @@
 include ../Makefile.include
 
-F90FLAGS += -I${NETCDF_INC}
 # For timing module in new version of code
 F90FLAGS += -I../
 
 # add -mpi=mpilog to generate mpe logging
-LDFLAGS = ../timing.o ../intel_timer_mod.o -L${NETCDF_LIB} -lnetcdf -lnetcdff
+LDFLAGS += ../timing.o ../intel_timer_mod.o -lnetcdf -lnetcdff
 
 #EXECS = join_files shallow_base shallow_parallel
 EXECS = shallow_base
