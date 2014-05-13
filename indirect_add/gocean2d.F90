@@ -68,6 +68,7 @@
 
          !! finalise the model run
          CALL finalisation
+
 !-----------------------------------
 CONTAINS         
 
@@ -274,7 +275,7 @@ CONTAINS
           ALLOCATE(ut_w(jpijglou), ut_e(jpijglou), vt_n(jpijglov), vt_s(jpijglov), STAT=ierr(3)) 
 
           ALLOCATE(e1t(jpijglot), e2t(jpijglot), e1u(jpijglou), e2u(jpijglou), STAT=ierr(4))
-          ALLOCATE(e1f(jpijglot), e2f(jpijglot), e1v(jpijglov), e2v(jpijglov), STAT=ierr(5)) 
+          ALLOCATE(e1f(jpijglof), e2f(jpijglof), e1v(jpijglov), e2v(jpijglov), STAT=ierr(5)) 
           ALLOCATE(e1e2t(jpijglot), e1e2u(jpijglou), e1e2v(jpijglov), STAT=ierr(6))
 
           ALLOCATE(gphiu(jpijglou), gphiv(jpijglov), gphif(jpijglot), STAT=ierr(7))
