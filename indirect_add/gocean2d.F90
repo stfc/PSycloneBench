@@ -70,6 +70,7 @@
          !! finalise the model run
          CALL finalisation
 
+         WRITE(*,*) 'Simulation finished!!'
 !-----------------------------------
 CONTAINS         
 
@@ -489,7 +490,9 @@ CONTAINS
 
             ! -linear bottom friction (implemented implicitly.
 
-            ua(ji) = (un(ji) * (hu(ji) + sshn_u(ji)) + rdt * (adv + vis + cor + hpg) / e1e2u(ji)) / &
+            !ua(ji) = (un(ji) * (hu(ji) + sshn_u(ji)) + rdt * (adv + vis + cor + hpg) / e1e2u(ji)) / &
+            !       & (hu(ji) + ssha_u(ji)) / (1.0_wp + cbfr) 
+            ua(ji) = (un(ji) * (hu(ji) + sshn_u(ji)) + rdt * (adv + hpg) / e1e2u(ji)) / &
                    & (hu(ji) + ssha_u(ji)) / (1.0_wp + cbfr) 
 
           END DO
@@ -568,7 +571,9 @@ CONTAINS
 
             ! -linear bottom friction (implemented implicitly.
 
-            va(ji) = (vn(ji) * (hv(ji) + sshn_v(ji)) + rdt * (adv + vis + cor + hpg) / e1e2v(ji) ) / &
+            !va(ji) = (vn(ji) * (hv(ji) + sshn_v(ji)) + rdt * (adv + vis + cor + hpg) / e1e2v(ji) ) / &
+            !       & ((hv(ji) + ssha_v(ji))) / (1.0_wp + cbfr) 
+            va(ji) = (vn(ji) * (hv(ji) + sshn_v(ji)) + rdt * (adv + hpg) / e1e2v(ji) ) / &
                    & ((hv(ji) + ssha_v(ji))) / (1.0_wp + cbfr) 
 
           END DO
@@ -682,7 +687,7 @@ CONTAINS
 
           ! output model results
           CHARACTER(len=5) :: fname
-          WRITE(fname, '(I4.4)') istp
+          WRITE(fname, '(I5.5)') istp
           OPEN(1, file='go2d_'//fname//'.dat', STATUS='UNKNOWN')
           REWIND(1)
 
@@ -691,7 +696,7 @@ CONTAINS
             rtmp1 = 0.5_wp * (un(tu_e(ji)) + un(tu_w(ji)))
             rtmp2 = 0.5_wp * (vn(tv_n(ji)) + vn(tv_s(ji)))
 
-            WRITE(1,'(2f10.3, 2f9.2, 2e8.3)') xt(ji), yt(ji), ht(ji), sshn(ji),rtmp1, rtmp2 
+            WRITE(1,'(2f20.3, 2f15.4, 2e18.3)') xt(ji), yt(ji), ht(ji), sshn(ji),rtmp1, rtmp2 
 
           END DO
           
@@ -703,29 +708,31 @@ CONTAINS
 
 
         SUBROUTINE finalisation
-          DEALLOCATE(tt_w, tt_e, tt_n, tt_s) 
-          DEALLOCATE(tu_w, tu_e, tv_n, tv_s)
-          DEALLOCATE(ut_w, ut_e, vt_n, vt_s) 
+          INTEGER :: ierr(14)
+          DEALLOCATE(tt_w, tt_e, tt_n, tt_s, STAT=ierr(1)) 
+          DEALLOCATE(tu_w, tu_e, tv_n, tv_s, STAT=ierr(2))
+          DEALLOCATE(ut_w, ut_e, vt_n, vt_s, STAT=ierr(3)) 
+            
+          DEALLOCATE(e1t, e2t, e1u, e2u, STAT=ierr(4))
+          DEALLOCATE(e1f, e2f, e1v, e2v, STAT=ierr(5)) 
+          DEALLOCATE(e1e2t, e1e2u, e1e2v, STAT=ierr(6))
+            
+          DEALLOCATE(gphiu, gphiv, gphif, STAT=ierr(7))
+            
+          DEALLOCATE(xt, yt, xf, yf, ff, STAT=ierr(8))
+          DEALLOCATE(xu, yu, xv, yv, STAT=ierr(9))
+            
+          DEALLOCATE(ht, hu, hv, hf, STAT=ierr(10))
+            
+          DEALLOCATE(sshb, sshb_u, sshb_v, STAT=ierr(11))
+          DEALLOCATE(sshn, sshn_u, sshn_v, STAT=ierr(12))
+          DEALLOCATE(ssha, ssha_u, ssha_v, STAT=ierr(13))
+            
+          DEALLOCATE(un, vn, ua, va, STAT=ierr(14))
 
-          DEALLOCATE(e1t, e2t, e1u, e2u)
-          DEALLOCATE(e1f, e2f, e1v, e2v) 
-          DEALLOCATE(e1e2t,  e1e2u, e1e2v)
-
-          DEALLOCATE(gphiu,  gphiv, gphif)
-
-          DEALLOCATE(xt,  yt, xf, yf, ff)
-          DEALLOCATE(xu,  yu, xv, yv)
-
-          DEALLOCATE(ht,  hu, hv, hf)
-
-          DEALLOCATE(sshb,  sshb_u, sshb_v)
-          DEALLOCATE(sshn,  sshn_u, sshn_v)
-          DEALLOCATE(ssha,  ssha_u, ssha_v)
-
-          DEALLOCATE(un,  vn, ua,  va)
           !close opened files
           !send out some ending information
-          WRITE(*,*) 'Simulation finished!!'
+          IF(ANY(ierr /= 0, 1)) STOP "in SUBROUTINE finalisation: failed to deallocate arrays"
 
         END SUBROUTINE finalisation
 
