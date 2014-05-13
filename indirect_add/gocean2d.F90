@@ -424,8 +424,8 @@ CONTAINS
                deps = 0._wp                    !can be any value as v_s=0
              ELSE
                jvs = tv_s(jiw)
-               v_s  = 0.5_wp * (vn(jvs) + vn(jvs+1)) * e1v(jvs)   ! add length scale
-               deps = 0.5_wp * (hv(jvs) + hv(jvs+1))
+               v_s  = 0.25_wp * (vn(jvs) + vn(jvs+1)) * (e1v(jvs) + e1v(jvs+1))
+               deps = 0.5_wp * (hv(jvs) + sshn_v(jvs) + hv(jvs+1) + sshn_v(jvs+1))
              END IF
 
              IF(ji > jpijglou - jpiglo -1) THEN
@@ -433,8 +433,8 @@ CONTAINS
                depn = 0._wp
              ELSE
                jvn = tv_n(jiw)
-               v_n  = 0.5_wp * (vn(jvn) + vn(jvn+1)) * e1v(jvn)
-               depn = 0.5_wp * (hv(jvn) + hv(jvn+1))
+               v_n  = 0.25_wp * (vn(jvn) + vn(jvn+1)) * (e1v(jvn) + e1v(jvn+1))
+               depn = 0.5_wp * (hv(jvn) + sshn_v(jvn) + hv(jvn+1) + sshn_v(jvn+1))
              END If
 
             ! -advection (currently first order upwind)
@@ -469,13 +469,12 @@ CONTAINS
                 & e1u(ji) * e2u(ji) * (hu(ji) + sshn_u(ji))
 
             ! -pressure gradient
-            hpg = -g * ((ht(jie) + sshn(jie)) * sshn(jie) * e2t(jie) - &
-                &       (ht(jiw) + sshn(jiw)) * sshn(jiw) * e2t(jiw))
+            hpg = -g * (hu(ji) + sshn_u(ji)) * e2u(ji) * (sshn(jie) - sshn(jiw))
 
             ! -linear bottom friction (implemented implicitly.
 
-            ua(ji) = (un(ji) * (hu(ji) + sshn_u(ji)) + rdt * (adv + vis + cor + hpg)) / &
-                   & (e1e2u(ji) * (hu(ji) + ssha_u(ji))) / (1.0_wp + cbfr) 
+            ua(ji) = (un(ji) * (hu(ji) + sshn_u(ji)) + rdt * (adv + vis + cor + hpg) / e1e2u(ji)) / &
+                   & (hu(ji) + ssha_u(ji)) / (1.0_wp + cbfr) 
 
           END DO
 
@@ -500,9 +499,9 @@ CONTAINS
                depw = 0._wp                    !can be any value as v_s=0
              ELSE
                jvw = tu_w(jis)
-               u_w = 0.25_wp * (un(jvw) + un(jvw+jpiglo)) * &
-                   &           (e2t(jvw) + e2t(jvw+jpiglo))
-               depw = 0.5_wp * (hv(ji) + hv(ji-1) + sshn_v(ji) + sshn_v(ji-1))
+               u_w = 0.25_wp * (un(jvw) + un(jvw+jpiglo+1)) * &
+                   &           (e2u(jvw) + e2u(jvw+jpiglo+1))
+               depw = 0.5_wp * (hu(jvw) + sshn_u(jvw) + hu(jvw+jpiglo+1) + sshn_u(jvw+jpiglo+1))
              END IF
 
              IF(MOD(ji,jpiglo) == 0) THEN
@@ -510,9 +509,9 @@ CONTAINS
                depe = 0._wp                    !can be any value as v_s=0
              ELSE
                jve = tu_e(jis)
-               u_e = 0.25_wp * (un(jve) + un(jve+jpiglo)) * &
-                   &           (e2t(jve) + e2t(jve+jpiglo))
-               depe = 0.5_wp * (hv(ji) + hv(ji+1) + sshn_v(ji) + sshn_v(ji+1))
+               u_e = 0.25_wp * (un(jve) + un(jve+jpiglo+1)) * &
+                   &           (e2t(jve) + e2t(jve+jpiglo+1))
+               depe = 0.5_wp * (hu(jve) + sshn_u(jve) + hu(jve+jpiglo+1) + sshn_u(ji+jpiglo+1))
              END IF
 
             ! -advection (currently first order upwind)
@@ -549,13 +548,12 @@ CONTAINS
                 & e1v(ji) * e2v(ji) * (hv(ji) + sshn_v(ji))
 
             ! -pressure gradient
-            hpg = -g * ((ht(jin) + sshn(jin)) * sshn(jin) * e1t(jin) - &
-                &       (ht(jis) + sshn(jis)) * sshn(jis) * e1t(jis))
+            hpg = -g * (hv(ji) + sshn_v(ji)) * e1u(ji) * (sshn(jin) - sshn(jis))
 
             ! -linear bottom friction (implemented implicitly.
 
-            va(ji) = (vn(ji) * (hv(ji) + sshn_v(ji)) + rdt * (adv + vis + cor + hpg)) / &
-                   & (e1e2v(ji) * (hv(ji) + ssha_v(ji))) / (1.0_wp + cbfr) 
+            va(ji) = (vn(ji) * (hv(ji) + sshn_v(ji)) + rdt * (adv + vis + cor + hpg) / e1e2v(ji) ) / &
+                   & ((hv(ji) + ssha_v(ji))) / (1.0_wp + cbfr) 
 
           END DO
         END SUBROUTINE momentum
