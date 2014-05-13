@@ -139,7 +139,7 @@ CONTAINS
             jpijglot = jpiglo * jpjglo
             jpijglof = (jpiglo + 1) * (jpjglo + 1)
             jpijglou = (jpiglo + 1) * jpjglo 
-            jpijglov = jpiglo + (jpjglo + 1)
+            jpijglov = jpiglo * (jpjglo + 1)
 
             CALL allocation
 
@@ -295,12 +295,12 @@ CONTAINS
           ALLOCATE(e1f(jpijglof), e2f(jpijglof), e1v(jpijglov), e2v(jpijglov), STAT=ierr(5)) 
           ALLOCATE(e1e2t(jpijglot), e1e2u(jpijglou), e1e2v(jpijglov), STAT=ierr(6))
 
-          ALLOCATE(gphiu(jpijglou), gphiv(jpijglov), gphif(jpijglot), STAT=ierr(7))
+          ALLOCATE(gphiu(jpijglou), gphiv(jpijglov), gphif(jpijglof), STAT=ierr(7))
 
-          ALLOCATE(xt(jpijglot), yt(jpijglot), xf(jpijglot), yf(jpijglot), ff(jpijglot), STAT=ierr(8))
+          ALLOCATE(xt(jpijglot), yt(jpijglot), xf(jpijglof), yf(jpijglof), ff(jpijglot), STAT=ierr(8))
           ALLOCATE(xu(jpijglou), yu(jpijglou), xv(jpijglov), yv(jpijglov), STAT=ierr(9))
 
-          ALLOCATE(ht(jpijglot), hu(jpijglou), hv(jpijglov), hf(jpijglot), STAT=ierr(10))
+          ALLOCATE(ht(jpijglot), hu(jpijglou), hv(jpijglov), hf(jpijglof), STAT=ierr(10))
 
           ALLOCATE(sshb(jpijglot), sshb_u(jpijglou), sshb_v(jpijglov), STAT=ierr(11))
           ALLOCATE(sshn(jpijglot), sshn_u(jpijglou), sshn_v(jpijglov), STAT=ierr(12))
@@ -456,13 +456,21 @@ CONTAINS
 
             ! -advection (currently first order upwind)
             uu_w = (0.5_wp - SIGN(0.5_wp, u_w)) * un(ji)              + & 
-                 & (0.5_wp + SIGN(0.5_wp, u_w)) * un(ji - 1) 
+                 & (0.5_wp + SIGN(0.5_wp, u_w)) * un(tu_w(jiw)) 
             uu_e = (0.5_wp + SIGN(0.5_wp, u_e)) * un(ji)              + & 
-                 & (0.5_wp - SIGN(0.5_wp, u_e)) * un(ji + 1) 
-            uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji)              + & 
-                 & (0.5_wp + SIGN(0.5_wp, v_s)) * un(ji - jpiglo - 1) 
-            uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un(ji)              + & 
-                 & (0.5_wp - SIGN(0.5_wp, v_n)) * un(ji + jpiglo + 1) 
+                 & (0.5_wp - SIGN(0.5_wp, u_e)) * un(tu_e(jie)) 
+            IF(ji <= jpiglo+1) THEN
+               uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji) 
+            ELSE
+               uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji)              + & 
+                    & (0.5_wp + SIGN(0.5_wp, v_s)) * un(ji - jpiglo - 1) 
+            END If
+            IF(ji >= jpijglou-jpiglo) THEN
+               uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un(ji)
+            ELSE
+               uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un(ji)              + & 
+                    & (0.5_wp - SIGN(0.5_wp, v_n)) * un(ji + jpiglo + 1) 
+            END IF
 
             adv = uu_w * u_w * depw - uu_e * u_e * depe + uu_s * v_s * deps - uu_n * v_n * depn
 
@@ -472,8 +480,17 @@ CONTAINS
 
             dudx_e = (un(ji+1) - un(ji))   / e1t(jie)
             dudx_w = (un(ji)   - un(ji-1)) / e1t(jiw)
-            dudy_n = 2.0_wp * (un(itmp1) - un(ji))    / (e2u(ji) + e2u(itmp1))
-            dudy_s = 2.0_wp * (un(ji)    - un(itmp2)) / (e2u(ji) + e2u(itmp2))
+            IF(ji <= jpiglo+1) THEN
+              dudy_s = 0.0_wp !slip boundary
+            ELSE
+              dudy_s = 2.0_wp * (un(ji)    - un(itmp2)) / (e2u(ji) + e2u(itmp2))
+            END IF
+
+            IF(ji >= jpijglou-jpiglo) THEN
+              dudy_n = 0.0_wp ! slip boundary
+            ELSE
+              dudy_n = 2.0_wp * (un(itmp1) - un(ji))    / (e2u(ji) + e2u(itmp1))
+            END If
 
             vis = (dudx_e * (ht(jie) + sshn(jie)) - dudx_w * (ht(jiw) + sshn(jiw))) * e2u(ji)  + &
                 & (dudy_n * (hu(ji) + hu(itmp1) + sshn_u(ji) + sshn_u(itmp1)) -              &
@@ -613,7 +630,7 @@ CONTAINS
           !                                  Du                 Dssh
           !Flather open boundary condition [---- = sqrt(g/H) * ------]
           !                                  Dn                 Dn
-            DO ji = 1, jpijglou  
+            DO ji = 1, jpijglov  
               IF  (vt_s(ji) < 0) THEN
                 jiv = ji + jpiglo
                 va(ji) = va(jiv) + SQRT(g/hv(ji)) * (ssha(ji) - ssha(jiv))
@@ -623,7 +640,7 @@ CONTAINS
               END IF
             END DO
 
-            DO ji = 1, jpijglov  
+            DO ji = 1, jpijglou  
               IF  (ut_w(ji) < 0) THEN
                 jiu = ji + 1
                 ua(ji) = ua(jiu) + SQRT(g/hu(ji)) * (ssha(ji) - ssha(jiu))
