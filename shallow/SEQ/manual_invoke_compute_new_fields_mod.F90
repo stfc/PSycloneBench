@@ -21,26 +21,31 @@ CONTAINS
     REAL(wp), INTENT(in) :: tdt
     ! Locals
     integer :: i, j
+    integer :: m, n
+
+    m = size(z,1) - 1
+    n = size(z,2) - 1
 
     !CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt)
-    DO J=1, SIZE(z, 2) - 1
-       DO I=2, SIZE(z, 1)
+    DO J=1, N !SIZE(z, 2) - 1
+       DO I=2, M+1 !SIZE(z, 1)
 
           CALL compute_unew_code(i, j, unew, uold, &
                                  z, cv, h, tdt)
+
        END DO
     END DO
     !CALL manual_invoke_compute_vnew(vnew, vold,  z, cu, h, tdt)
-    DO J=2, SIZE(z, 2)
-       DO I=1, SIZE(z, 1) - 1
+    DO J=2, N+1 !SIZE(z, 2)
+       DO I=1, M !SIZE(z, 1) - 1
 
           CALL compute_vnew_code(i, j, vnew, vold, &
                                  z, cu, h, tdt)
        END DO
     END DO
     !CALL manual_invoke_compute_pnew(pnew, pold, cu, cv,    tdt)
-    DO J=1,SIZE(z, 2) - 1
-       DO I=1,SIZE(z, 1) - 1
+    DO J=1, N !SIZE(z, 2) - 1
+       DO I=1, M !SIZE(z, 1) - 1
 
           CALL compute_pnew_code(i, j, pnew, pold, &
                                  cu, cv, tdt)
