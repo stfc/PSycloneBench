@@ -45,6 +45,7 @@ PROGRAM shallow
   USE apply_bcs_ct, ONLY: manual_invoke_apply_bcs_ct
   USE apply_bcs_cu, ONLY: manual_invoke_apply_bcs_cu
   USE apply_bcs_cv, ONLY: manual_invoke_apply_bcs_cv
+  USE manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf
   USE compute_cu,   ONLY: manual_invoke_compute_cu
   USE compute_cv,   ONLY: manual_invoke_compute_cv
   USE compute_z,    ONLY: manual_invoke_compute_z
@@ -114,10 +115,11 @@ PROGRAM shallow
     ! PERIODIC CONTINUATION
 
     !CALL timer_start('PBCs',idxt1)
-    CALL manual_invoke_apply_bcs_cu(CU)
-    CALL manual_invoke_apply_bcs_ct(H)
-    CALL manual_invoke_apply_bcs_cv(CV)
-    CALL manual_invoke_apply_bcs_cf(Z)
+    CALL manual_invoke_apply_bcs_uvtf(CU, CV, H, Z)
+    !CALL manual_invoke_apply_bcs_cu(CU)
+    !CALL manual_invoke_apply_bcs_ct(H)
+    !CALL manual_invoke_apply_bcs_cv(CV)
+    !CALL manual_invoke_apply_bcs_cf(Z)
     !CALL timer_stop(idxt1)
 
     ! COMPUTE NEW VALUES U,V AND P

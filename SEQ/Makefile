@@ -12,6 +12,7 @@ MODULES = kind_params.o physical_params.o field.o model.o shallow_IO.o \
           initial_conditions.o compute_cu_mod.o compute_cv_mod.o \
           compute_z.o compute_h.o manual_invoke_compute_new_fields_mod.o \
           compute_unew.o compute_vnew.o compute_pnew.o \
+          manual_invoke_apply_bcs_mod.o \
           apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
           apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
           timing.o time_smooth.o intel_timer_mod.o mesh.o          
@@ -33,6 +34,8 @@ time_smooth.o: $(GUNGHO_MODULES)
 initial_conditions.o: model.o
 
 manual_invoke_compute_new_fields_mod.o: compute_unew.o compute_vnew.o compute_pnew.o
+manual_invoke_apply_bcs_mod.o: apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
+          apply_bcs_cu_mod.o apply_bcs_cv_mod.o
 
 %: %.o 
 	$(F90) -o $@ $< $(GUNGHO_MODULES) $(MODULES) $(LDFLAGS)
