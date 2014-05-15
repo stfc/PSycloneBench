@@ -9,9 +9,11 @@ F90 = ftn
 
 #F90FLAGS =  -g -O0 -check all
 F90FLAGS = -O4 -axCORE-AVX2 -fast -opt-report
-# -vec-report3 -guide=4 -opt-report=3
-#-no-inline-factor 
-# For output of assembler
+F90FLAGS += -vec-report6
+# -guide=4
+# Turn-off all compiler limits regarding in-lining of code
+F90FLAGS += -no-inline-factor 
+# For output of source-code-annotated assembler
 #F90FLAGS += -S -fsource-asm -fverbose-asm
 
 #F90FLAGS += -I${NETCDF_INC}
