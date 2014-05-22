@@ -4,7 +4,10 @@ MODULE mesh
 
   PRIVATE
 
-  !> Extents of the grid
+  !> Extents of the grid. Note that the actual grid used in
+  !! the computation has extents one greater than this in
+  !! each dimension. Where the different mesh points
+  !! sit on this grid is defined in the topology module.
   INTEGER :: nx, ny
 
   !> Grid spacings in x and y
@@ -13,29 +16,24 @@ MODULE mesh
   REAL(KIND=8) :: fsdx, fsdy
 
   PUBLIC dx, dy, fsdx, fsdy
-  PUBLIC set_grid_extents, set_grid_spacings
+  PUBLIC mesh_init
 
 CONTAINS
 
-  SUBROUTINE set_grid_extents(m, n)
-    IMPLICIT none
-    INTEGER, INTENT(in) :: m, n
+  subroutine mesh_init(m, n, ldx, ldy)
+    implicit none
+    integer,      intent(in) :: m, n
+    real(kind=8), intent(in) :: ldx, ldy
 
     nx = m
     ny = n
 
-  END SUBROUTINE set_grid_extents
-
-  SUBROUTINE set_grid_spacings(x, y)
-    IMPLICIT none
-    REAL(KIND=8), INTENT(in) :: x, y
-
-    dx = x
-    dy = y
+    dx = ldx
+    dy = ldy
 
     fsdx = 4./DX
     fsdy = 4./DY
 
-  END SUBROUTINE set_grid_spacings
+  END SUBROUTINE mesh_init
 
 END MODULE mesh
