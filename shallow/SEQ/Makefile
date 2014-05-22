@@ -2,11 +2,14 @@
 # Makefile.include.<compiler> file.
 include Makefile.include
 
+# Location of the psyclone source files (for doing the code
+# generation)
+PSYCLONE_DIR = ../../../PSyclone/src
+
 # add -mpi=mpilog to generate mpe logging
 LDFLAGS += -lnetcdff -lnetcdf
 
-#EXECS = join_files shallow_base shallow_parallel
-EXECS = shallow_base
+EXECS = shallow_base shallow_gen
 
 MODULES = kind_params.o physical_params.o field.o model.o shallow_IO.o \
           initial_conditions.o compute_cu_mod.o compute_cv_mod.o \
@@ -23,6 +26,17 @@ GUNGHO_MODULES = global_parameters.o argument.o kernel.o
 
 all: $(EXECS)
 
+# Targets involving the code-generation framework
+shallow_gen.f90: shallow_gocean.f90
+	python ${PSYCLONE_DIR}/generator.py -api gocean shallow_gocean.f90 -oalg shallow_gen.f90 -opsy psy.f90
+
+# psy.f90 is generated at the same time as shallow_gen.f90
+psy.f90: shallow_gen.f90
+
+# The generated code depends on the generated Psy middle-layer
+shallow_gen.o: $(MODULES) psy.o
+
+# Normal targets
 shallow_base.o: $(MODULES)
 
 timing.o: intel_timer_mod.o
@@ -47,7 +61,10 @@ manual_invoke_apply_bcs_mod.o: apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
 	$(F90) $(F90FLAGS) -c $<
 
 clean: 
-	rm -f *.o *.mod *.MOD $(EXECS) *.f90~
+	rm -f *.o *.mod *.MOD *~ psy.f90 shallow_gen.f90
+
+allclean: clean
+	rm -f $(EXECS)
 
 docs:
 	doxygen shallow.doxy.config
