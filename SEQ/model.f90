@@ -97,9 +97,10 @@ CONTAINS
 
   !================================================
 
-  SUBROUTINE model_init()
-    USE mesh, ONLY: set_grid_extents, set_grid_spacings
-    USE time_smooth, ONLY: time_smooth_init
+  subroutine model_init()
+    use mesh,         only: mesh_init
+    use time_smooth,  only: time_smooth_init
+    use topology_mod, only: topology_init
     IMPLICIT none
     !> Grid spacings currently hard-wired, as in original
     !! version of code.
@@ -114,11 +115,15 @@ CONTAINS
     CALL read_namelist(m,n,itmax)
 
     ! Set up mesh parameters
-    CALL set_grid_extents(m, n)
+    CALL mesh_init(m, n, dxloc, dyloc)
+
+    ! Computational domain actually has extent m+1,n+1 and
+    ! location of fields within this depends on which
+    ! mesh point type they are defined upon
     mp1 = m + 1
     np1 = n + 1
 
-    CALL set_grid_spacings(dxloc, dyloc)
+    CALL topology_init(mp1,np1)
 
     ! Allocate model arrays
     CALL model_alloc(mp1, np1)
