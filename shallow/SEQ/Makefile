@@ -18,7 +18,7 @@ MODULES = kind_params.o physical_params.o field.o model.o shallow_IO.o \
           manual_invoke_apply_bcs_mod.o \
           apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
           apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
-          timing.o time_smooth.o intel_timer_mod.o mesh.o          
+          timing.o time_smooth.o intel_timer_mod.o mesh.o topology_mod.o
 
 # My local copies of GungHo modules. Avoids attempting to build
 # the GungHo code which stretches some compilers...
@@ -41,7 +41,7 @@ shallow_base.o: $(MODULES)
 
 timing.o: intel_timer_mod.o
 
-model.o: field.o timing.o shallow_IO.o mesh.o time_smooth.o
+model.o: field.o timing.o shallow_IO.o mesh.o time_smooth.o topology_mod.o
 
 time_smooth.o: $(GUNGHO_MODULES)
 
