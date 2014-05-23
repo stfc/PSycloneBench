@@ -15,7 +15,7 @@ LDFLAGS += -lnetcdff -lnetcdf
 EXECS = shallow_base shallow_gen
 
 # The modules that are common to both targets
-COMMON_MODULES = kind_params.o physical_params.o field.o model.o shallow_IO.o \
+MODULES = kind_params.o physical_params.o field.o model.o shallow_IO.o \
           initial_conditions.o compute_cu_mod.o compute_cv_mod.o \
           compute_z.o compute_h.o manual_invoke_compute_new_fields_mod.o \
           compute_unew.o compute_vnew.o compute_pnew.o \
@@ -29,6 +29,8 @@ GENERATED_MODULES = psy.o shallow_gen.o
 # My local copies of GungHo modules. Avoids attempting to build
 # the GungHo code which stretches some compilers...
 GUNGHO_MODULES = global_parameters.o argument.o kernel.o
+
+COMMON_MODULES = $(GUNGHO_MODULES) $(MODULES)
 
 all: $(EXECS)
 
@@ -56,9 +58,9 @@ timing.o: intel_timer_mod.o
 
 model.o: field.o timing.o shallow_IO.o mesh.o time_smooth.o topology_mod.o
 
-time_smooth.o: $(GUNGHO_MODULES)
+time_smooth.o: kind_params.o $(GUNGHO_MODULES)
 
-initial_conditions.o: model.o
+initial_conditions.o: physical_params.o model.o
 
 manual_invoke_compute_new_fields_mod.o: compute_unew.o \
                                         compute_vnew.o \
