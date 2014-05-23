@@ -107,6 +107,38 @@ contains
     cv%jstart = 2
     cv%jstop  = ny
 
+    ! When applying periodic (wrap-around) boundary conditions (PBCs)
+    ! we must fill the regions marked with an 'o' above.
+    ! This looks like (using x to indicate a location that is written
+    ! first and y a location that is written second):
+    !
+    !  i=1   i=M
+    !  -o  o  o  y 
+    ! / o  o  o  y   j=N 
+    ! | o  o  o  y
+    ! \ o  o  o  y
+    !  \x  x  x _y   j=1
+    !    \______/|
+
+    ! In array notation this looks like:
+    ! First row = last row
+    ! field(1:M    ,1:1  ) = field(1:M,NP1:NP1)
+    ! Last col = first col
+    ! field(MP1:MP1,1:NP1) = field(1:1,  1:NP1)
+
+    cv%nhalos = 2
+    ALLOCATE(cv%halo(cv%nhalos))
+
+    cv%halo(1)%dest%istart = 1   ; cv%halo(1)%dest%istop = M
+    cv%halo(1)%dest%jstart = 1   ; cv%halo(1)%dest%jstop = 1
+    cv%halo(1)%src%istart  = 1   ; cv%halo(1)%src%istop  = M
+    cv%halo(1)%src%jstart  = N+1 ; cv%halo(1)%src%jstop  = N+1
+
+    cv%halo(2)%dest%istart = M+1 ; cv%halo(2)%dest%istop = M+1
+    cv%halo(2)%dest%jstart = 1   ; cv%halo(2)%dest%jstop = N+1
+    cv%halo(2)%src%istart  = 1   ; cv%halo(2)%src%istop  = 1
+    cv%halo(2)%src%jstart  = 1   ; cv%halo(2)%src%jstop  = N+1
+
     ! When updating a quantity on T points we write to:
     ! (using x to indicate a location that is written):
     !
