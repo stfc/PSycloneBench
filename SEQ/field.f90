@@ -62,6 +62,17 @@ MODULE field
 
 CONTAINS
 
+  !===================================================
+
+!  function field_create(mesh, field_type)
+!    implicit none
+!    type(field_type) :: field_create
+!    type(mesh_type)  :: mesh
+!    
+!  end function field_create
+
+  !===================================================
+
   SUBROUTINE copy_scalar_field(field_in, field_out)
     IMPLICIT none
     TYPE(scalar_field_type), INTENT(in) :: field_in
