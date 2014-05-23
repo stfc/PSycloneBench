@@ -41,11 +41,10 @@ program shallow
   use model
   use initial_conditions
   use time_smooth,  ONLY: manual_invoke_time_smooth
-  use apply_bcs_cf, ONLY: manual_invoke_apply_bcs_cf
-  use apply_bcs_ct, ONLY: manual_invoke_apply_bcs_ct
   use apply_bcs_cu, ONLY: manual_invoke_apply_bcs_cu
   use apply_bcs_cv, ONLY: manual_invoke_apply_bcs_cv
   use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf
+  use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvt
   use compute_cu,   ONLY: manual_invoke_compute_cu
   use compute_cv,   ONLY: manual_invoke_compute_cv
   use compute_z,    ONLY: manual_invoke_compute_z
@@ -119,7 +118,7 @@ program shallow
 
     ! PERIODIC CONTINUATION
 
-    CALL timer_start('PBCs',idxt1)
+    CALL timer_start('PBCs-1',idxt1)
     CALL manual_invoke_apply_bcs_uvtf(CU, CV, H, Z)
     CALL timer_stop(idxt1)
 
@@ -132,10 +131,8 @@ program shallow
     CALL timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
-    CALL timer_start('PBCs',idxt1)
-    CALL manual_invoke_apply_bcs_cu(UNEW)
-    CALL manual_invoke_apply_bcs_cv(VNEW)
-    CALL manual_invoke_apply_bcs_ct(PNEW)
+    CALL timer_start('PBCs-2',idxt1)
+    CALL manual_invoke_apply_bcs_uvt(UNEW, VNEW, PNEW)
     CALL timer_stop(idxt1)
 
     ! Time is in seconds but we never actually need it
