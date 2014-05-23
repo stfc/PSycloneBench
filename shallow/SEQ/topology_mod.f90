@@ -58,9 +58,9 @@ contains
     !  o  x  x  x
     !  o  x  x  x   j=1
     cu%istart = 2
-    cu%istop  = nx
+    cu%istop  = M+1
     cu%jstart = 1
-    cu%jstop  = ny-1
+    cu%jstop  = N
 
     ! When applying periodic (wrap-around) boundary conditions (PBCs)
     ! we must fill the regions marked with an 'o' above.
