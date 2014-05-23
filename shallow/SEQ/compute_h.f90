@@ -27,12 +27,13 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE manual_invoke_compute_h(h, p, u, v)
-    IMPLICIT none
-    REAL(wp), INTENT(out), DIMENSION(:,:) :: h
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: p, u,v
+  subroutine manual_invoke_compute_h(h, p, u, v)
+    use topology_mod, only: ct
+    implicit none
+    real(wp), intent(out), dimension(:,:) :: h
+    real(wp), intent(in),  dimension(:,:) :: p, u,v
     ! Locals
-    INTEGER :: I, J
+    integer :: I, J
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -79,8 +80,8 @@ CONTAINS
     !   uij-1- -Tij-1---ui+1j-1
     !
 
-    DO J=1, SIZE(h, 2) - 1
-       DO I=1, SIZE(h, 1) - 1
+    DO J=ct%jstart, ct%jstop !1, SIZE(h, 2) - 1
+       DO I=ct%istart, ct%istop !1, SIZE(h, 1) - 1
 
           CALL compute_h_code(i, j, h, p, u, v)
        END DO

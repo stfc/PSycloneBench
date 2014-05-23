@@ -31,9 +31,10 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! compute_cv_code().
-  subroutine manual_invoke_compute_cv(cv, p, v)
+  subroutine manual_invoke_compute_cv(cvfld, p, v)
+    use topology_mod, only: cv
     implicit none
-    real(wp), intent(out), dimension(:,:) :: cv
+    real(wp), intent(out), dimension(:,:) :: cvfld
     real(wp), intent(in),  dimension(:,:) :: p, v
     ! Locals
     integer :: I, J
@@ -79,10 +80,10 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
     !
 
-    do J=2, size(cv, 2)
-       do I=1, size(cv, 1) - 1
+    do J=cv%jstart, cv%jstop !2, size(cv, 2)
+       do I=cv%istart, cv%istop !1, size(cv, 1) - 1
 
-          call compute_cv_code(i, j, cv, p, v)
+          call compute_cv_code(i, j, cvfld, p, v)
        end do
     end do
 
