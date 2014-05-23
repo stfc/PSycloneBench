@@ -36,21 +36,22 @@ PROGRAM shallow
 !     with the mantra "all computation must occur in a kernel."
 !     Andrew Porter, April 2014
 
-  USE shallow_IO
-  USE timing
-  USE model
-  USE initial_conditions
-  USE time_smooth,  ONLY: manual_invoke_time_smooth
-  USE apply_bcs_cf, ONLY: manual_invoke_apply_bcs_cf
-  USE apply_bcs_ct, ONLY: manual_invoke_apply_bcs_ct
-  USE apply_bcs_cu, ONLY: manual_invoke_apply_bcs_cu
-  USE apply_bcs_cv, ONLY: manual_invoke_apply_bcs_cv
-  USE manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf
-  USE compute_cu,   ONLY: manual_invoke_compute_cu
-  USE compute_cv,   ONLY: manual_invoke_compute_cv
-  USE compute_z,    ONLY: manual_invoke_compute_z
-  USE compute_h,    ONLY: manual_invoke_compute_h
-  USE manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
+  use shallow_IO
+  use timing
+  use model
+  use initial_conditions
+  !RF use time_smooth,  ONLY: manual_invoke_time_smooth
+  use time_smooth,  ONLY: time_smooth_type
+  use apply_bcs_cf, ONLY: manual_invoke_apply_bcs_cf
+  use apply_bcs_ct, ONLY: manual_invoke_apply_bcs_ct
+  use apply_bcs_cu, ONLY: manual_invoke_apply_bcs_cu
+  use apply_bcs_cv, ONLY: manual_invoke_apply_bcs_cv
+  use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf
+  use compute_cu,   ONLY: manual_invoke_compute_cu
+  use compute_cv,   ONLY: manual_invoke_compute_cv
+  use compute_z,    ONLY: manual_invoke_compute_z
+  use compute_h,    ONLY: manual_invoke_compute_h
+  use manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
   IMPLICIT NONE
 
   !> Checksum used for each array
@@ -142,9 +143,12 @@ PROGRAM shallow
 
       CALL timer_start('Time smoothing',idxt1)
 
-      CALL manual_invoke_time_smooth(U, UNEW, UOLD)
-      CALL manual_invoke_time_smooth(V, VNEW, VOLD)
-      CALL manual_invoke_time_smooth(P, PNEW, POLD)
+      !RF CALL manual_invoke_time_smooth(U, UNEW, UOLD)
+      !RF CALL manual_invoke_time_smooth(V, VNEW, VOLD)
+      !RF CALL manual_invoke_time_smooth(P, PNEW, POLD)
+      call invoke(time_smooth_type(u,unew,uold),&
+                  time_smooth_type(v,vnew,vold),&
+                  time_smooth_type(p,pnew,pold))
 
       CALL timer_stop(idxt1)
 
