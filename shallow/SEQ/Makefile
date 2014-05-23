@@ -80,7 +80,7 @@ clean:
 	rm -f *.o *.mod *.MOD *~ psy.f90 shallow_gen.f90
 
 allclean: clean
-	rm -f $(EXECS)
+	rm -f *.exe
 
 docs:
 	doxygen shallow.doxy.config
