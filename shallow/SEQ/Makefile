@@ -62,7 +62,8 @@ initial_conditions.o: model.o
 
 manual_invoke_compute_new_fields_mod.o: compute_unew.o \
                                         compute_vnew.o \
-                                        compute_pnew.o
+                                        compute_pnew.o \
+                                        topology_mod.o
 
 manual_invoke_apply_bcs_mod.o: apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
                                apply_bcs_cu_mod.o apply_bcs_cv_mod.o
