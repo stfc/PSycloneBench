@@ -1,4 +1,4 @@
-PROGRAM shallow
+program shallow
 
 !     BENCHMARK WEATHER PREDICTION PROGRAM FOR COMPARING THE
 !     PREFORMANCE OF CURRENT SUPERCOMPUTERS. THE MODEL IS
@@ -36,22 +36,24 @@ PROGRAM shallow
 !     with the mantra "all computation must occur in a kernel."
 !     Andrew Porter, April 2014
 
-  USE shallow_IO
-  USE timing
-  USE model
-  USE initial_conditions
-  USE time_smooth,  ONLY: manual_invoke_time_smooth
-  USE apply_bcs_cf, ONLY: manual_invoke_apply_bcs_cf
-  USE apply_bcs_ct, ONLY: manual_invoke_apply_bcs_ct
-  USE apply_bcs_cu, ONLY: manual_invoke_apply_bcs_cu
-  USE apply_bcs_cv, ONLY: manual_invoke_apply_bcs_cv
-  USE manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf
-  USE compute_cu,   ONLY: manual_invoke_compute_cu
-  USE compute_cv,   ONLY: manual_invoke_compute_cv
-  USE compute_z,    ONLY: manual_invoke_compute_z
-  USE compute_h,    ONLY: manual_invoke_compute_h
-  USE manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
-  IMPLICIT NONE
+  use shallow_IO
+  use timing
+  use model
+  use initial_conditions
+  use time_smooth,  ONLY: manual_invoke_time_smooth
+  use apply_bcs_cf, ONLY: manual_invoke_apply_bcs_cf
+  use apply_bcs_ct, ONLY: manual_invoke_apply_bcs_ct
+  use apply_bcs_cu, ONLY: manual_invoke_apply_bcs_cu
+  use apply_bcs_cv, ONLY: manual_invoke_apply_bcs_cv
+  use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf
+  use compute_cu,   ONLY: manual_invoke_compute_cu
+  use compute_cv,   ONLY: manual_invoke_compute_cv
+  use compute_z,    ONLY: manual_invoke_compute_z
+  use compute_h,    ONLY: manual_invoke_compute_h
+  use manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
+  implicit none
+
+  !type(field_type) :: pressure
 
   !> Checksum used for each array
   REAL(KIND=8) :: csum
@@ -71,6 +73,10 @@ PROGRAM shallow
   ! single parameter.
   CALL copy_field(dt, tdt)
  
+  ! Create a new field, pressure, which is defined at the T points
+  ! of the mesh
+  !CALL field_create(pressure, CT)
+
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
   CALL init_initial_condition_params()
