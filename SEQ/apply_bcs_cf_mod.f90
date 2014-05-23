@@ -35,9 +35,11 @@ contains
     ! Locals
     integer :: mp1, np1
 
-    ! Note that we do not loop over the full extent of the field.
-    ! Fields are allocated with extents (M+1,N+1).
-    ! Presumably the extra row and column are needed for periodic BCs.
+    ! Note that we do not loop over the full extent of the array.
+    ! Arrays are allocated with extents (M+1,N+1) but our field is really
+    ! only MxN. The CF field sits at (2:M+1,2:N+1) in the array - this offset
+    ! is due to the staggering of the fields on the Arakawa C grid.
+    ! The extra row and column are used for periodic BCs.
     ! We are updating the first column and last row of a quantity on CF.
     ! This looks like (using x to indicate a location that is written first
     ! and y a location that is written second):

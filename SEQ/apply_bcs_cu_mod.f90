@@ -1,4 +1,5 @@
-!> \brief Apply boundary conditions for field on CU
+!> \brief Apply boundary conditions for field defined on CU
+!! points.
 !! \detail Applies cyclic boundary conditions for a 
 !! field defined on CU.
 module apply_bcs_cu
@@ -36,8 +37,10 @@ contains
     integer :: n, mp1, np1
 
     ! Note that we do not loop over the full extent of the field.
-    ! Fields are allocated with extents (M+1,N+1).
-    ! Presumably the extra row and column are needed for periodic BCs.
+    ! Arrays are allocated with extents (M+1,N+1) which gives the
+    ! necessary freedom to have the actual fields staggered.
+    ! The extra row and column are then also available for appling
+    ! periodic BCs.
     ! We are updating the first column and last row of a quantity on CU.
     ! This looks like (using x to indicate a location that is written first
     ! and y a location that is written second):
