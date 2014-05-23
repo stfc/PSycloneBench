@@ -31,6 +31,7 @@ module topology_mod
 
   type(topology_type) :: cu, cv, ct, cf
 
+  public region
   public cu, cv, ct, cf
   public topology_init
 

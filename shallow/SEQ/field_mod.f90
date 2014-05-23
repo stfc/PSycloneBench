@@ -1,6 +1,7 @@
-MODULE field
-  USE kind_params
-  IMPLICIT none
+module field_mod
+  use kind_params
+  use topology_mod, only: region
+  implicit none
 
   ! A field must exist upon a grid.
   ! Does that mean a field extends a grid type?
@@ -53,7 +54,7 @@ MODULE field
   END INTERFACE set
 
   INTERFACE copy_field
-     MODULE PROCEDURE copy_scalar_field, copy_2dfield
+     MODULE PROCEDURE copy_scalar_field, copy_2dfield, copy_2dfield_patch
   END INTERFACE copy_field
 
   INTERFACE increment
@@ -75,8 +76,8 @@ CONTAINS
 
   SUBROUTINE copy_scalar_field(field_in, field_out)
     IMPLICIT none
-    TYPE(scalar_field_type), INTENT(in) :: field_in
-    TYPE(scalar_field_type), INTENT(out) :: field_out
+    type(scalar_field_type), INTENT(in) :: field_in
+    type(scalar_field_type), INTENT(out) :: field_out
 
     field_out = field_in
 
@@ -86,12 +87,24 @@ CONTAINS
 
   SUBROUTINE copy_2dfield(field_in, field_out)
     IMPLICIT none
-    REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: field_in
-    REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: field_out
+    REAL(wp), INTENT(in),  DIMENSION(:,:) :: field_in
+    REAL(wp), INTENT(out), DIMENSION(:,:) :: field_out
         
     field_out(:,:) = field_in(:,:)
         
   END SUBROUTINE copy_2dfield
+
+  !===================================================
+
+  SUBROUTINE copy_2dfield_patch(field, src, dest)
+    IMPLICIT none
+    real(wp),     intent(inout), dimension(:,:) :: field
+    type(region), intent(in) :: src, dest
+
+    field(dest%istart:dest%istop,dest%jstart:dest%jstop) = &
+         field(src%istart:src%istop,src%jstart:src%jstop)
+        
+  END SUBROUTINE copy_2dfield_patch
 
   !===================================================
 
@@ -121,4 +134,4 @@ CONTAINS
 !    REAL(wp), INTENT(in) :: val
 !
 !    fld%data = val
-END MODULE field
+END MODULE field_mod

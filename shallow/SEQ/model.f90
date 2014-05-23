@@ -1,5 +1,5 @@
 MODULE model
-  USE field
+  USE field_mod
   USE mesh
   USE shallow_IO
   USE timing, ONLY: timer_init, timer_report
