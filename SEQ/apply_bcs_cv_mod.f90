@@ -29,14 +29,13 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! apply_bcs_cv_code().
-  subroutine manual_invoke_apply_bcs_cv(field)
+  subroutine manual_invoke_apply_bcs_cv(fld)
+    use field_mod,    only: copy_field
     use topology_mod, only: cv
     implicit none
-    real(wp), intent(inout), dimension(:,:) :: field
+    real(wp), intent(inout), dimension(:,:) :: fld
     ! Locals
     integer :: ihalo
-    integer :: istarts, istartd, jstarts, jstartd
-    integer :: istops, istopd, jstops, jstopd
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -65,23 +64,11 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1-Ti+1j-1
     !
 
+!DIR$ LOOP_INFO max_trips(2)
     do ihalo=1,cv%nhalos
 
-       ! Destination
-       istartd = cv%halo(ihalo)%dest%istart
-       istopd  = cv%halo(ihalo)%dest%istop
-       jstartd = cv%halo(ihalo)%dest%jstart
-       jstopd  = cv%halo(ihalo)%dest%jstop
-
-       ! Source
-       istarts = cv%halo(ihalo)%src%istart
-       istops  = cv%halo(ihalo)%src%istop
-       jstarts = cv%halo(ihalo)%src%jstart
-       jstops  = cv%halo(ihalo)%src%jstop
-
-       ! Copy from source to destination
-       field(istartd:istopd,jstartd:jstopd) = &
-            field(istarts:istops,jstarts:jstops)
+      ! Copy from source to destination
+      call copy_field(fld, cv%halo(ihalo)%src, cv%halo(ihalo)%dest)
 
     end do
 

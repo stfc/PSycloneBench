@@ -30,15 +30,13 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! apply_bcs_cu_code().
-  subroutine manual_invoke_apply_bcs_cu(field)
+  subroutine manual_invoke_apply_bcs_cu(fld)
+    use field_mod,    only: copy_field
     use topology_mod, only: cu
     implicit none
-    real(wp), intent(inout), dimension(:,:) :: field
+    real(wp), intent(inout), dimension(:,:) :: fld
     ! Locals
-    !integer :: n, mp1, np1
     integer :: ihalo
-    integer :: istarts, istartd, jstarts, jstartd
-    integer :: istops, istopd, jstops, jstopd
 
     ! Note that we do not loop over the full extent of the field.
     ! Arrays are allocated with extents (M+1,N+1) which gives the
@@ -69,30 +67,10 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1-Ti+1j-1
     !
 
-!    MP1 = SIZE(field, 1)
-!    NP1 = SIZE(field, 2)
-!    N = NP1 - 1
-!
-!    call apply_bcs_cu_code(n, mp1, np1, field)
-
+!DIR$ LOOP_INFO max_trips(2)
     do ihalo = 1, cu%nhalos
-
-       ! Destination
-       istartd = cu%halo(ihalo)%dest%istart
-       istopd  = cu%halo(ihalo)%dest%istop
-       jstartd = cu%halo(ihalo)%dest%jstart
-       jstopd  = cu%halo(ihalo)%dest%jstop
-
-       ! Source
-       istarts = cu%halo(ihalo)%src%istart
-       istops  = cu%halo(ihalo)%src%istop
-       jstarts = cu%halo(ihalo)%src%jstart
-       jstops  = cu%halo(ihalo)%src%jstop
-
        ! Copy from source to destination
-       field(istartd:istopd,jstartd:jstopd) = &
-            field(istarts:istops,jstarts:jstops)
-             
+       CALL copy_field(fld, cu%halo(ihalo)%src, cu%halo(ihalo)%dest)
     end do
 
   end subroutine manual_invoke_apply_bcs_cu

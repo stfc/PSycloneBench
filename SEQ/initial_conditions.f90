@@ -1,6 +1,6 @@
 MODULE initial_conditions
   USE physical_params
-  USE field
+  USE field_mod
   IMPLICIT none
   PRIVATE
 

@@ -15,7 +15,7 @@ LDFLAGS += -lnetcdff -lnetcdf
 EXECS = shallow_base shallow_gen
 
 # The modules that are common to both targets
-MODULES = kind_params.o physical_params.o field.o model.o shallow_IO.o \
+MODULES = kind_params.o physical_params.o field_mod.o model.o shallow_IO.o \
           initial_conditions.o compute_cu_mod.o compute_cv_mod.o \
           compute_z.o compute_h.o manual_invoke_compute_new_fields_mod.o \
           compute_unew.o compute_vnew.o compute_pnew.o \
@@ -56,7 +56,9 @@ shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 # Interdependencies between modules
 timing.o: intel_timer_mod.o
 
-model.o: field.o timing.o shallow_IO.o mesh.o time_smooth.o topology_mod.o
+field_mod.o: kind_params.o topology_mod.o
+
+model.o: field_mod.o timing.o shallow_IO.o mesh.o time_smooth.o topology_mod.o
 
 time_smooth.o: kind_params.o $(GUNGHO_MODULES)
 
@@ -69,6 +71,8 @@ manual_invoke_compute_new_fields_mod.o: compute_unew.o \
 
 manual_invoke_apply_bcs_mod.o: apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
                                apply_bcs_cu_mod.o apply_bcs_cv_mod.o
+
+apply_bcs_cu_mod.o: field_mod.o topology_mod.o
 
 %.exe: $(MODULE_LIST)
 	$(F90) -o $@ $? $(LDFLAGS)
