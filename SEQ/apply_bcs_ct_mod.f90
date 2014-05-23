@@ -30,10 +30,13 @@ contains
   !> Manual implementation of the code needed to invoke
   !! apply_bcs_ct_code().
   subroutine manual_invoke_apply_bcs_ct(field)
+    use topology_mod, only: ct
     implicit none
     real(wp), intent(inout), dimension(:,:) :: field
     ! Locals
-    integer :: n, mp1, np1
+    integer :: ihalo
+    integer :: istarts, istartd, jstarts, jstartd
+    integer :: istops, istopd, jstops, jstopd
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -62,11 +65,25 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1-Ti+1j-1
     !
 
-    MP1 = SIZE(field, 1)
-    NP1 = SIZE(field, 2)
-    N = NP1 - 1
+    do ihalo = 1, ct%nhalos
 
-    call apply_bcs_ct_code(n, mp1, np1, field)
+       ! Destination
+       istartd = ct%halo(ihalo)%dest%istart
+       istopd  = ct%halo(ihalo)%dest%istop
+       jstartd = ct%halo(ihalo)%dest%jstart
+       jstopd  = ct%halo(ihalo)%dest%jstop
+
+       ! Source
+       istarts = ct%halo(ihalo)%src%istart
+       istops  = ct%halo(ihalo)%src%istop
+       jstarts = ct%halo(ihalo)%src%jstart
+       jstops  = ct%halo(ihalo)%src%jstop
+
+       ! Copy from source to destination
+       field(istartd:istopd,jstartd:jstopd) = &
+            field(istarts:istops,jstarts:jstops)
+             
+    end do
 
   end subroutine manual_invoke_apply_bcs_ct
 
