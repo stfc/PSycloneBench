@@ -30,10 +30,13 @@ contains
   !> Manual implementation of the code needed to invoke
   !! apply_bcs_cf_code().
   subroutine manual_invoke_apply_bcs_cf(field)
+    use topology_mod, only: cf
     implicit none
     real(wp), intent(inout), dimension(:,:) :: field
     ! Locals
-    integer :: mp1, np1
+    integer :: ihalo
+    integer :: istarts, istartd, jstarts, jstartd
+    integer :: istops, istopd, jstops, jstopd
 
     ! Note that we do not loop over the full extent of the array.
     ! Arrays are allocated with extents (M+1,N+1) but our field is really
@@ -64,10 +67,25 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1-Ti+1j-1
     !
 
-    MP1 = SIZE(field, 1)
-    NP1 = SIZE(field, 2)
+    do ihalo = 1, cf%nhalos
 
-    call apply_bcs_cf_code(mp1, np1, field)
+       ! Destination
+       istartd = cf%halo(ihalo)%dest%istart
+       istopd  = cf%halo(ihalo)%dest%istop
+       jstartd = cf%halo(ihalo)%dest%jstart
+       jstopd  = cf%halo(ihalo)%dest%jstop
+
+       ! Source
+       istarts = cf%halo(ihalo)%src%istart
+       istops  = cf%halo(ihalo)%src%istop
+       jstarts = cf%halo(ihalo)%src%jstart
+       jstops  = cf%halo(ihalo)%src%jstop
+
+       ! Copy from source to destination
+       field(istartd:istopd,jstartd:jstopd) = &
+            field(istarts:istops,jstarts:jstops)
+             
+    end do
 
   end subroutine manual_invoke_apply_bcs_cf
 

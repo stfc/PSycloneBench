@@ -197,6 +197,38 @@ contains
     cf%jstart = 2
     cf%jstop  = ny
 
+    ! When applying periodic (wrap-around) boundary conditions
+    ! (PBCs) we must fill the regions marked with an 'o' above.
+    ! This looks like (using x to indicate a location that is 
+    ! written first and y a location that is written second):
+    !
+    !  i=1   i=M
+    ! .-x  o  o  o 
+    ! | x  o  o  o   j=N 
+    ! | x  o  o  o
+    ! | x  o  o  o
+    ! ->y_ y  y  y   j=1
+    !   |\______/ 
+
+    ! In array notation this looks like:
+    ! First col = last col
+    ! field(1:1  ,2:NP1) = field(MP1:MP1,  2:NP1)
+    ! First row = last row
+    ! field(1:MP1,1:1  ) = field(  1:MP1,NP1:NP1)
+
+    cf%nhalos = 2
+    ALLOCATE( cf%halo(cf%nhalos) )
+
+    cf%halo(1)%dest%istart = 1   ; cf%halo(1)%dest%istop = 1
+    cf%halo(1)%dest%jstart = 2   ; cf%halo(1)%dest%jstop = N+1
+    cf%halo(1)%src%istart  = M+1 ; cf%halo(1)%src%istop  = M+1
+    cf%halo(1)%src%jstart  = 2   ; cf%halo(1)%src%jstop  = N+1
+
+    cf%halo(2)%dest%istart = 1   ; cf%halo(2)%dest%istop = M+1
+    cf%halo(2)%dest%jstart = 1   ; cf%halo(2)%dest%jstop = 1
+    cf%halo(2)%src%istart  = 1   ; cf%halo(2)%src%istop  = M+1
+    cf%halo(2)%src%jstart  = N+1 ; cf%halo(2)%src%jstop  = N+1
+
   end subroutine topology_init
 
 end module topology_mod
