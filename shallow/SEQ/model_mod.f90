@@ -2,7 +2,7 @@ MODULE model_mod
   USE field_mod
   USE mesh_mod
   USE shallow_IO
-  USE timing, ONLY: timer_init, timer_report
+  USE timing_mod, ONLY: timer_init, timer_report
   IMPLICIT none
 
   INTEGER :: m, n      !< global domain size (no. of grid pts)
