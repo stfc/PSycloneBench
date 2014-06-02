@@ -37,7 +37,7 @@ program shallow
 !     Andrew Porter, April 2014
 
   use shallow_IO
-  use timing
+  use timing_mod
   use model_mod
   use initial_conditions
   use time_smooth_mod,  ONLY: manual_invoke_time_smooth

@@ -24,7 +24,8 @@ MODULES = kind_params_mod.o physical_params_mod.o field_mod.o model_mod.o \
           manual_invoke_apply_bcs_mod.o \
           apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
           apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
-          timing.o time_smooth_mod.o intel_timer_mod.o mesh_mod.o topology_mod.o
+          timing_mod.o time_smooth_mod.o intel_timer_mod.o \
+          mesh_mod.o topology_mod.o
 
 GENERATED_MODULES = psy.o shallow_gen.o
 
@@ -56,11 +57,11 @@ shallow_base.o: $(COMMON_MODULES)
 shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
 # Interdependencies between modules
-timing.o: intel_timer_mod.o
+timing_mod.o: intel_timer_mod.o
 
 field_mod.o: kind_params_mod.o topology_mod.o
 
-model_mod.o: field_mod.o timing.o shallow_IO.o mesh_mod.o \
+model_mod.o: field_mod.o timing_mod.o shallow_IO.o mesh_mod.o \
              time_smooth_mod.o topology_mod.o
 
 time_smooth_mod.o: kind_params_mod.o $(GUNGHO_MODULES)
