@@ -36,10 +36,10 @@ PROGRAM shallow
 !     with the mantra "all computation must occur in a kernel."
 !     Andrew Porter, April 2014
 
-  use shallow_IO
+  use shallow_io_mod
   use timing_mod
   use model_mod
-  use initial_conditions
+  use initial_conditions_mod
   !RF use time_smooth_mod,  ONLY: manual_invoke_time_smooth
   use time_smooth_mod,  ONLY: time_smooth_type
   use apply_bcs_cf_mod, ONLY: manual_invoke_apply_bcs_cf

@@ -1,4 +1,4 @@
-module global_parameters
+module global_parameters_mod
   ! Module containing core parameter values
   use iso_c_binding
   implicit none
@@ -25,4 +25,4 @@ module global_parameters
      enumerator :: FE
   end enum
   
-end module global_parameters
+end module global_parameters_mod

@@ -1,4 +1,4 @@
-MODULE shallow_io
+MODULE shallow_io_mod
   IMPLICIT none
 
   PRIVATE
@@ -305,4 +305,4 @@ CONTAINS
 
       end subroutine check
 
-END MODULE shallow_io
+END MODULE shallow_io_mod
