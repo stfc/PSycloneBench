@@ -1,4 +1,4 @@
-MODULE model
+MODULE model_mod
   USE field_mod
   USE mesh
   USE shallow_IO
@@ -98,9 +98,9 @@ CONTAINS
   !================================================
 
   subroutine model_init()
-    use mesh,         only: mesh_init
-    use time_smooth,  only: time_smooth_init
-    use topology_mod, only: topology_init
+    use mesh,            only: mesh_init
+    use time_smooth_mod, only: time_smooth_init
+    use topology_mod,    only: topology_init
     IMPLICIT none
     !> Grid spacings currently hard-wired, as in original
     !! version of code.
@@ -180,4 +180,4 @@ CONTAINS
 
   END SUBROUTINE model_dealloc
 
-END MODULE model
+END MODULE model_mod

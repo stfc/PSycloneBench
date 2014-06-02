@@ -1,5 +1,5 @@
-MODULE time_smooth
-  USE kind_params
+MODULE time_smooth_mod
+  USE kind_params_mod
   USE kernel_mod
   use argument_mod
   IMPLICIT none
@@ -86,4 +86,4 @@ CONTAINS
 
   END SUBROUTINE time_smooth_code
 
-END MODULE time_smooth
+END MODULE time_smooth_mod

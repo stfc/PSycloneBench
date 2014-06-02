@@ -1,5 +1,5 @@
 MODULE compute_pnew_mod
-  USE kind_params
+  USE kind_params_mod
   USE kernel_mod
   use argument_mod
   IMPLICIT none
@@ -90,7 +90,7 @@ CONTAINS
   !===================================================
 
   SUBROUTINE compute_pnew_code(i, j, pnew, pold, cu, cv, tdt)
-    USE model, ONLY: dx, dy
+    USE model_mod, ONLY: dx, dy
     IMPLICIT none
     INTEGER, INTENT(in) :: I, J
     REAL(wp), INTENT(out), DIMENSION(:,:) :: pnew

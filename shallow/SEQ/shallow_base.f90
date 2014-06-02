@@ -38,9 +38,9 @@ program shallow
 
   use shallow_IO
   use timing
-  use model
+  use model_mod
   use initial_conditions
-  use time_smooth,  ONLY: manual_invoke_time_smooth
+  use time_smooth_mod,  ONLY: manual_invoke_time_smooth
   use apply_bcs_cu_mod, ONLY: manual_invoke_apply_bcs_cu
   use apply_bcs_cv_mod, ONLY: manual_invoke_apply_bcs_cv
   use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf

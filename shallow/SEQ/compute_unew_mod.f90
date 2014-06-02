@@ -1,5 +1,5 @@
 MODULE compute_unew_mod
-  USE kind_params
+  USE kind_params_mod
   USE kernel_mod
   use argument_mod
   IMPLICIT none
@@ -83,7 +83,7 @@ CONTAINS
   !===================================================
 
   SUBROUTINE compute_unew_code(i, j, unew, uold, z, cv, h, tdt)
-    USE model, ONLY: dx
+    USE model_mod, ONLY: dx
     IMPLICIT none
     INTEGER, INTENT(in) :: I, J
     REAL(wp), INTENT(out), DIMENSION(:,:) :: unew

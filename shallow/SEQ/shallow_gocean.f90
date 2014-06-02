@@ -38,10 +38,10 @@ PROGRAM shallow
 
   use shallow_IO
   use timing
-  use model
+  use model_mod
   use initial_conditions
-  !RF use time_smooth,  ONLY: manual_invoke_time_smooth
-  use time_smooth,  ONLY: time_smooth_type
+  !RF use time_smooth_mod,  ONLY: manual_invoke_time_smooth
+  use time_smooth_mod,  ONLY: time_smooth_type
   use apply_bcs_cf_mod, ONLY: manual_invoke_apply_bcs_cf
   use apply_bcs_ct_mod, ONLY: manual_invoke_apply_bcs_ct
   use apply_bcs_cu_mod, ONLY: manual_invoke_apply_bcs_cu

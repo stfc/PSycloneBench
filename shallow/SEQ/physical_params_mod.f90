@@ -1,6 +1,6 @@
 !> Module for physical/mathematical parameters
-MODULE physical_params
-  USE kind_params
+MODULE physical_params_mod
+  USE kind_params_mod
   IMPLICIT none
 
   PUBLIC
@@ -12,4 +12,4 @@ MODULE physical_params
   !> 2 x Pi
   REAL(wp), PARAMETER :: tpi = pi + pi
 
-END MODULE physical_params
+END MODULE physical_params_mod

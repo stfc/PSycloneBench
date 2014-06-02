@@ -15,7 +15,8 @@ LDFLAGS += -lnetcdff -lnetcdf
 EXECS = shallow_base shallow_gen
 
 # The modules that are common to both targets
-MODULES = kind_params.o physical_params.o field_mod.o model.o shallow_IO.o \
+MODULES = kind_params_mod.o physical_params_mod.o field_mod.o model_mod.o \
+          shallow_IO.o \
           initial_conditions.o compute_cu_mod.o compute_cv_mod.o \
           compute_z_mod.o compute_h_mod.o \
           manual_invoke_compute_new_fields_mod.o \
@@ -23,7 +24,7 @@ MODULES = kind_params.o physical_params.o field_mod.o model.o shallow_IO.o \
           manual_invoke_apply_bcs_mod.o \
           apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
           apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
-          timing.o time_smooth.o intel_timer_mod.o mesh.o topology_mod.o
+          timing.o time_smooth_mod.o intel_timer_mod.o mesh.o topology_mod.o
 
 GENERATED_MODULES = psy.o shallow_gen.o
 
@@ -57,13 +58,14 @@ shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 # Interdependencies between modules
 timing.o: intel_timer_mod.o
 
-field_mod.o: kind_params.o topology_mod.o
+field_mod.o: kind_params_mod.o topology_mod.o
 
-model.o: field_mod.o timing.o shallow_IO.o mesh.o time_smooth.o topology_mod.o
+model_mod.o: field_mod.o timing.o shallow_IO.o mesh.o \
+             time_smooth_mod.o topology_mod.o
 
-time_smooth.o: kind_params.o $(GUNGHO_MODULES)
+time_smooth_mod.o: kind_params_mod.o $(GUNGHO_MODULES)
 
-initial_conditions.o: physical_params.o model.o
+initial_conditions.o: physical_params_mod.o model_mod.o
 
 manual_invoke_compute_new_fields_mod.o: compute_unew_mod.o \
                                         compute_vnew_mod.o \
