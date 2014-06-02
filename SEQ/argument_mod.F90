@@ -14,7 +14,7 @@
 
 module argument_mod
 use iso_c_binding
-use global_parameters
+use global_parameters_mod
 implicit none
 private
 

@@ -1,7 +1,7 @@
 MODULE model_mod
   USE field_mod
   USE mesh_mod
-  USE shallow_IO
+  USE shallow_io_mod
   USE timing_mod, ONLY: timer_init, timer_report
   IMPLICIT none
 

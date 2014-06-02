@@ -14,7 +14,7 @@
 !-------------------------------------------------------------------------------
 module kernel_mod
 use argument_mod
-use global_parameters
+use global_parameters_mod
 implicit none
 private
 

@@ -1,4 +1,4 @@
-MODULE initial_conditions
+MODULE initial_conditions_mod
   USE physical_params_mod
   USE field_mod
   IMPLICIT none
@@ -150,4 +150,4 @@ CONTAINS
     END DO
   END SUBROUTINE init_velocity_v
 
-END MODULE initial_conditions
+END MODULE initial_conditions_mod
