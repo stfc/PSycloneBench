@@ -24,7 +24,7 @@ MODULES = kind_params_mod.o physical_params_mod.o field_mod.o model_mod.o \
           manual_invoke_apply_bcs_mod.o \
           apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
           apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
-          timing.o time_smooth_mod.o intel_timer_mod.o mesh.o topology_mod.o
+          timing.o time_smooth_mod.o intel_timer_mod.o mesh_mod.o topology_mod.o
 
 GENERATED_MODULES = psy.o shallow_gen.o
 
@@ -60,7 +60,7 @@ timing.o: intel_timer_mod.o
 
 field_mod.o: kind_params_mod.o topology_mod.o
 
-model_mod.o: field_mod.o timing.o shallow_IO.o mesh.o \
+model_mod.o: field_mod.o timing.o shallow_IO.o mesh_mod.o \
              time_smooth_mod.o topology_mod.o
 
 time_smooth_mod.o: kind_params_mod.o $(GUNGHO_MODULES)
@@ -90,7 +90,7 @@ clean:
 	rm -f *.o *.mod *.MOD *~ psy.f90 shallow_gen.f90
 
 allclean: clean
-	rm -f *.exe
+	rm -f *.exe fparser.log
 
 docs:
 	doxygen shallow.doxy.config

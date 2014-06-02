@@ -1,5 +1,5 @@
 !> Module to contain all mesh-specific data
-MODULE mesh
+MODULE mesh_mod
   IMPLICIT none
 
   PRIVATE
@@ -36,4 +36,4 @@ CONTAINS
 
   END SUBROUTINE mesh_init
 
-END MODULE mesh
+END MODULE mesh_mod

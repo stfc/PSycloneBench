@@ -1,6 +1,6 @@
 MODULE model_mod
   USE field_mod
-  USE mesh
+  USE mesh_mod
   USE shallow_IO
   USE timing, ONLY: timer_init, timer_report
   IMPLICIT none
@@ -98,17 +98,17 @@ CONTAINS
   !================================================
 
   subroutine model_init()
-    use mesh,            only: mesh_init
+    use mesh_mod,        only: mesh_init
     use time_smooth_mod, only: time_smooth_init
     use topology_mod,    only: topology_init
     IMPLICIT none
     !> Grid spacings currently hard-wired, as in original
     !! version of code.
-    REAL(KIND=8), PARAMETER :: dxloc=1.0E5, dyloc=1.0E5
+    REAL(KIND=wp), PARAMETER :: dxloc=1.0E5, dyloc=1.0E5
     !> Parameter for time smoothing
-    REAL(KIND=8), PARAMETER :: alpha_loc = .001
+    REAL(KIND=wp), PARAMETER :: alpha_loc = .001
     !> Hardwired model time-step (seconds)
-    REAL(KIND=8), PARAMETER :: dt_loc = 90.
+    REAL(KIND=wp), PARAMETER :: dt_loc = 90.
 
     CALL timer_init()
 

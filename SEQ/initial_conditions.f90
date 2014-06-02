@@ -39,7 +39,7 @@ CONTAINS
 
   SUBROUTINE invoke_init_stream_fn_kernel(psi)
     IMPLICIT none
-    REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: psi
+    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: psi
     ! Locals
     INTEGER :: idim1, idim2
     INTEGER :: i, j
@@ -79,7 +79,7 @@ CONTAINS
   SUBROUTINE init_pressure(p)
     USE model_mod, ONLY: m, dx
     IMPLICIT none
-    REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: p
+    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: p
 !    TYPE(field_type), INTENT(out) :: p
     ! Locals
     INTEGER :: idim1, idim2
@@ -115,10 +115,10 @@ CONTAINS
   !===================================================
 
   SUBROUTINE init_velocity_u(u, psi, m, n)
-    USE mesh, ONLY: dy
+    USE mesh_mod, ONLY: dy
     IMPLICIT none
-    REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: u
-    REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: psi
+    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: u
+    REAL(KIND=wp), INTENT(in),  DIMENSION(:,:) :: psi
     INTEGER,      INTENT(in) :: m, n
     ! Locals
     INTEGER :: I, J
@@ -134,10 +134,10 @@ CONTAINS
   !===================================================
 
   SUBROUTINE init_velocity_v(v, psi, m, n)
-    USE mesh, ONLY: dx
+    USE mesh_mod, ONLY: dx
     IMPLICIT none
-    REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: v
-    REAL(KIND=8), INTENT(in),  DIMENSION(:,:) :: psi
+    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: v
+    REAL(KIND=wp), INTENT(in),  DIMENSION(:,:) :: psi
     INTEGER, INTENT(in) :: m, n
     ! Locals
     INTEGER :: I, J

@@ -97,7 +97,7 @@ contains
 
   !> Compute the potential vorticity on the grid point (i,j)
   subroutine compute_z_code(i, j, z, p, u, v)
-    use mesh, only: fsdx, fsdy
+    use mesh_mod, only: fsdx, fsdy
     implicit none
     integer,  intent(in) :: I, J
     real(wp), intent(out), dimension(:,:) :: z
