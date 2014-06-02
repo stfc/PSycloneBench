@@ -2,7 +2,7 @@
 !! \detail Given the current pressure and velocity fields,
 !! computes the potential voriticity.
 module compute_z_mod
-  use kind_params
+  use kind_params_mod
   use kernel_mod
   use argument_mod
   implicit none

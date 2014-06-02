@@ -1,5 +1,5 @@
 module field_mod
-  use kind_params
+  use kind_params_mod
   use topology_mod, only: region
   implicit none
 

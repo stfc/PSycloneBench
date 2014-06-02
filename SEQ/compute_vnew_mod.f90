@@ -1,5 +1,5 @@
 MODULE compute_vnew_mod
-  USE kind_params
+  USE kind_params_mod
   USE kernel_mod
   use argument_mod
   IMPLICIT none
@@ -94,7 +94,7 @@ CONTAINS
   !===================================================
 
   SUBROUTINE compute_vnew_code(i, j, vnew, vold, z, cu, h, tdt)
-    USE model, ONLY: dy
+    USE model_mod, ONLY: dy
     IMPLICIT none
     INTEGER, INTENT(in) :: I, J
     REAL(wp), INTENT(out), DIMENSION(:,:) :: vnew

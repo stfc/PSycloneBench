@@ -2,7 +2,7 @@
 !! \detail Applies cyclic boundary conditions for a 
 !! field defined on CF.
 module apply_bcs_cf_mod
-  use kind_params
+  use kind_params_mod
   use kernel_mod
   use argument_mod
   implicit none

@@ -1,5 +1,5 @@
 MODULE initial_conditions
-  USE physical_params
+  USE physical_params_mod
   USE field_mod
   IMPLICIT none
   PRIVATE
@@ -26,7 +26,7 @@ CONTAINS
   !! rely on compiler magic to make sure they're not
   !! recomputed for every grid point.
   SUBROUTINE init_initial_condition_params()
-    USE model, ONLY: m, n
+    USE model_mod, ONLY: m, n
     IMPLICIT none
 
     di = TPI/m
@@ -77,7 +77,7 @@ CONTAINS
   !===================================================
 
   SUBROUTINE init_pressure(p)
-    USE model, ONLY: m, dx
+    USE model_mod, ONLY: m, dx
     IMPLICIT none
     REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: p
 !    TYPE(field_type), INTENT(out) :: p

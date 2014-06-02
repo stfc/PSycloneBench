@@ -1,5 +1,5 @@
 MODULE manual_invoke_compute_new_fields_mod
-  USE kind_params
+  USE kind_params_mod
   IMPLICIT none
   PRIVATE
 

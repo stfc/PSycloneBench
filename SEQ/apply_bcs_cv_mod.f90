@@ -2,7 +2,7 @@
 !! \detail Applies cyclic boundary conditions for a 
 !! field defined on CV.
 module apply_bcs_cv_mod
-  use kind_params
+  use kind_params_mod
   use kernel_mod
   use argument_mod
   implicit none

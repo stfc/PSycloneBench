@@ -1,5 +1,5 @@
 !> Module holding basic KIND parameters
-MODULE kind_params
+MODULE kind_params_mod
   IMPLICIT none
 
   PUBLIC
@@ -7,4 +7,4 @@ MODULE kind_params
   !> Douple precision kind parameter
   INTEGER, PARAMETER :: wp = SELECTED_REAL_KIND(12,307)
 
-END MODULE kind_params
+END MODULE kind_params_mod

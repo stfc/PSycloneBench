@@ -1,5 +1,5 @@
 MODULE compute_h_mod
-  USE kind_params
+  USE kind_params_mod
   USE kernel_mod
   use argument_mod
   IMPLICIT none
