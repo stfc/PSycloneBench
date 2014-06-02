@@ -11,10 +11,10 @@ CONTAINS
                                               vnew, vold, &
                                               pnew, pold, &
                                               z, cufld, cvfld, hfld, tdt)
-    USE compute_unew, ONLY: compute_unew_code
-    USE compute_vnew, ONLY: compute_vnew_code
-    USE compute_pnew, ONLY: compute_pnew_code
-    use topology_mod, ONLY: cu, cv, ct
+    USE compute_unew_mod, ONLY: compute_unew_code
+    USE compute_vnew_mod, ONLY: compute_vnew_code
+    USE compute_pnew_mod, ONLY: compute_pnew_code
+    use topology_mod,     ONLY: cu, cv, ct
     IMPLICIT none
     REAL(wp), INTENT(out), DIMENSION(:,:) :: unew, vnew, pnew
     REAL(wp), INTENT(in),  DIMENSION(:,:) :: uold, vold, pold

@@ -1,4 +1,4 @@
-MODULE compute_h
+MODULE compute_h_mod
   USE kind_params
   USE kernel_mod
   use argument_mod
@@ -102,4 +102,4 @@ CONTAINS
 
   END SUBROUTINE compute_h_code
 
-END MODULE compute_h
+END MODULE compute_h_mod

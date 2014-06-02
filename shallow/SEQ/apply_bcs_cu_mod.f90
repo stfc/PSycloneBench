@@ -2,7 +2,7 @@
 !! points.
 !! \detail Applies cyclic boundary conditions for a 
 !! field defined on CU.
-module apply_bcs_cu
+module apply_bcs_cu_mod
   use kind_params
   use kernel_mod
   use argument_mod
@@ -90,4 +90,4 @@ contains
 
   end subroutine apply_bcs_cu_code
 
-end module apply_bcs_cu
+end module apply_bcs_cu_mod

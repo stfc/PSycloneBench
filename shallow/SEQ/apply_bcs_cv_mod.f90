@@ -1,7 +1,7 @@
 !> \brief Apply boundary conditions for field on CV
 !! \detail Applies cyclic boundary conditions for a 
 !! field defined on CV.
-module apply_bcs_cv
+module apply_bcs_cv_mod
   use kind_params
   use kernel_mod
   use argument_mod
@@ -89,4 +89,4 @@ contains
 
   end subroutine apply_bcs_cv_code
 
-end module apply_bcs_cv
+end module apply_bcs_cv_mod

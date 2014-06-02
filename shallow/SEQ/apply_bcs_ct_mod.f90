@@ -1,7 +1,7 @@
 !> \brief Apply boundary conditions for field on CT
 !! \detail Applies cyclic boundary conditions for a 
 !! field defined on CT.
-module apply_bcs_ct
+module apply_bcs_ct_mod
   use kind_params
   use kernel_mod
   use argument_mod
@@ -89,4 +89,4 @@ contains
 
   end subroutine apply_bcs_ct_code
 
-end module apply_bcs_ct
+end module apply_bcs_ct_mod

@@ -1,7 +1,7 @@
 !> \brief Compute the mass flux in the x direction, cu
 !! \detail Given the current pressure and velocity fields,
 !! computes the mass flux in the x direction.
-module compute_cu
+module compute_cu_mod
   use kind_params
   use kernel_mod
   use argument_mod
@@ -102,4 +102,4 @@ contains
 
   end subroutine compute_cu_code
 
-end module compute_cu
+end module compute_cu_mod

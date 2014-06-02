@@ -42,15 +42,15 @@ PROGRAM shallow
   use initial_conditions
   !RF use time_smooth,  ONLY: manual_invoke_time_smooth
   use time_smooth,  ONLY: time_smooth_type
-  use apply_bcs_cf, ONLY: manual_invoke_apply_bcs_cf
-  use apply_bcs_ct, ONLY: manual_invoke_apply_bcs_ct
-  use apply_bcs_cu, ONLY: manual_invoke_apply_bcs_cu
-  use apply_bcs_cv, ONLY: manual_invoke_apply_bcs_cv
+  use apply_bcs_cf_mod, ONLY: manual_invoke_apply_bcs_cf
+  use apply_bcs_ct_mod, ONLY: manual_invoke_apply_bcs_ct
+  use apply_bcs_cu_mod, ONLY: manual_invoke_apply_bcs_cu
+  use apply_bcs_cv_mod, ONLY: manual_invoke_apply_bcs_cv
   use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf
-  use compute_cu,   ONLY: manual_invoke_compute_cu
-  use compute_cv,   ONLY: manual_invoke_compute_cv
-  use compute_z,    ONLY: manual_invoke_compute_z
-  use compute_h,    ONLY: manual_invoke_compute_h
+  use compute_cu_mod, ONLY: manual_invoke_compute_cu
+  use compute_cv_mod, ONLY: manual_invoke_compute_cv
+  use compute_z_mod,  ONLY: manual_invoke_compute_z
+  use compute_h_mod,  ONLY: manual_invoke_compute_h
   use manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
   IMPLICIT NONE
 

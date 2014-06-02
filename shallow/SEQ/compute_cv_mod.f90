@@ -1,7 +1,7 @@
 !> \brief Compute the mass flux in the y direction, cv
 !! \detail Given the current pressure and velocity fields,
 !! computes the mass flux in the y direction.
-module compute_cv
+module compute_cv_mod
   use kind_params
   use kernel_mod
   use argument_mod
@@ -102,4 +102,4 @@ contains
 
   end subroutine compute_cv_code
 
-end module compute_cv
+end module compute_cv_mod

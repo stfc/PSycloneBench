@@ -1,4 +1,4 @@
-MODULE compute_pnew
+MODULE compute_pnew_mod
   USE kind_params
   USE kernel_mod
   use argument_mod
@@ -110,4 +110,4 @@ CONTAINS
 
   END SUBROUTINE compute_pnew_code
 
-END MODULE compute_pnew
+END MODULE compute_pnew_mod
