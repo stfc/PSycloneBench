@@ -1,4 +1,4 @@
-MODULE compute_unew
+MODULE compute_unew_mod
   USE kind_params
   USE kernel_mod
   use argument_mod
@@ -105,4 +105,4 @@ CONTAINS
 
   END SUBROUTINE compute_unew_code
 
-END MODULE compute_unew
+END MODULE compute_unew_mod

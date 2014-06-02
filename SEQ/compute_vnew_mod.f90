@@ -1,4 +1,4 @@
-MODULE compute_vnew
+MODULE compute_vnew_mod
   USE kind_params
   USE kernel_mod
   use argument_mod
@@ -115,4 +115,4 @@ CONTAINS
 
   END SUBROUTINE compute_vnew_code
 
-END MODULE compute_vnew
+END MODULE compute_vnew_mod

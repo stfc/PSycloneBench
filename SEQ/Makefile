@@ -17,8 +17,9 @@ EXECS = shallow_base shallow_gen
 # The modules that are common to both targets
 MODULES = kind_params.o physical_params.o field_mod.o model.o shallow_IO.o \
           initial_conditions.o compute_cu_mod.o compute_cv_mod.o \
-          compute_z.o compute_h.o manual_invoke_compute_new_fields_mod.o \
-          compute_unew.o compute_vnew.o compute_pnew.o \
+          compute_z_mod.o compute_h_mod.o \
+          manual_invoke_compute_new_fields_mod.o \
+          compute_unew_mod.o compute_vnew_mod.o compute_pnew_mod.o \
           manual_invoke_apply_bcs_mod.o \
           apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
           apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
@@ -28,7 +29,7 @@ GENERATED_MODULES = psy.o shallow_gen.o
 
 # My local copies of GungHo modules. Avoids attempting to build
 # the GungHo code which stretches some compilers...
-GUNGHO_MODULES = global_parameters.o argument.o kernel.o
+GUNGHO_MODULES = global_parameters.o argument_mod.o kernel_mod.o
 
 COMMON_MODULES = $(GUNGHO_MODULES) $(MODULES)
 
@@ -64,9 +65,9 @@ time_smooth.o: kind_params.o $(GUNGHO_MODULES)
 
 initial_conditions.o: physical_params.o model.o
 
-manual_invoke_compute_new_fields_mod.o: compute_unew.o \
-                                        compute_vnew.o \
-                                        compute_pnew.o \
+manual_invoke_compute_new_fields_mod.o: compute_unew_mod.o \
+                                        compute_vnew_mod.o \
+                                        compute_pnew_mod.o \
                                         topology_mod.o
 
 manual_invoke_apply_bcs_mod.o: apply_bcs_cf_mod.o apply_bcs_ct_mod.o \

@@ -17,5 +17,6 @@ F90FLAGS += -no-inline-factor
 #F90FLAGS += -S -fsource-asm -fverbose-asm
 
 F90FLAGS += -I${NETCDF_INC}
+#LDFLAGS = 
 LDFLAGS = -fast
 LDFLAGS += -L${NETCDF_LIB} 

@@ -1,7 +1,7 @@
 !> \brief Compute the potential vorticity, z
 !! \detail Given the current pressure and velocity fields,
 !! computes the potential voriticity.
-module compute_z
+module compute_z_mod
   use kind_params
   use kernel_mod
   use argument_mod
@@ -108,4 +108,4 @@ contains
 
   end subroutine compute_z_code
 
-end module compute_z
+end module compute_z_mod

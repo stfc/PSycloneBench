@@ -11,10 +11,10 @@ CONTAINS
   !===================================================
 
   SUBROUTINE manual_invoke_apply_bcs_uvtf(ufield, vfield, tfield, ffield)
-    USE apply_bcs_cf, ONLY: manual_invoke_apply_bcs_cf
-    use apply_bcs_ct, only: manual_invoke_apply_bcs_ct
-    use apply_bcs_cu, only: manual_invoke_apply_bcs_cu
-    use apply_bcs_cv, only: manual_invoke_apply_bcs_cv
+    USE apply_bcs_cf_mod, ONLY: manual_invoke_apply_bcs_cf
+    use apply_bcs_ct_mod, only: manual_invoke_apply_bcs_ct
+    use apply_bcs_cu_mod, only: manual_invoke_apply_bcs_cu
+    use apply_bcs_cv_mod, only: manual_invoke_apply_bcs_cv
     IMPLICIT none
     REAL(wp), INTENT(inout), DIMENSION(:,:) :: ufield, vfield, tfield, ffield
 
@@ -28,9 +28,9 @@ CONTAINS
   !===================================================
 
   subroutine manual_invoke_apply_bcs_uvt(ufield, vfield, tfield)
-    use apply_bcs_ct, only: manual_invoke_apply_bcs_ct
-    use apply_bcs_cu, only: manual_invoke_apply_bcs_cu
-    use apply_bcs_cv, only: manual_invoke_apply_bcs_cv
+    use apply_bcs_ct_mod, only: manual_invoke_apply_bcs_ct
+    use apply_bcs_cu_mod, only: manual_invoke_apply_bcs_cu
+    use apply_bcs_cv_mod, only: manual_invoke_apply_bcs_cv
     implicit none
     real(wp), intent(inout), dimension(:,:) :: ufield, vfield, tfield
 
