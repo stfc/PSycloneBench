@@ -29,13 +29,14 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE manual_invoke_compute_vnew(vnew, vold, z, cu, h, tdt)
-    IMPLICIT none
-    REAL(wp), INTENT(out), DIMENSION(:,:) :: vnew
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: vold, z, cu, h
-    REAL(wp), INTENT(in) :: tdt
+  subroutine manual_invoke_compute_vnew(vnew, vold, z, cu, h, tdt)
+    use topology_mod, only: cv
+    implicit none
+    real(wp), intent(out), dimension(:,:) :: vnew
+    real(wp), intent(in),  dimension(:,:) :: vold, z, cu, h
+    real(wp), intent(in) :: tdt
     ! Locals
-    INTEGER :: I, J
+    integer :: I, J
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -81,8 +82,8 @@ CONTAINS
     !   uij-1- -Tij-1---ui+1j-1
     !
 
-    DO J=2, SIZE(z, 2)
-       DO I=1, SIZE(z, 1) - 1
+    DO J=cv%jstart, cv%jstop, 1
+       DO I=cv%istart, cv%istop, 1
 
           CALL compute_vnew_code(i, j, vnew, vold, &
                                  z, cu, h, tdt)

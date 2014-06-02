@@ -28,13 +28,14 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE manual_invoke_compute_pnew(pnew, pold, cu, cv, tdt)
-    IMPLICIT none
-    REAL(wp), INTENT(out), DIMENSION(:,:) :: pnew
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: pold, cu, cv
-    REAL(wp), INTENT(in) :: tdt
+  subroutine manual_invoke_compute_pnew(pnew, pold, cu, cv, tdt)
+    use topology_mod, only: ct
+    implicit none
+    real(wp), intent(out), dimension(:,:) :: pnew
+    real(wp), intent(in),  dimension(:,:) :: pold, cu, cv
+    real(wp), intent(in) :: tdt
     ! Locals
-    INTEGER :: I, J
+    integer :: I, J
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -77,8 +78,10 @@ CONTAINS
     !   uij-1- -Tij-1---ui+1j-1
     !
 
-    DO J=1,SIZE(pnew, 2) - 1
-       DO I=1,SIZE(pnew, 1) - 1
+!    DO J=1,SIZE(pnew, 2) - 1
+!       DO I=1,SIZE(pnew, 1) - 1
+    DO J=ct%jstart, ct%jstop, 1
+       DO I=ct%istart, ct%istop, 1
 
           CALL compute_pnew_code(i, j, pnew, pold, &
                                  cu, cv, tdt)

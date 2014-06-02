@@ -29,13 +29,14 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE manual_invoke_compute_unew(unew, uold, z, cv, h, tdt)
-    IMPLICIT none
-    REAL(wp), INTENT(out), DIMENSION(:,:) :: unew
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: uold, z, cv, h
-    REAL(wp), INTENT(in) :: tdt
+  subroutine manual_invoke_compute_unew(unew, uold, z, cv, h, tdt)
+    use topology_mod, only: cu
+    implicit none
+    real(wp), intent(out), dimension(:,:) :: unew
+    real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
+    real(wp), intent(in) :: tdt
     ! Locals
-    INTEGER :: I, J
+    integer :: I, J
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -70,8 +71,8 @@ CONTAINS
     !   END DO
     ! END DO
 
-    DO J=1, SIZE(z, 2) - 1
-       DO I=2, SIZE(z, 1)
+    DO J=cu%jstart, cu%jstop, 1
+       DO I=cu%istart, cu%istop, 1
 
           CALL compute_unew_code(i, j, unew, uold, &
                                  z, cv, h, tdt)
