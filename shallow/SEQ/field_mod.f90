@@ -3,7 +3,8 @@ module field_mod
   use topology_mod, only: region
   implicit none
 
-  ! A field must exist upon a grid.
+  ! A field is defined at certain points on the grid, e.g. at U
+  ! or V points.
   ! Does that mean a field extends a grid type?
   ! Or that a field carries with it a description of the grid
   ! on which it lives? If the latter then we have to query
