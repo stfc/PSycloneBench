@@ -39,22 +39,25 @@ PROGRAM shallow
   use timing_mod
   use model_mod
   use initial_conditions_mod
-  !RF use time_smooth_mod,  ONLY: manual_invoke_time_smooth
-  use time_smooth_mod,  ONLY: time_smooth_type
-  use apply_bcs_cf_mod, ONLY: manual_invoke_apply_bcs_cf
-  use apply_bcs_ct_mod, ONLY: manual_invoke_apply_bcs_ct
-  use apply_bcs_cu_mod, ONLY: manual_invoke_apply_bcs_cu
-  use apply_bcs_cv_mod, ONLY: manual_invoke_apply_bcs_cv
-  use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf
-  !RF use compute_cu_mod, ONLY: manual_invoke_compute_cu
-  use compute_cu_mod, ONLY: compute_cu_type
-  !RF use compute_cv_mod, ONLY: manual_invoke_compute_cv
-  use compute_cv_mod, ONLY: compute_cv_type
-  !RF use compute_z_mod,  ONLY: manual_invoke_compute_z
-  use compute_z_mod, ONLY: compute_z_type
-  !RF use compute_h_mod,  ONLY: manual_invoke_compute_h
-  use compute_h_mod, ONLY: compute_h_type
-  use manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
+  !RF use time_smooth_mod,  only: manual_invoke_time_smooth
+  use time_smooth_mod,  only: time_smooth_type
+  use apply_bcs_cf_mod, only: manual_invoke_apply_bcs_cf
+  use apply_bcs_ct_mod, only: manual_invoke_apply_bcs_ct
+  use apply_bcs_cu_mod, only: manual_invoke_apply_bcs_cu
+  use apply_bcs_cv_mod, only: manual_invoke_apply_bcs_cv
+  use manual_invoke_apply_bcs_mod, only: manual_invoke_apply_bcs_uvtf
+  !RF use compute_cu_mod, only: manual_invoke_compute_cu
+  use compute_cu_mod, only: compute_cu_type
+  !RF use compute_cv_mod, only: manual_invoke_compute_cv
+  use compute_cv_mod, only: compute_cv_type
+  !RF use compute_z_mod,  only: manual_invoke_compute_z
+  use compute_z_mod, only: compute_z_type
+  !RF use compute_h_mod,  only: manual_invoke_compute_h
+  use compute_h_mod, only: compute_h_type
+  use manual_invoke_compute_new_fields_mod, only: manual_invoke_compute_new_fields
+  !use compute_unew_mod, only: compute_unew_type
+  !use compute_vnew_mod, only: compute_vnew_type
+  !use compute_pnew_mod, only: compute_pnew_type
   IMPLICIT NONE
 
   !> Checksum used for each array
@@ -130,8 +133,12 @@ PROGRAM shallow
 
     CALL timer_start('Compute new fields', idxt1)
     CALL manual_invoke_compute_new_fields(unew, uold, vnew, vold, &
-                                          pnew, pold, &
-                                          z, cu, cv, h, tdt%data)
+                                         pnew, pold, &
+                                         z, cu, cv, h, tdt%data)
+    !CALL invoke( compute_unew_type(unew, uold, z, cv, h, tdt), &
+    !             compute_vnew_type(vnew, vold, z, cu, h, tdt), &
+    !             compute_pnew_type(pnew, pold, cu, cv, tdt) )
+
     CALL timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
