@@ -35,7 +35,6 @@ PROGRAM shallow
 !     This version heavily modified as part of the GOcean-2D project
 !     with the mantra "all computation must occur in a kernel."
 !     Andrew Porter, April 2014
-
   use shallow_io_mod
   use timing_mod
   use model_mod
@@ -47,10 +46,14 @@ PROGRAM shallow
   use apply_bcs_cu_mod, ONLY: manual_invoke_apply_bcs_cu
   use apply_bcs_cv_mod, ONLY: manual_invoke_apply_bcs_cv
   use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf
-  use compute_cu_mod, ONLY: manual_invoke_compute_cu
-  use compute_cv_mod, ONLY: manual_invoke_compute_cv
-  use compute_z_mod,  ONLY: manual_invoke_compute_z
-  use compute_h_mod,  ONLY: manual_invoke_compute_h
+  !RF use compute_cu_mod, ONLY: manual_invoke_compute_cu
+  use compute_cu_mod, ONLY: compute_cu_type
+  !RF use compute_cv_mod, ONLY: manual_invoke_compute_cv
+  use compute_cv_mod, ONLY: compute_cv_type
+  !RF use compute_z_mod,  ONLY: manual_invoke_compute_z
+  use compute_z_mod, ONLY: compute_z_type
+  !RF use compute_h_mod,  ONLY: manual_invoke_compute_h
+  use compute_h_mod, ONLY: compute_h_type
   use manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
   IMPLICIT NONE
 
@@ -105,10 +108,15 @@ PROGRAM shallow
 
     CALL timer_start('Compute c{u,v},z,h', idxt1)
 
-    CALL manual_invoke_compute_cu(CU, P, U)
-    CALL manual_invoke_compute_cv(CV, P, V)
-    CALL manual_invoke_compute_z(z, P, U, V)
-    CALL manual_invoke_compute_h(h, P, U, V)
+    call invoke( compute_cu_type(CU, P, U), &
+                 compute_cv_type(CV, P, V), &
+                 compute_z_type(z, P, U, V), &
+                 compute_h_type(h, P, U, V) )
+
+    !RF CALL manual_invoke_compute_cu(CU, P, U)
+    !RF CALL manual_invoke_compute_cv(CV, P, V)
+    !RF CALL manual_invoke_compute_z(z, P, U, V)
+    !RF CALL manual_invoke_compute_h(h, P, U, V)
 
     CALL timer_stop(idxt1)
 
