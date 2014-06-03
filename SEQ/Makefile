@@ -56,22 +56,24 @@ shallow_base.o: $(COMMON_MODULES)
 
 shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
-# Interdependencies between modules
+# Interdependencies between modules, alphabetical order
 
 apply_bcs_cu_mod.o: field_mod.o topology_mod.o
 
 compute_cu_mod.o: topology_mod.o
 
-timing_mod.o: intel_timer_mod.o
-
 field_mod.o: kind_params_mod.o topology_mod.o
 
-model_mod.o: field_mod.o timing_mod.o shallow_io_mod.o mesh_mod.o \
-             time_smooth_mod.o topology_mod.o
+initial_conditions_mod.o: physical_params_mod.o model_mod.o
 
 time_smooth_mod.o: kind_params_mod.o $(GUNGHO_MODULES)
 
-initial_conditions_mod.o: physical_params_mod.o model_mod.o
+timing_mod.o: intel_timer_mod.o
+
+mesh_mod.o: kind_params_mod.o
+
+model_mod.o: field_mod.o timing_mod.o shallow_io_mod.o mesh_mod.o \
+             time_smooth_mod.o topology_mod.o
 
 manual_invoke_compute_new_fields_mod.o: compute_unew_mod.o \
                                         compute_vnew_mod.o \
