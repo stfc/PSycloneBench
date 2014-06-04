@@ -5,8 +5,8 @@ module mesh_mod
 
   private
 
-  !> Extents of the grid. Note that the actual grid used in
-  !! the computation has extents one greater than this in
+  !> Extents of the grid. Note that the actual arrays used in
+  !! the computation have extents one greater than this in
   !! each dimension. Where the different mesh points
   !! sit on this grid is defined in the topology module.
   integer :: nx, ny

@@ -1,4 +1,4 @@
-!> \brief Apply boundary conditions for field defined on CU
+!> \brief Apply periodic boundary conditions for field defined on CU
 !! points.
 !! \detail Applies cyclic boundary conditions for a 
 !! field defined on CU.
