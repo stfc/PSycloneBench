@@ -85,6 +85,22 @@ CONTAINS
             &              nit000, nitend, irecord  , &
             &              rdt   , cbfr  , visc
 
+          !! Default value
+
+          jpiglo      =      50               !  number of columns of model grid
+          jpjglo      =     100               !  number of rows of model grid
+          jphgr_msh   =       1               !  type of grid (0: read in a data file; 1: setup with following parameters)
+          dx          =   1000._wp            !  grid size in x direction (m)
+          dy          =   1000._wp            !  grid size in y direction (m)
+          dep_const   =    100._wp            !  constant depth (m)
+          nit000      =       1               !  first time step
+          nitend      =    1000               !  end time step
+          irecord     =       1               !  intervals to save results
+          rdt         =     10._wp            !  size of time step (second) 
+          cbfr        =   0.001_wp            !  bottom friction coefficeint
+          visc        =   1000._wp            !  horizontal kinematic viscosity coefficient 
+ 
+ 
           OPEN(1, file='namelist', STATUS='OLD')
           REWIND(1)
           READ(1, NML=namctl, IOSTAT = ios, ERR = 901)
@@ -93,20 +109,6 @@ CONTAINS
 
           CLOSE(1)
 
- !          jpiglo      =      50               !  number of columns of model grid
- !          jpjglo      =     100               !  number of rows of model grid
- !          jphgr_msh   =       1               !  type of grid (0: read in a data file; 1: setup with following parameters)
- !          dx          =   1000._wp            !  grid size in x direction (m)
- !          dy          =   1000._wp            !  grid size in y direction (m)
- !          dep_const   =    100._wp            !  constant depth (m)
- !          nit000      =       1               !  first time step
- !          nitend      =    1000               !  end time step
- !          irecord     =       1               !  intervals to save results
- !          rdt         =     10._wp            !  size of time step (second) 
- !          cbfr        =   0.001_wp            !  bottom friction coefficeint
- !          visc        =   1000._wp            !  horizontal kinematic viscosity coefficient 
- !
- !
         END SUBROUTINE setup
 
 !+++++++++++++++++++++++++++++++++++
@@ -202,11 +204,16 @@ CONTAINS
             
             ! -solid Boundary cells:   tt_w/e(:) = 0
             !                          tt_n/s(:) = 0
+            !                          ut_w/e(:) = 0
+            !                          vt_n/s(:) = 0
             ! -open Boundary cells:    tt_w/e(:) = -1
             !                          tt_n/s(:) = -1
+            !                          ut_w/e(:) = -1
+            !                          vt_n/s(:) = -1
 
             ! -manually define a south open boundary (tt_s/n  -1, tt_e/w -1)
             tt_s(1:jpiglo) = -1
+            vt_s(1:jpiglo) = -1
 
             !horizontal grid cells
 
@@ -376,6 +383,7 @@ CONTAINS
 
         SUBROUTINE step
           REAL(wp) :: rtime
+
           rtime = REAL(istp, wp) * rdt
 
           CALL continuity
@@ -408,7 +416,9 @@ CONTAINS
         SUBROUTINE momentum
           INTEGER  :: jie, jiw, jin, jis
           INTEGER  :: jue, juw, jvn, jvs
-          INTEGER  :: jve, jvw
+          INTEGER  :: jun, jus, jve, jvw
+          INTEGER  :: jvse, jvsw, jvne, jvnw
+          INTEGER  :: jues, juen, juws, juwn
           REAL(wp) :: zadv, zhpg, zcor, zdiff 
           REAL(wp) :: u_e, u_w, u_s, u_n
           REAL(wp) :: v_e, v_w, v_s, v_n
@@ -424,7 +434,7 @@ CONTAINS
           DO ji = 1, jpijglou
              jie = ut_e(ji)
              jiw = ut_w(ji)
-             IF( jie <= 0 .OR. jiw <= 0) CYCLE
+             IF( jie <= 0 .OR. jiw <= 0) CYCLE   ! updated in boundary condition part
 
              jue = tu_e(jie)
              juw = ji
@@ -436,65 +446,63 @@ CONTAINS
              u_w = 0.5 * (un(jue) + un(juw)) * e2t(jiw)   !add length scale
              depw = ht(jiw) + sshn(jiw)
 
-             IF(ji <= jpiglo) THEN
-               v_s  = 0._wp
-               deps = 0._wp                    !can be any value as v_s=0
-             ELSE
-               jvs = tv_s(jiw)
-               v_s  = 0.25_wp * (vn(jvs) + vn(jvs+1)) * (e1v(jvs) + e1v(jvs+1))
-               deps = 0.5_wp * (hv(jvs) + sshn_v(jvs) + hv(jvs+1) + sshn_v(jvs+1))
-             END IF
+             jvsw = tv_s(jiw)
+             jvse = tv_s(jie)
+             v_s  = 0.25_wp * (vn(jvsw) + vn(jvse)) * (e1v(jvsw) + e1v(jvse))
+             deps = 0.50_wp * (hv(jvsw) + sshn_v(jvsw) + hv(jvse) + sshn_v(jvse))
 
-             IF(ji > jpijglou - jpiglo -1) THEN
-               v_n  = 0._wp
-               depn = 0._wp
-             ELSE
-               jvn = tv_n(jiw)
-               v_n  = 0.25_wp * (vn(jvn) + vn(jvn+1)) * (e1v(jvn) + e1v(jvn+1))
-               depn = 0.5_wp * (hv(jvn) + sshn_v(jvn) + hv(jvn+1) + sshn_v(jvn+1))
-             END If
+             jvnw = tv_n(jiw)
+             jvne = tv_n(jie)
+             v_n  = 0.25_wp * (vn(jvnw) + vn(jvne)) * (e1v(jvnw) + e1v(jvne))
+             depn = 0.50_wp * (hv(jvnw) + sshn_v(jvnw) + hv(jvne) + sshn_v(jvne))
 
             ! -advection (currently first order upwind)
             uu_w = (0.5_wp - SIGN(0.5_wp, u_w)) * un(ji)              + & 
                  & (0.5_wp + SIGN(0.5_wp, u_w)) * un(tu_w(jiw)) 
             uu_e = (0.5_wp + SIGN(0.5_wp, u_e)) * un(ji)              + & 
                  & (0.5_wp - SIGN(0.5_wp, u_e)) * un(tu_e(jie)) 
-            IF(ji <= jpiglo+1) THEN
-               uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji) 
+
+            IF(tt_s(jiw) <= 0) THEN   
+               uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji)   
             ELSE
                uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji)              + & 
-                    & (0.5_wp + SIGN(0.5_wp, v_s)) * un(ji - jpiglo - 1) 
+                    & (0.5_wp + SIGN(0.5_wp, v_s)) * un(tu_e(tt_s(jiw))) 
             END If
-            IF(ji >= jpijglou-jpiglo) THEN
+
+            IF(tt_n(jiw) <= 0) THEN
                uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un(ji)
             ELSE
                uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un(ji)              + & 
-                    & (0.5_wp - SIGN(0.5_wp, v_n)) * un(ji + jpiglo + 1) 
+                    & (0.5_wp - SIGN(0.5_wp, v_n)) * un(tu_e(tt_n(jiw)))
             END IF
 
             adv = uu_w * u_w * depw - uu_e * u_e * depe + uu_s * v_s * deps - uu_n * v_n * depn
 
             ! -viscosity
-            itmp1 = ji + jpiglo + 1
-            itmp2 = ji - jpiglo - 1
 
-            dudx_e = (un(ji+1) - un(ji))   / e1t(jie)
-            dudx_w = (un(ji)   - un(ji-1)) / e1t(jiw)
-            IF(ji <= jpiglo+1) THEN
+            jue = tu_e(jie)
+            juw = tu_w(jiw)
+
+            dudx_e = (un(jue) - un(ji) ) / e1t(jie) * (ht(jie) + sshn(jie))
+            dudx_w = (un(ji)  - un(juw)) / e1t(jiw) * (ht(jiw) + sshn(jiw))
+            IF(tt_s(jiw) <= 0) THEN
               dudy_s = 0.0_wp !slip boundary
             ELSE
-              dudy_s = 2.0_wp * (un(ji)    - un(itmp2)) / (e2u(ji) + e2u(itmp2))
+              jus = tu_e(tt_s(jiw))
+              dudy_s = (un(ji) - un(jus)) / (e2u(ji) + e2u(jus)) * &
+                     & (hu(ji) + sshn_u(ji) + hu(jus) + sshn_u(jus))
             END IF
 
-            IF(ji >= jpijglou-jpiglo) THEN
+            IF(tt_n(jiw) <= 0) THEN
               dudy_n = 0.0_wp ! slip boundary
             ELSE
-              dudy_n = 2.0_wp * (un(itmp1) - un(ji))    / (e2u(ji) + e2u(itmp1))
+              jun = tu_e(tt_n(jiw))
+              dudy_n = (un(jun) - un(ji)) / (e2u(ji) + e2u(jun)) * &
+                     & (hu(ji) + sshn_u(ji) + hu(jun) + sshn_u(jun))
             END If
 
-            vis = (dudx_e * (ht(jie) + sshn(jie)) - dudx_w * (ht(jiw) + sshn(jiw))) * e2u(ji)  + &
-                & (dudy_n * (hu(ji) + hu(itmp1) + sshn_u(ji) + sshn_u(itmp1)) -              &
-                &  dudy_s * (hu(ji) + hu(itmp2) + sshn_u(ji) + sshn_u(itmp2))) * e1u(ji) * 0.5_wp  
+            vis = (dudx_e - dudx_w ) * e2u(ji)  + &
+                & (dudy_n - dudy_s ) * e1u(ji) * 0.5_wp  
             vis = visc * vis   !visc will be a array visc(1:jpijglou) 
                                !for variable viscosity, such as turbulent viscosity
 
@@ -507,9 +515,7 @@ CONTAINS
 
             ! -linear bottom friction (implemented implicitly.
 
-            !ua(ji) = (un(ji) * (hu(ji) + sshn_u(ji)) + rdt * (adv + vis + cor + hpg) / e1e2u(ji)) / &
-            !       & (hu(ji) + ssha_u(ji)) / (1.0_wp + cbfr) 
-            ua(ji) = (un(ji) * (hu(ji) + sshn_u(ji)) + rdt * (adv + hpg) / e1e2u(ji)) / &
+            ua(ji) = (un(ji) * (hu(ji) + sshn_u(ji)) + rdt * (adv + vis + cor + hpg) / e1e2u(ji)) / &
                    & (hu(ji) + ssha_u(ji)) / (1.0_wp + cbfr) 
 
           END DO
@@ -520,60 +526,73 @@ CONTAINS
              jin = vt_n(ji)
              IF( jis <= 0 .OR. jin <= 0) CYCLE
 
-             jvn = tv_n(jin)
-             jvs = ji
+             jvn  = tv_n(jin)
+             jvs  = ji
              v_n  = 0.5 * (vn(jvn) + vn(jvs)) * e1t(jin)  !add length scale.
              depn = ht(jin) + sshn(jin)
 
-             jvn = ji
-             jvs = tv_s(jis)
-             v_s = 0.5 * (vn(jvn) + vn(jvs)) * e1t(jis)   !add length scale
+             jvn  = ji
+             jvs  = tv_s(jis)
+             v_s  = 0.5 * (vn(jvn) + vn(jvs)) * e1t(jis)   !add length scale
              deps = ht(jis) + sshn(jis)
 
-             IF(MOD(ji,jpiglo) == 1) THEN
-               u_w  = 0._wp
-               depw = 0._wp                    !can be any value as v_s=0
-             ELSE
-               jvw = tu_w(jis)
-               u_w = 0.25_wp * (un(jvw) + un(jvw+jpiglo+1)) * &
-                   &           (e2u(jvw) + e2u(jvw+jpiglo+1))
-               depw = 0.5_wp * (hu(jvw) + sshn_u(jvw) + hu(jvw+jpiglo+1) + sshn_u(jvw+jpiglo+1))
-             END IF
+             juws = tu_w(jis)
+             juwn = tu_w(jin)
+             u_w  = 0.25_wp * (un(juws) + un(juwn)) * (e2u(juws) + e2u(juwn))
+             depw = 0.50_wp * (hu(juws) + sshn_u(juws) + hu(juwn) + sshn_u(juwn))
 
-             IF(MOD(ji,jpiglo) == 0) THEN
-               u_e  = 0._wp
-               depe = 0._wp                    !can be any value as v_s=0
-             ELSE
-               jve = tu_e(jis)
-               u_e = 0.25_wp * (un(jve) + un(jve+jpiglo+1)) * &
-                   &           (e2t(jve) + e2t(jve+jpiglo+1))
-               depe = 0.5_wp * (hu(jve) + sshn_u(jve) + hu(jve+jpiglo+1) + sshn_u(ji+jpiglo+1))
-             END IF
+             jues = tu_e(jis)
+             juen = tu_e(jin)
+             u_e  = 0.25_wp * (un(jues) + un(juen)) * (e2u(jues) + e2u(juen))
+             depe = 0.50_wp * (hu(jues) + sshn_u(jues) + hu(juen) + sshn_u(juen))
 
             ! -advection (currently first order upwind)
             vv_s = (0.5_wp - SIGN(0.5_wp, v_s)) * vn(ji)              + & 
-                 & (0.5_wp + SIGN(0.5_wp, v_s)) * vn(ji - jpiglo) 
+                 & (0.5_wp + SIGN(0.5_wp, v_w)) * vn(tv_s(jis)) 
             vv_n = (0.5_wp + SIGN(0.5_wp, v_n)) * vn(ji)              + & 
-                 & (0.5_wp - SIGN(0.5_wp, v_n)) * vn(ji + jpiglo) 
-            vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn(ji)              + & 
-                 & (0.5_wp + SIGN(0.5_wp, u_w)) * vn(ji - 1) 
-            vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn(ji)              + & 
-                 & (0.5_wp - SIGN(0.5_wp, u_e)) * vn(ji + 1) 
+                 & (0.5_wp - SIGN(0.5_wp, v_n)) * vn(tv_n(jin)) 
+
+            IF(tt_w(jis) <= 0) THEN   
+               vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn(ji)  
+            ELSE
+               vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn(ji)              + & 
+                    & (0.5_wp + SIGN(0.5_wp, u_w)) * vn(tv_n(tt_w(jis))) 
+            END If
+
+            IF(tt_e(jis) <= 0) THEN
+               vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn(ji)
+            ELSE
+               vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn(ji)              + & 
+                    & (0.5_wp - SIGN(0.5_wp, u_e)) * vn(tv_n(tt_e(jis)))
+            END IF
 
             adv = vv_w * u_w * depw - vv_e * u_e * depe + vv_s * v_s * deps - vv_n * v_n * depn
 
             ! -viscosity
-            itmp1 = ji + jpiglo 
-            itmp2 = ji - jpiglo
 
-            dvdy_n = (vn(itmp1) - vn(ji))    / e2t(jin)
-            dvdy_s = (vn(ji)    - vn(itmp2)) / e2t(jis)
-            dvdx_e = 2.0_wp * (vn(ji + 1) - vn(ji))     / (e1v(ji) + e1v(ji + 1))
-            dvdx_w = 2.0_wp * (vn(ji)     - vn(ji - 1)) / (e1v(ji) + e1v(ji - 1))
+            jvn = tv_n(jin)
+            jvs = tv_s(jis)
 
-            vis = (dvdy_n * (ht(jin) + sshn(jin)) - dvdy_s * (ht(jis) + sshn(jis))) * e1v(ji)  + &
-                & (dvdx_e * (hv(ji) + hv(ji + 1) + sshn_v(ji) + sshn_v(ji + 1)) -              &
-                &  dvdx_w * (hv(ji) + hv(ji - 1) + sshn_v(ji) + sshn_v(ji - 1))) * e1u(ji) * 0.5_wp  
+            dvdy_n = (vn(jvn) - vn(ji) ) / e1t(jin) * (ht(jin) + sshn(jin))
+            dvdy_s = (un(ji)  - un(jvs)) / e1t(jis) * (ht(jis) + sshn(jis))
+            IF(tt_w(jis) <= 0) THEN
+              dvdx_w = 0.0_wp !slip boundary
+            ELSE
+              jvw = tv_n(tt_w(jis))
+              dvdx_w = (vn(ji) - vn(jvw)) / (e2v(ji) + e2v(jvw)) * &
+                     & (hv(ji) + sshn_v(ji) + hv(jvw) + sshn_v(jvw))
+            END IF
+
+            IF(tt_e(jis) <= 0) THEN
+              dvdx_e = 0.0_wp ! slip boundary
+            ELSE
+              jve = tv_n(tt_e(jis))
+              dvdx_e = (vn(jve) - vn(ji)) / (e2v(ji) + e2v(jve)) * &
+                     & (hv(ji) + sshn_v(ji) + hv(jve) + sshn_v(jve))
+            END If
+
+            vis = (dvdy_n - dvdy_s ) * e1v(ji)  + &
+                & (dvdx_e - dvdx_w ) * e2v(ji) * 0.5_wp  
 
             vis = visc * vis   !visc will be a array visc(1:jpijglou) 
                                !for variable viscosity, such as turbulent viscosity
@@ -588,9 +607,7 @@ CONTAINS
 
             ! -linear bottom friction (implemented implicitly.
 
-            !va(ji) = (vn(ji) * (hv(ji) + sshn_v(ji)) + rdt * (adv + vis + cor + hpg) / e1e2v(ji) ) / &
-            !       & ((hv(ji) + ssha_v(ji))) / (1.0_wp + cbfr) 
-            va(ji) = (vn(ji) * (hv(ji) + sshn_v(ji)) + rdt * (adv + hpg) / e1e2v(ji) ) / &
+            va(ji) = (vn(ji) * (hv(ji) + sshn_v(ji)) + rdt * (adv + vis + cor + hpg) / e1e2v(ji) ) / &
                    & ((hv(ji) + ssha_v(ji))) / (1.0_wp + cbfr) 
 
           END DO
