@@ -54,10 +54,10 @@ PROGRAM shallow
   use compute_z_mod, only: compute_z_type
   !RF use compute_h_mod,  only: manual_invoke_compute_h
   use compute_h_mod, only: compute_h_type
-  use manual_invoke_compute_new_fields_mod, only: manual_invoke_compute_new_fields
-  !use compute_unew_mod, only: compute_unew_type
-  !use compute_vnew_mod, only: compute_vnew_type
-  !use compute_pnew_mod, only: compute_pnew_type
+  !RF use manual_invoke_compute_new_fields_mod, only: manual_invoke_compute_new_fields
+  use compute_unew_mod, only: compute_unew_type
+  use compute_vnew_mod, only: compute_vnew_type
+  use compute_pnew_mod, only: compute_pnew_type
   IMPLICIT NONE
 
   !> Checksum used for each array
@@ -132,12 +132,12 @@ PROGRAM shallow
     ! COMPUTE NEW VALUES U,V AND P
 
     CALL timer_start('Compute new fields', idxt1)
-    CALL manual_invoke_compute_new_fields(unew, uold, vnew, vold, &
-                                         pnew, pold, &
-                                         z, cu, cv, h, tdt%data)
-    !CALL invoke( compute_unew_type(unew, uold, z, cv, h, tdt), &
-    !             compute_vnew_type(vnew, vold, z, cu, h, tdt), &
-    !             compute_pnew_type(pnew, pold, cu, cv, tdt) )
+    !RF CALL manual_invoke_compute_new_fields(unew, uold, vnew, vold, &
+    !RF                                      pnew, pold, &
+    !RF                                      z, cu, cv, h, tdt%data)
+    CALL invoke( compute_unew_type(unew, uold, z, cv, h, tdt), &
+                 compute_vnew_type(vnew, vold, z, cu, h, tdt), &
+                 compute_pnew_type(pnew, pold, cu, cv, tdt) )
 
     CALL timer_stop(idxt1)
 
