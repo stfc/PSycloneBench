@@ -1,6 +1,6 @@
 module field_mod
   use kind_params_mod
-  use topology_mod, only: region
+  use topology_mod
   implicit none
 
   ! A field is defined at certain points on the grid, e.g. at U
@@ -23,46 +23,9 @@ module field_mod
   ! sure that we need to capture the vagaries of where data
   ! might come from.
 
-  !> Base type to capture the information needed about
-  !! an external region. This is a region of the field that
-  !! is not computed but receives data from elsewhere.
-  type :: ExtRegionType
-     !> What type of source this external region has
-     integer      :: SrcType
-     !> Where in the field the data is to be put
-     type(region) :: dest     
-  end type ExtRegionType
-
-  !> Internal source of data - i.e. data is to be copied
-  !! from another part of this same field.
-  type, extends(ExtRegionType) :: InternalSourceType
-     !> Location of source data within the field
-     type(region) :: src
-  end type InternalSourceType
-
-  !> Remote source of data - envisioned as another MPI
-  !! process.
-  type, extends(ExtRegionType) :: RemoteSourceType
-     !> MPI rank of process that owns data
-     integer      :: iproc
-     !> Region of data required from remote process
-     type(region) :: src
-  end type RemoteSourceType
-
-  !> External region to be populated with data read from file
-  type, extends(ExtRegionType) :: FileSourceType
-     !> Unit number of file
-     integer            :: unit_no
-     !> Name of the field in the file to read
-     character(len=128) :: field_name
-  end type FileSourceType
-
-  type :: grid_type
+  type, extends(topology_type) :: rquad_type
      !> Total number of grid points
      integer :: npts
-  end type grid_type
-
-  type, extends(grid_type) :: rquad_type
      !> Extent of grid in x
      INTEGER :: nx
      !> Extent of grid in y
@@ -74,12 +37,8 @@ module field_mod
   end type rquad_type
 
   type :: field_type
-     !> The grid on which this field is defined
+      !> The grid on which this field is defined
      type(rquad_type) :: grid
-     !> The number of external regions that this field has
-     integer :: NumExtRegions
-     !> Array of external regions
-     class(ExtRegionType), allocatable, dimension(:) :: ExtRegion
      !> The internal region of this field
      type(region) :: IntRegion
   end type field_type
@@ -92,6 +51,23 @@ module field_mod
      !> Array holding the actual field values
      real(wp), dimension(:,:), allocatable :: data
   end type r2d_field_type
+
+  !> A field defined on the U points of the Arakawa C Grid
+  type, extends(r2d_field_type) :: cu_field_type
+
+  end type cu_field_type
+
+  type, extends(r2d_field_type) :: cv_field_type
+
+  end type cv_field_type
+
+  type, extends(r2d_field_type) :: ct_field_type
+
+  end type ct_field_type
+
+  type, extends(r2d_field_type) :: cf_field_type
+
+  end type cf_field_type
 
   interface set
      module procedure set_scalar_field
@@ -179,35 +155,5 @@ contains
   END SUBROUTINE set_scalar_field
 
   !===================================================
-
-!  SUBROUTINE set_2dreal(fld, val)
-!    IMPLICIT none
-!    TYPE(reg_field_type), INTENT(out) :: fld
-!    REAL(wp), INTENT(in) :: val
-!
-!    fld%data = val
-
-  !===================================================
-
-  subroutine update_external_regions(fld)
-    implicit none
-    class(field_type), intent(inout) :: fld
-    ! Locals
-    integer :: iregion
-
-    do iregion=1, fld%NumExtRegions, 1
-       write(*,*) 'External region ',iregion,' has type: ',&
-                  fld%ExtRegion(iregion)%SrcType
-
-       select case (fld%ExtRegion(iregion)%SrcType)
-       case (INTERNAL)
-       case (REMOTE)
-       case (COUPLER)
-       case (FILE)
-       case default
-       end select
-    end do
-
-  end subroutine update_external_regions
 
 end module field_mod

@@ -1,5 +1,6 @@
 MODULE manual_invoke_apply_bcs_mod
   USE kind_params_mod
+  use field_mod
   IMPLICIT none
   PRIVATE
 
@@ -39,6 +40,26 @@ CONTAINS
     call manual_invoke_apply_bcs_ct(tfield)
 
   end subroutine manual_invoke_apply_bcs_uvt
+
+  !===================================================
+
+  subroutine manual_invoke_apply_periodic_bcs(fld)
+    implicit none
+    class(field_type), intent(inout) :: fld
+
+    select type(fld)
+
+    type is (cu_field_type)
+
+    type is (cv_field_type)
+
+    type is (ct_field_type)
+
+    type is (cf_field_type)
+
+    end select
+
+  end subroutine manual_invoke_apply_periodic_bcs
 
   !===================================================
 

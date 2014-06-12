@@ -29,10 +29,11 @@ module topology_mod
      type(halo_type), allocatable, dimension(:) :: halo
   end type topology_type
 
-  type(topology_type) :: cu, cv, ct, cf
+  type(topology_type) :: cu_grid, cv_grid, ct_grid, cf_grid
 
   public region
-  public cu, cv, ct, cf
+  public topology_type
+  public cu_grid, cv_grid, ct_grid, cf_grid
   public topology_init
 
 contains
@@ -58,10 +59,10 @@ contains
     !  o  x  x  x   j=N
     !  o  x  x  x
     !  o  x  x  x   j=1
-    cu%istart = 2
-    cu%istop  = M+1
-    cu%jstart = 1
-    cu%jstop  = N
+    cu_grid%istart = 2
+    cu_grid%istop  = M+1
+    cu_grid%jstart = 1
+    cu_grid%jstop  = N
 
     ! When applying periodic (wrap-around) boundary conditions (PBCs)
     ! we must fill the regions marked with an 'o' above.
@@ -81,18 +82,18 @@ contains
     ! (1    , 1:N) = (M+1  , 1:N)
     ! (1:M+1, n+1) = (1:M+1, 1)
 
-    cu%nhalos = 2
-    ALLOCATE(cu%halo(cu%nhalos))
+    cu_grid%nhalos = 2
+    ALLOCATE(cu_grid%halo(cu_grid%nhalos))
 
-    cu%halo(1)%dest%istart = 1   ; cu%halo(1)%dest%istop = 1
-    cu%halo(1)%dest%jstart = 1   ; cu%halo(1)%dest%jstop = N
-    cu%halo(1)%src%istart  = M+1 ; cu%halo(1)%src%istop  = M+1
-    cu%halo(1)%src%jstart  = 1   ; cu%halo(1)%src%jstop  = N
+    cu_grid%halo(1)%dest%istart = 1   ; cu_grid%halo(1)%dest%istop = 1
+    cu_grid%halo(1)%dest%jstart = 1   ; cu_grid%halo(1)%dest%jstop = N
+    cu_grid%halo(1)%src%istart  = M+1 ; cu_grid%halo(1)%src%istop  = M+1
+    cu_grid%halo(1)%src%jstart  = 1   ; cu_grid%halo(1)%src%jstop  = N
 
-    cu%halo(2)%dest%istart = 1   ; cu%halo(2)%dest%istop = M+1
-    cu%halo(2)%dest%jstart = N+1 ; cu%halo(2)%dest%jstop = N+1
-    cu%halo(2)%src%istart  = 1   ; cu%halo(2)%src%istop  = M+1
-    cu%halo(2)%src%jstart  = 1   ; cu%halo(2)%src%jstop  = 1
+    cu_grid%halo(2)%dest%istart = 1   ; cu_grid%halo(2)%dest%istop = M+1
+    cu_grid%halo(2)%dest%jstart = N+1 ; cu_grid%halo(2)%dest%jstop = N+1
+    cu_grid%halo(2)%src%istart  = 1   ; cu_grid%halo(2)%src%istop  = M+1
+    cu_grid%halo(2)%src%jstart  = 1   ; cu_grid%halo(2)%src%jstop  = 1
 
 
     ! When updating a quantity on V points we write to:
@@ -103,10 +104,10 @@ contains
     !  x  x  x  o   j=N
     !  x  x  x  o
     !  o  o  o  o   j=1
-    cv%istart = 1
-    cv%istop  = nx-1
-    cv%jstart = 2
-    cv%jstop  = ny
+    cv_grid%istart = 1
+    cv_grid%istop  = nx-1
+    cv_grid%jstart = 2
+    cv_grid%jstop  = ny
 
     ! When applying periodic (wrap-around) boundary conditions (PBCs)
     ! we must fill the regions marked with an 'o' above.
@@ -127,18 +128,18 @@ contains
     ! Last col = first col
     ! field(MP1:MP1,1:NP1) = field(1:1,  1:NP1)
 
-    cv%nhalos = 2
-    ALLOCATE(cv%halo(cv%nhalos))
+    cv_grid%nhalos = 2
+    ALLOCATE(cv_grid%halo(cv_grid%nhalos))
 
-    cv%halo(1)%dest%istart = 1   ; cv%halo(1)%dest%istop = M
-    cv%halo(1)%dest%jstart = 1   ; cv%halo(1)%dest%jstop = 1
-    cv%halo(1)%src%istart  = 1   ; cv%halo(1)%src%istop  = M
-    cv%halo(1)%src%jstart  = N+1 ; cv%halo(1)%src%jstop  = N+1
+    cv_grid%halo(1)%dest%istart = 1   ; cv_grid%halo(1)%dest%istop = M
+    cv_grid%halo(1)%dest%jstart = 1   ; cv_grid%halo(1)%dest%jstop = 1
+    cv_grid%halo(1)%src%istart  = 1   ; cv_grid%halo(1)%src%istop  = M
+    cv_grid%halo(1)%src%jstart  = N+1 ; cv_grid%halo(1)%src%jstop  = N+1
 
-    cv%halo(2)%dest%istart = M+1 ; cv%halo(2)%dest%istop = M+1
-    cv%halo(2)%dest%jstart = 1   ; cv%halo(2)%dest%jstop = N+1
-    cv%halo(2)%src%istart  = 1   ; cv%halo(2)%src%istop  = 1
-    cv%halo(2)%src%jstart  = 1   ; cv%halo(2)%src%jstop  = N+1
+    cv_grid%halo(2)%dest%istart = M+1 ; cv_grid%halo(2)%dest%istop = M+1
+    cv_grid%halo(2)%dest%jstart = 1   ; cv_grid%halo(2)%dest%jstop = N+1
+    cv_grid%halo(2)%src%istart  = 1   ; cv_grid%halo(2)%src%istop  = 1
+    cv_grid%halo(2)%src%jstart  = 1   ; cv_grid%halo(2)%src%jstop  = N+1
 
     ! When updating a quantity on T points we write to:
     ! (using x to indicate a location that is written):
@@ -148,10 +149,10 @@ contains
     !  x  x  x  o   j=N
     !  x  x  x  o
     !  x  x  x  o   j=1
-    ct%istart = 1
-    ct%istop  = nx-1
-    ct%jstart = 1
-    ct%jstop  = ny-1
+    ct_grid%istart = 1
+    ct_grid%istop  = nx-1
+    ct_grid%jstart = 1
+    ct_grid%jstop  = ny-1
 
     ! When applying periodic (wrap-around) boundary conditions
     ! (PBCs) we must fill the regions marked with an 'o' above.
@@ -172,18 +173,18 @@ contains
     ! Last row = first row
     ! field(1  :MP1,NP1:NP1) = field(1:MP1,1:1)
 
-    ct%nhalos = 2
-    ALLOCATE( ct%halo(ct%nhalos) )
+    ct_grid%nhalos = 2
+    ALLOCATE( ct_grid%halo(ct_grid%nhalos) )
 
-    ct%halo(1)%dest%istart = M+1 ; ct%halo(1)%dest%istop = M+1
-    ct%halo(1)%dest%jstart = 1   ; ct%halo(1)%dest%jstop = N
-    ct%halo(1)%src%istart  = 1   ; ct%halo(1)%src%istop  = 1
-    ct%halo(1)%src%jstart  = 1   ; ct%halo(1)%src%jstop  = N
+    ct_grid%halo(1)%dest%istart = M+1 ; ct_grid%halo(1)%dest%istop = M+1
+    ct_grid%halo(1)%dest%jstart = 1   ; ct_grid%halo(1)%dest%jstop = N
+    ct_grid%halo(1)%src%istart  = 1   ; ct_grid%halo(1)%src%istop  = 1
+    ct_grid%halo(1)%src%jstart  = 1   ; ct_grid%halo(1)%src%jstop  = N
 
-    ct%halo(2)%dest%istart = 1   ; ct%halo(2)%dest%istop = M+1
-    ct%halo(2)%dest%jstart = N+1 ; ct%halo(2)%dest%jstop = N+1
-    ct%halo(2)%src%istart  = 1   ; ct%halo(2)%src%istop  = M+1
-    ct%halo(2)%src%jstart  = 1   ; ct%halo(2)%src%jstop  = 1
+    ct_grid%halo(2)%dest%istart = 1   ; ct_grid%halo(2)%dest%istop = M+1
+    ct_grid%halo(2)%dest%jstart = N+1 ; ct_grid%halo(2)%dest%jstop = N+1
+    ct_grid%halo(2)%src%istart  = 1   ; ct_grid%halo(2)%src%istop  = M+1
+    ct_grid%halo(2)%src%jstart  = 1   ; ct_grid%halo(2)%src%jstop  = 1
 
     ! When updating a quantity on F points we write to:
     ! (using x to indicate a location that is written):
@@ -193,10 +194,10 @@ contains
     !  o  x  x  x   j=N
     !  o  x  x  x
     !  o  o  o  o   j=1
-    cf%istart = 2
-    cf%istop  = nx
-    cf%jstart = 2
-    cf%jstop  = ny
+    cf_grid%istart = 2
+    cf_grid%istop  = nx
+    cf_grid%jstart = 2
+    cf_grid%jstop  = ny
 
     ! When applying periodic (wrap-around) boundary conditions
     ! (PBCs) we must fill the regions marked with an 'o' above.
@@ -217,18 +218,18 @@ contains
     ! First row = last row
     ! field(1:MP1,1:1  ) = field(  1:MP1,NP1:NP1)
 
-    cf%nhalos = 2
-    ALLOCATE( cf%halo(cf%nhalos) )
+    cf_grid%nhalos = 2
+    ALLOCATE( cf_grid%halo(cf_grid%nhalos) )
 
-    cf%halo(1)%dest%istart = 1   ; cf%halo(1)%dest%istop = 1
-    cf%halo(1)%dest%jstart = 2   ; cf%halo(1)%dest%jstop = N+1
-    cf%halo(1)%src%istart  = M+1 ; cf%halo(1)%src%istop  = M+1
-    cf%halo(1)%src%jstart  = 2   ; cf%halo(1)%src%jstop  = N+1
+    cf_grid%halo(1)%dest%istart = 1   ; cf_grid%halo(1)%dest%istop = 1
+    cf_grid%halo(1)%dest%jstart = 2   ; cf_grid%halo(1)%dest%jstop = N+1
+    cf_grid%halo(1)%src%istart  = M+1 ; cf_grid%halo(1)%src%istop  = M+1
+    cf_grid%halo(1)%src%jstart  = 2   ; cf_grid%halo(1)%src%jstop  = N+1
 
-    cf%halo(2)%dest%istart = 1   ; cf%halo(2)%dest%istop = M+1
-    cf%halo(2)%dest%jstart = 1   ; cf%halo(2)%dest%jstop = 1
-    cf%halo(2)%src%istart  = 1   ; cf%halo(2)%src%istop  = M+1
-    cf%halo(2)%src%jstart  = N+1 ; cf%halo(2)%src%jstop  = N+1
+    cf_grid%halo(2)%dest%istart = 1   ; cf_grid%halo(2)%dest%istop = M+1
+    cf_grid%halo(2)%dest%jstart = 1   ; cf_grid%halo(2)%dest%jstop = 1
+    cf_grid%halo(2)%src%istart  = 1   ; cf_grid%halo(2)%src%istop  = M+1
+    cf_grid%halo(2)%src%jstart  = N+1 ; cf_grid%halo(2)%src%jstop  = N+1
 
   end subroutine topology_init
 

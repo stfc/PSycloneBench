@@ -31,7 +31,7 @@ contains
   !! apply_bcs_cv_code().
   subroutine manual_invoke_apply_bcs_cv(fld)
     use field_mod,    only: copy_field
-    use topology_mod, only: cv
+    use topology_mod, only: cv_grid
     implicit none
     real(wp), intent(inout), dimension(:,:) :: fld
     ! Locals
@@ -65,10 +65,10 @@ contains
     !
 
 !DIR$ LOOP_INFO max_trips(2)
-    do ihalo=1,cv%nhalos
+    do ihalo=1,cv_grid%nhalos
 
       ! Copy from source to destination
-      call copy_field(fld, cv%halo(ihalo)%src, cv%halo(ihalo)%dest)
+      call copy_field(fld, cv_grid%halo(ihalo)%src, cv_grid%halo(ihalo)%dest)
 
     end do
 

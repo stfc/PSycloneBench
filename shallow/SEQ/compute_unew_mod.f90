@@ -30,7 +30,7 @@ CONTAINS
   !===================================================
 
   subroutine manual_invoke_compute_unew(unew, uold, z, cv, h, tdt)
-    use topology_mod, only: cu
+    use topology_mod, only: cu_grid
     implicit none
     real(wp), intent(out), dimension(:,:) :: unew
     real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
@@ -71,8 +71,8 @@ CONTAINS
     !   END DO
     ! END DO
 
-    DO J=cu%jstart, cu%jstop, 1
-       DO I=cu%istart, cu%istop, 1
+    DO J=cu_grid%jstart, cu_grid%jstop, 1
+       DO I=cu_grid%istart, cu_grid%istop, 1
 
           CALL compute_unew_code(i, j, unew, uold, &
                                  z, cv, h, tdt)

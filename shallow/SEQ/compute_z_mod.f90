@@ -33,7 +33,7 @@ contains
   !> Manual implementation of the code needed to invoke
   !! compute_z_code().
   subroutine manual_invoke_compute_z(z, p, u, v)
-    use topology_mod, only: cf
+    use topology_mod, only: cf_grid
     implicit none
     real(wp), intent(out), dimension(:,:) :: z
     real(wp), intent(in),  dimension(:,:) :: p, u, v
@@ -84,8 +84,8 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
     !
 
-    do J=cf%jstart, cf%jstop !2, size(z, 2)
-       do I=cf%istart, cf%istop !2, size(z, 1)
+    do J=cf_grid%jstart, cf_grid%jstop !2, size(z, 2)
+       do I=cf_grid%istart, cf_grid%istop !2, size(z, 1)
 
           call compute_z_code(i, j, z, p, u, v)
        end do

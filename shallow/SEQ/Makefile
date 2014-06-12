@@ -81,7 +81,8 @@ manual_invoke_compute_new_fields_mod.o: compute_unew_mod.o \
                                         topology_mod.o
 
 manual_invoke_apply_bcs_mod.o: apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
-                               apply_bcs_cu_mod.o apply_bcs_cv_mod.o
+                               apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
+                               field_mod.o
 
 %.exe: $(MODULE_LIST)
 	$(F90) -o $@ $? $(LDFLAGS)
