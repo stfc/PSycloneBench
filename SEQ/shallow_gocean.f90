@@ -39,22 +39,16 @@ PROGRAM shallow
   use timing_mod
   use model_mod
   use initial_conditions_mod
-  !RF use time_smooth_mod,  only: manual_invoke_time_smooth
   use time_smooth_mod,  only: time_smooth_type
   use apply_bcs_cf_mod, only: manual_invoke_apply_bcs_cf
   use apply_bcs_ct_mod, only: manual_invoke_apply_bcs_ct
   use apply_bcs_cu_mod, only: manual_invoke_apply_bcs_cu
   use apply_bcs_cv_mod, only: manual_invoke_apply_bcs_cv
   use manual_invoke_apply_bcs_mod, only: manual_invoke_apply_bcs_uvtf
-  !RF use compute_cu_mod, only: manual_invoke_compute_cu
   use compute_cu_mod, only: compute_cu_type
-  !RF use compute_cv_mod, only: manual_invoke_compute_cv
   use compute_cv_mod, only: compute_cv_type
-  !RF use compute_z_mod,  only: manual_invoke_compute_z
   use compute_z_mod, only: compute_z_type
-  !RF use compute_h_mod,  only: manual_invoke_compute_h
   use compute_h_mod, only: compute_h_type
-  !RF use manual_invoke_compute_new_fields_mod, only: manual_invoke_compute_new_fields
   use compute_unew_mod, only: compute_unew_type
   use compute_vnew_mod, only: compute_vnew_type
   use compute_pnew_mod, only: compute_pnew_type
@@ -116,11 +110,6 @@ PROGRAM shallow
                  compute_z_type(z, P, U, V), &
                  compute_h_type(h, P, U, V) )
 
-    !RF CALL manual_invoke_compute_cu(CU, P, U)
-    !RF CALL manual_invoke_compute_cv(CV, P, V)
-    !RF CALL manual_invoke_compute_z(z, P, U, V)
-    !RF CALL manual_invoke_compute_h(h, P, U, V)
-
     CALL timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
@@ -132,9 +121,6 @@ PROGRAM shallow
     ! COMPUTE NEW VALUES U,V AND P
 
     CALL timer_start('Compute new fields', idxt1)
-    !RF CALL manual_invoke_compute_new_fields(unew, uold, vnew, vold, &
-    !RF                                      pnew, pold, &
-    !RF                                      z, cu, cv, h, tdt%data)
     CALL invoke( compute_unew_type(unew, uold, z, cv, h, tdt), &
                  compute_vnew_type(vnew, vold, z, cu, h, tdt), &
                  compute_pnew_type(pnew, pold, cu, cv, tdt) )
@@ -158,9 +144,6 @@ PROGRAM shallow
 
       CALL timer_start('Time smoothing',idxt1)
 
-      !RF CALL manual_invoke_time_smooth(U, UNEW, UOLD)
-      !RF CALL manual_invoke_time_smooth(V, VNEW, VOLD)
-      !RF CALL manual_invoke_time_smooth(P, PNEW, POLD)
       call invoke(time_smooth_type(u,unew,uold),&
                   time_smooth_type(v,vnew,vold),&
                   time_smooth_type(p,pnew,pold))
