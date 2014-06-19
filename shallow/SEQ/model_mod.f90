@@ -1,4 +1,5 @@
 MODULE model_mod
+  use kind_params_mod
   USE field_mod
   USE mesh_mod
   USE shallow_io_mod

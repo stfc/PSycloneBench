@@ -23,8 +23,6 @@ MODULES = kind_params_mod.o physical_params_mod.o \
           manual_invoke_compute_new_fields_mod.o \
           compute_unew_mod.o compute_vnew_mod.o compute_pnew_mod.o \
           manual_invoke_apply_bcs_mod.o \
-          apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
-          apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
           timing_mod.o time_smooth_mod.o intel_timer_mod.o \
           mesh_mod.o
 
@@ -59,8 +57,6 @@ shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
 # Interdependencies between modules, alphabetical order
 
-apply_bcs_cu_mod.o: field_mod.o
-
 compute_cu_mod.o: field_mod.o
 
 field_mod.o: kind_params_mod.o grid_mod.o halo_mod.o
@@ -80,9 +76,7 @@ manual_invoke_compute_new_fields_mod.o: compute_unew_mod.o \
                                         compute_vnew_mod.o \
                                         compute_pnew_mod.o
 
-manual_invoke_apply_bcs_mod.o: apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
-                               apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
-                               field_mod.o
+manual_invoke_apply_bcs_mod.o: field_mod.o
 
 %.exe: $(MODULE_LIST)
 	$(F90) -o $@ $? $(LDFLAGS)

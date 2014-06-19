@@ -4,8 +4,8 @@ module grid_mod
 
   private
 
-  integer, parameter :: ARAKAWA_C = 0
-  integer, parameter :: ARAKAWA_B = 1
+  integer, public, parameter :: ARAKAWA_C = 0
+  integer, public, parameter :: ARAKAWA_B = 1
 
   type, public :: grid_type
      !> The type of grid this is (e.g. Arakawa C Grid)
@@ -28,12 +28,25 @@ module grid_mod
 
 contains
 
-  function grid_constructor() result(self)
+  function grid_constructor(grid_name) result(self)
     implicit none
+    integer, intent(in) :: grid_name
     type(grid_type), target :: self
+
     write(*,*) "grid_constructor needs to read namelist file!"
 
-    self%grid_name = ARAKAWA_C
+    ! This case statement is mainly to check that the caller
+    ! has specified a valid value for grid_name.
+    select case(grid_name)
+
+    case(ARAKAWA_C)
+       self%grid_name = ARAKAWA_C
+    case(ARAKAWA_B)
+       self%grid_name = ARAKAWA_B
+    case default
+       write(*,*) 'grid_constructor: ERROR: unsupported grid type: ',grid_name
+       stop
+    end select
 
   end function grid_constructor
 

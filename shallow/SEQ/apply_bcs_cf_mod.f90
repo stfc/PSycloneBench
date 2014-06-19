@@ -30,10 +30,9 @@ contains
   !> Manual implementation of the code needed to invoke
   !! apply_bcs_cf_code().
   subroutine manual_invoke_apply_bcs_cf(field)
-    use field_mod,    only: copy_field
-    use topology_mod, only: cf_grid
+    use field_mod
     implicit none
-    real(wp), intent(inout), dimension(:,:) :: field
+    type(r2d_field_type), intent(inout) :: field
     ! Locals
     integer :: ihalo
 
@@ -67,10 +66,12 @@ contains
     !
 
 !DIR$ LOOP_INFO max_trips(2)
-    do ihalo = 1, cf_grid%nhalos
+    do ihalo = 1, field%num_halos
 
       ! Copy from source to destination
-      call copy_field(field, cf_grid%halo(ihalo)%src, cf_grid%halo(ihalo)%dest)
+      call copy_field(field, &
+                      field%halo(ihalo)%source, &
+                      field%halo(ihalo)%dest)
 
     end do
 

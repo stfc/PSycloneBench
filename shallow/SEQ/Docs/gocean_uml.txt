@@ -27,7 +27,7 @@ class grid_type {
   int ny
   float dx
   float dy
- +grid new_grid()
+ +grid_type grid_constructor()
 }
 
 class halo_type {
@@ -45,7 +45,11 @@ class field_type {
   Region internal
   int num_halos
   halo_type halo[num_halos]
- +field_type new_field()
+ +field_type field_constructor()
+ -cu_field_init()
+ -cv_field_init()
+ -cf_field_init()
+ -ct_field_init()
 }
 
 class scalar_field_type {

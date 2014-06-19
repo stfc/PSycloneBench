@@ -1,45 +1,32 @@
-MODULE manual_invoke_apply_bcs_mod
-  USE kind_params_mod
+module manual_invoke_apply_bcs_mod
+  use kind_params_mod
   use field_mod
-  IMPLICIT none
-  PRIVATE
+  implicit none
 
-  PUBLIC manual_invoke_apply_bcs_uvtf
-  PUBLIC manual_invoke_apply_bcs_uvt
+  private
 
-CONTAINS
+  public manual_invoke_apply_bcs
 
-  !===================================================
-
-  SUBROUTINE manual_invoke_apply_bcs_uvtf(ufield, vfield, tfield, ffield)
-    USE apply_bcs_cf_mod, ONLY: manual_invoke_apply_bcs_cf
-    use apply_bcs_ct_mod, only: manual_invoke_apply_bcs_ct
-    use apply_bcs_cu_mod, only: manual_invoke_apply_bcs_cu
-    use apply_bcs_cv_mod, only: manual_invoke_apply_bcs_cv
-    IMPLICIT none
-    REAL(wp), INTENT(inout), DIMENSION(:,:) :: ufield, vfield, tfield, ffield
-
-    call manual_invoke_apply_bcs_cu(ufield)
-    call manual_invoke_apply_bcs_ct(tfield)
-    call manual_invoke_apply_bcs_cv(vfield)
-    call manual_invoke_apply_bcs_cf(ffield)
-
-  END SUBROUTINE manual_invoke_apply_bcs_uvtf
+contains
 
   !===================================================
 
-  subroutine manual_invoke_apply_bcs_uvt(ufield, vfield, tfield)
-    use apply_bcs_ct_mod, only: manual_invoke_apply_bcs_ct
-    use apply_bcs_cu_mod, only: manual_invoke_apply_bcs_cu
-    use apply_bcs_cv_mod, only: manual_invoke_apply_bcs_cv
+  subroutine manual_invoke_apply_bcs(field)
     implicit none
-    real(wp), intent(inout), dimension(:,:) :: ufield, vfield, tfield
+    type(r2d_field_type), intent(inout) :: field
+    ! Locals
+    integer :: ihalo
 
-    call manual_invoke_apply_bcs_cu(ufield)
-    call manual_invoke_apply_bcs_cv(vfield)
-    call manual_invoke_apply_bcs_ct(tfield)
+!DIR$ LOOP_INFO max_trips(2)
+    do ihalo = 1, field%num_halos
 
-  end subroutine manual_invoke_apply_bcs_uvt
+      ! Copy from source to destination
+      call copy_field(field,                    &
+                      field%halo(ihalo)%source, &
+                      field%halo(ihalo)%dest)
+    end do
+
+  end subroutine manual_invoke_apply_bcs
 
   !===================================================
 

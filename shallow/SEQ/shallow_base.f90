@@ -1,6 +1,6 @@
 program shallow
 
-!> @manpage BENCHMARK WEATHER PREDICTION PROGRAM FOR COMPARING THE
+!> @mainpage BENCHMARK WEATHER PREDICTION PROGRAM FOR COMPARING THE
 !! PREFORMANCE OF CURRENT SUPERCOMPUTERS. THE MODEL IS
 !! BASED OF THE PAPER - THE DYNAMICS OF FINITE-DIFFERENCE
 !! MODELS OF THE SHALLOW-WATER EQUATIONS, BY ROBERT SADOURNY
@@ -39,12 +39,11 @@ program shallow
   use shallow_io_mod
   use timing_mod
   use model_mod
+  use grid_mod
+  use field_mod
   use initial_conditions_mod
   use time_smooth_mod,  ONLY: manual_invoke_time_smooth
-  use apply_bcs_cu_mod, ONLY: manual_invoke_apply_bcs_cu
-  use apply_bcs_cv_mod, ONLY: manual_invoke_apply_bcs_cv
-  use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf
-  use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvt
+  use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs
   use compute_cu_mod, ONLY: manual_invoke_compute_cu
   use compute_cv_mod, ONLY: manual_invoke_compute_cv
   use compute_z_mod,  ONLY: manual_invoke_compute_z
@@ -52,8 +51,19 @@ program shallow
   use manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
   implicit none
 
-  type(grid_type)  :: model_grid
-  type(field_type) :: pressure_fld
+  type(grid_type)      :: model_grid
+  !> Pressure
+  type(r2d_field_type) :: p_fld, pold_fld, pnew_fld
+  !> Velocity in x direction at {current,previous,next} time step
+  type(r2d_field_type) :: u_fld, uold_fld, unew_fld
+  !> Velocity in x direction at {current,previous,next} time step
+  type(r2d_field_type) :: v_fld, vold_fld, vnew_fld
+  !> Mass flux in x and y directions
+  type(r2d_field_type) :: cu_fld, cv_fld
+  !> Potential vorticity
+  type(r2d_field_type) :: z_fld
+  !> Surface height
+  type(r2d_field_type) :: h_fld
 
   !> Checksum used for each array
   REAL(KIND=8) :: csum
@@ -67,11 +77,55 @@ program shallow
   !  ** Initialisations of model parameters (dt etc) ** 
   CALL model_init()
  
-  model_grid = grid_type(ARAKAWA_C_GRID)
+  ! Create the model grid
+  model_grid = grid_type(ARAKAWA_C)
 
-  pressure_fld = field_type(grid                = model_grid, &
-                            grid_points         = t_pt,       &
-                            boundary_conditions = PERIODIC)
+  ! Create fields on this grid
+  p_fld    = r2d_field_type(model_grid, &
+                            T_POINTS,   &
+                            BC_PERIODIC)
+!!$  pold_fld = field_type(grid_ptr            = model_grid, &
+!!$                        grid_points         = T_POINTS,   &
+!!$                        boundary_conditions = BC_PERIODIC)
+!!$  pnew_fld = field_type(grid_ptr            = model_grid, &
+!!$                        grid_points         = T_POINTS,   &
+!!$                        boundary_conditions = BC_PERIODIC)
+!!$
+!!$  u_fld    = field_type(grid_ptr            = model_grid, &
+!!$                        grid_points         = U_POINTS,   &
+!!$                        boundary_conditions = BC_PERIODIC)
+!!$  uold_fld = field_type(grid_ptr            = model_grid, &
+!!$                        grid_points         = U_POINTS,   &
+!!$                        boundary_conditions = BC_PERIODIC)
+!!$  unew_fld = field_type(grid_ptr            = model_grid, &
+!!$                        grid_points         = U_POINTS,   &
+!!$                        boundary_conditions = BC_PERIODIC)
+!!$
+!!$  v_fld    = field_type(grid_ptr            = model_grid, &
+!!$                        grid_points         = V_POINTS,   &
+!!$                        boundary_conditions = BC_PERIODIC)
+!!$  vold_fld = field_type(grid_ptr            = model_grid, &
+!!$                        grid_points         = V_POINTS,   &
+!!$                        boundary_conditions = BC_PERIODIC)
+!!$  vnew_fld = field_type(grid_ptr            = model_grid, &
+!!$                        grid_points         = V_POINTS,   &
+!!$                        boundary_conditions = BC_PERIODIC)
+!!$
+!!$  cu_fld = field_type(grid_ptr            = model_grid, &
+!!$                     grid_points         = U_POINTS,   &
+!!$                     boundary_conditions = BC_PERIODIC)
+!!$
+!!$  cv_fld = field_type(grid_ptr            = model_grid, &
+!!$                     grid_points         = V_POINTS,   &
+!!$                     boundary_conditions = BC_PERIODIC)
+!!$
+!!$  z_fld = field_type(grid_ptr            = model_grid, &
+!!$                     grid_points         = F_POINTS,   &
+!!$                     boundary_conditions = BC_PERIODIC)
+!!$
+!!$  h_fld = field_type(grid_ptr            = model_grid, &
+!!$                     grid_points         = T_POINTS,   &
+!!$                     boundary_conditions = BC_PERIODIC)
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
@@ -87,24 +141,24 @@ program shallow
 
   CALL init_initial_condition_params()
   CALL invoke_init_stream_fn_kernel(PSI)
-  CALL init_pressure(P)
+  CALL init_pressure(p_fld)
 
   !     INITIALIZE VELOCITIES
  
-  CALL init_velocity_u(u, psi, m, n)
-  CALL init_velocity_v(v, psi, m, n)
+  CALL init_velocity_u(u_fld, psi, m, n)
+  CALL init_velocity_v(v_fld, psi, m, n)
 
   !     PERIODIC CONTINUATION
-  CALL manual_invoke_apply_bcs_cu(U)
-  CALL manual_invoke_apply_bcs_cv(V)
+  CALL manual_invoke_apply_bcs(u_fld)
+  CALL manual_invoke_apply_bcs(v_fld)
 
   ! Initialise fields that will hold data at previous time step
-  CALL copy_field(U, UOLD)
-  CALL copy_field(V, VOLD)
-  CALL copy_field(P, POLD)
+  CALL copy_field(u_fld, uold_fld)
+  CALL copy_field(v_fld, vold_fld)
+  CALL copy_field(p_fld, pold_fld)
      
   ! Write intial values of p, u, and v into a netCDF file   
-  CALL model_write(0, p, u, v)
+  CALL model_write(0, p_fld, u_fld, v_fld)
 
   !     Start timer
   CALL timer_start('Time-stepping',idxt0)
@@ -116,10 +170,10 @@ program shallow
 
     CALL timer_start('Compute c{u,v},z,h', idxt1)
 
-    CALL manual_invoke_compute_cu(CU, P, U)
-    CALL manual_invoke_compute_cv(CV, P, V)
-    CALL manual_invoke_compute_z(z, P, U, V)
-    CALL manual_invoke_compute_h(h, P, U, V)
+    CALL manual_invoke_compute_cu(CU_fld, p_fld, u_fld)
+    CALL manual_invoke_compute_cv(CV_fld, p_fld, v_fld)
+    CALL manual_invoke_compute_z(z_fld, p_fld, u_fld, v_fld)
+    CALL manual_invoke_compute_h(h_fld, p_fld, u_fld, v_fld)
 
     CALL timer_stop(idxt1)
 
@@ -127,37 +181,43 @@ program shallow
 
     CALL timer_start('PBCs-1',idxt1)
     ! This call could be generated automatically by PSyclone
-    CALL manual_invoke_apply_bcs_uvtf(CU, CV, H, Z)
+    CALL manual_invoke_apply_bcs(CU_fld)
+    CALL manual_invoke_apply_bcs(CV_fld)
+    CALL manual_invoke_apply_bcs(H_fld)
+    CALL manual_invoke_apply_bcs(Z_fld)
     CALL timer_stop(idxt1)
 
     ! COMPUTE NEW VALUES U,V AND P
 
     CALL timer_start('Compute new fields', idxt1)
-    CALL manual_invoke_compute_new_fields(unew, uold, &
-                                          vnew, vold, &
-                                          pnew, pold, &
-                                          z, cu, cv, h, tdt%data)
+    CALL manual_invoke_compute_new_fields(unew_fld, uold_fld, &
+                                          vnew_fld, vold_fld, &
+                                          pnew_fld, pold_fld, &
+                                          z_fld, cu_fld, cv_fld, &
+                                          h_fld, tdt%data)
     CALL timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
     CALL timer_start('PBCs-2',idxt1)
     ! This call could be generated by PSyclone
-    CALL manual_invoke_apply_bcs_uvt(UNEW, VNEW, PNEW)
+    CALL manual_invoke_apply_bcs(UNEW_fld)
+    CALL manual_invoke_apply_bcs(VNEW_fld)
+    CALL manual_invoke_apply_bcs(PNEW_fld)
     CALL timer_stop(idxt1)
 
     ! Time is in seconds but we never actually need it
     !CALL increment(time, dt)
 
-    CALL model_write(ncycle, p, u, v)
+    CALL model_write(ncycle, p_fld, u_fld, v_fld)
 
     ! TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
     IF(NCYCLE .GT. 1) then
 
       CALL timer_start('Time smoothing',idxt1)
 
-      CALL manual_invoke_time_smooth(U, UNEW, UOLD)
-      CALL manual_invoke_time_smooth(V, VNEW, VOLD)
-      CALL manual_invoke_time_smooth(P, PNEW, POLD)
+      CALL manual_invoke_time_smooth(u_fld, UNEW_fld, UOLD_fld)
+      CALL manual_invoke_time_smooth(v_fld, VNEW_fld, VOLD_fld)
+      CALL manual_invoke_time_smooth(p_fld, PNEW_fld, POLD_fld)
 
       CALL timer_stop(idxt1)
 
@@ -170,9 +230,9 @@ program shallow
 
     CALL timer_start('Field copy',idxt1)
 
-    CALL copy_field(UNEW, U)
-    CALL copy_field(VNEW, V)
-    CALL copy_field(PNEW, P)
+    CALL copy_field(UNEW_fld, U_fld)
+    CALL copy_field(VNEW_fld, V_fld)
+    CALL copy_field(PNEW_fld, p_fld)
 
     CALL timer_stop(idxt1)
 
@@ -182,15 +242,15 @@ program shallow
 
   CALL timer_stop(idxt0)
 
-  CALL compute_checksum(pnew, csum)
+  CALL compute_checksum(pnew_fld%data, csum)
   CALL model_write_log("('P CHECKSUM after ',I6,' steps = ',E15.7)", &
                        itmax, csum)
 
-  CALL compute_checksum(unew, csum)
+  CALL compute_checksum(unew_fld%data, csum)
   CALL model_write_log("('U CHECKSUM after ',I6,' steps = ',E15.7)", &
                        itmax, csum)
 
-  CALL compute_checksum(vnew, csum)
+  CALL compute_checksum(vnew_fld%data, csum)
   CALL model_write_log("('V CHECKSUM after ',I6,' steps = ',E15.7)", &
                        itmax, csum)
 
