@@ -1,7 +1,8 @@
 MODULE compute_vnew_mod
-  USE kind_params_mod
-  USE kernel_mod
+  use kind_params_mod
+  use kernel_mod
   use argument_mod
+  use field_mod
   IMPLICIT none
 
   PRIVATE
@@ -30,9 +31,8 @@ CONTAINS
   !===================================================
 
   subroutine manual_invoke_compute_vnew(vnew, vold, z, cu, h, tdt)
-    use topology_mod, only: cv_grid
     implicit none
-    real(wp), intent(out), dimension(:,:) :: vnew
+    type(r2d_field_type), intent(out) :: vnew
     real(wp), intent(in),  dimension(:,:) :: vold, z, cu, h
     real(wp), intent(in) :: tdt
     ! Locals
@@ -82,10 +82,10 @@ CONTAINS
     !   uij-1- -Tij-1---ui+1j-1
     !
 
-    DO J=cv_grid%jstart, cv_grid%jstop, 1
-       DO I=cv_grid%istart, cv_grid%istop, 1
+    DO J=vnew%internal%ystart, vnew%internal%ystop, 1
+       DO I=vnew%internal%xstart, vnew%internal%xstop, 1
 
-          CALL compute_vnew_code(i, j, vnew, vold, &
+          CALL compute_vnew_code(i, j, vnew%data, vold, &
                                  z, cu, h, tdt)
        END DO
     END DO

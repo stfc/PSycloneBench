@@ -5,6 +5,7 @@ module compute_cv_mod
   use kind_params_mod
   use kernel_mod
   use argument_mod
+  use field_mod
   implicit none
 
   private
@@ -32,10 +33,9 @@ contains
   !> Manual implementation of the code needed to invoke
   !! compute_cv_code().
   subroutine manual_invoke_compute_cv(cvfld, p, v)
-    use topology_mod, only: cv_grid
     implicit none
-    real(wp), intent(out), dimension(:,:) :: cvfld
-    real(wp), intent(in),  dimension(:,:) :: p, v
+    type(r2d_field_type),    intent(out) :: cvfld
+    real(wp), dimension(:,:), intent(in) :: p, v
     ! Locals
     integer :: I, J
 
@@ -80,10 +80,10 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
     !
 
-    do J=cv_grid%jstart, cv_grid%jstop !2, size(cv, 2)
-       do I=cv_grid%istart, cv_grid%istop !1, size(cv, 1) - 1
+    do J=cvfld%internal%ystart, cvfld%internal%ystop
+       do I=cvfld%internal%xstart, cvfld%internal%xstop
 
-          call compute_cv_code(i, j, cvfld, p, v)
+          call compute_cv_code(i, j, cvfld%data, p, v)
        end do
     end do
 

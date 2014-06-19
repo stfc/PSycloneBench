@@ -1,16 +1,17 @@
-MODULE compute_h_mod
-  USE kind_params_mod
-  USE kernel_mod
+module compute_h_mod
+  use kind_params_mod
+  use kernel_mod
   use argument_mod
-  IMPLICIT none
+  use field_mod
+  implicit none
 
-  PRIVATE
+  private
 
-  PUBLIC manual_invoke_compute_h
-  PUBLIC compute_h_type, compute_h_code
+  public manual_invoke_compute_h
+  public compute_h_type, compute_h_code
 
-  TYPE, EXTENDS(kernel_type) :: compute_h_type
-     TYPE(arg), DIMENSION(4) :: meta_args =    &
+  type, extends(kernel_type) :: compute_h_type
+     type(arg), dimension(4) :: meta_args =    &
           (/ arg(WRITE, CT, POINTWISE),        & ! h
              arg(READ,  CT, POINTWISE),        & ! p
              arg(READ,  CU, POINTWISE),        & ! u
@@ -18,20 +19,19 @@ MODULE compute_h_mod
            /)
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
-     INTEGER :: ITERATES_OVER = DOFS
-  CONTAINS
+     integer :: ITERATES_OVER = DOFS
+  contains
     procedure, nopass :: code => compute_h_code
-  END TYPE compute_h_type
+  end type compute_h_type
 
-CONTAINS
+contains
 
   !===================================================
 
-  subroutine manual_invoke_compute_h(h, p, u, v)
-    use topology_mod, only: ct_grid
+  subroutine manual_invoke_compute_h(hfld, p, u, v)
     implicit none
-    real(wp), intent(out), dimension(:,:) :: h
-    real(wp), intent(in),  dimension(:,:) :: p, u,v
+    type(r2d_field_type),    intent(out) :: hfld
+    real(wp), dimension(:,:), intent(in) :: p, u,v
     ! Locals
     integer :: I, J
 
@@ -80,10 +80,10 @@ CONTAINS
     !   uij-1- -Tij-1---ui+1j-1
     !
 
-    DO J=ct_grid%jstart, ct_grid%jstop, 1
-       DO I=ct_grid%istart, ct_grid%istop, 1
+    DO J=hfld%internal%ystart, hfld%internal%ystop, 1
+       DO I=hfld%internal%xstart, hfld%internal%xstop, 1
 
-          CALL compute_h_code(i, j, h, p, u, v)
+          CALL compute_h_code(i, j, hfld%data, p, u, v)
        END DO
     END DO
 

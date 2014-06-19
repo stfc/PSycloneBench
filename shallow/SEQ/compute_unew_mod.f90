@@ -2,15 +2,16 @@ MODULE compute_unew_mod
   USE kind_params_mod
   USE kernel_mod
   use argument_mod
-  IMPLICIT none
+  use field_mod
+  implicit none
 
-  PRIVATE
+  private
 
-  PUBLIC manual_invoke_compute_unew
-  PUBLIC compute_unew_type, compute_unew_code
+  public manual_invoke_compute_unew
+  public compute_unew_type, compute_unew_code
 
-  TYPE, EXTENDS(kernel_type) :: compute_unew_type
-     TYPE(arg), DIMENSION(6) :: meta_args =    &
+  type, extends(kernel_type) :: compute_unew_type
+     type(arg), dimension(6) :: meta_args =    &
           (/ arg(WRITE, CU, POINTWISE),        & ! unew
              arg(READ,  CU, POINTWISE),        & ! uold
              arg(READ,  CF, POINTWISE),        & ! z
@@ -20,19 +21,18 @@ MODULE compute_unew_mod
            /)
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
-     INTEGER :: ITERATES_OVER = DOFS
-  CONTAINS
+     integer :: ITERATES_OVER = DOFS
+  contains
     procedure, nopass :: code => compute_unew_code
-  END TYPE compute_unew_type
+  end type compute_unew_type
 
-CONTAINS
+contains
 
   !===================================================
 
   subroutine manual_invoke_compute_unew(unew, uold, z, cv, h, tdt)
-    use topology_mod, only: cu_grid
     implicit none
-    real(wp), intent(out), dimension(:,:) :: unew
+    type(r2d_field_type), intent(out) :: unew
     real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
     real(wp), intent(in) :: tdt
     ! Locals
@@ -71,10 +71,10 @@ CONTAINS
     !   END DO
     ! END DO
 
-    DO J=cu_grid%jstart, cu_grid%jstop, 1
-       DO I=cu_grid%istart, cu_grid%istop, 1
+    DO J=unew%internal%ystart, unew%internal%ystop, 1
+       DO I=unew%internal%xstart, unew%internal%xstop, 1
 
-          CALL compute_unew_code(i, j, unew, uold, &
+          CALL compute_unew_code(i, j, unew%data, uold, &
                                  z, cv, h, tdt)
        END DO
     END DO

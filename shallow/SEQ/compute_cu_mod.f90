@@ -34,8 +34,8 @@ contains
   !! compute_cu_code().
   subroutine manual_invoke_compute_cu(cufld, p, u)
     implicit none
-    type(r2d_field_type), intent(out) :: cufld
-    real(wp), intent(in),  dimension(:,:) :: p, u
+    type(r2d_field_type),     intent(out) :: cufld
+    real(wp), dimension(:,:), intent(in)  :: p, u
     ! Locals
     integer :: I, J
 

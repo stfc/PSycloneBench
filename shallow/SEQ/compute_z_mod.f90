@@ -5,6 +5,7 @@ module compute_z_mod
   use kind_params_mod
   use kernel_mod
   use argument_mod
+  use field_mod
   implicit none
 
   private
@@ -32,11 +33,10 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! compute_z_code().
-  subroutine manual_invoke_compute_z(z, p, u, v)
-    use topology_mod, only: cf_grid
+  subroutine manual_invoke_compute_z(zfld, p, u, v)
     implicit none
-    real(wp), intent(out), dimension(:,:) :: z
-    real(wp), intent(in),  dimension(:,:) :: p, u, v
+    type(r2d_field_type),    intent(out) :: zfld
+    real(wp), dimension(:,:), intent(in) :: p, u, v
     ! Locals
     integer :: I, J
 
@@ -84,10 +84,10 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
     !
 
-    do J=cf_grid%jstart, cf_grid%jstop !2, size(z, 2)
-       do I=cf_grid%istart, cf_grid%istop !2, size(z, 1)
+    do J=zfld%internal%ystart, zfld%internal%ystop, 1
+       do I=zfld%internal%xstart, zfld%internal%xstop, 1
 
-          call compute_z_code(i, j, z, p, u, v)
+          call compute_z_code(i, j, zfld%data, p, u, v)
        end do
     end do
 

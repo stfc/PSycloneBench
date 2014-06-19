@@ -11,12 +11,12 @@ CONTAINS
                                               vnew, vold, &
                                               pnew, pold, &
                                               z, cufld, cvfld, hfld, tdt)
-    USE compute_unew_mod, ONLY: compute_unew_code
-    USE compute_vnew_mod, ONLY: compute_vnew_code
-    USE compute_pnew_mod, ONLY: compute_pnew_code
-    use topology_mod,     ONLY: cu_grid, cv_grid, ct_grid
-    IMPLICIT none
-    REAL(wp), INTENT(out), DIMENSION(:,:) :: unew, vnew, pnew
+    use compute_unew_mod, ONLY: compute_unew_code
+    use compute_vnew_mod, ONLY: compute_vnew_code
+    use compute_pnew_mod, ONLY: compute_pnew_code
+    use field_mod
+    implicit none
+    type(r2d_field_type), INTENT(out) :: unew, vnew, pnew
     REAL(wp), INTENT(in),  DIMENSION(:,:) :: uold, vold, pold
     REAL(wp), INTENT(in),  DIMENSION(:,:) :: z, cufld, cvfld, hfld
     REAL(wp), INTENT(in) :: tdt
@@ -24,27 +24,27 @@ CONTAINS
     integer :: i, j
 
     !CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt)
-    DO J=cu_grid%jstart, cu_grid%jstop 
-       DO I=cu_grid%istart, cu_grid%istop
+    DO J=unew%internal%ystart, unew%internal%ystop 
+       DO I=unew%internal%xstart, unew%internal%xstop
 
-          CALL compute_unew_code(i, j, unew, uold, &
+          CALL compute_unew_code(i, j, unew%data, uold, &
                                  z, cvfld, hfld, tdt)
 
        END DO
     END DO
     !CALL manual_invoke_compute_vnew(vnew, vold,  z, cu, h, tdt)
-    DO J=cv_grid%jstart, cv_grid%jstop
-       DO I=cv_grid%istart, cv_grid%istop
+    DO J=vnew%internal%ystart, vnew%internal%ystop
+       DO I=vnew%internal%xstart, vnew%internal%xstop
 
-          CALL compute_vnew_code(i, j, vnew, vold, &
+          CALL compute_vnew_code(i, j, vnew%data, vold, &
                                  z, cufld, hfld, tdt)
        END DO
     END DO
     !CALL manual_invoke_compute_pnew(pnew, pold, cu, cv,    tdt)
-    DO J=ct_grid%jstart, ct_grid%jstop
-       DO I=ct_grid%istart, ct_grid%istop
+    DO J=pnew%internal%ystart, pnew%internal%ystop
+       DO I=pnew%internal%xstart, pnew%internal%xstop
 
-          CALL compute_pnew_code(i, j, pnew, pold, &
+          CALL compute_pnew_code(i, j, pnew%data, pold, &
                                  cufld, cvfld, tdt)
        END DO
     END DO
