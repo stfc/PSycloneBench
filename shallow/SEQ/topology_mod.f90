@@ -7,19 +7,6 @@ module topology_mod
 
   private
 
-  !> Specify a region on the simulation grid
-  type :: region
-     integer :: istart, istop
-     integer :: jstart, jstop
-  end type region
-
-  !> Specify the source and destination regions
-  !! of a halo
-  type :: halo_type
-     type(region) :: src
-     type(region) :: dest
-  end type halo_type
-
   !> Specifies the region of the grid occupied by the
   !! grid-point type and the associated halos
   type, extends(region) :: topology_type

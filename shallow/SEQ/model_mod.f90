@@ -100,7 +100,6 @@ CONTAINS
   subroutine model_init()
     use mesh_mod,        only: mesh_init
     use time_smooth_mod, only: time_smooth_init
-    use topology_mod,    only: topology_init
     IMPLICIT none
     !> Grid spacings currently hard-wired, as in original
     !! version of code.
@@ -122,8 +121,6 @@ CONTAINS
     ! mesh point type they are defined upon
     mp1 = m + 1
     np1 = n + 1
-
-    CALL topology_init(mp1,np1)
 
     ! Allocate model arrays
     CALL model_alloc(mp1, np1)

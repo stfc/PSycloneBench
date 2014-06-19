@@ -15,8 +15,9 @@ LDFLAGS += -lnetcdff -lnetcdf
 EXECS = shallow_base shallow_gen
 
 # The modules that are common to both targets
-MODULES = kind_params_mod.o physical_params_mod.o field_mod.o model_mod.o \
-          shallow_io_mod.o \
+MODULES = kind_params_mod.o physical_params_mod.o \
+          region_mod.o halo_mod.o grid_mod.o field_mod.o \
+          model_mod.o shallow_io_mod.o \
           initial_conditions_mod.o compute_cu_mod.o compute_cv_mod.o \
           compute_z_mod.o compute_h_mod.o \
           manual_invoke_compute_new_fields_mod.o \
@@ -25,7 +26,7 @@ MODULES = kind_params_mod.o physical_params_mod.o field_mod.o model_mod.o \
           apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
           apply_bcs_cu_mod.o apply_bcs_cv_mod.o \
           timing_mod.o time_smooth_mod.o intel_timer_mod.o \
-          mesh_mod.o topology_mod.o
+          mesh_mod.o
 
 GENERATED_MODULES = psy.o shallow_gen.o
 
@@ -58,11 +59,11 @@ shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
 # Interdependencies between modules, alphabetical order
 
-apply_bcs_cu_mod.o: field_mod.o topology_mod.o
+apply_bcs_cu_mod.o: field_mod.o
 
-compute_cu_mod.o: topology_mod.o
+compute_cu_mod.o: field_mod.o
 
-field_mod.o: kind_params_mod.o topology_mod.o
+field_mod.o: kind_params_mod.o grid_mod.o halo_mod.o
 
 initial_conditions_mod.o: physical_params_mod.o model_mod.o
 
@@ -73,12 +74,11 @@ timing_mod.o: intel_timer_mod.o
 mesh_mod.o: kind_params_mod.o
 
 model_mod.o: field_mod.o timing_mod.o shallow_io_mod.o mesh_mod.o \
-             time_smooth_mod.o topology_mod.o
+             time_smooth_mod.o
 
 manual_invoke_compute_new_fields_mod.o: compute_unew_mod.o \
                                         compute_vnew_mod.o \
-                                        compute_pnew_mod.o \
-                                        topology_mod.o
+                                        compute_pnew_mod.o
 
 manual_invoke_apply_bcs_mod.o: apply_bcs_cf_mod.o apply_bcs_ct_mod.o \
                                apply_bcs_cu_mod.o apply_bcs_cv_mod.o \

@@ -5,6 +5,7 @@ module compute_cu_mod
   use kind_params_mod
   use kernel_mod
   use argument_mod
+  use field_mod
   implicit none
 
   private
@@ -32,9 +33,8 @@ contains
   !> Manual implementation of the code needed to invoke
   !! compute_cu_code().
   subroutine manual_invoke_compute_cu(cufld, p, u)
-    use topology_mod, only: cu_grid
     implicit none
-    real(wp), intent(out), dimension(:,:) :: cufld
+    type(r2d_field_type), intent(out) :: cufld
     real(wp), intent(in),  dimension(:,:) :: p, u
     ! Locals
     integer :: I, J
@@ -80,10 +80,10 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
     !
 
-    do J=cu_grid%jstart, cu_grid%jstop
-       do I=cu_grid%istart, cu_grid%istop
+    do J=cufld%internal%ystart, cufld%internal%ystop
+       do I=cufld%internal%xstart, cufld%internal%xstop
 
-          call compute_cu_code(i, j, cufld, p, u)
+          call compute_cu_code(i, j, cufld%data, p, u)
        end do
     end do
 
