@@ -7,4 +7,21 @@ module region_mod
      integer :: ystart, ystop
   end type region_type
 
+  interface region_type
+     module procedure :: region_constructor
+  end interface region_type
+
+contains
+
+  function region_constructor() result(self)
+    implicit none
+    type(region_type) :: self
+
+    self%xstart = 0
+    self%xstop  = 0
+    self%ystart = 0
+    self%ystop  = 0
+
+  end function region_constructor
+
 end module region_mod
