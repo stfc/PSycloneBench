@@ -1,0 +1,12 @@
+# Build settings for Cray compiler
+#CC = icc
+CC = cc
+
+#NETCDF_INC = /usr/include
+#NETCDF_LIB = /usr/lib64
+
+CFLAGS = -O3 -h c99 -h aggress
+
+OMPFLAGS = 
+
+LDFLAGS = #-fast

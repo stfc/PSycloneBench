@@ -1,14 +1,15 @@
 # Build settings for Intel compiler
-CC = icc
+#CC = icc
+CC = cc
 
 #NETCDF_INC = /usr/include
 #NETCDF_LIB = /usr/lib64
 NETCDF_INC = ${HOME}/MyInstalls/include
 NETCDF_LIB = ${HOME}/MyInstalls/lib
 
-CFLAGS = -O3 -axCORE-AVX2 -fast -opt-report
+CFLAGS = -O3 -axCORE-AVX2 -opt-report
 
 OMPFLAGS = -openmp
 
-LDFLAGS = -fast
+LDFLAGS = #-fast
 LDFLAGS += -L${NETCDF_LIB} 
