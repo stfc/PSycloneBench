@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
   t300 = 0.;
 
   // ** Start of time loop ** 
-  #pragma omp parallel default (shared) private(i,j,ncycle) firstprivate(tdt,tdts8,tdtsdx,tdtsdy)
+  #pragma omp parallel default (shared) private(i,j,ncycle,tdts8,tdtsdx,tdtsdy) firstprivate(tdt)
 
   for (ncycle=1;ncycle<=ITMAX;ncycle++) {
     
