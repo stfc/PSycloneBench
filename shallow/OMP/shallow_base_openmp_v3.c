@@ -35,14 +35,33 @@
 
 #define TRUE 1
 #define FALSE 0
-#define M 256
-#define N 256
+#define M 128
+#define N 128
 #define M_LEN M + 1
 #define N_LEN N + 1
-#define ITMAX 4000
+#define ITMAX 2000
 #define L_OUT TRUE
 
 extern double wtime(); 
+
+//===================================================
+
+double compute_checksum(double field[M_LEN][N_LEN], 
+			int lenx, int leny)
+{
+  int i, j;
+  double sum = 0.0;
+
+  for(i=0;i<lenx;i++){
+    for(j=0;j<leny;j++){
+      sum += field[i][j];
+    }
+  }
+
+  return sum;
+}
+
+//===================================================
 
 //! Benchmark weather prediction program for comparing the
 //! preformance of current supercomputers. The model is
@@ -100,9 +119,8 @@ int main(int argc, char **argv) {
   int i,j;
  
   // timer variables 
-  double mfs100,mfs200,mfs300,mfs310;
   double t100,t200,t300;
-  double tstart,ctime,tcyc,time,ptime;
+  double tstart,ctime,tcyc,time;
   double t100i,t200i,t300i;
   double c1,c2;
 
@@ -174,21 +192,6 @@ int main(int argc, char **argv) {
     printf(" grid spacing in the y direction     %f\n", dy); 
     printf(" time step                           %f\n", dt); 
     printf(" time filter parameter               %f\n", alpha); 
-
-    mnmin = MIN(M,N);
-    printf(" initial diagonal elements of p\n");
-    for (i=0; i<mnmin; i++) {
-      printf("%f ",p[i][i]);
-    }
-    printf("\n initial diagonal elements of u\n");
-    for (i=0; i<mnmin; i++) {
-      printf("%f ",u[i][i]);
-    }
-    printf("\n initial diagonal elements of v\n");
-    for (i=0; i<mnmin; i++) {
-      printf("%f ",v[i][i]);
-    }
-    printf("\n");
   }
 
   // Start timer
@@ -393,40 +396,26 @@ int main(int argc, char **argv) {
 
   // ** End of time loop ** 
 
+  fprintf(stdout, "P CHECKSUM after %d steps = %15.7e\n", 
+	  ITMAX, compute_checksum(pnew,M_LEN,N_LEN));
+  fprintf(stdout, "U CHECKSUM after %d steps = %15.7e\n", 
+	  ITMAX, compute_checksum(unew,M_LEN,N_LEN));
+  fprintf(stdout, "V CHECKSUM after %d steps = %15.7e\n", 
+	  ITMAX, compute_checksum(vnew,M_LEN,N_LEN));
+
   // Output p, u, v fields and run times.
   if (L_OUT) {
-    ptime = time / 3600.;
-    printf(" cycle number %d model time in hours %f\n", ITMAX, ptime);
-    printf(" diagonal elements of p\n");
-    for (i=0; i<mnmin; i++) {
-      printf("%f ",pnew[i][i]);
-    }
-    printf("\n diagonal elements of u\n");
-    for (i=0; i<mnmin; i++) {
-      printf("%f ",unew[i][i]);
-    }
-    printf("\n diagonal elements of v\n");
-    for (i=0; i<mnmin; i++) {
-      printf("%f ",vnew[i][i]);
-    }
-    printf("\n");
-
-    mfs100 = 0.0;
-    mfs200 = 0.0;
-    mfs300 = 0.0;
-    // gdr t100 etc. now an accumulation of all l100 time
-    if ( t100 > 0 ) { mfs100 = ITMAX * 24. * M * N / t100 / 1000000; }
-    if ( t200 > 0 ) { mfs200 = ITMAX * 26. * M * N / t200 / 1000000; }
-    if ( t300 > 0 ) { mfs300 = ITMAX * 15. * M * N / t300 / 1000000; }
-
     c2 = wtime(); 
     ctime = c2 - tstart;
     tcyc = ctime / ITMAX;
 
-    printf(" cycle number %d total computer time %f time per cycle %f\n", ITMAX, ctime, tcyc);
-    printf(" time and megaflops for loop 100 %.6f %.6f\n", t100, mfs100);
-    printf(" time and megaflops for loop 200 %.6f %.6f\n", t200, mfs200);
-    printf(" time and megaflops for loop 300 %.6f %.6f\n", t300, mfs300);
+    fprintf(stdout,"\n");
+    fprintf(stdout," Job run on %d threads\n",omp_get_max_threads());
+    fprintf(stdout," No. of steps = %d, total time = %f, time per cycle = %f (s)\n", 
+	    ITMAX, ctime, tcyc);
+    fprintf(stdout," time for c{u,v},z,h calc = %.6f s\n", t100);
+    fprintf(stdout," time for {u,v,p}new calc = %.6f s\n", t200);
+    fprintf(stdout," time for time-smoothing  = %.6f s\n", t300);
   }
 
   return(0);
