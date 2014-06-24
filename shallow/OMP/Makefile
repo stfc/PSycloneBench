@@ -5,9 +5,9 @@ include Makefile.include
 all: shallow_omp.exe
 
 clean:
-	rm *.exe
-	rm *~
-	rm *.o
+	rm -f *.exe
+	rm -f *~
+	rm -f *.o
 
 OBJECTS = wtime.o shallow_base_openmp_v3.o
 
