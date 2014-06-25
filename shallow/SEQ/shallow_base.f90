@@ -51,7 +51,7 @@ program shallow
   use manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
   implicit none
 
-  type(grid_type)      :: model_grid
+  type(grid_type), target :: model_grid
   !> Pressure
   type(r2d_field_type) :: p_fld, pold_fld, pnew_fld
   !> Velocity in x direction at {current,previous,next} time step
@@ -84,48 +84,48 @@ program shallow
   p_fld    = r2d_field_type(model_grid, &
                             T_POINTS,   &
                             BC_PERIODIC)
-!!$  pold_fld = field_type(grid_ptr            = model_grid, &
-!!$                        grid_points         = T_POINTS,   &
-!!$                        boundary_conditions = BC_PERIODIC)
-!!$  pnew_fld = field_type(grid_ptr            = model_grid, &
-!!$                        grid_points         = T_POINTS,   &
-!!$                        boundary_conditions = BC_PERIODIC)
-!!$
-!!$  u_fld    = field_type(grid_ptr            = model_grid, &
-!!$                        grid_points         = U_POINTS,   &
-!!$                        boundary_conditions = BC_PERIODIC)
-!!$  uold_fld = field_type(grid_ptr            = model_grid, &
-!!$                        grid_points         = U_POINTS,   &
-!!$                        boundary_conditions = BC_PERIODIC)
-!!$  unew_fld = field_type(grid_ptr            = model_grid, &
-!!$                        grid_points         = U_POINTS,   &
-!!$                        boundary_conditions = BC_PERIODIC)
-!!$
-!!$  v_fld    = field_type(grid_ptr            = model_grid, &
-!!$                        grid_points         = V_POINTS,   &
-!!$                        boundary_conditions = BC_PERIODIC)
-!!$  vold_fld = field_type(grid_ptr            = model_grid, &
-!!$                        grid_points         = V_POINTS,   &
-!!$                        boundary_conditions = BC_PERIODIC)
-!!$  vnew_fld = field_type(grid_ptr            = model_grid, &
-!!$                        grid_points         = V_POINTS,   &
-!!$                        boundary_conditions = BC_PERIODIC)
-!!$
-!!$  cu_fld = field_type(grid_ptr            = model_grid, &
-!!$                     grid_points         = U_POINTS,   &
-!!$                     boundary_conditions = BC_PERIODIC)
-!!$
-!!$  cv_fld = field_type(grid_ptr            = model_grid, &
-!!$                     grid_points         = V_POINTS,   &
-!!$                     boundary_conditions = BC_PERIODIC)
-!!$
-!!$  z_fld = field_type(grid_ptr            = model_grid, &
-!!$                     grid_points         = F_POINTS,   &
-!!$                     boundary_conditions = BC_PERIODIC)
-!!$
-!!$  h_fld = field_type(grid_ptr            = model_grid, &
-!!$                     grid_points         = T_POINTS,   &
-!!$                     boundary_conditions = BC_PERIODIC)
+  pold_fld = r2d_field_type(model_grid, &
+                        T_POINTS,   &
+                        BC_PERIODIC)
+  pnew_fld = r2d_field_type(model_grid, &
+                        T_POINTS,   &
+                        BC_PERIODIC)
+
+  u_fld    = r2d_field_type(model_grid, &
+                        U_POINTS,   &
+                        BC_PERIODIC)
+  uold_fld = r2d_field_type(model_grid, &
+                        U_POINTS,   &
+                        BC_PERIODIC)
+  unew_fld = r2d_field_type(model_grid, &
+                        U_POINTS,   &
+                        BC_PERIODIC)
+
+  v_fld    = r2d_field_type(model_grid, &
+                        V_POINTS,   &
+                        BC_PERIODIC)
+  vold_fld = r2d_field_type(model_grid, &
+                        V_POINTS,   &
+                        BC_PERIODIC)
+  vnew_fld = r2d_field_type(model_grid, &
+                        V_POINTS,   &
+                        BC_PERIODIC)
+
+  cu_fld = r2d_field_type(model_grid, &
+                     U_POINTS,   &
+                     BC_PERIODIC)
+
+  cv_fld = r2d_field_type(model_grid, &
+                     V_POINTS,   &
+                     BC_PERIODIC)
+
+  z_fld = r2d_field_type(model_grid, &
+                     F_POINTS,   &
+                     BC_PERIODIC)
+
+  h_fld = r2d_field_type(model_grid, &
+                     T_POINTS,   &
+                     BC_PERIODIC)
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.

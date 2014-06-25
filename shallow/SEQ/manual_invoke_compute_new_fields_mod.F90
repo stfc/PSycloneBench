@@ -16,10 +16,10 @@ CONTAINS
     use compute_pnew_mod, ONLY: compute_pnew_code
     use field_mod
     implicit none
-    type(r2d_field_type), INTENT(out) :: unew, vnew, pnew
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: uold, vold, pold
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: z, cufld, cvfld, hfld
-    REAL(wp), INTENT(in) :: tdt
+    type(r2d_field_type), intent(out) :: unew, vnew, pnew
+    type(r2d_field_type), intent(in) :: uold, vold, pold
+    type(r2d_field_type), intent(in) :: z, cufld, cvfld, hfld
+    real(wp), intent(in) :: tdt
     ! Locals
     integer :: i, j
 
@@ -27,8 +27,8 @@ CONTAINS
     DO J=unew%internal%ystart, unew%internal%ystop 
        DO I=unew%internal%xstart, unew%internal%xstop
 
-          CALL compute_unew_code(i, j, unew%data, uold, &
-                                 z, cvfld, hfld, tdt)
+          CALL compute_unew_code(i, j, unew%data, uold%data, &
+                                 z%data, cvfld%data, hfld%data, tdt)
 
        END DO
     END DO
@@ -36,16 +36,16 @@ CONTAINS
     DO J=vnew%internal%ystart, vnew%internal%ystop
        DO I=vnew%internal%xstart, vnew%internal%xstop
 
-          CALL compute_vnew_code(i, j, vnew%data, vold, &
-                                 z, cufld, hfld, tdt)
+          CALL compute_vnew_code(i, j, vnew%data, vold%data, &
+                                 z%data, cufld%data, hfld%data, tdt)
        END DO
     END DO
     !CALL manual_invoke_compute_pnew(pnew, pold, cu, cv,    tdt)
     DO J=pnew%internal%ystart, pnew%internal%ystop
        DO I=pnew%internal%xstart, pnew%internal%xstop
 
-          CALL compute_pnew_code(i, j, pnew%data, pold, &
-                                 cufld, cvfld, tdt)
+          CALL compute_pnew_code(i, j, pnew%data, pold%data, &
+                                 cufld%data, cvfld%data, tdt)
        END DO
     END DO
 

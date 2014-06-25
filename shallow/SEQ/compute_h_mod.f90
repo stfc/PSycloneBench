@@ -28,10 +28,10 @@ contains
 
   !===================================================
 
-  subroutine manual_invoke_compute_h(hfld, p, u, v)
+  subroutine manual_invoke_compute_h(hfld, pfld, ufld, vfld)
     implicit none
-    type(r2d_field_type),    intent(out) :: hfld
-    real(wp), dimension(:,:), intent(in) :: p, u,v
+    type(r2d_field_type), intent(out) :: hfld
+    type(r2d_field_type), intent(in)  :: pfld, ufld,vfld
     ! Locals
     integer :: I, J
 
@@ -83,7 +83,8 @@ contains
     DO J=hfld%internal%ystart, hfld%internal%ystop, 1
        DO I=hfld%internal%xstart, hfld%internal%xstop, 1
 
-          CALL compute_h_code(i, j, hfld%data, p, u, v)
+          CALL compute_h_code(i, j, hfld%data, &
+                              pfld%data, ufld%data, vfld%data)
        END DO
     END DO
 

@@ -1,23 +1,25 @@
-MODULE shallow_io_mod
-  IMPLICIT none
+module shallow_io_mod
+  use kind_params_mod
+  use field_mod
+  implicit none
 
-  PRIVATE
+  private
 
-  LOGICAL :: l_out   !< Whether or not to produce output  
-  INTEGER :: mprint  !< frequency of output    
+  logical :: l_out   !< Whether or not to produce output  
+  integer :: mprint  !< frequency of output    
 
   ! NetCDF variables
-  INCLUDE 'netcdf.inc'
+  include 'netcdf.inc'
 
-  INTEGER :: ncid, t_id, p_id, u_id, v_id, iret, t_val
-  INTEGER, DIMENSION(3) :: istart, icount 
-  CHARACTER (LEN=13) :: ncfile = "shallowdat.nc"
+  integer :: ncid, t_id, p_id, u_id, v_id, iret, t_val
+  integer, dimension(3) :: istart, icount 
+  character (len=13) :: ncfile = "shallowdat.nc"
 
-  PUBLIC read_namelist, print_initial_values, print_diagonals
-  PUBLIC model_write_init, model_write, model_write_finalise
-  PUBLIC model_write_log
+  public read_namelist, print_initial_values, print_diagonals
+  public model_write_init, model_write, model_write_finalise
+  public model_write_log
 
-CONTAINS
+contains
 
   !===================================================
 
@@ -115,12 +117,17 @@ CONTAINS
   !===================================================
 
   !> Write data for the current time step
-  SUBROUTINE model_write(ncycle, p, u, v)
+  SUBROUTINE model_write(ncycle, pfld, ufld, vfld)
     IMPLICIT none
-    INTEGER,                      INTENT(in) :: ncycle
-    REAL(KIND=8), DIMENSION(:,:), INTENT(in) :: p, u, v
+    integer,                      intent(in) :: ncycle
+    type(r2d_field_type), intent(in), target :: pfld, ufld, vfld
     ! Locals
+    real(kind=wp), dimension(:,:), pointer :: p, u, v
     INTEGER :: m, n
+
+    u => ufld%data
+    v => vfld%data
+    p => pfld%data
 
     IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
 

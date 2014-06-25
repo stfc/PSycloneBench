@@ -76,10 +76,11 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE init_pressure(p)
+  SUBROUTINE init_pressure(pfld)
     USE model_mod, ONLY: m, dx
     IMPLICIT none
-    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: p
+    type(r2d_field_type), target, intent(inout) :: pfld
+    REAL(KIND=wp), DIMENSION(:,:), pointer :: p
 !    TYPE(field_type), INTENT(out) :: p
     ! Locals
     INTEGER :: idim1, idim2
@@ -89,6 +90,8 @@ CONTAINS
     !> Computed amplitude of initial osciallations in
     !! pressure field.
     REAL(wp) :: pcf
+
+    p => pfld%data
 
     idim1 = SIZE(p, 1)
     idim2 = SIZE(p, 2)
@@ -114,14 +117,17 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE init_velocity_u(u, psi, m, n)
+  SUBROUTINE init_velocity_u(ufld, psi, m, n)
     USE mesh_mod, ONLY: dy
     IMPLICIT none
-    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: u
-    REAL(KIND=wp), INTENT(in),  DIMENSION(:,:) :: psi
-    INTEGER,      INTENT(in) :: m, n
+    type(r2d_field_type), intent(inout), target :: ufld
+    real(kind=wp), intent(in),  dimension(:,:) :: psi
+    integer,      intent(in) :: m, n
     ! Locals
-    INTEGER :: I, J
+    real(kind=wp), pointer, dimension(:,:) :: u
+    integer :: i, j
+
+    u => ufld%data
 
     ! dy is a property of the mesh
     DO J=1,N
@@ -133,14 +139,17 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE init_velocity_v(v, psi, m, n)
+  SUBROUTINE init_velocity_v(vfld, psi, m, n)
     USE mesh_mod, ONLY: dx
     IMPLICIT none
-    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: v
+    type(r2d_field_type), intent(inout), target :: vfld
     REAL(KIND=wp), INTENT(in),  DIMENSION(:,:) :: psi
     INTEGER, INTENT(in) :: m, n
     ! Locals
+    real(kind=wp), pointer, dimension(:,:) :: v
     INTEGER :: I, J
+
+    v => vfld%data
 
     ! dx is a property of the mesh
     DO J=1,N+1

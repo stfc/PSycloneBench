@@ -32,10 +32,10 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! compute_cv_code().
-  subroutine manual_invoke_compute_cv(cvfld, p, v)
+  subroutine manual_invoke_compute_cv(cvfld, pfld, vfld)
     implicit none
-    type(r2d_field_type),    intent(out) :: cvfld
-    real(wp), dimension(:,:), intent(in) :: p, v
+    type(r2d_field_type), intent(out) :: cvfld
+    type(r2d_field_type), intent(in)  :: pfld, vfld
     ! Locals
     integer :: I, J
 
@@ -83,7 +83,7 @@ contains
     do J=cvfld%internal%ystart, cvfld%internal%ystop
        do I=cvfld%internal%xstart, cvfld%internal%xstop
 
-          call compute_cv_code(i, j, cvfld%data, p, v)
+          call compute_cv_code(i, j, cvfld%data, pfld%data, vfld%data)
        end do
     end do
 

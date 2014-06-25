@@ -51,9 +51,13 @@ module field_mod
      module procedure set_scalar_field
   end interface set
 
+  !> Interface for the copy_field operation. Overloaded to take
+  !! a scalar, an array or an r2d_field_type.
+  !! \todo Remove support for raw arrays from this interface.
   interface copy_field
-     module procedure copy_scalar_field, copy_2dfield_array, &
-                      copy_2dfield_array_patch, copy_2dfield_patch
+     module procedure copy_scalar_field,                            &
+                      copy_2dfield_array, copy_2dfield_array_patch, &
+                      copy_2dfield, copy_2dfield_patch
   end interface copy_field
 
   interface increment
@@ -68,6 +72,10 @@ module field_mod
   interface r2d_field_type
      module procedure r2d_field_constructor
   end interface r2d_field_type
+
+  public increment
+  public copy_field
+  public set
 
 contains
 
@@ -91,24 +99,24 @@ contains
 
   !===================================================
 
-  function r2d_field_constructor(grid_ptr,    &
+  function r2d_field_constructor(grid,    &
                                  grid_points, &
                                  boundary_conditions) result(self)
     implicit none
     ! Arguments
     !> Pointer to the grid on which this field lives
-    type(grid_type), intent(in), pointer :: grid_ptr
+    type(grid_type), intent(in), target  :: grid
     !> Which grid-point type the field is defined on
     integer,         intent(in)          :: grid_points
     !> The boundary conditions that this field is subject to
     integer,         intent(in)          :: boundary_conditions
     ! Local declarations
-    type(field_type) :: self
+    type(r2d_field_type) :: self
 
     self%boundary_conditions = boundary_conditions
     ! Set this field's grid pointer to point to the grid pointed to
     ! by the supplied grid_ptr argument
-    self%grid => grid_ptr
+    self%grid => grid
 
     select case(grid_points)
 
@@ -131,7 +139,7 @@ contains
 
   subroutine cu_field_init(fld)
     implicit none
-    type(field_type), intent(inout) :: fld
+    type(r2d_field_type), intent(inout) :: fld
     ! Locals
     integer :: M, N
 
@@ -190,7 +198,7 @@ contains
 
   subroutine cv_field_init(fld)
     implicit none
-    type(field_type), intent(inout) :: fld
+    type(r2d_field_type), intent(inout) :: fld
     ! Locals
     integer :: M, N
 
@@ -250,7 +258,7 @@ contains
 
   subroutine ct_field_init(fld)
     implicit none
-    type(field_type), intent(inout) :: fld
+    type(r2d_field_type), intent(inout) :: fld
     ! Locals
     integer :: M, N
 
@@ -310,7 +318,7 @@ contains
 
   subroutine cf_field_init(fld)
     implicit none
-    type(field_type), intent(inout) :: fld
+    type(r2d_field_type), intent(inout) :: fld
     ! Locals
     integer :: M, N
 
@@ -402,6 +410,17 @@ contains
      field(src%xstart:src%xstop ,src%ystart:src%ystop)
         
   end subroutine copy_2dfield_array_patch
+
+  !===================================================
+
+  SUBROUTINE copy_2dfield(field_in, field_out)
+    IMPLICIT none
+    type(r2d_field_type), intent(in)  :: field_in
+    type(r2d_field_type), intent(out) :: field_out
+        
+    field_out%data(:,:) = field_in%data(:,:)
+        
+  end subroutine copy_2dfield
 
   !===================================================
 

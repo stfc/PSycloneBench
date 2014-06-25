@@ -1,6 +1,7 @@
 MODULE time_smooth_mod
-  USE kind_params_mod
-  USE kernel_mod
+  use kind_params_mod
+  use field_mod
+  use kernel_mod
   use argument_mod
   IMPLICIT none
 
@@ -50,22 +51,23 @@ CONTAINS
   !! kernel
   SUBROUTINE manual_invoke_time_smooth(field, field_new, field_old)
     IMPLICIT none
-    REAL(wp), INTENT(in), DIMENSION(:,:) :: field
-    REAL(wp), INTENT(in), DIMENSION(:,:) :: field_new
-    REAL(wp), INTENT(inout), DIMENSION(:,:) :: field_old
+    type(r2d_field_type), intent(in)    :: field
+    type(r2d_field_type), intent(in)    :: field_new
+    type(r2d_field_type), intent(inout) :: field_old
     ! Locals
-    INTEGER :: i, j
-    INTEGER :: idim1, idim2
+    integer :: i, j
+    integer :: idim1, idim2
     
     ! Here we will query what should be field objects to get at
     ! raw data.
-    idim1 = SIZE(field, 1)
-    idim2 = SIZE(field, 2)
+    idim1 = SIZE(field%data, 1)
+    idim2 = SIZE(field%data, 2)
 
     ! Loop over 'columns'
     DO J=1,idim2
       DO I=1,idim1
-         CALL time_smooth_code(i,j,field,field_new,field_old)
+         CALL time_smooth_code(i, j, &
+                               field%data, field_new%data, field_old%data)
       END DO
     END DO
 

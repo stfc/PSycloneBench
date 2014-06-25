@@ -33,10 +33,10 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! compute_z_code().
-  subroutine manual_invoke_compute_z(zfld, p, u, v)
+  subroutine manual_invoke_compute_z(zfld, pfld, ufld, vfld)
     implicit none
-    type(r2d_field_type),    intent(out) :: zfld
-    real(wp), dimension(:,:), intent(in) :: p, u, v
+    type(r2d_field_type), intent(out) :: zfld
+    type(r2d_field_type), intent(in)  :: pfld, ufld, vfld
     ! Locals
     integer :: I, J
 
@@ -87,7 +87,8 @@ contains
     do J=zfld%internal%ystart, zfld%internal%ystop, 1
        do I=zfld%internal%xstart, zfld%internal%xstop, 1
 
-          call compute_z_code(i, j, zfld%data, p, u, v)
+          call compute_z_code(i, j, zfld%data, &
+                              pfld%data, ufld%data, vfld%data)
        end do
     end do
 

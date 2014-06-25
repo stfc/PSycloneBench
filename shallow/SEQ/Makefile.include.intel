@@ -12,7 +12,7 @@ F90FLAGS =  -g -O0 -check all
 #F90FLAGS += -vec-report6
 # -guide=4
 # Turn-off all compiler limits regarding in-lining of code
-#F90FLAGS += -no-inline-factor 
+F90FLAGS += -no-inline-factor 
 # For output of source-code-annotated assembler
 #F90FLAGS += -S -fsource-asm -fverbose-asm
 

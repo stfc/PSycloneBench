@@ -32,10 +32,10 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! compute_cu_code().
-  subroutine manual_invoke_compute_cu(cufld, p, u)
+  subroutine manual_invoke_compute_cu(cufld, pfld, ufld)
     implicit none
-    type(r2d_field_type),     intent(out) :: cufld
-    real(wp), dimension(:,:), intent(in)  :: p, u
+    type(r2d_field_type), intent(out) :: cufld
+    type(r2d_field_type), intent(in)  :: pfld, ufld
     ! Locals
     integer :: I, J
 
@@ -83,7 +83,7 @@ contains
     do J=cufld%internal%ystart, cufld%internal%ystop
        do I=cufld%internal%xstart, cufld%internal%xstop
 
-          call compute_cu_code(i, j, cufld%data, p, u)
+          call compute_cu_code(i, j, cufld%data, pfld%data, ufld%data)
        end do
     end do
 
