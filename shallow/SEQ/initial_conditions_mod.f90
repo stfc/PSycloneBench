@@ -1,8 +1,8 @@
-MODULE initial_conditions_mod
-  USE physical_params_mod
-  USE field_mod
-  IMPLICIT none
-  PRIVATE
+module initial_conditions_mod
+  use physical_params_mod
+  use field_mod
+  implicit none
+  private
 
   !> Amplitude of initial oscillations in stream function
   !! Used by invoke_init_stream_fn_kernel()
@@ -25,12 +25,12 @@ CONTAINS
   !! fly in init_stream_fn_code() and init_pressure() and
   !! rely on compiler magic to make sure they're not
   !! recomputed for every grid point.
-  SUBROUTINE init_initial_condition_params()
-    USE model_mod, ONLY: m, n
+  SUBROUTINE init_initial_condition_params(pfld)
     IMPLICIT none
+    type(r2d_field_type), intent(in) :: pfld
 
-    di = TPI/m
-    dj = TPI/n
+    di = TPI/pfld%internal%nx
+    dj = TPI/pfld%internal%ny
 
 
   END SUBROUTINE init_initial_condition_params
@@ -77,11 +77,9 @@ CONTAINS
   !===================================================
 
   SUBROUTINE init_pressure(pfld)
-    USE model_mod, ONLY: m, dx
     IMPLICIT none
     type(r2d_field_type), target, intent(inout) :: pfld
     REAL(KIND=wp), DIMENSION(:,:), pointer :: p
-!    TYPE(field_type), INTENT(out) :: p
     ! Locals
     INTEGER :: idim1, idim2
     INTEGER :: i, j
@@ -93,10 +91,10 @@ CONTAINS
 
     p => pfld%data
 
-    idim1 = SIZE(p, 1)
-    idim2 = SIZE(p, 2)
+    idim1 = pfld%grid%nx
+    idim2 = pfld%grid%ny
 
-    EL = m*dx
+    EL = pfld%internal%nx * pfld%grid%dx
     PCF = PI*PI*A*A/(EL*EL)
 
     ! di = 2Pi/(Extent of mesh in x)

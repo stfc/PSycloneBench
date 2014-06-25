@@ -77,12 +77,12 @@ program shallow
   !> Integer tags for timers
   INTEGER :: idxt0, idxt1
 
-  !  ** Initialisations of model parameters (dt etc) ** 
-  CALL model_init()
- 
   ! Create the model grid
   model_grid = grid_type(ARAKAWA_C)
 
+  !  ** Initialisations of model parameters (dt etc) ** 
+  CALL model_init(model_grid)
+ 
   ! Create fields on this grid
   p_fld    = r2d_field_type(model_grid, &
                             T_POINTS,   &
@@ -142,7 +142,7 @@ program shallow
 
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
-  CALL init_initial_condition_params()
+  CALL init_initial_condition_params(p_fld)
   CALL invoke_init_stream_fn_kernel(psi_fld)
   CALL init_pressure(p_fld)
 

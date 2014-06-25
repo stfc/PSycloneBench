@@ -3,6 +3,8 @@ module region_mod
 
   !> Specify a region on the simulation grid
   type :: region_type
+     !> Extent of this region in x and y
+     integer :: nx, ny
      integer :: xstart, xstop
      integer :: ystart, ystop
   end type region_type
@@ -16,6 +18,9 @@ contains
   function region_constructor() result(self)
     implicit none
     type(region_type) :: self
+
+    self%nx = 0
+    self%ny = 0
 
     self%xstart = 0
     self%xstop  = 0

@@ -84,7 +84,7 @@ contains
   !===================================================
 
   SUBROUTINE compute_unew_code(i, j, unew, uold, z, cv, h, tdt)
-    USE model_mod, ONLY: dx
+    USE grid_mod, ONLY: dx
     IMPLICIT none
     INTEGER, INTENT(in) :: I, J
     REAL(wp), INTENT(out), DIMENSION(:,:) :: unew
