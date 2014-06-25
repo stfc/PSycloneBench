@@ -12,9 +12,7 @@ MODULE model_mod
   INTEGER :: itmax   !< number of timesteps
 
   TYPE(scalar_field_type) :: dt  !< model timestep (seconds)
-!  REAL(KIND=8) :: dt
   TYPE(scalar_field_type) :: tdt !< 2xdt apart from first step when is just dt
-!  REAL(KIND=8) :: tdt 
 
   ! solution arrays
   ! Fields are allocated with extents (M+1,N+1).
@@ -63,36 +61,36 @@ MODULE model_mod
   !        END DO
   !     END DO
 
-  !> Potential Enstrophy. Is this defined on the same mesh
-  !! points as the vorticity?
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: z
-  !> Component of vel in x at current time step
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: u
-  !> Component of vel in x at next time step
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: unew
-  !> Component of vel in x at previous time step
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: uold
-  !> Component of vel in y current time step
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: v
-  !> Component of vel in y next time step
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: vnew
-  !> Component of vel in y previous time step
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: vold
-  !> Pressure at current time step
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: p
-  !> Pressure at next time step
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: pnew
-  !> Pressure at previous time step
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: pold
-  !> Mass flux in x at u point
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: cu
-  !> Mass flux in y at v point
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: cv
-  !> H = P + 0.5(<u^2>_x + <v^2>_y), defined on the same
-  !! grid points as the pressure, P
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: h
-  !> Stream function
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: psi  
+!!$  !> Potential Enstrophy. Is this defined on the same mesh
+!!$  !! points as the vorticity?
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: z
+!!$  !> Component of vel in x at current time step
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: u
+!!$  !> Component of vel in x at next time step
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: unew
+!!$  !> Component of vel in x at previous time step
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: uold
+!!$  !> Component of vel in y current time step
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: v
+!!$  !> Component of vel in y next time step
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: vnew
+!!$  !> Component of vel in y previous time step
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: vold
+!!$  !> Pressure at current time step
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: p
+!!$  !> Pressure at next time step
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: pnew
+!!$  !> Pressure at previous time step
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: pold
+!!$  !> Mass flux in x at u point
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: cu
+!!$  !> Mass flux in y at v point
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: cv
+!!$  !> H = P + 0.5(<u^2>_x + <v^2>_y), defined on the same
+!!$  !! grid points as the pressure, P
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: h
+!!$  !> Stream function
+!!$  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: psi  
 
 CONTAINS
 
@@ -123,9 +121,6 @@ CONTAINS
     mp1 = m + 1
     np1 = n + 1
 
-    ! Allocate model arrays
-    CALL model_alloc(mp1, np1)
-
     ! Set model time-step
     CALL set(dt, dt_loc)
 
@@ -155,26 +150,12 @@ CONTAINS
 
   !================================================
 
-  SUBROUTINE model_alloc(idimx, idimy)
-    IMPLICIT none
-    INTEGER, INTENT(in) :: idimx, idimy
-
-    ALLOCATE( u(idimx,idimy),    v(idimx,idimy),    p(idimx,idimy) ) 
-    ALLOCATE( unew(idimx,idimy), vnew(idimx,idimy), pnew(idimx,idimy) ) 
-    ALLOCATE( uold(idimx,idimy), vold(idimx,idimy), pold(idimx,idimy) )
-    ALLOCATE( cu(idimx,idimy),   cv(idimx,idimy) ) 
-    ALLOCATE( z(idimx,idimy),    h(idimx,idimy),    psi(idimx,idimy) ) 
-
-  END SUBROUTINE model_alloc
-
-  !================================================
-
   SUBROUTINE model_dealloc()
     IMPLICIT none
 
     !> Free memory \todo Move to model_finalise()
-    DEALLOCATE( u, v, p, unew, vnew, pnew, uold, vold, pold )
-    DEALLOCATE( cu, cv, z, h, psi ) 
+    !DEALLOCATE( u, v, p, unew, vnew, pnew, uold, vold, pold )
+    !DEALLOCATE( cu, cv, z, h, psi ) 
 
   END SUBROUTINE model_dealloc
 

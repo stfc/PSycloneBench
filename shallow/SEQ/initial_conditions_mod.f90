@@ -37,21 +37,21 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE invoke_init_stream_fn_kernel(psi)
-    IMPLICIT none
-    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: psi
+  subroutine invoke_init_stream_fn_kernel(psifld)
+    implicit none
+    type(r2d_field_type), intent(inout) :: psifld
     ! Locals
-    INTEGER :: idim1, idim2
-    INTEGER :: i, j
+    integer :: idim1, idim2
+    integer :: i, j
 
-    idim1 = SIZE(psi, 1)
-    idim2 = SIZE(psi, 2)
+    idim1 = SIZE(psifld%data, 1)
+    idim2 = SIZE(psifld%data, 2)
 
     ! Loop over 'columns'
     DO J=1, idim2
       DO I=1, idim1
 
-        CALL init_stream_fn_code(i, j, psi)
+        CALL init_stream_fn_code(i, j, psifld%data)
 
       END DO
     END DO
@@ -117,17 +117,18 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE init_velocity_u(ufld, psi, m, n)
+  SUBROUTINE init_velocity_u(ufld, psifld, m, n)
     USE mesh_mod, ONLY: dy
     IMPLICIT none
     type(r2d_field_type), intent(inout), target :: ufld
-    real(kind=wp), intent(in),  dimension(:,:) :: psi
+    type(r2d_field_type), intent(in),    target :: psifld
     integer,      intent(in) :: m, n
     ! Locals
-    real(kind=wp), pointer, dimension(:,:) :: u
+    real(kind=wp), pointer, dimension(:,:) :: u, psi
     integer :: i, j
 
     u => ufld%data
+    psi => psifld%data
 
     ! dy is a property of the mesh
     DO J=1,N
@@ -139,24 +140,39 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE init_velocity_v(vfld, psi, m, n)
+  SUBROUTINE init_velocity_v(vfld, psifld)
     USE mesh_mod, ONLY: dx
     IMPLICIT none
     type(r2d_field_type), intent(inout), target :: vfld
-    REAL(KIND=wp), INTENT(in),  DIMENSION(:,:) :: psi
-    INTEGER, INTENT(in) :: m, n
+    type(r2d_field_type), intent(in),    target :: psifld
     ! Locals
-    real(kind=wp), pointer, dimension(:,:) :: v
-    INTEGER :: I, J
+    real(kind=wp), pointer, dimension(:,:) :: v, psi
+    integer :: I, J
 
     v => vfld%data
+    psi => psifld%data
 
-    ! dx is a property of the mesh
-    DO J=1,N+1
-       DO I=1,M
-          V(I,J) = (PSI(I+1,J)-PSI(I,J))/DX
+    !> \todo dx is a property of the mesh and should be looked-up
+    DO J=vfld%internal%ystart, vfld%internal%ystop
+       DO I=vfld%internal%xstart, vfld%internal%xstop
+          call init_velocity_v_code(i,j,dx,v,psi)
+!          V(I,J) = (PSI(I+1,J)-PSI(I,J))/DX
        END DO
     END DO
-  END SUBROUTINE init_velocity_v
+
+  CONTAINS
+
+    subroutine init_velocity_v_code(i, j, dx, v, psi)
+      implicit none
+      integer, intent(in) :: i, j
+      real(kind=wp),                 intent(in)  :: dx
+      real(kind=wp), dimension(:,:), intent(out) :: v
+      real(kind=wp), dimension(:,:), intent(in)  :: psi
+
+      V(I,J) = (PSI(I+1,J)-PSI(I,J))/DX
+
+    end subroutine init_velocity_v_code
+
+  end subroutine init_velocity_v
 
 END MODULE initial_conditions_mod

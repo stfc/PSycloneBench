@@ -9,10 +9,12 @@ module field_mod
 
   ! Enumeration of grid-point types on the Arakawa C grid. A
   ! field lives on one of these types.
-  integer, public, parameter :: U_POINTS = 0
-  integer, public, parameter :: V_POINTS = 1
-  integer, public, parameter :: T_POINTS = 2
-  integer, public, parameter :: F_POINTS = 3
+  integer, public, parameter :: U_POINTS   = 0
+  integer, public, parameter :: V_POINTS   = 1
+  integer, public, parameter :: T_POINTS   = 2
+  integer, public, parameter :: F_POINTS   = 3
+  !> A field that lives on all grid-points of the grid
+  integer, public, parameter :: ALL_POINTS = 4
 
   ! Enumeration of boundary-condition types
   !> Field has periodic boundary conditions (in both x and y)
@@ -20,6 +22,8 @@ module field_mod
   !> Field has external boundary conditions. This is a placeholder
   !! really as this is a complex area.
   integer, public, parameter :: BC_EXTERNAL = 1
+  !> Field has no boundary conditions
+  integer, public, parameter :: BC_NONE = 2
 
   type, public :: field_type
      !> Which mesh points the field is defined upon

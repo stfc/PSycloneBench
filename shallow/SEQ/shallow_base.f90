@@ -52,7 +52,7 @@ program shallow
   implicit none
 
   type(grid_type), target :: model_grid
-  !> Pressure
+  !> Pressure at {current,previous,next} time step
   type(r2d_field_type) :: p_fld, pold_fld, pnew_fld
   !> Velocity in x direction at {current,previous,next} time step
   type(r2d_field_type) :: u_fld, uold_fld, unew_fld
@@ -64,6 +64,9 @@ program shallow
   type(r2d_field_type) :: z_fld
   !> Surface height
   type(r2d_field_type) :: h_fld
+  !> Stream function
+  type(r2d_field_type) :: psi_fld
+  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: psi  
 
   !> Checksum used for each array
   REAL(KIND=8) :: csum
@@ -85,68 +88,69 @@ program shallow
                             T_POINTS,   &
                             BC_PERIODIC)
   pold_fld = r2d_field_type(model_grid, &
-                        T_POINTS,   &
-                        BC_PERIODIC)
+                            T_POINTS,   &
+                            BC_PERIODIC)
   pnew_fld = r2d_field_type(model_grid, &
-                        T_POINTS,   &
-                        BC_PERIODIC)
+                            T_POINTS,   &
+                            BC_PERIODIC)
 
   u_fld    = r2d_field_type(model_grid, &
-                        U_POINTS,   &
-                        BC_PERIODIC)
+                            U_POINTS,   &
+                            BC_PERIODIC)
   uold_fld = r2d_field_type(model_grid, &
-                        U_POINTS,   &
-                        BC_PERIODIC)
+                            U_POINTS,   &
+                            BC_PERIODIC)
   unew_fld = r2d_field_type(model_grid, &
-                        U_POINTS,   &
-                        BC_PERIODIC)
+                            U_POINTS,   &
+                            BC_PERIODIC)
 
   v_fld    = r2d_field_type(model_grid, &
-                        V_POINTS,   &
-                        BC_PERIODIC)
+                            V_POINTS,   &
+                            BC_PERIODIC)
   vold_fld = r2d_field_type(model_grid, &
-                        V_POINTS,   &
-                        BC_PERIODIC)
+                            V_POINTS,   &
+                            BC_PERIODIC)
   vnew_fld = r2d_field_type(model_grid, &
-                        V_POINTS,   &
-                        BC_PERIODIC)
+                            V_POINTS,   &
+                            BC_PERIODIC)
 
   cu_fld = r2d_field_type(model_grid, &
-                     U_POINTS,   &
-                     BC_PERIODIC)
+                          U_POINTS,   &
+                          BC_PERIODIC)
 
   cv_fld = r2d_field_type(model_grid, &
-                     V_POINTS,   &
-                     BC_PERIODIC)
+                          V_POINTS,   &
+                          BC_PERIODIC)
 
   z_fld = r2d_field_type(model_grid, &
-                     F_POINTS,   &
-                     BC_PERIODIC)
+                         F_POINTS,   &
+                         BC_PERIODIC)
 
   h_fld = r2d_field_type(model_grid, &
-                     T_POINTS,   &
-                     BC_PERIODIC)
+                         T_POINTS,   &
+                         BC_PERIODIC)
+
+  psi_fld = r2d_field_type(model_grid,   &
+                           ALL_POINTS,   &
+                           BC_NONE)
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
-  ! dt and tdt are prototypical fields that are actually a 
+  ! dt and tdt are examples of fields that are actually a 
   ! single parameter.
   CALL copy_field(dt, tdt)
-
-  ! Create a new field, pressure, which is defined at the T points
-  ! of the mesh
-  !CALL field_create(pressure, CT)
 
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
   CALL init_initial_condition_params()
-  CALL invoke_init_stream_fn_kernel(PSI)
+  CALL invoke_init_stream_fn_kernel(psi_fld)
   CALL init_pressure(p_fld)
 
   !     INITIALIZE VELOCITIES
  
-  CALL init_velocity_u(u_fld, psi, m, n)
-  CALL init_velocity_v(v_fld, psi, m, n)
+  !> \todo Remove need to pass m and n to init_velocity_u()
+  CALL init_velocity_u(u_fld, psi_fld, m, n)
+  CALL init_velocity_v(v_fld, psi_fld)
 
   !     PERIODIC CONTINUATION
   CALL manual_invoke_apply_bcs(u_fld)
