@@ -26,6 +26,8 @@ module grid_mod
      module procedure grid_constructor
   end interface grid_type
 
+  public grid_init
+
 contains
 
   function grid_constructor(grid_name) result(self)
@@ -49,5 +51,37 @@ contains
     end select
 
   end function grid_constructor
+
+  !============================================
+
+  !> Initialise the supplied grid object for a 2D model
+  !! consisting of m x n points.
+  !! @param[inout] grid The object to initialise
+  !! @param[in] m Extent of model in x dimension
+  !! @param[in] n Extent of model in y dimension
+  !! @param[in] dxarg Grid spacing in x dimension
+  !! @param[in] dyarg Grid spacing in y dimension
+  subroutine grid_init(grid, m, n, dxarg, dyarg)
+    implicit none
+    type(grid_type), intent(inout) :: grid
+    integer, intent(in) :: m, n
+    real(wp), intent(in) :: dxarg, dyarg
+
+    select case(grid%grid_name)
+
+    case(ARAKAWA_C)
+       ! For an Arakawa C grid we need a grid that has extent 
+       ! 1 greater than the extent of the model fields in
+       ! order to allow for variable staggering 
+       grid%nx = m+1
+       grid%ny = n+1
+    case default
+       stop 'grid_init: ERROR: only Arakawa C grid implemented!'
+    end select
+
+    grid%dx = dxarg
+    grid%dy = dyarg
+
+  end subroutine grid_init
 
 end module grid_mod
