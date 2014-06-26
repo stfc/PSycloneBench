@@ -15,6 +15,11 @@ module shallow_io_mod
   integer, dimension(3) :: istart, icount 
   character (len=13) :: ncfile = "shallowdat.nc"
 
+  !> Interface to logging routines
+  interface model_write_log
+     module procedure write_log_ir, write_log_r
+  end interface
+
   public read_namelist, print_initial_values, print_diagonals
   public model_write_init, model_write, model_write_finalise
   public model_write_log
@@ -150,18 +155,28 @@ contains
 
   !===================================================
 
-  !> This routine really needs to have a list of optional
-  !! arguments - i.e. to provide a logging interface of
-  !! some sort.
-  SUBROUTINE model_write_log(fmtstr, istep, fvar)
+  !> Write log entry with one integer and one real arg
+  SUBROUTINE write_log_ir(fmtstr, istep, fvar)
     IMPLICIT none
     CHARACTER(LEN=*), INTENT(in) :: fmtstr
     INTEGER,          INTENT(in) :: istep
-    REAL(KIND=8),     INTENT(in) :: fvar
+    REAL(wp),         INTENT(in) :: fvar
 
     WRITE(6,FMT=fmtstr) istep, fvar
 
-  END SUBROUTINE model_write_log
+  END SUBROUTINE write_log_ir
+
+  !===================================================
+
+  !> Write log entry with one real arg
+  SUBROUTINE write_log_r(fmtstr, fvar)
+    IMPLICIT none
+    CHARACTER(LEN=*), INTENT(in) :: fmtstr
+    REAL(wp),         INTENT(in) :: fvar
+
+    WRITE(6,FMT=fmtstr) fvar
+
+  END SUBROUTINE write_log_r
 
   !===================================================
 

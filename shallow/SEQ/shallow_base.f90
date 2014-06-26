@@ -67,9 +67,6 @@ program shallow
   !> Stream function
   type(r2d_field_type) :: psi_fld
 
-  !> Checksum used for each array
-  REAL(KIND=8) :: csum
-
   !> Loop counter for time-stepping loop
   INTEGER :: ncycle
    
@@ -147,13 +144,22 @@ program shallow
 
   !     INITIALIZE VELOCITIES
  
-  !> \todo Remove need to pass m and n to init_velocity_u()
   CALL init_velocity_u(u_fld, psi_fld)
   CALL init_velocity_v(v_fld, psi_fld)
 
   !     PERIODIC CONTINUATION
   CALL manual_invoke_apply_bcs(u_fld)
   CALL manual_invoke_apply_bcs(v_fld)
+
+  ! Generate and output checksums of initial fields
+  CALL model_write_log("('psi initial CHECKSUM = ',E15.7)", &
+                       field_checksum(psi_fld))
+  CALL model_write_log("('P initial CHECKSUM = ',E15.7)", &
+                         field_checksum(p_fld))
+  CALL model_write_log("('U initial CHECKSUM = ',E15.7)",  &
+                       field_checksum(u_fld))
+  CALL model_write_log("('V initial CHECKSUM = ',E15.7)", &
+                       field_checksum(v_fld))
 
   ! Initialise fields that will hold data at previous time step
   CALL copy_field(u_fld, uold_fld)
@@ -245,33 +251,14 @@ program shallow
 
   CALL timer_stop(idxt0)
 
-  CALL compute_checksum(pnew_fld%data, csum)
+  ! Output field checksums at end of run for correctness check
   CALL model_write_log("('P CHECKSUM after ',I6,' steps = ',E15.7)", &
-                       itmax, csum)
-
-  CALL compute_checksum(unew_fld%data, csum)
+                       itmax, field_checksum(pnew_fld))
   CALL model_write_log("('U CHECKSUM after ',I6,' steps = ',E15.7)", &
-                       itmax, csum)
-
-  CALL compute_checksum(vnew_fld%data, csum)
+                       itmax, field_checksum(unew_fld))
   CALL model_write_log("('V CHECKSUM after ',I6,' steps = ',E15.7)", &
-                       itmax, csum)
+                       itmax, field_checksum(vnew_fld))
 
   CALL model_finalise()
-
-CONTAINS
-
-  !===================================================
-
-  SUBROUTINE compute_checksum(field, val)
-    IMPLICIT none
-    REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: field
-    REAL(KIND=8), INTENT(out) :: val
-
-    val = SUM(field)
-
-  END SUBROUTINE compute_checksum
-
-  !===================================================
 
 END PROGRAM shallow

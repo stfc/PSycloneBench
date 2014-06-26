@@ -80,6 +80,7 @@ module field_mod
   public increment
   public copy_field
   public set
+  public field_checksum
 
 contains
 
@@ -163,6 +164,8 @@ contains
     N = fld%grid%ny
 
     ! An 'all points' field is defined upon every point in the grid
+    fld%internal%nx = M
+    fld%internal%ny = N
     fld%internal%xstart = 1
     fld%internal%xstop  = M
     fld%internal%ystart = 1
@@ -194,6 +197,8 @@ contains
     !  o  x  x  x   j=N
     !  o  x  x  x
     !  o  x  x  x   j=1
+    fld%internal%nx = M
+    fld%internal%ny = N
     fld%internal%xstart = 2
     fld%internal%xstop  = M+1
     fld%internal%ystart = 1
@@ -253,6 +258,8 @@ contains
     !  x  x  x  o   j=N
     !  x  x  x  o
     !  o  o  o  o   j=1
+    fld%internal%nx = M
+    fld%internal%ny = N
     fld%internal%xstart = 1
     fld%internal%xstop  = M
     fld%internal%ystart = 2
@@ -313,6 +320,8 @@ contains
     !  x  x  x  o   j=N
     !  x  x  x  o
     !  x  x  x  o   j=1
+    fld%internal%nx = M
+    fld%internal%ny = N
     fld%internal%xstart = 1
     fld%internal%xstop  = M
     fld%internal%ystart = 1
@@ -373,6 +382,8 @@ contains
     !  o  x  x  x   j=N
     !  o  x  x  x
     !  o  o  o  o   j=1
+    fld%internal%nx = M
+    fld%internal%ny = N
     fld%internal%xstart = 2
     fld%internal%xstop  = M+1
     fld%internal%ystart = 2
@@ -500,6 +511,17 @@ contains
     end select
 
   END SUBROUTINE set_scalar_field
+
+  !===================================================
+
+  function field_checksum(field) result(val)
+    implicit none
+    type(r2d_field_type), intent(in) :: field
+    real(wp) :: val
+
+    val = SUM(field%data)
+
+  end function field_checksum
 
   !===================================================
 
