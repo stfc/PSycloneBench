@@ -61,6 +61,8 @@ compute_cu_mod.o: field_mod.o
 
 field_mod.o: kind_params_mod.o grid_mod.o halo_mod.o region_mod.o
 
+halo_mod.o: region_mod.o
+
 initial_conditions_mod.o: physical_params_mod.o model_mod.o
 
 time_smooth_mod.o: kind_params_mod.o $(GUNGHO_MODULES)
