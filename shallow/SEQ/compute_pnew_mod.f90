@@ -35,8 +35,8 @@ contains
 
   subroutine manual_invoke_compute_pnew(pnew, pold, cu, cv, tdt)
     implicit none
-    type(r2d_field_type), intent(out) :: pnew
-    type(r2d_field_type), intent(in)  :: pold, cu, cv
+    type(r2d_field_type), intent(inout) :: pnew
+    type(r2d_field_type), intent(in)    :: pold, cu, cv
     real(wp), intent(in) :: tdt
     ! Locals
     integer :: I, J

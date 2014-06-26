@@ -115,11 +115,12 @@ CONTAINS
 
   !===================================================
 
-  subroutine init_velocity_u(ufld, psifld, m, n)
+  subroutine init_velocity_u(ufld, psifld)
     implicit none
+    ! The horizontal velocity field to initialise
     type(r2d_field_type), intent(inout), target :: ufld
+    ! The stream function used in the initialisation
     type(r2d_field_type), intent(in),    target :: psifld
-    integer,      intent(in) :: m, n
     ! Locals
     real(kind=wp), pointer, dimension(:,:) :: u, psi
     integer  :: i, j
@@ -131,8 +132,10 @@ CONTAINS
     ! dy is a property of the mesh
     dy = ufld%grid%dy
 
-    do J=1,N
-       do I=1,M+1
+!    do J=1,N
+!       do I=1,M+1
+    do J=ufld%internal%ystart,ufld%internal%ystop
+       do I=ufld%internal%xstart,ufld%internal%xstop
           U(I,J) = -(PSI(I,J+1)-PSI(I,J))/dy
        end do
     end do
@@ -143,7 +146,9 @@ CONTAINS
 
   SUBROUTINE init_velocity_v(vfld, psifld)
     implicit none
+    ! The vertical velocity field to initialise
     type(r2d_field_type), intent(inout), target :: vfld
+    ! The stream function used in the initialisation
     type(r2d_field_type), intent(in),    target :: psifld
     ! Locals
     real(kind=wp), pointer, dimension(:,:) :: v, psi

@@ -66,7 +66,6 @@ program shallow
   type(r2d_field_type) :: h_fld
   !> Stream function
   type(r2d_field_type) :: psi_fld
-  REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: psi  
 
   !> Checksum used for each array
   REAL(KIND=8) :: csum
@@ -149,7 +148,7 @@ program shallow
   !     INITIALIZE VELOCITIES
  
   !> \todo Remove need to pass m and n to init_velocity_u()
-  CALL init_velocity_u(u_fld, psi_fld, m, n)
+  CALL init_velocity_u(u_fld, psi_fld)
   CALL init_velocity_v(v_fld, psi_fld)
 
   !     PERIODIC CONTINUATION

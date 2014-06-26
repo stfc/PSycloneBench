@@ -99,6 +99,8 @@ contains
     ! Local declarations
     type(field_type) :: self
 
+    stop 'field_constructor: ERROR: I should not have been called!'
+
   end function field_constructor
 
   !===================================================
@@ -116,11 +118,17 @@ contains
     integer,         intent(in)          :: boundary_conditions
     ! Local declarations
     type(r2d_field_type) :: self
+    integer :: ierr
 
     self%boundary_conditions = boundary_conditions
     ! Set this field's grid pointer to point to the grid pointed to
     ! by the supplied grid_ptr argument
     self%grid => grid
+
+    allocate(self%data(self%grid%nx,self%grid%ny), Stat=ierr)
+    if(ierr /= 0)then
+       stop 'r2d_field_constructor: ERROR: failed to allocate field'
+    end if
 
     select case(grid_points)
 
@@ -132,12 +140,38 @@ contains
        call ct_field_init(self)
     case(F_POINTS)
        call cf_field_init(self)
+    case(ALL_POINTS)
+       call field_init(self)
     case default
        stop "r2d_field_constructor: ERROR: invalid specifier for type of mesh points"
     end select
 
 
   end function r2d_field_constructor
+
+  !===================================================
+
+  subroutine field_init(fld)
+    implicit none
+    type(r2d_field_type), intent(inout) :: fld
+    ! Locals
+    integer :: M, N
+
+    fld%defined_on = ALL_POINTS
+
+    M = fld%grid%nx
+    N = fld%grid%ny
+
+    ! An 'all points' field is defined upon every point in the grid
+    fld%internal%xstart = 1
+    fld%internal%xstop  = M
+    fld%internal%ystart = 1
+    fld%internal%ystop  = N
+
+    ! We have no halo regions
+    fld%num_halos = 0
+
+  end subroutine field_init
 
   !===================================================
 
@@ -419,8 +453,8 @@ contains
 
   SUBROUTINE copy_2dfield(field_in, field_out)
     IMPLICIT none
-    type(r2d_field_type), intent(in)  :: field_in
-    type(r2d_field_type), intent(out) :: field_out
+    type(r2d_field_type), intent(in)    :: field_in
+    type(r2d_field_type), intent(inout) :: field_out
         
     field_out%data(:,:) = field_in%data(:,:)
         

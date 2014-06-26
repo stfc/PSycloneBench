@@ -36,8 +36,8 @@ contains
 
   subroutine manual_invoke_compute_unew(unew, uold, z, cv, h, tdt)
     implicit none
-    type(r2d_field_type), intent(out) :: unew
-    real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
+    type(r2d_field_type), intent(inout) :: unew
+    type(r2d_field_type), intent(in)    :: uold, z, cv, h
     real(wp), intent(in) :: tdt
     ! Locals
     integer  :: I, J
@@ -81,8 +81,9 @@ contains
     DO J=unew%internal%ystart, unew%internal%ystop, 1
        DO I=unew%internal%xstart, unew%internal%xstop, 1
 
-          CALL compute_unew_code(i, j, dx, dy, unew%data, uold, &
-                                 z, cv, h, tdt)
+          CALL compute_unew_code(i, j, dx, dy, &
+                                 unew%data, uold%data, &
+                                 z%data, cv%data, h%data, tdt)
        END DO
     END DO
 

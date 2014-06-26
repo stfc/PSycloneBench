@@ -77,7 +77,7 @@ manual_invoke_compute_new_fields_mod.o: compute_unew_mod.o \
 manual_invoke_apply_bcs_mod.o: field_mod.o
 
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $? $(LDFLAGS)
+	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
 
 %.o: %.f90
 	$(F90) $(F90FLAGS) -c $<

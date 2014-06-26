@@ -16,9 +16,9 @@ CONTAINS
     use compute_pnew_mod, ONLY: compute_pnew_code
     use field_mod
     implicit none
-    type(r2d_field_type), intent(out) :: unew, vnew, pnew
-    type(r2d_field_type), intent(in) :: uold, vold, pold
-    type(r2d_field_type), intent(in) :: z, cufld, cvfld, hfld
+    type(r2d_field_type), intent(inout) :: unew, vnew, pnew
+    type(r2d_field_type), intent(in)    :: uold, vold, pold
+    type(r2d_field_type), intent(in)    :: z, cufld, cvfld, hfld
     real(wp), intent(in) :: tdt
     ! Locals
     integer :: i, j

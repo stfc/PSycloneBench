@@ -39,8 +39,8 @@ contains
   !! compute_z_code().
   subroutine manual_invoke_compute_z(zfld, pfld, ufld, vfld)
     implicit none
-    type(r2d_field_type), intent(out) :: zfld
-    type(r2d_field_type), intent(in)  :: pfld, ufld, vfld
+    type(r2d_field_type), intent(inout) :: zfld
+    type(r2d_field_type), intent(in)    :: pfld, ufld, vfld
     ! Locals
     integer :: I, J
     real(wp) :: dx, dy

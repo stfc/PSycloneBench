@@ -30,8 +30,8 @@ contains
 
   subroutine manual_invoke_compute_h(hfld, pfld, ufld, vfld)
     implicit none
-    type(r2d_field_type), intent(out) :: hfld
-    type(r2d_field_type), intent(in)  :: pfld, ufld,vfld
+    type(r2d_field_type), intent(inout) :: hfld
+    type(r2d_field_type), intent(in)    :: pfld, ufld,vfld
     ! Locals
     integer :: I, J
 

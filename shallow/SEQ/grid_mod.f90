@@ -35,8 +35,6 @@ contains
     integer, intent(in) :: grid_name
     type(grid_type), target :: self
 
-    write(*,*) "grid_constructor needs to read namelist file!"
-
     ! This case statement is mainly to check that the caller
     ! has specified a valid value for grid_name.
     select case(grid_name)
@@ -79,6 +77,7 @@ contains
        stop 'grid_init: ERROR: only Arakawa C grid implemented!'
     end select
 
+    ! For a regular, orthogonal mesh the spatial resolution is constant
     grid%dx = dxarg
     grid%dy = dyarg
 

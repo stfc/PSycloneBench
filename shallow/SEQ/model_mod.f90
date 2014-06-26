@@ -6,8 +6,8 @@ MODULE model_mod
   use timing_mod, ONLY: timer_init, timer_report
   implicit none
 
-  INTEGER :: m, n      !< global domain size (no. of grid pts)
-  INTEGER :: mp1, np1  !< m+1 and n+1 == array extents
+  !INTEGER :: m, n      !< global domain size (no. of grid pts)
+  !INTEGER :: mp1, np1  !< m+1 and n+1 == array extents
 
   INTEGER :: itmax   !< number of timesteps
 
@@ -78,6 +78,8 @@ CONTAINS
     REAL(KIND=wp), PARAMETER :: alpha_loc = .001
     !> Hardwired model time-step (seconds)
     REAL(KIND=wp), PARAMETER :: dt_loc = 90.
+    !> Problem size, read from namelist
+    integer :: m, n
 
     CALL timer_init()
 
@@ -85,12 +87,6 @@ CONTAINS
 
     ! Set up mesh parameters
     CALL grid_init(grid, m, n, dxloc, dyloc)
-
-    ! Computational domain actually has extent m+1,n+1 and
-    ! location of fields within this depends on which
-    ! mesh point type they are defined upon
-    mp1 = m + 1
-    np1 = n + 1
 
     ! Set model time-step
     CALL set(dt, dt_loc)

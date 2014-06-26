@@ -34,8 +34,8 @@ contains
   !! compute_cv_code().
   subroutine manual_invoke_compute_cv(cvfld, pfld, vfld)
     implicit none
-    type(r2d_field_type), intent(out) :: cvfld
-    type(r2d_field_type), intent(in)  :: pfld, vfld
+    type(r2d_field_type), intent(inout) :: cvfld
+    type(r2d_field_type), intent(in)    :: pfld, vfld
     ! Locals
     integer :: I, J
 
