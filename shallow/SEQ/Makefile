@@ -23,8 +23,8 @@ MODULES = kind_params_mod.o physical_params_mod.o \
           manual_invoke_compute_new_fields_mod.o \
           compute_unew_mod.o compute_vnew_mod.o compute_pnew_mod.o \
           manual_invoke_apply_bcs_mod.o \
-          timing_mod.o time_smooth_mod.o intel_timer_mod.o \
-          mesh_mod.o
+          timing_mod.o time_smooth_mod.o intel_timer_mod.o
+
 
 GENERATED_MODULES = psy.o shallow_gen.o
 
@@ -67,9 +67,7 @@ time_smooth_mod.o: kind_params_mod.o $(GUNGHO_MODULES)
 
 timing_mod.o: intel_timer_mod.o
 
-mesh_mod.o: kind_params_mod.o
-
-model_mod.o: field_mod.o timing_mod.o shallow_io_mod.o mesh_mod.o \
+model_mod.o: field_mod.o timing_mod.o shallow_io_mod.o \
              time_smooth_mod.o
 
 manual_invoke_compute_new_fields_mod.o: compute_unew_mod.o \

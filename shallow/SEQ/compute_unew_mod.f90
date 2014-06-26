@@ -19,6 +19,10 @@ MODULE compute_unew_mod
              arg(READ,  CT, POINTWISE),        & ! h
              arg(READ,  R,  POINTWISE)         & ! tdt
            /)
+     !> This kernel operates on fields that live on an
+     !! orthogonal, regular grid.
+     integer :: GRID_TYPE = ORTHOGONAL_REGULAR
+
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
@@ -36,7 +40,8 @@ contains
     real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
     real(wp), intent(in) :: tdt
     ! Locals
-    integer :: I, J
+    integer  :: I, J
+    real(wp) :: dx, dy
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -70,11 +75,13 @@ contains
     !        +CV(I+1,J))-TDTSDX*(H(I+1,J)-H(I,J))                       
     !   END DO
     ! END DO
+    dx = unew%grid%dx
+    dy = unew%grid%dy
 
     DO J=unew%internal%ystart, unew%internal%ystop, 1
        DO I=unew%internal%xstart, unew%internal%xstop, 1
 
-          CALL compute_unew_code(i, j, unew%data, uold, &
+          CALL compute_unew_code(i, j, dx, dy, unew%data, uold, &
                                  z, cv, h, tdt)
        END DO
     END DO
@@ -83,15 +90,15 @@ contains
 
   !===================================================
 
-  SUBROUTINE compute_unew_code(i, j, unew, uold, z, cv, h, tdt)
-    USE grid_mod, ONLY: dx
-    IMPLICIT none
-    INTEGER, INTENT(in) :: I, J
-    REAL(wp), INTENT(out), DIMENSION(:,:) :: unew
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: uold, z, cv, h
-    REAL(wp), INTENT(in) :: tdt
+  subroutine compute_unew_code(i, j, dx, dy, unew, uold, z, cv, h, tdt)
+    implicit none
+    integer,  intent(in) :: I, J
+    real(wp), intent(in) :: dx, dy
+    real(wp), intent(out), dimension(:,:) :: unew
+    real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
+    real(wp), intent(in) :: tdt
     ! Locals
-    REAL(wp) :: tdts8, tdtsdx
+    real(wp) :: tdts8, tdtsdx
    
     !> These quantities are computed here because tdt is not
     !! constant. (It is == dt for first time step, 2xdt for
@@ -104,6 +111,6 @@ contains
                 (CV(I,J+1)+CV(I-1,J+1)+CV(I-1,J)+CV(I,J)) - &
                 TDTSDX*(H(I,J)-H(I-1,J))
 
-  END SUBROUTINE compute_unew_code
+  end subroutine compute_unew_code
 
-END MODULE compute_unew_mod
+end module compute_unew_mod

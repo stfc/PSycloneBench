@@ -19,6 +19,10 @@ MODULE compute_vnew_mod
              arg(READ,  CT, POINTWISE),        & ! h
              arg(READ,  R,  POINTWISE)         & ! tdt
            /)
+     !> This kernel operates on fields that live on an
+     !! orthogonal, regular grid.
+     integer :: GRID_TYPE = ORTHOGONAL_REGULAR
+
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      INTEGER :: ITERATES_OVER = DOFS
@@ -33,10 +37,11 @@ CONTAINS
   subroutine manual_invoke_compute_vnew(vnew, vold, z, cu, h, tdt)
     implicit none
     type(r2d_field_type), intent(out) :: vnew
-    real(wp), intent(in),  dimension(:,:) :: vold, z, cu, h
+    type(r2d_field_type), intent(in)  :: vold, z, cu, h
     real(wp), intent(in) :: tdt
     ! Locals
     integer :: I, J
+    real(wp) :: dx, dy
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -82,11 +87,15 @@ CONTAINS
     !   uij-1- -Tij-1---ui+1j-1
     !
 
+    dx = vnew%grid%dx
+    dy = vnew%grid%dy
+
     DO J=vnew%internal%ystart, vnew%internal%ystop, 1
        DO I=vnew%internal%xstart, vnew%internal%xstop, 1
 
-          CALL compute_vnew_code(i, j, vnew%data, vold, &
-                                 z, cu, h, tdt)
+          CALL compute_vnew_code(i, j, dx, dy, &
+                                 vnew%data, vold%data, &
+                                 z%data, cu%data, h%data, tdt)
        END DO
     END DO
 
@@ -94,10 +103,10 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE compute_vnew_code(i, j, vnew, vold, z, cu, h, tdt)
-    USE model_mod, ONLY: dy
-    IMPLICIT none
-    INTEGER, INTENT(in) :: I, J
+  subroutine compute_vnew_code(i, j, dx, dy, vnew, vold, z, cu, h, tdt)
+    implicit none
+    integer,  intent(in) :: I, J
+    real(wp), intent(in) :: dx, dy
     REAL(wp), INTENT(out), DIMENSION(:,:) :: vnew
     REAL(wp), INTENT(in),  DIMENSION(:,:) :: vold, z, cu, h
     REAL(wp), INTENT(in) :: tdt

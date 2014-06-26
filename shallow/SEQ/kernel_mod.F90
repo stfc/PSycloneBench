@@ -26,8 +26,14 @@ public CG, DG, R
 !> These quantities should be defined somewhere in the lfric
 !! infrastructure but at the moment they are not!
 !! \todo Work out where POINTWISE and DOFS should be declared.
-INTEGER, PARAMETER :: POINTWISE = 2, DOFS = 5
-public POINTWISE, DOFS 
+integer, public, parameter :: POINTWISE = 2, DOFS = 5
+
+!> The type of grid that a kernel is written to operate on.
+!! NEMO uses an orthogonal, curvilinear mesh while
+!! shallow has a regular mesh (constant spatial resolution).
+!! \todo These should probably be declared somewhere else!
+integer, public, parameter :: ORTHOGONAL_REGULAR     = 7
+integer, public, parameter :: ORTHOGONAL_CURVILINEAR = 8
 
 type :: kernel_type
   private

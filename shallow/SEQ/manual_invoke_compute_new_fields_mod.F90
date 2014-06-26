@@ -22,12 +22,17 @@ CONTAINS
     real(wp), intent(in) :: tdt
     ! Locals
     integer :: i, j
+    real(wp) :: dx, dy
+
+    dx = pnew%grid%dx
+    dy = pnew%grid%dy
 
     !CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt)
     DO J=unew%internal%ystart, unew%internal%ystop 
        DO I=unew%internal%xstart, unew%internal%xstop
 
-          CALL compute_unew_code(i, j, unew%data, uold%data, &
+          CALL compute_unew_code(i, j, dx, dy, &
+                                 unew%data, uold%data, &
                                  z%data, cvfld%data, hfld%data, tdt)
 
        END DO
@@ -36,7 +41,8 @@ CONTAINS
     DO J=vnew%internal%ystart, vnew%internal%ystop
        DO I=vnew%internal%xstart, vnew%internal%xstop
 
-          CALL compute_vnew_code(i, j, vnew%data, vold%data, &
+          CALL compute_vnew_code(i, j, dx, dy, &
+                                 vnew%data, vold%data, &
                                  z%data, cufld%data, hfld%data, tdt)
        END DO
     END DO
@@ -44,7 +50,8 @@ CONTAINS
     DO J=pnew%internal%ystart, pnew%internal%ystop
        DO I=pnew%internal%xstart, pnew%internal%xstop
 
-          CALL compute_pnew_code(i, j, pnew%data, pold%data, &
+          CALL compute_pnew_code(i, j, dx, dy, &
+                                 pnew%data, pold%data, &
                                  cufld%data, cvfld%data, tdt)
        END DO
     END DO

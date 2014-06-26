@@ -115,42 +115,45 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE init_velocity_u(ufld, psifld, m, n)
-    USE mesh_mod, ONLY: dy
-    IMPLICIT none
+  subroutine init_velocity_u(ufld, psifld, m, n)
+    implicit none
     type(r2d_field_type), intent(inout), target :: ufld
     type(r2d_field_type), intent(in),    target :: psifld
     integer,      intent(in) :: m, n
     ! Locals
     real(kind=wp), pointer, dimension(:,:) :: u, psi
-    integer :: i, j
+    integer  :: i, j
+    real(wp) :: dy
 
     u => ufld%data
     psi => psifld%data
 
     ! dy is a property of the mesh
-    DO J=1,N
-       DO I=1,M+1
+    dy = ufld%grid%dy
+
+    do J=1,N
+       do I=1,M+1
           U(I,J) = -(PSI(I,J+1)-PSI(I,J))/dy
-       END DO
-    END DO
-  END SUBROUTINE init_velocity_u
+       end do
+    end do
+
+  end subroutine init_velocity_u
 
   !===================================================
 
   SUBROUTINE init_velocity_v(vfld, psifld)
-    USE mesh_mod, ONLY: dx
-    IMPLICIT none
+    implicit none
     type(r2d_field_type), intent(inout), target :: vfld
     type(r2d_field_type), intent(in),    target :: psifld
     ! Locals
     real(kind=wp), pointer, dimension(:,:) :: v, psi
-    integer :: I, J
+    integer  :: I, J
+    real(wp) :: dx
 
     v => vfld%data
     psi => psifld%data
+    dx = vfld%grid%dx
 
-    !> \todo dx is a property of the mesh and should be looked-up
     DO J=vfld%internal%ystart, vfld%internal%ystop
        DO I=vfld%internal%xstart, vfld%internal%xstop
           call init_velocity_v_code(i,j,dx,v,psi)

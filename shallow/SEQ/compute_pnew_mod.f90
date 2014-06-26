@@ -18,6 +18,10 @@ module compute_pnew_mod
              arg(READ,  CV, POINTWISE),        & ! cv
              arg(READ,  R,  POINTWISE)         & ! tdt
            /)
+     !> This kernel operates on fields that live on an
+     !! orthogonal, regular grid.
+     integer :: GRID_TYPE = ORTHOGONAL_REGULAR
+
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      INTEGER :: ITERATES_OVER = DOFS
@@ -32,10 +36,11 @@ contains
   subroutine manual_invoke_compute_pnew(pnew, pold, cu, cv, tdt)
     implicit none
     type(r2d_field_type), intent(out) :: pnew
-    real(wp), intent(in),  dimension(:,:) :: pold, cu, cv
+    type(r2d_field_type), intent(in)  :: pold, cu, cv
     real(wp), intent(in) :: tdt
     ! Locals
     integer :: I, J
+    real(wp) :: dx, dy
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -77,12 +82,15 @@ contains
     !   |       |       |
     !   uij-1- -Tij-1---ui+1j-1
     !
+    dx = pnew%grid%dx
+    dy = pnew%grid%dy
 
     DO J=pnew%internal%ystart, pnew%internal%ystop, 1
        DO I=pnew%internal%xstart, pnew%internal%xstop, 1
 
-          CALL compute_pnew_code(i, j, pnew%data, pold, &
-                                 cu, cv, tdt)
+          CALL compute_pnew_code(i, j, dx, dy, &
+                                 pnew%data, pold%data, &
+                                 cu%data, cv%data, tdt)
        END DO
     END DO
 
@@ -90,15 +98,15 @@ contains
 
   !===================================================
 
-  SUBROUTINE compute_pnew_code(i, j, pnew, pold, cu, cv, tdt)
-    USE model_mod, ONLY: dx, dy
-    IMPLICIT none
-    INTEGER, INTENT(in) :: I, J
-    REAL(wp), INTENT(out), DIMENSION(:,:) :: pnew
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: pold, cu, cv
-    REAL(wp), INTENT(in) :: tdt
+  subroutine compute_pnew_code(i, j, dx, dy, pnew, pold, cu, cv, tdt)
+    implicit none
+    integer,  intent(in) :: I, J
+    real(wp), intent(in) :: dx, dy
+    real(wp), intent(out), dimension(:,:) :: pnew
+    real(wp), intent(in),  dimension(:,:) :: pold, cu, cv
+    real(wp), intent(in) :: tdt
     ! Locals
-    REAL(wp) :: tdtsdx, tdtsdy
+    real(wp) :: tdtsdx, tdtsdy
    
     !> These quantities are computed here because tdt is not
     !! constant. (It is == dt for first time step, 2xdt for
