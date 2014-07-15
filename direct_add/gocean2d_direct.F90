@@ -667,7 +667,7 @@ CONTAINS
 ! kernel  un updating
           DO jj = 1, jpj
             DO ji = 0, jpi
-              un(:,:)   = ua(:,:)
+              un(ji,jj)   = ua(ji,jj)
             END DO
           END DO
 ! end of kernel sshn_u updating.
@@ -675,7 +675,7 @@ CONTAINS
 ! kernel vn updating
           DO jj = 0, jpj
             DO ji = 1, jpi
-              vn(:,:)   = va(:,:)
+              vn(ji,jj)   = va(ji,jj)
             END DO
           END DO
 ! end kernel vn updating.
@@ -683,7 +683,7 @@ CONTAINS
 ! kernel sshn updating
           DO jj = 1, jpj
             DO ji = 1, jpi
-              sshn(:,:) = ssha(:,:)
+              sshn(ji,jj) = ssha(ji,jj)
             END DO
           END DO
 ! end kernel sshn_u updating.
