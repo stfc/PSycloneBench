@@ -582,13 +582,13 @@ CONTAINS
             jvn = tv_n(jin)
             jvs = tv_s(jis)
 
-            dvdy_n = (vn(jvn) - vn(ji) ) / e1t(jin) * (ht(jin) + sshn(jin))
-            dvdy_s = (un(ji)  - un(jvs)) / e1t(jis) * (ht(jis) + sshn(jis))
+            dvdy_n = (vn(jvn) - vn(ji) ) / e2t(jin) * (ht(jin) + sshn(jin))
+            dvdy_s = (un(ji)  - un(jvs)) / e2t(jis) * (ht(jis) + sshn(jis))
             IF(tt_w(jis) <= 0) THEN
               dvdx_w = 0.0_wp !slip boundary
             ELSE
               jvw = tv_n(tt_w(jis))
-              dvdx_w = (vn(ji) - vn(jvw)) / (e2v(ji) + e2v(jvw)) * &
+              dvdx_w = (vn(ji) - vn(jvw)) / (e1v(ji) + e1v(jvw)) * &
                      & (hv(ji) + sshn_v(ji) + hv(jvw) + sshn_v(jvw))
             END IF
 
@@ -596,7 +596,7 @@ CONTAINS
               dvdx_e = 0.0_wp ! slip boundary
             ELSE
               jve = tv_n(tt_e(jis))
-              dvdx_e = (vn(jve) - vn(ji)) / (e2v(ji) + e2v(jve)) * &
+              dvdx_e = (vn(jve) - vn(ji)) / (e1v(ji) + e1v(jve)) * &
                      & (hv(ji) + sshn_v(ji) + hv(jve) + sshn_v(jve))
             END If
 
