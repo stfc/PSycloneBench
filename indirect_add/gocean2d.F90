@@ -423,9 +423,8 @@ CONTAINS
           INTEGER  :: jun, jus, jve, jvw
           INTEGER  :: jvse, jvsw, jvne, jvnw
           INTEGER  :: jues, juen, juws, juwn
-          REAL(wp) :: zadv, zhpg, zcor, zdiff 
-          REAL(wp) :: u_e, u_w, u_s, u_n
-          REAL(wp) :: v_e, v_w, v_s, v_n
+          REAL(wp) :: u_e, u_w
+          REAL(wp) :: v_s, v_n
           REAL(wp) :: v_sc, v_nc, u_ec, u_wc
           REAL(wp) :: uu_e, uu_w, uu_s, uu_n
           REAL(wp) :: vv_e, vv_w, vv_s, vv_n
@@ -433,7 +432,7 @@ CONTAINS
           REAL(wp) :: dudx_e, dudy_n, dvdx_e, dvdy_n
           REAL(wp) :: dudx_w, dudy_s, dvdx_w, dvdy_s
 
-          REAL(wp) :: adv, vis, hpg, cor, bfr
+          REAL(wp) :: adv, vis, hpg, cor
 
           ! u equation
           DO ji = 1, jpijglou
@@ -557,7 +556,7 @@ CONTAINS
 
             ! -advection (currently first order upwind)
             vv_s = (0.5_wp - SIGN(0.5_wp, v_s)) * vn(ji)              + & 
-                 & (0.5_wp + SIGN(0.5_wp, v_w)) * vn(tv_s(jis)) 
+                 & (0.5_wp + SIGN(0.5_wp, v_s)) * vn(tv_s(jis)) 
             vv_n = (0.5_wp + SIGN(0.5_wp, v_n)) * vn(ji)              + & 
                  & (0.5_wp - SIGN(0.5_wp, v_n)) * vn(tv_n(jin)) 
 
