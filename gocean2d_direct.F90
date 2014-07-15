@@ -1,7 +1,7 @@
     PROGRAM gocean2d
          !!! A Horizontal 2D hydrodynamic ocean model which
-         !!   1) using structured grid, but
-         !!   2) using in-direct data structures
+         !!   1) using structured grid
+         !!   2) using direct data addressig structures
 
          IMPLICIT NONE
 
@@ -10,15 +10,15 @@
          INTEGER,  PARAMETER :: wp = dp
 
          REAL(wp), PARAMETER :: pi    = 3.1415926535897932_wp  
-         REAL(wp), PARAMETER :: g     = 9.80665_wp              ! gravity constant
-         REAL(wp), PARAMETER :: omega = 7.292116e-05_wp         ! earth rotation speed (s^(-1))
-         REAL(wp), PARAMETER :: d2r   = pi / 180._wp            ! degree to radian
-
-
-         INTEGER, ALLOCATABLE :: pt(:,:)                        ! properties of t-cells 
-                                                                ! 1: water cell within computational domain
-                                                                ! 0: land cell
-                                                                !-1: water cell outside computational domain
+         REAL(wp), PARAMETER :: g     = 9.80665_wp                          ! gravity constant
+         REAL(wp), PARAMETER :: omega = 7.292116e-05_wp                     ! earth rotation speed (s^(-1))
+         REAL(wp), PARAMETER :: d2r   = pi / 180._wp                        ! degree to radian
+                                                                            
+                                                                            
+         INTEGER, ALLOCATABLE :: pt(:,:)                                    ! properties of t-cells 
+                                                                            ! 1: water cell within computational domain
+                                                                            ! 0: land cell
+                                                                            !-1: water cell outside computational domain
 
          REAL(wp), ALLOCATABLE :: e1t(:,:), e2t(:,:), e1u(:,:), e2u(:,:) 
          REAL(wp), ALLOCATABLE :: e1f(:,:), e2f(:,:), e1v(:,:), e2v(:,:) 
@@ -100,7 +100,7 @@ CONTAINS
           irecord     =       1               !  intervals to save results
           rdt         =     10._wp            !  size of time step (second) 
           cbfr        =   0.001_wp            !  bottom friction coefficeint
-          visc        =   1000._wp            !  horizontal kinematic viscosity coefficient 
+          visc        =     100._wp            !  horizontal kinematic viscosity coefficient 
  
  
           OPEN(1, file='namelist', STATUS='OLD')
@@ -135,6 +135,16 @@ CONTAINS
             STOP "It is not ready to Read in grid from a file"
             CALL allocation
             ! add reading data part here
+            ! the following variables/arrays are needed:
+            ! jpi, jpj, 
+            ! pt(0:jpi+1)
+            ! e1t(jpi,    jpj), e2t(jpi,    jpj)
+            ! e1u(0:jpi,  jpj), e2u(0:jpi,  jpj)
+            ! e1v(jpi,  0:jpj), e2v(jpi,  0:jpj)
+            ! e1f(0:jpi,0:jpj), e2f(0:jpi,0:jpj)
+            ! gphiu(0:jpi,jpj), gphiv(jpi,0:jpj), gphif(0:jpi,0:jpj) 
+            ! xt(jpi,jpj), yt(jpi,jpj)
+            ! ht(jpi,jpj), hu(jpi,jpj), hv(jpi,jpj)
 
           CASE(1)
 
@@ -188,24 +198,6 @@ CONTAINS
             e1f(0:jpi, 0:jpj)   = dx
             e2f(0:jpi, 0:jpj)   = dy
 
-            DO jj = 1, jpj
-              DO ji = 1, jpi
-                e12t(ji,jj) = e1t(ji,jj) * e2t(ji,jj)
-              END DO
-            END DO
-
-            DO jj = 1, jpj
-              DO ji = 0, jpi
-                e12u(ji,jj) = e1u(ji,jj) * e2u(ji,jj)
-              END DO
-            END DO
-
-            DO jj = 0, jpj
-              DO ji = 1, jpi
-                e12v(ji,jj) = e1v(ji,jj) * e2v(ji,jj)
-              END DO
-            END DO
-
 
             ! -here is a f-plane testing case
             gphiu(0:jpi, 1:jpj) = 50._wp
@@ -213,8 +205,8 @@ CONTAINS
             gphif(0:jpi, 0:jpj) = 50._wp
 
 
-            xt(1,1) = 0.0_wp
-            yt(1,1) = 0.0_wp
+            xt(1,1) = 0.0_wp + 0.5_wp * e1t(1,1)
+            yt(1,1) = 0.0_wp + 0.5_wp * e2t(1,1)
 
             DO ji = 2, jpi
               xt(ji,1:jpj) = xt(ji-1, 1:jpj) + dx
@@ -251,6 +243,25 @@ CONTAINS
             ! add interrupt here
             STOP "Wrong grid defination type, check your setup !!!!"
           END SELECT
+
+          ! calculate t,u,v cell area
+          DO jj = 1, jpj
+            DO ji = 1, jpi
+              e12t(ji,jj) = e1t(ji,jj) * e2t(ji,jj)
+            END DO
+          END DO
+
+          DO jj = 1, jpj
+            DO ji = 0, jpi
+              e12u(ji,jj) = e1u(ji,jj) * e2u(ji,jj)
+            END DO
+          END DO
+
+          DO jj = 0, jpj
+            DO ji = 1, jpi
+              e12v(ji,jj) = e1v(ji,jj) * e2v(ji,jj)
+            END DO
+          END DO
 
         END SUBROUTINE grid
 
@@ -291,9 +302,15 @@ CONTAINS
           ! define (or read in) initil ssh and velocity fields
 !         ! split this part into ssh, sshu, sshv, u, v kernels 
 
-            DO ji=1,jpi-1
+            DO ji=1,jpi
               DO jj =1, jpj
-                itmp1 = min(ji,jpiglo)
+                sshn(ji,jj) = 0.0_wp
+              END DO
+            END DO
+
+            DO ji=0,jpi
+              DO jj =1, jpj
+                itmp1 = min(ji+1,jpi)
                 itmp2 = max(ji,1)
                 rtmp1 = e12t(itmp1,jj) * sshn(itmp1,jj) + e12t(itmp2,jj) * sshn(itmp2,jj)
                 sshn_u(ji,jj) = 0.5_wp * rtmp1 / e12u(ji,jj)
@@ -301,11 +318,11 @@ CONTAINS
             END DO
 
             DO ji=1,jpi
-              DO jj =1, jpj-1
-                itmp1 = min(jj,jpjglo)
+              DO jj =0, jpj
+                itmp1 = min(jj+1,jpj)
                 itmp2 = max(jj,1)
                 rtmp1 = e12t(ji,itmp1) * sshn(ji,itmp1) + e12t(ji,itmp2) * sshn(ji,itmp2)
-                sshn_v(ji,jj) = 0.5_wp * rtmp1 / e12u(ji,jj)
+                sshn_v(ji,jj) = 0.5_wp * rtmp1 / e12v(ji,jj)
               END DO
             END DO
 
@@ -347,8 +364,7 @@ CONTAINS
 !+++++++++++++++++++++++++++++++++++
 
         SUBROUTINE continuity
-!kernel
-          INTEGER :: jie, jiw, jin, jis
+!kernel continuity
           DO jj = 1, jpj
             DO ji = 1, jpi
               rtmp1 = (sshn_u(ji  ,jj  ) + hu(ji  ,jj  )) * un(ji  ,jj  )
@@ -358,14 +374,14 @@ CONTAINS
               ssha(ji,jj) = sshn(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * rdt / e12t(ji,jj)
             END DO
           END DO
+!end kernel continuity
         END SUBROUTINE continuity
 
 !+++++++++++++++++++++++++++++++++++
  
         SUBROUTINE momentum
-          REAL(wp) :: zadv, zhpg, zcor, zdiff 
-          REAL(wp) :: u_e, u_w, u_s, u_n
-          REAL(wp) :: v_e, v_w, v_s, v_n
+          REAL(wp) :: u_e, u_w
+          REAL(wp) :: v_s, v_n
           REAL(wp) :: v_sc, v_nc, u_ec, u_wc
           REAL(wp) :: uu_e, uu_w, uu_s, uu_n
           REAL(wp) :: vv_e, vv_w, vv_s, vv_n
@@ -373,13 +389,13 @@ CONTAINS
           REAL(wp) :: dudx_e, dudy_n, dvdx_e, dvdy_n
           REAL(wp) :: dudx_w, dudy_s, dvdx_w, dvdy_s
 
-          REAL(wp) :: adv, vis, hpg, cor, bfr
+          REAL(wp) :: adv, vis, hpg, cor
 
           ! u equation
           DO jj = 1, jpj
           DO ji = 1, jpi-1
 
-! start of u adv kernel
+! kernel u adv 
 
              IF(pt(ji,jj) + pt(ji+1,jj) <= 0)  CYCLE                    !jump over non-computatinal domain
              IF(pt(ji,jj) <= 0 .OR. pt(ji+1,jj) <= 0)  CYCLE                    !jump over boundary u
@@ -419,11 +435,11 @@ CONTAINS
             END IF
 
             adv = uu_w * u_w * depw - uu_e * u_e * depe + uu_s * v_s * deps - uu_n * v_n * depn
-!end of u adv kernel
+!end kernel u adv 
 
             ! -viscosity
 
-!beginning of vis kernel
+!kernel  u vis 
             dudx_e = (un(ji+1,jj) - un(ji,  jj)) / e1t(ji+1,jj) * (ht(ji+1,jj) + sshn(ji+1,jj))
             dudx_w = (un(ji,  jj) - un(ji-1,jj)) / e1t(ji,  jj) * (ht(ji,  jj) + sshn(ji,  jj))
             IF(pt(ji,jj-1) <=0 .OR. pt(ji+1,jj-1) <= 0) THEN   
@@ -444,23 +460,23 @@ CONTAINS
                 & (dudy_n - dudy_s ) * e1u(ji,jj) * 0.5_wp  
             vis = visc * vis   !visc will be an array visc(1:jpijglou) 
                                !for variable viscosity, such as turbulent viscosity
-!   End of u-vis kernel
+!End  kernel u vis 
 
             ! -Coriolis' force (can be implemented implicitly)
-! start  cor kernel
+!kernel cor 
             cor = 0.5_wp * (2._wp * omega * SIN(gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * &
                 & e12u(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj))
-!   end of cor kernel
+!end kernel cor 
 
             ! -pressure gradient
-!start of hpg kernel
+!start kernel hpg 
             hpg = -g * (hu(ji,jj) + sshn_u(ji,jj)) * e2u(ji,jj) * (sshn(ji+1,jj) - sshn(ji,jj))
-!           end of hpg kernel
+!end kernel hpg 
             ! -linear bottom friction (implemented implicitly.
-!           start of  ua calculation kernel
+!kernel ua calculation 
             ua(ji,jj) = (un(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj)) + rdt * (adv + vis + cor + hpg) / e12u(ji,jj)) / &
                    & (hu(ji,jj) + ssha_u(ji,jj)) / (1.0_wp + cbfr * rdt) 
-!           end ua kernel
+!end kernel ua 
           END DO
           END DO
 
@@ -471,6 +487,7 @@ CONTAINS
              IF(pt(ji,jj) + pt(ji+1,jj) <= 0)  CYCLE                    !jump over non-computatinal domain
              IF(pt(ji,jj) <= 0 .OR. pt(ji,jj+1) <= 0)  CYCLE                !jump over v boundary cells
 
+! kernel v adv 
              v_n  = 0.5 * (vn(ji,jj) + vn(ji,jj+1)) * e1t(ji,jj+1)  !add length scale.
              depn = ht(ji,jj+1) + sshn(ji,jj+1)
 
@@ -507,9 +524,12 @@ CONTAINS
 
             adv = vv_w * u_w * depw - vv_e * u_e * depe + vv_s * v_s * deps - vv_n * v_n * depn
 
+!end kernel v adv 
+
             ! -viscosity
+            
 
-
+!kernel v dis 
             dvdy_n = (vn(ji,jj+1) - vn(ji,  jj)) / e2t(ji,jj+1) * (ht(ji,jj+1) + sshn(ji,jj+1))
             dvdy_s = (vn(ji,  jj) - vn(ji,jj-1)) / e2t(ji,  jj) * (ht(ji,  jj) + sshn(ji,  jj))
 
@@ -532,20 +552,24 @@ CONTAINS
 
             vis = visc * vis   !visc will be a array visc(1:jpijglou) 
                                !for variable viscosity, such as turbulent viscosity
-
+!end kernel v dis 
 
             ! -Coriolis' force (can be implemented implicitly)
+!kernel v cor 
             cor = -0.5_wp * (2._wp * omega * SIN(gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * &
                 & e12v(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj))
+!end kernel v cor 
 
             ! -pressure gradient
+!kernel v hpg 
             hpg = -g * (hv(ji,jj) + sshn_v(ji,jj)) * e1v(ji,jj) * (sshn(ji,jj+1) - sshn(ji,jj))
+!kernel v hpg 
 
             ! -linear bottom friction (implemented implicitly.
-
+!kernel ua calculation 
             va(ji,jj) = (vn(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj)) + rdt * (adv + vis + cor + hpg) / e12v(ji,jj) ) / &
                    & ((hv(ji,jj) + ssha_v(ji,jj))) / (1.0_wp + cbfr * rdt) 
-
+!end kernel ua calculation 
           END DO
           END DO
         END SUBROUTINE momentum
@@ -559,7 +583,7 @@ CONTAINS
 
           !open boundary condition of clamped ssh
 
-!kernel for ssh clamped obc
+!kernel ssh clamped obc
             amp_tide   = 0.2_wp
             omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
             DO jj = 1, jpj  
@@ -576,24 +600,24 @@ CONTAINS
                 END IF
               END DO
             END DO
-!end of ssh clamped obc
+!end kernel ssh clamped obc
             
 
-! "solid boundary conditions for u-velocity" kernel
+! kernel"solid boundary conditions for u-velocity" 
             DO jj = 1, jpj
               DO ji = 0, jpi
                 IF(pt(ji,jj) * pt(ji+1,jj) == 0) ua(ji,jj) = 0._wp
               END DO
             END DO
-!end of "solid boundary conditions for u-velocity" kernel
+!end kernel "solid boundary conditions for u-velocity" 
 
-! "solid boundary conditions for v-velocity" kernel
+!kernel "solid boundary conditions for v-velocity" 
             DO jj = 0, jpj
               DO ji = 1, jpi
                 IF(pt(ji,jj) * pt(ji,jj+1) == 0) va(ji,jj) = 0._wp
               END DO
             END DO
-!end of "solid boundary conditions for v-velocity" kernel
+!end kernel "solid boundary conditions for v-velocity" 
 
           !                                            Du                 Dssh
           !start of "Flather open boundary condition [---- = sqrt(g/H) * ------]" Kernel
@@ -601,7 +625,7 @@ CONTAINS
           ! ua and va in du/dn should be the specified tidal forcing
 
 
-! Flather u kernel
+! kernel Flather u 
             DO jj = 1, jpj
               DO ji = 0, jpi  
                 IF(pt(ji,jj) + pt(ji+1,jj) <= -1) CYCLE                         ! not in the domain
@@ -614,9 +638,9 @@ CONTAINS
                 END IF
               END DO
             END DO
-!end flather u kernel.
+!end kernel flather u .
 
-! Flather v kernel
+!kernel Flather v 
             DO jj = 0, jpj
               DO ji = 1, jpi
                 IF(pt(ji,jj) + pt(ji,jj+1) <= -1) CYCLE                         ! not in the domain
@@ -629,7 +653,7 @@ CONTAINS
                 END IF
               END DO
             END DO
-!end flather v kernel.
+!end kernel flather v .
 
         END SUBROUTINE bc
 
@@ -640,31 +664,31 @@ CONTAINS
           ! update the now-velocity and ssh
 
   
-! kernel for un updating
+! kernel  un updating
           DO jj = 1, jpj
             DO ji = 0, jpi
               un(:,:)   = ua(:,:)
             END DO
           END DO
-! end of kernel for sshn_u updating.
+! end of kernel sshn_u updating.
 
-! kernel for vn updating
+! kernel vn updating
           DO jj = 0, jpj
             DO ji = 1, jpi
               vn(:,:)   = va(:,:)
             END DO
           END DO
-! end of kernel for sshn_u updating.
+! end kernel vn updating.
 
-! kernel for sshn updating
+! kernel sshn updating
           DO jj = 1, jpj
             DO ji = 1, jpi
               sshn(:,:) = ssha(:,:)
             END DO
           END DO
-! end of kernel for sshn_u updating.
+! end kernel sshn_u updating.
 
-! kernel for sshn_u updating
+! kernel sshn_u updating
           DO jj = 1, jpj
             DO ji = 0, jpi
               IF(pt(ji,jj) + pt(ji+1,jj) <= 0)  CYCLE                              !jump over non-computational domain
@@ -678,7 +702,7 @@ CONTAINS
               END IF
             END DO
           END DO
-! end of kernel for sshn_u updating.
+! end kernel sshn_u updating.
 
 ! kernel: sshn_v updating
           DO jj = 0, jpj
@@ -694,7 +718,7 @@ CONTAINS
               END If
             END DO
           END DO
-! end of kernel for sshn_v updating.
+! end kernel sshn_v updating.
             
         END SUBROUTINE next
 
