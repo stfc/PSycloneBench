@@ -487,7 +487,7 @@ CONTAINS
 
             ! -advection (currently first order upwind)
             vv_s = (0.5_wp - SIGN(0.5_wp, v_s)) * vn(ji,jj)              + & 
-                 & (0.5_wp + SIGN(0.5_wp, v_w)) * vn(ji,jj-1) 
+                 & (0.5_wp + SIGN(0.5_wp, v_s)) * vn(ji,jj-1) 
             vv_n = (0.5_wp + SIGN(0.5_wp, v_n)) * vn(ji,jj)              + & 
                  & (0.5_wp - SIGN(0.5_wp, v_n)) * vn(ji,jj+1) 
 
