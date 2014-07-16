@@ -731,7 +731,7 @@ CONTAINS
           CHARACTER(len=5) :: fname
           WRITE(fname, '(I5.5)') istp
           !OPEN(1, file='go2d_'//fname//'.dat', STATUS='UNKNOWN')
-          OPEN(1, file='go2d_'//fname//'.txt', STATUS='UNKNOWN')
+          OPEN(1, file='go2d_'//fname//'.csv', STATUS='UNKNOWN')
           REWIND(1)
 
           DO ji = 1, jpijglot
@@ -739,7 +739,9 @@ CONTAINS
             rtmp1 = 0.5_wp * (un(tu_e(ji)) + un(tu_w(ji)))
             rtmp2 = 0.5_wp * (vn(tv_n(ji)) + vn(tv_s(ji)))
 
-            !WRITE(1,'(2f20.3, 2f15.4, 2e18.3)') xt(ji), yt(ji), ht(ji), sshn(ji),rtmp1, rtmp2 
+            ! write "x-coord, y-coord, depth, ssh, u-velocity, v-velocity" to ASCII files
+
+            !WRITE(1,'(2f20.3, 2f15.4, 2e18.3)') &
             WRITE(1,'(f20.3,'','',f20.3,'','',f15.4,'','',f15.4,'','',f18.3,'','',f18.3)') &
                  & xt(ji), yt(ji), ht(ji), sshn(ji),rtmp1, rtmp2 
 
