@@ -1,4 +1,4 @@
-      PROGRAM shallow
+PROGRAM shallow
 
 !     BENCHMARK WEATHER PREDICTION PROGRAM FOR COMPARING THE
 !     PREFORMANCE OF CURRENT SUPERCOMPUTERS. THE MODEL IS
@@ -33,357 +33,359 @@
 !     - Use 8-byte reals. 
 
 
-      USE timing_mod
-      IMPLICIT NONE
+  USE timing_mod
+  use tiling_mod
+  IMPLICIT NONE
 
-      INCLUDE 'netcdf.inc'
+  INCLUDE 'netcdf.inc'
 
-      INTEGER :: m, n    ! global domain size
-      INTEGER :: itmax   ! number of timesteps
-      INTEGER :: mprint  ! frequency of output    
-      NAMELIST/global_domain/ m, n, itmax, mprint
+  INTEGER :: m, n    ! global domain size
+  INTEGER :: itmax   ! number of timesteps
+  INTEGER :: mprint  ! frequency of output    
+  NAMELIST/global_domain/ m, n, itmax, mprint
 
-      LOGICAL :: l_out   ! produce output  
-      NAMELIST/io_control/ l_out
+  LOGICAL :: l_out   ! produce output  
+  NAMELIST/io_control/ l_out
 
-      INTEGER :: m_len, n_len       ! array sizes
-      INTEGER :: mp1, np1           ! m+1 and n+1
+  INTEGER :: m_len, n_len       ! array sizes
+  INTEGER :: mp1, np1           ! m+1 and n+1
 
-      ! solution arrays
-      REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::                & 
+  ! solution arrays
+  REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::                & 
                              u, v, p, unew, vnew, pnew,           & 
                              uold, vold, pold, cu, cv, z, h, psi  
 
-      REAL(KIND=8) :: dt, tdt, dx, dy, a, alpha, el, pi, tpi, di, dj, pcf, & 
+  REAL(KIND=8) :: dt, tdt, dx, dy, a, alpha, el, pi, tpi, di, dj, pcf, & 
                       tdts8, tdtsdx, tdtsdy, fsdx, fsdy
-      INTEGER :: mnmin, ncycle
-      INTEGER :: i, j
+  INTEGER :: mnmin, ncycle
+  INTEGER :: i, j, tid
    
-      ! timer variables 
-      REAL(KIND=8) :: time, ptime
+  ! timer variables 
+  REAL(KIND=8) :: time, ptime
 
-      ! NetCDF variables
-      INTEGER :: ncid, t_id, p_id, u_id, v_id, iret, t_val
-      INTEGER, DIMENSION(3) :: istart, icount 
-      CHARACTER (LEN=13) :: ncfile = "shallowdat.nc"
+  ! NetCDF variables
+  INTEGER :: ncid, t_id, p_id, u_id, v_id, iret, t_val
+  INTEGER, DIMENSION(3) :: istart, icount 
+  CHARACTER (LEN=13) :: ncfile = "shallowdat.nc"
  
-      ! namelist input 
-      CHARACTER (LEN=8) :: nml_name = "namelist" 
-      INTEGER :: input_unit = 99
-      INTEGER :: ierr
+  ! namelist input 
+  CHARACTER (LEN=8) :: nml_name = "namelist" 
+  INTEGER :: input_unit = 99
+  INTEGER :: ierr
 
-      !> Integer tags for timers
-      INTEGER :: idxt0, idxt1
-
+  !> Integer tags for timers
+  INTEGER :: idxt0, idxt1
 
 !  ** Initialisations ** 
-      CALL timer_init()
+  call timer_init()
 
 !     Read in namelist 
-      OPEN(unit=input_unit, file=nml_name, status='old',iostat=ierr)
-        CALL check(ierr, "open "//nml_name)
-      READ(unit=input_unit, nml=global_domain, iostat=ierr)
-        CALL check(ierr, "read "//nml_name)
-      READ(unit=input_unit, nml=io_control, iostat=ierr)
-        CALL check(ierr, "read "//nml_name)
+  OPEN(unit=input_unit, file=nml_name, status='old',iostat=ierr)
+  CALL check(ierr, "open "//nml_name)
+  READ(unit=input_unit, nml=global_domain, iostat=ierr)
+  CALL check(ierr, "read "//nml_name)
+  READ(unit=input_unit, nml=io_control, iostat=ierr)
+  CALL check(ierr, "read "//nml_name)
 
 !     Set up arrays
-      m_len = m+1
-      n_len = n+1
+  m_len = m+1
+  n_len = n+1
 
-      ALLOCATE( u(m_len,n_len), v(m_len,n_len), p(m_len,n_len) ) 
-      ALLOCATE( unew(m_len,n_len), vnew(m_len,n_len), pnew(m_len,n_len) ) 
-      ALLOCATE( uold(m_len,n_len), vold(m_len,n_len), pold(m_len,n_len) )
-      ALLOCATE( cu(m_len,n_len), cv(m_len,n_len) ) 
-      ALLOCATE( z(m_len,n_len), h(m_len,n_len), psi(m_len,n_len) ) 
+  call tiling_init(1,4,m_len, n_len)
+
+  ALLOCATE( u(m_len,n_len), v(m_len,n_len), p(m_len,n_len) ) 
+  ALLOCATE( unew(m_len,n_len), vnew(m_len,n_len), pnew(m_len,n_len) ) 
+  ALLOCATE( uold(m_len,n_len), vold(m_len,n_len), pold(m_len,n_len) )
+  ALLOCATE( cu(m_len,n_len), cv(m_len,n_len) ) 
+  ALLOCATE( z(m_len,n_len), h(m_len,n_len), psi(m_len,n_len) ) 
  
 !     Prepare netCDF file to receive model output data
-      IF (l_out) THEN 
-         call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id,istart,icount)
-      ENDIF
+  IF (l_out) THEN 
+     call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id,istart,icount)
+  ENDIF
 
 !     NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
 !     CYCLE AFTER WHICH IT IS RESET TO DT+DT.
-      DT = 90.
-      TDT = DT
+  DT = 90.
+  TDT = DT
  
-      DX = 1.E5
-      DY = 1.E5
-      A = 1.E6
-      ALPHA = .001
+  DX = 1.E5
+  DY = 1.E5
+  A = 1.E6
+  ALPHA = .001
 
-      MP1 = M+1
-      NP1 = N+1
-      EL = N*DX
-      PI = 4.*ATAN(1.)
-      TPI = PI+PI
-      DI = TPI/M
-      DJ = TPI/N
-      PCF = PI*PI*A*A/(EL*EL)
+  MP1 = M+1
+  NP1 = N+1
+  EL = N*DX
+  PI = 4.*ATAN(1.)
+  TPI = PI+PI
+  DI = TPI/M
+  DJ = TPI/N
+  PCF = PI*PI*A*A/(EL*EL)
      
 !     INITIAL VALUES OF THE STREAM FUNCTION AND P
-      DO J=1,NP1
-         DO I=1,MP1
-            PSI(I,J) = A*SIN((I-.5)*DI)*SIN((J-.5)*DJ)
-            P(I,J) = PCF*(COS(2.*(I-1)*DI)   & 
-                 +COS(2.*(J-1)*DJ))+50000.
-         END DO
-      END DO
+  DO J=1,NP1
+     DO I=1,MP1
+        PSI(I,J) = A*SIN((I-.5)*DI)*SIN((J-.5)*DJ)
+        P(I,J) = PCF*(COS(2.*(I-1)*DI)   & 
+             +COS(2.*(J-1)*DJ))+50000.
+     END DO
+  END DO
 
 !     INITIALIZE VELOCITIES
-      DO J=1,N
-         DO I=1,M
-            U(I+1,J) = -(PSI(I+1,J+1)-PSI(I+1,J))/DY
-            V(I,J+1) = (PSI(I+1,J+1)-PSI(I,J+1))/DX
-         END DO
-      END DO
+  DO J=1,N
+     DO I=1,M
+        U(I+1,J) = -(PSI(I+1,J+1)-PSI(I+1,J))/DY
+        V(I,J+1) = (PSI(I+1,J+1)-PSI(I,J+1))/DX
+     END DO
+  END DO
      
 !     PERIODIC CONTINUATION
-      DO J=1,N
-         U(1,J) = U(M+1,J)
-         V(M+1,J+1) = V(1,J+1)
-      END DO
-      DO I=1,M
-         U(I+1,N+1) = U(I+1,1)
-         V(I,1) = V(I,N+1)
-      END DO
-      U(1,N+1) = U(M+1,1)
-      V(M+1,1) = V(1,N+1)
-      DO J=1,NP1
-         DO I=1,MP1
-            UOLD(I,J) = U(I,J)
-            VOLD(I,J) = V(I,J)
-            POLD(I,J) = P(I,J)
-         END DO
-      END DO
+  DO J=1,N
+     U(1,J) = U(M+1,J)
+     V(M+1,J+1) = V(1,J+1)
+  END DO
+  DO I=1,M
+     U(I+1,N+1) = U(I+1,1)
+     V(I,1) = V(I,N+1)
+  END DO
+  U(1,N+1) = U(M+1,1)
+  V(M+1,1) = V(1,N+1)
+  DO J=1,NP1
+     DO I=1,MP1
+        UOLD(I,J) = U(I,J)
+        VOLD(I,J) = V(I,J)
+        POLD(I,J) = P(I,J)
+     END DO
+  END DO
      
 !     PRINT INITIAL VALUES
-      IF (l_out) THEN 
-         WRITE(6,390) N,M,DX,DY,DT,ALPHA
+  IF (l_out) THEN 
+     WRITE(6,390) N,M,DX,DY,DT,ALPHA
  390     FORMAT(" NUMBER OF POINTS IN THE X DIRECTION",I8,/    & 
                 " NUMBER OF POINTS IN THE Y DIRECTION",I8,/    & 
                 " GRID SPACING IN THE X DIRECTION    ",F8.0,/  & 
                 " GRID SPACING IN THE Y DIRECTION    ",F8.0,/  & 
                 " TIME STEP                          ",F8.0,/  & 
                 " TIME FILTER PARAMETER              ",F8.3)
-         MNMIN = MIN0(M,N)
-         WRITE(6,391) (P(I,I),I=1,MNMIN)
+     MNMIN = MIN0(M,N)
+     WRITE(6,391) (P(I,I),I=1,MNMIN)
  391     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF P ' //,(8E15.6))
-         WRITE(6,392) (U(I,I),I=1,MNMIN)
+     WRITE(6,392) (U(I,I),I=1,MNMIN)
  392     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF U ' //,(8E15.6))
-         WRITE(6,393) (V(I,I),I=1,MNMIN)
+     WRITE(6,393) (V(I,I),I=1,MNMIN)
  393     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF V ' //,(8E15.6))
 
 !        Write intial values of p, u, and v into a netCDF file   
-         t_val = 0   
-         call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
-         call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
-         call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
-      ENDIF
+     t_val = 0   
+     call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
+     call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
+     call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
+  ENDIF
 
-      TIME = 0.
+  TIME = 0.
 
-      !     Start timer
-      CALL timer_start('Time-stepping',idxt0)
+  !     Start timer
+  CALL timer_start('Time-stepping',idxt0)
 
 !  ** Start of time loop ** 
-      DO ncycle=1,itmax
+  DO ncycle=1,itmax
     
-!        COMPUTE CAPITAL U, CAPITAL V, Z AND H
-         FSDX = 4./DX
-         FSDY = 4./DY
+     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
+     FSDX = 4./DX
+     FSDY = 4./DY
 
-         CALL timer_start('Compute CU,CV,CZ,H',idxt1)
+     CALL timer_start('Compute CU,CV,CZ,H',idxt1)
 
-         DO J=1,N
-            DO I=1,M
-               CU(I+1,J) = .5*(P(I+1,J)+P(I,J))*U(I+1,J)
-               CV(I,J+1) = .5*(P(I,J+1)+P(I,J))*V(I,J+1)
-               Z(I+1,J+1) =(FSDX*(V(I+1,J+1)-V(I,J+1))-FSDY*(U(I+1,J+1) & 
-                    -U(I+1,J)))/(P(I,J)+P(I+1,J)+P(I+1,J+1)+P(I,J+1))
-               H(I,J) = P(I,J)+.25*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)     & 
-                    +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
-            END DO
-         END DO
+     DO J=1,N
+        DO I=1,M
+           CU(I+1,J) = .5*(P(I+1,J)+P(I,J))*U(I+1,J)
+           CV(I,J+1) = .5*(P(I,J+1)+P(I,J))*V(I,J+1)
+           Z(I+1,J+1) =(FSDX*(V(I+1,J+1)-V(I,J+1))-FSDY*(U(I+1,J+1) & 
+                -U(I+1,J)))/(P(I,J)+P(I+1,J)+P(I+1,J+1)+P(I,J+1))
+           H(I,J) = P(I,J)+.25*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)     & 
+                +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
+        END DO
+     END DO
 
-         CALL timer_stop(idxt1)
+     CALL timer_stop(idxt1)
 
-         CALL timer_start('PBCs',idxt1)
-!        PERIODIC CONTINUATION
-         DO J=1,N
-            CU(1,J) = CU(M+1,J)
-            CV(M+1,J+1) = CV(1,J+1)
-            Z(1,J+1) = Z(M+1,J+1)
-            H(M+1,J) = H(1,J)
-         END DO
-         DO I=1,M
-            CU(I+1,N+1) = CU(I+1,1)
-            CV(I,1) = CV(I,N+1)
-            Z(I+1,1) = Z(I+1,N+1)
-            H(I,N+1) = H(I,1)
-         END DO
-         CU(1,N+1) = CU(M+1,1)
-         CV(M+1,1) = CV(1,N+1)
-         Z(1,1) = Z(M+1,N+1)
-         H(M+1,N+1) = H(1,1)
+     CALL timer_start('PBCs',idxt1)
+     ! PERIODIC CONTINUATION
+     DO J=1,N
+        CU(1,J) = CU(M+1,J)
+        CV(M+1,J+1) = CV(1,J+1)
+        Z(1,J+1) = Z(M+1,J+1)
+        H(M+1,J) = H(1,J)
+     END DO
+     DO I=1,M
+        CU(I+1,N+1) = CU(I+1,1)
+        CV(I,1) = CV(I,N+1)
+        Z(I+1,1) = Z(I+1,N+1)
+        H(I,N+1) = H(I,1)
+     END DO
+     CU(1,N+1) = CU(M+1,1)
+     CV(M+1,1) = CV(1,N+1)
+     Z(1,1) = Z(M+1,N+1)
+     H(M+1,N+1) = H(1,1)
      
-         CALL timer_stop(idxt1)
+     CALL timer_stop(idxt1)
 
-!        COMPUTE NEW VALUES U,V AND P
-         TDTS8 = TDT/8.
-         TDTSDX = TDT/DX
-         TDTSDY = TDT/DY
+     ! COMPUTE NEW VALUES U,V AND P
+     TDTS8 = TDT/8.
+     TDTSDX = TDT/DX
+     TDTSDY = TDT/DY
+     
+     CALL timer_start('Compute {U,V,P}NEW',idxt1)
 
-         CALL timer_start('Compute {U,V,P}NEW',idxt1)
-
-         DO J=1,N
-            DO I=1,M
-               UNEW(I+1,J) = UOLD(I+1,J)+                                     &
+     DO J=1,N
+        DO I=1,M
+           UNEW(I+1,J) = UOLD(I+1,J)+                                     &
                    TDTS8*(Z(I+1,J+1)+Z(I+1,J))*(CV(I+1,J+1)+CV(I,J+1)+CV(I,J) &
                    +CV(I+1,J))-TDTSDX*(H(I+1,J)-H(I,J))                       
-               VNEW(I,J+1) = VOLD(I,J+1)-TDTS8*(Z(I+1,J+1)+Z(I,J+1)) & 
+           VNEW(I,J+1) = VOLD(I,J+1)-TDTS8*(Z(I+1,J+1)+Z(I,J+1)) & 
                    *(CU(I+1,J+1)+CU(I,J+1)+CU(I,J)+CU(I+1,J))        & 
                    -TDTSDY*(H(I,J+1)-H(I,J))
-               PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I+1,J)-CU(I,J))   & 
+           PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I+1,J)-CU(I,J))   & 
                    -TDTSDY*(CV(I,J+1)-CV(I,J))
-            END DO
-         END DO
+        END DO
+     END DO
 
-         CALL timer_stop(idxt1)
+     CALL timer_stop(idxt1)
 
-!        PERIODIC CONTINUATION
-         CALL timer_start('PBCs',idxt1)
-         DO J=1,N
-            UNEW(1,J) = UNEW(M+1,J)
-            VNEW(M+1,J+1) = VNEW(1,J+1)
-            PNEW(M+1,J) = PNEW(1,J)
-         END DO
-         DO I=1,M
-            UNEW(I+1,N+1) = UNEW(I+1,1)
-            VNEW(I,1) = VNEW(I,N+1)
-            PNEW(I,N+1) = PNEW(I,1)
-         END DO
-         UNEW(1,N+1) = UNEW(M+1,1)
-         VNEW(M+1,1) = VNEW(1,N+1)
-         PNEW(M+1,N+1) = PNEW(1,1)
+     ! PERIODIC CONTINUATION
+     CALL timer_start('PBCs',idxt1)
+     DO J=1,N
+        UNEW(1,J) = UNEW(M+1,J)
+        VNEW(M+1,J+1) = VNEW(1,J+1)
+        PNEW(M+1,J) = PNEW(1,J)
+     END DO
+     DO I=1,M
+        UNEW(I+1,N+1) = UNEW(I+1,1)
+        VNEW(I,1) = VNEW(I,N+1)
+        PNEW(I,N+1) = PNEW(I,1)
+     END DO
+     UNEW(1,N+1) = UNEW(M+1,1)
+     VNEW(M+1,1) = VNEW(1,N+1)
+     PNEW(M+1,N+1) = PNEW(1,1)
 
-         CALL timer_stop(idxt1)
+     CALL timer_stop(idxt1)
+     
+     TIME = TIME + DT
 
-         TIME = TIME + DT
-
-         IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
+     IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
             
-            PTIME = TIME/3600.
-            WRITE(6,350) NCYCLE,PTIME
+        PTIME = TIME/3600.
+        WRITE(6,350) NCYCLE,PTIME
  350        FORMAT(//' CYCLE NUMBER',I5,' MODEL TIME IN  HOURS', F6.2)
-            WRITE(6,355) (PNEW(I,I),I=1,MNMIN)
+        WRITE(6,355) (PNEW(I,I),I=1,MNMIN)
  355        FORMAT(/' DIAGONAL ELEMENTS OF P ' //(8E15.6))
-            WRITE(6,360) (UNEW(I,I),I=1,MNMIN)
+        WRITE(6,360) (UNEW(I,I),I=1,MNMIN)
  360        FORMAT(/' DIAGONAL ELEMENTS OF U ' //(8E15.6))
-            WRITE(6,365) (VNEW(I,I),I=1,MNMIN)
+        WRITE(6,365) (VNEW(I,I),I=1,MNMIN)
  365        FORMAT(/' DIAGONAL ELEMENTS OF V ' //(8E15.6))
 
-!           Append calculated values of p, u, and v to netCDF file
-            istart(3) = ncycle/mprint + 1
-            t_val = ncycle
+        ! Append calculated values of p, u, and v to netCDF file
+        istart(3) = ncycle/mprint + 1
+        t_val = ncycle
 
-!           Shape of record to be written (one ncycle at a time)
-            call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
-            call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
-            call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
+        ! Shape of record to be written (one ncycle at a time)
+        call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
+        call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
+        call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
 
-         endif
+     endif
 
-!        TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
-         IF(NCYCLE .GT. 1) then
+     ! TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
+     IF(NCYCLE .GT. 1) then
 
-            CALL timer_start('Time smooth',idxt1)
+        CALL timer_start('Time smooth',idxt1)
 
-            DO J=1,N
-               DO I=1,M
-                  UOLD(I,J) = U(I,J)+ALPHA*(UNEW(I,J)-2.*U(I,J)+UOLD(I,J))
-                  VOLD(I,J) = V(I,J)+ALPHA*(VNEW(I,J)-2.*V(I,J)+VOLD(I,J))
-                  POLD(I,J) = P(I,J)+ALPHA*(PNEW(I,J)-2.*P(I,J)+POLD(I,J))
-                  U(I,J) = UNEW(I,J)
-                  V(I,J) = VNEW(I,J)
-                  P(I,J) = PNEW(I,J)
-               END DO
-            END DO
+        DO J=1,N
+           DO I=1,M
+              UOLD(I,J) = U(I,J)+ALPHA*(UNEW(I,J)-2.*U(I,J)+UOLD(I,J))
+              VOLD(I,J) = V(I,J)+ALPHA*(VNEW(I,J)-2.*V(I,J)+VOLD(I,J))
+              POLD(I,J) = P(I,J)+ALPHA*(PNEW(I,J)-2.*P(I,J)+POLD(I,J))
+              U(I,J) = UNEW(I,J)
+              V(I,J) = VNEW(I,J)
+              P(I,J) = PNEW(I,J)
+           END DO
+        END DO
 
-            CALL timer_stop(idxt1)
+        CALL timer_stop(idxt1)
     
 !           PERIODIC CONTINUATION
-            CALL timer_start('PBCs',idxt1)
+        CALL timer_start('PBCs',idxt1)
 
-            DO J=1,N
-               UOLD(M+1,J) = UOLD(1,J)
-               VOLD(M+1,J) = VOLD(1,J)
-               POLD(M+1,J) = POLD(1,J)
-               U(M+1,J) = U(1,J)
-               V(M+1,J) = V(1,J)
-               P(M+1,J) = P(1,J)
-            END DO
-            DO I=1,M
-               UOLD(I,N+1) = UOLD(I,1)
-               VOLD(I,N+1) = VOLD(I,1)
-               POLD(I,N+1) = POLD(I,1)
-               U(I,N+1) = U(I,1)
-               V(I,N+1) = V(I,1)
-               P(I,N+1) = P(I,1)
-            END DO
-            UOLD(M+1,N+1) = UOLD(1,1)
-            VOLD(M+1,N+1) = VOLD(1,1)
-            POLD(M+1,N+1) = POLD(1,1)
-            U(M+1,N+1) = U(1,1)
-            V(M+1,N+1) = V(1,1)
-            P(M+1,N+1) = P(1,1)
+        DO J=1,N
+           UOLD(M+1,J) = UOLD(1,J)
+           VOLD(M+1,J) = VOLD(1,J)
+           POLD(M+1,J) = POLD(1,J)
+           U(M+1,J) = U(1,J)
+           V(M+1,J) = V(1,J)
+           P(M+1,J) = P(1,J)
+        END DO
+        DO I=1,M
+           UOLD(I,N+1) = UOLD(I,1)
+           VOLD(I,N+1) = VOLD(I,1)
+           POLD(I,N+1) = POLD(I,1)
+           U(I,N+1) = U(I,1)
+           V(I,N+1) = V(I,1)
+           P(I,N+1) = P(I,1)
+        END DO
+        UOLD(M+1,N+1) = UOLD(1,1)
+        VOLD(M+1,N+1) = VOLD(1,1)
+        POLD(M+1,N+1) = POLD(1,1)
+        U(M+1,N+1) = U(1,1)
+        V(M+1,N+1) = V(1,1)
+        P(M+1,N+1) = P(1,1)
 
-            CALL timer_stop(idxt1)
+        CALL timer_stop(idxt1)
 
-         else
+     else
 
-            TDT = TDT+TDT
+        TDT = TDT+TDT
+        
+        DO J=1,NP1
+           DO I=1,MP1
+              UOLD(I,J) = U(I,J)
+              VOLD(I,J) = V(I,J)
+              POLD(I,J) = P(I,J)
+              U(I,J) = UNEW(I,J)
+              V(I,J) = VNEW(I,J)
+              P(I,J) = PNEW(I,J)
+           END DO
+        END DO
 
-            DO J=1,NP1
-               DO I=1,MP1
-                  UOLD(I,J) = U(I,J)
-                  VOLD(I,J) = V(I,J)
-                  POLD(I,J) = P(I,J)
-                  U(I,J) = UNEW(I,J)
-                  V(I,J) = VNEW(I,J)
-                  P(I,J) = PNEW(I,J)
-               END DO
-            END DO
-
-         endif
-
-      End do
+     endif
+     
+  End do
 
 !  ** End of time loop ** 
-      CALL timer_stop(idxt0)
+  CALL timer_stop(idxt0)
 
-      WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax, SUM(PNEW(:,:))
-      WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax,SUM(UNEW(:,:))
-      WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax,SUM(VNEW(:,:))
+  WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
+       itmax, SUM(PNEW(:,:))
+  WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E15.7)") &
+       itmax,SUM(UNEW(:,:))
+  WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E15.7)") &
+       itmax,SUM(VNEW(:,:))
 
- !     Close the netCDF file
+  ! Close the netCDF file
 
-      IF (l_out) THEN 
+  IF (l_out) THEN 
 
-         iret = nf_close(ncid)
-         call check_err(iret)
-      ENDIF
+     iret = nf_close(ncid)
+     call check_err(iret)
+  endif
 
-      CALL timer_report()
+  call timer_report()
 
-!     Free memory
-      DEALLOCATE( u, v, p, unew, vnew, pnew, uold, vold, pold )
-      DEALLOCATE( cu, cv, z, h, psi ) 
+  ! Free memory
+  deallocate( u, v, p, unew, vnew, pnew, uold, vold, pold )
+  deallocate( cu, cv, z, h, psi ) 
 
-      END PROGRAM shallow
+end program shallow
 
       
 !     Check error code
