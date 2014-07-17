@@ -9,4 +9,4 @@ NETCDF_LIB = /gpfs/packages/ibm/netcdf/3.6.2/lib
 
 F90FLAGS =  -qcheck -g -O0 
 #F90FLAGS = -O3
-
+LDFLAGS = -L${NETCDF_LIB} -lnetcdff -lnetcdf
