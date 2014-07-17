@@ -1,139 +1,71 @@
-    PROGRAM gocean2d
-         !!! A Horizontal 2D hydrodynamic ocean model which
-         !!   1) using structured grid
-         !!   2) using direct data addressig structures
+program gocean2d
+  use grid_mod
+  use field_mod
+  use model_mod
+  !!! A Horizontal 2D hydrodynamic ocean model which
+  !!   1) using structured grid
+  !!   2) using direct data addressig structures
 
-         IMPLICIT NONE
-
-         INTEGER,  PARAMETER :: sp = SELECTED_REAL_KIND(6, 37)
-         INTEGER,  PARAMETER :: dp = SELECTED_REAL_KIND(12, 307)
-         INTEGER,  PARAMETER :: wp = dp
-
-         REAL(wp), PARAMETER :: pi    = 3.1415926535897932_wp  
-         REAL(wp), PARAMETER :: g     = 9.80665_wp                          ! gravity constant
-         REAL(wp), PARAMETER :: omega = 7.292116e-05_wp                     ! earth rotation speed (s^(-1))
-         REAL(wp), PARAMETER :: d2r   = pi / 180._wp                        ! degree to radian
+  implicit none
                                                                             
                                                                             
-         INTEGER, ALLOCATABLE :: pt(:,:)                                    ! properties of t-cells 
-                                                                            ! 1: water cell within computational domain
-                                                                            ! 0: land cell
-                                                                            !-1: water cell outside computational domain
+  INTEGER, ALLOCATABLE :: pt(:,:)         ! properties of t-cells 
+                                          ! 1: water cell within computational domain
+                                          ! 0: land cell
+                                          !-1: water cell outside computational domain
+  
+  REAL(wp), ALLOCATABLE :: ht(:,:), hu(:,:), hv(:,:), hf(:,:) 
+  
+  REAL(wp), ALLOCATABLE :: sshb(:,:), sshb_u(:,:), sshb_v(:,:)
+  REAL(wp), ALLOCATABLE :: sshn(:,:), sshn_u(:,:), sshn_v(:,:)
+  REAL(wp), ALLOCATABLE :: ssha(:,:), ssha_u(:,:), ssha_v(:,:)
+  
+  REAL(wp), ALLOCATABLE :: un(:,:),  vn(:,:), ua(:,:),  va(:,:)
+         
+  type(grid_type), target :: model_grid
+  type(r2d_field_type) :: blah
 
-         REAL(wp), ALLOCATABLE :: e1t(:,:), e2t(:,:), e1u(:,:), e2u(:,:) 
-         REAL(wp), ALLOCATABLE :: e1f(:,:), e2f(:,:), e1v(:,:), e2v(:,:) 
-         REAL(wp), ALLOCATABLE :: e12t(:,:), e12u(:,:), e12v(:,:)
+  integer  :: istp                                          !time stepping index
 
-         REAL(wp), ALLOCATABLE :: gphiu(:,:), gphiv(:,:), gphif(:,:)
+  ! Create the model grid
+  model_grid = grid_type(ARAKAWA_C)
 
-         REAL(wp), ALLOCATABLE :: xt(:,:), yt(:,:)
+  !! read in model parameters and read in or setup model grid 
+  CALL model_init(model_grid)
 
+  !! setup model initial condition
+  CALL initialisation
 
-         REAL(wp), ALLOCATABLE :: ht(:,:), hu(:,:), hv(:,:), hf(:,:) 
+  !! time stepping 
+  DO istp = nit000, nitend, 1
+     print*, 'istp == ', istp
+     CALL step
+  END DO
 
-         REAL(wp), ALLOCATABLE :: sshb(:,:), sshb_u(:,:), sshb_v(:,:)
-         REAL(wp), ALLOCATABLE :: sshn(:,:), sshn_u(:,:), sshn_v(:,:)
-         REAL(wp), ALLOCATABLE :: ssha(:,:), ssha_u(:,:), ssha_v(:,:)
-
-         REAL(wp), ALLOCATABLE :: un(:,:),  vn(:,:), ua(:,:),  va(:,:)
-
-         INTEGER  :: jpiglo, jpjglo, jpi, jpj                               !dimensions of grid
-         INTEGER  :: jphgr_msh                                              !type of grid
-         INTEGER  :: nit000, nitend, irecord                                !start-end and record time steps
-
-         REAL(wp) :: dx, dy, dep_const                                      !regular grid size and constant depth
-         REAL(wp) :: rdt                                                    !time step
-                                                                    
-         REAL(wp) :: cbfr                                                   !bottom friction coefficient
-         REAL(wp) :: visc                                                   !backgroud/constant viscosity 
-
-         INTEGER  :: istp                                                   !time stepping index
-         INTEGER  :: ji, jj, jk                                             !temporary loop index
-
-         INTEGER  :: itmp1, itmp2, itmp3, itmp4, itmp5, itmp6               !integer temporary variables
-         REAL(wp) :: rtmp1, rtmp2, rtmp3, rtmp4, rtmp5, rtmp6               !real    temporary variables 
-
-
-         !! read in model parameters
-         CALL setup
-
-         !! allocate memory and read in or setup model grid 
-         CALL grid
-
-         !! setup model initial condition
-         CALL initialisation
-
-         !! time stepping 
-         DO istp = nit000, nitend, 1
-           print*, 'istp == ', istp
-           CALL step
-         END DO
-
-         !! finalise the model run
-         CALL finalisation
-
-         WRITE(*,*) 'Simulation finished!!'
-!-----------------------------------
-CONTAINS         
+  !! finalise the model run
+  CALL finalisation
+  
+  WRITE(*,*) 'Simulation finished!!'
+end PROGRAM gocean2d
 
 !+++++++++++++++++++++++++++++++++++
 
-        SUBROUTINE setup
-          INTEGER :: ios
+SUBROUTINE grid
+  !  need a kernel for boundary /grid 
+  !! Allocate working arrays
+  !! Define (or read in) model grid
 
-          !! Read in model setup parameters 
-          NAMELIST/namctl/ jpiglo, jpjglo, jphgr_msh, &
-            &              dx    , dy    , dep_const, &
-            &              nit000, nitend, irecord  , &
-            &              rdt   , cbfr  , visc
-
-          !! Default value
-
-          jpiglo      =      50               !  number of columns of model grid
-          jpjglo      =     100               !  number of rows of model grid
-          jphgr_msh   =       1               !  type of grid (0: read in a data file; 1: setup with following parameters)
-          dx          =   1000._wp            !  grid size in x direction (m)
-          dy          =   1000._wp            !  grid size in y direction (m)
-          dep_const   =    100._wp            !  constant depth (m)
-          nit000      =       1               !  first time step
-          nitend      =    1000               !  end time step
-          irecord     =       1               !  intervals to save results
-          rdt         =     10._wp            !  size of time step (second) 
-          cbfr        =   0.001_wp            !  bottom friction coefficeint
-          visc        =     100._wp            !  horizontal kinematic viscosity coefficient 
- 
- 
-          OPEN(1, file='namelist', STATUS='OLD')
-          REWIND(1)
-          READ(1, NML=namctl, IOSTAT = ios, ERR = 901)
-901       IF(ios /= 0) STOP "err found in reading namelist file"
-          WRITE(*,NML=namctl)
-
-          jpi = jpiglo
-          jpj = jpjglo
-
-          CLOSE(1)
-
-        END SUBROUTINE setup
-
-!+++++++++++++++++++++++++++++++++++
-
-        SUBROUTINE grid
-        !  need a kernel for boundary /grid 
-          !! Allocate working arrays
-          !! Define (or read in) model grid
-
-          !jphgr_msh = 0    ! read in this from a namelist file
-          !jphgr_msh = 1    ! define manually 
+  !jphgr_msh = 0    ! read in this from a namelist file
+  !jphgr_msh = 1    ! define manually 
           
 
-          SELECT CASE( jphgr_msh)
+  SELECT CASE( jphgr_msh)
 
-          CASE(0) ! read in grid from a coordinate file
+  CASE(0) ! read in grid from a coordinate file
 
-            ! to be added
-            STOP "It is not ready to Read in grid from a file"
-            CALL allocation
+     ! to be added
+     STOP "It is not ready to Read in grid from a file"
+     CALL allocation
             ! add reading data part here
             ! the following variables/arrays are needed:
             ! jpi, jpj, 
@@ -146,149 +78,139 @@ CONTAINS
             ! xt(jpi,jpj), yt(jpi,jpj)
             ! ht(jpi,jpj), hu(jpi,jpj), hv(jpi,jpj)
 
-          CASE(1)
+  CASE(1)
 
-            !##### a manually defined grid
+     !##### a manually defined grid
 
-            ! -size of each grid cell
-            ! -depth on each T points
-            ! -grid dimension
+     ! -size of each grid cell
+     ! -depth on each T points
+     ! -grid dimension
 
+     CALL allocation
 
-            CALL allocation
+     
+     !Define Model solid/open Boundaries via the properties of t-cells
 
+     DO jj = 0, jpj+1
+        DO ji = 0, jpi+1
+           pt(ji,jj) = 1                             ! all inner celles
+        END DO
+     END DO
 
-            !Define Model solid/open Boundaries via the properties of t-cells
+     ! -define solid/open boundaries
+     DO jj = 0, jpj+1
+        pt(0,    jj) = 0                            ! west solid boundary
+        pt(jpi+1,jj) = 0                            ! east solid boundary
+     END Do
 
-            DO jj = 0, jpj+1
-              DO ji = 0, jpi+1
-                pt(ji,jj) = 1                             ! all inner celles
-              END DO
-            END DO
+     DO ji = 0, jpi+1
+        pt(ji,jpj+1) = 0                            ! north solid boundary
+     END Do
 
-            ! -define solid/open boundaries
-            DO jj = 0, jpj+1
-              pt(0,    jj) = 0                            ! west solid boundary
-              pt(jpi+1,jj) = 0                            ! east solid boundary
-            END Do
-
-            DO ji = 0, jpi+1
-              pt(ji,jpj+1) = 0                            ! north solid boundary
-            END Do
-
-            DO ji = 1, jpi
-              pt(ji,0) = -1                               ! south open boundary
-            END Do
-
+     DO ji = 1, jpi
+        pt(ji,0) = -1                               ! south open boundary
+     END Do
 
 
-            !horizontal grid cells
-
-            ! -horizontal scales of grid cells
-            ! -Latititude of grid points
-            ! -horizontal coordinates of grid points
-
-
-            e1t(1:jpi, 1:jpj)   = dx
-            e2t(1:jpi, 1:jpj)   = dy
-            e1u(0:jpi, 1:jpj)   = dx
-            e2u(0:jpi, 1:jpj)   = dy
-            e1v(1:jpi, 0:jpj)   = dx
-            e2v(1:jpi, 0:jpj)   = dy
-            e1f(0:jpi, 0:jpj)   = dx
-            e2f(0:jpi, 0:jpj)   = dy
+     !horizontal grid cells
+     
+     ! -horizontal scales of grid cells
+     ! -Latititude of grid points
+     ! -horizontal coordinates of grid points
 
 
-            ! -here is a f-plane testing case
-            gphiu(0:jpi, 1:jpj) = 50._wp
-            gphiv(1:jpi, 0:jpj) = 50._wp
-            gphif(0:jpi, 0:jpj) = 50._wp
+     e1t(1:jpi, 1:jpj)   = dx
+     e2t(1:jpi, 1:jpj)   = dy
+     e1u(0:jpi, 1:jpj)   = dx
+     e2u(0:jpi, 1:jpj)   = dy
+     e1v(1:jpi, 0:jpj)   = dx
+     e2v(1:jpi, 0:jpj)   = dy
+     e1f(0:jpi, 0:jpj)   = dx
+     e2f(0:jpi, 0:jpj)   = dy
+
+     
+     ! -here is a f-plane testing case
+     gphiu(0:jpi, 1:jpj) = 50._wp
+     gphiv(1:jpi, 0:jpj) = 50._wp
+     gphif(0:jpi, 0:jpj) = 50._wp
 
 
-            xt(1,1) = 0.0_wp + 0.5_wp * e1t(1,1)
-            yt(1,1) = 0.0_wp + 0.5_wp * e2t(1,1)
+     xt(1,1) = 0.0_wp + 0.5_wp * e1t(1,1)
+     yt(1,1) = 0.0_wp + 0.5_wp * e2t(1,1)
 
-            DO ji = 2, jpi
-              xt(ji,1:jpj) = xt(ji-1, 1:jpj) + dx
-            END DO
+     DO ji = 2, jpi
+        xt(ji,1:jpj) = xt(ji-1, 1:jpj) + dx
+     END DO
             
-            DO jj = 2, jpj
-              yt(1:jpi,jj) = yt(1:jpi, jj-1) + dy
-            END DO
-            !Depth 
+     DO jj = 2, jpj
+        yt(1:jpi,jj) = yt(1:jpi, jj-1) + dy
+     END DO
+     !Depth 
 
-            ! -depth on grid points
+     ! -depth on grid points
 
-            DO jj = 1, jpj
-            DO ji = 1, jpi
-              ht(ji,jj) = dep_const 
-            END DO
-            END DO
+     DO jj = 1, jpj
+        DO ji = 1, jpi
+           ht(ji,jj) = dep_const 
+        END DO
+     END DO
 
-            DO jj = 1, jpj
-            DO ji = 0, jpi
-              hu(ji,jj) = dep_const 
-            END DO
-            END DO
+     DO jj = 1, jpj
+        DO ji = 0, jpi
+           hu(ji,jj) = dep_const 
+        END DO
+     END DO
 
-            DO jj = 0, jpj
-            DO ji = 1, jpi
-              hv(ji,jj) = dep_const 
-            END DO
-            END DO
+     DO jj = 0, jpj
+        DO ji = 1, jpi
+           hv(ji,jj) = dep_const 
+        END DO
+     END DO
 
 
-          CASE DEFAULT
-            ! undefined jphgr_msh value
-            ! add interrupt here
-            STOP "Wrong grid defination type, check your setup !!!!"
-          END SELECT
+  CASE DEFAULT
+     ! undefined jphgr_msh value
+     ! add interrupt here
+     STOP "Wrong grid definition type, check your setup !!!!"
+  END SELECT
 
-          ! calculate t,u,v cell area
-          DO jj = 1, jpj
-            DO ji = 1, jpi
-              e12t(ji,jj) = e1t(ji,jj) * e2t(ji,jj)
-            END DO
-          END DO
+  ! calculate t,u,v cell area
+  DO jj = 1, jpj
+     DO ji = 1, jpi
+        e12t(ji,jj) = e1t(ji,jj) * e2t(ji,jj)
+     END DO
+  END DO
+  
+  DO jj = 1, jpj
+     DO ji = 0, jpi
+        e12u(ji,jj) = e1u(ji,jj) * e2u(ji,jj)
+     END DO
+  END DO
 
-          DO jj = 1, jpj
-            DO ji = 0, jpi
-              e12u(ji,jj) = e1u(ji,jj) * e2u(ji,jj)
-            END DO
-          END DO
+  DO jj = 0, jpj
+     DO ji = 1, jpi
+        e12v(ji,jj) = e1v(ji,jj) * e2v(ji,jj)
+     END DO
+  END DO
 
-          DO jj = 0, jpj
-            DO ji = 1, jpi
-              e12v(ji,jj) = e1v(ji,jj) * e2v(ji,jj)
-            END DO
-          END DO
-
-        END SUBROUTINE grid
+END SUBROUTINE grid
 
 !+++++++++++++++++++++++++++++++++++
 
         SUBROUTINE allocation
           !! Read in model setup parameters and allocate working arrays
-          INTEGER :: ierr(11)
+          INTEGER :: ierr(6)
           
 
-          ALLOCATE(e1t(jpi,jpj), e2t(jpi,jpj), e1u(0:jpi,jpj), e2u(0:jpi,jpj), STAT=ierr(1))
-          ALLOCATE(e1f(0:jpi,0:jpj), e2f(0:jpi,0:jpj), e1v(jpi,0:jpj), e2v(jpi,0:jpj), STAT=ierr(2)) 
-          ALLOCATE(e12t(jpi,jpj), e12u(0:jpi,jpj), e12v(jpi,0:jpj), STAT=ierr(3))
+          ALLOCATE(ht(jpi,jpj), hu(0:jpi,jpj), hv(jpi,0:jpj), hf(0:jpi,0:jpj), STAT=ierr(1))
 
-          ALLOCATE(gphiu(0:jpi,jpj), gphiv(jpi,0:jpj), gphif(0:jpi,0:jpj), STAT=ierr(4))
+          ALLOCATE(sshb(jpi,jpj), sshb_u(0:jpi,jpj), sshb_v(jpi,0:jpj), STAT=ierr(2))
+          ALLOCATE(sshn(jpi,jpj), sshn_u(0:jpi,jpj), sshn_v(jpi,0:jpj), STAT=ierr(3))
+          ALLOCATE(ssha(jpi,jpj), ssha_u(0:jpi,jpj), ssha_v(jpi,0:jpj), STAT=ierr(4))
 
-          ALLOCATE(xt(jpi,jpj), yt(jpi,jpj), STAT=ierr(5))
+          ALLOCATE(un(0:jpi,jpj), vn(jpi,0:jpj), ua(0:jpi,jpj), va(jpi,0:jpj), STAT=ierr(5))
 
-          ALLOCATE(ht(jpi,jpj), hu(0:jpi,jpj), hv(jpi,0:jpj), hf(0:jpi,0:jpj), STAT=ierr(6))
-
-          ALLOCATE(sshb(jpi,jpj), sshb_u(0:jpi,jpj), sshb_v(jpi,0:jpj), STAT=ierr(7))
-          ALLOCATE(sshn(jpi,jpj), sshn_u(0:jpi,jpj), sshn_v(jpi,0:jpj), STAT=ierr(8))
-          ALLOCATE(ssha(jpi,jpj), ssha_u(0:jpi,jpj), ssha_v(jpi,0:jpj), STAT=ierr(9))
-
-          ALLOCATE(un(0:jpi,jpj), vn(jpi,0:jpj), ua(0:jpi,jpj), va(jpi,0:jpj), STAT=ierr(10))
-
-          ALLOCATE(pt(0:jpi+1,0:jpj+1), STAT=ierr(11))
+          ALLOCATE(pt(0:jpi+1,0:jpj+1), STAT=ierr(6))
 
           IF(ANY(ierr /= 0, 1)) STOP "in SUBROUTINE ALLOCATION: failed to allocate arrays"
 
