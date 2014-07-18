@@ -144,7 +144,7 @@ contains
     case(ALL_POINTS)
        call field_init(self)
     case default
-       stop "r2d_field_constructor: ERROR: invalid specifier for type of mesh points"
+       stop 'r2d_field_constructor: ERROR: invalid specifier for type of mesh points'
     end select
 
 
@@ -181,22 +181,60 @@ contains
   subroutine cu_field_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
 
     fld%defined_on = U_POINTS
+
+    select case(fld%grid%stagger)
+
+    case(STAGGER_SW)
+       call cu_sw_init(fld)
+
+    case(STAGGER_NE)
+       call cu_ne_init(fld)
+
+    case default
+       stop 'cu_field_init: ERROR - unsupported stagger!'
+
+    end select
+
+  end subroutine cu_field_init
+
+  !===================================================
+
+  subroutine cu_sw_init(fld)
+    implicit none
+    type(r2d_field_type), intent(inout) :: fld
+    ! Locals
+    integer :: M, N
 
     M = fld%grid%nx - 1
     N = fld%grid%ny - 1
 
-    ! When updating a quantity on U points we write to:
-    ! (using 'x' to indicate a location that is written):
+    ! Set up a field defined on U points when the grid has
+    ! a South-West staggering:
+
+    !   vi-1j+1--fij+1---vij+1---fi+1j+1
+    !   |        |       |       |
+    !   |        |       |       |
+    !   Ti-1j----uij-----Tij-----ui+1j
+    !   |        |       |       |
+    !   |        |       |       |
+    !   vi-1j----fij-----vij-----fi+1j
+    !   |        |       |       |
+    !   |        |       |       |
+    !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
+
+    ! When updating a quantity on U points with this staggering
+    ! we write to (using 'x' to indicate a location that is written):
     !
     ! i=1   i=M
     !  o  o  o  o 
     !  o  x  x  x   j=N
     !  o  x  x  x
     !  o  x  x  x   j=1
+    !
+    ! i.e. fld(2:M+1,1:N) = ...
+
     fld%internal%nx = M
     fld%internal%ny = N
     fld%internal%xstart = 2
@@ -235,17 +273,83 @@ contains
     fld%halo(2)%source%xstart = 1 ; fld%halo(2)%source%xstop = M+1
     fld%halo(2)%source%ystart = 1 ; fld%halo(2)%source%ystop = 1
 
-  end subroutine cu_field_init
+  end subroutine cu_sw_init
+
+  !===================================================
+
+  subroutine cu_ne_init(fld)
+    implicit none
+    type(r2d_field_type), intent(inout) :: fld
+    ! Locals
+    integer :: M, N
+
+    M = fld%grid%nx - 1
+    N = fld%grid%ny - 1
+
+    ! Set up a field defined on U points when the grid has
+    ! a North-East staggering:
+
+    !   vi-1j---fi-1j---vij-----fij
+    !   |       |       |       |
+    !   |       |       |       |
+    !   Ti-1j---ui-1j---Tij-----uij
+    !   |       |       |       |
+    !   |       |       |       |
+    !   vi-1j-1-fi-1j-1-vij-1---fij-1
+    !   |       |       |       |
+    !   |       |       |       |
+    !   Ti-1j-1-u-1ij-1-Tij-1---uij-1
+
+    ! When updating a quantity on U points with this staggering
+    ! we write to (using 'x' to indicate a location that is written):
+    !
+    ! i=1   i=M
+    !  x  x  x  o 
+    !  x  x  x  o   j=N
+    !  x  x  x  o
+    !  o  o  o  o   j=1
+    !
+    ! i.e. fld(2:M,2:N+1) = ...
+
+    fld%internal%nx = M
+    fld%internal%ny = N
+    fld%internal%xstart = 1
+    fld%internal%xstop  = M
+    fld%internal%ystart = 2
+    fld%internal%ystop  = N+1
+
+  end subroutine cu_ne_init
 
   !===================================================
 
   subroutine cv_field_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
 
     fld%defined_on = V_POINTS
+
+    select case(fld%grid%stagger)
+
+    case(STAGGER_SW)
+       call cv_sw_init(fld)
+
+    case(STAGGER_NE)
+       call cv_ne_init(fld)
+
+    case default
+       stop 'cv_field_init: ERROR - unsupported stagger!'
+
+    end select
+
+  end subroutine cv_field_init
+
+  !===================================================
+
+  subroutine cv_sw_init(fld)
+    implicit none
+    type(r2d_field_type), intent(inout) :: fld
+    ! Locals
+    integer :: M, N
 
     M = fld%grid%nx - 1
     N = fld%grid%ny - 1
@@ -297,17 +401,69 @@ contains
     fld%halo(2)%source%xstart  = 1   ; fld%halo(2)%source%xstop  = 1
     fld%halo(2)%source%ystart  = 1   ; fld%halo(2)%source%ystop  = N+1
 
-  end subroutine cv_field_init
+  end subroutine cv_sw_init
+
+  !===================================================
+
+  subroutine cv_ne_init(fld)
+    implicit none
+    type(r2d_field_type), intent(inout) :: fld
+    ! Locals
+    integer :: M, N
+
+    M = fld%grid%nx - 1
+    N = fld%grid%ny - 1
+
+    ! When updating a quantity on V points with this staggering
+    ! we write to (using 'x' to indicate a location that is written):
+    !
+    ! i=1   i=M
+    !  o  o  o  o 
+    !  o  x  x  x   j=N
+    !  o  x  x  x
+    !  o  x  x  x   j=1
+    !
+    ! i.e. fld(2:M+1,1:N) = ...
+
+    fld%internal%nx = M
+    fld%internal%ny = N
+    fld%internal%xstart = 2
+    fld%internal%xstop  = M+1
+    fld%internal%ystart = 1
+    fld%internal%ystop  = N
+
+  end subroutine cv_ne_init
 
   !===================================================
 
   subroutine ct_field_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
 
     fld%defined_on = T_POINTS
+
+    select case(fld%grid%stagger)
+
+    case(STAGGER_SW)
+       call ct_sw_init(fld)
+
+    case(STAGGER_NE)
+       call ct_ne_init(fld)
+
+    case default
+       stop 'ct_field_init: ERROR - unsupported stagger!'
+
+    end select
+
+  end subroutine ct_field_init
+
+  !===================================================
+
+  subroutine ct_sw_init(fld)
+    implicit none
+    type(r2d_field_type), intent(inout) :: fld
+    ! Locals
+    integer :: M, N
 
     M = fld%grid%nx - 1
     N = fld%grid%ny - 1
@@ -322,6 +478,7 @@ contains
     !  x  x  x  o   j=1
     fld%internal%nx = M
     fld%internal%ny = N
+
     fld%internal%xstart = 1
     fld%internal%xstop  = M
     fld%internal%ystart = 1
@@ -359,17 +516,67 @@ contains
     fld%halo(2)%source%xstart  = 1   ; fld%halo(2)%source%xstop  = M+1
     fld%halo(2)%source%ystart  = 1   ; fld%halo(2)%source%ystop  = 1
 
-  end subroutine ct_field_init
+  end subroutine ct_sw_init
+
+  !===================================================
+
+  subroutine ct_ne_init(fld)
+    implicit none
+    type(r2d_field_type), intent(inout) :: fld
+    ! Locals
+    integer :: M, N
+
+    M = fld%grid%nx - 1
+    N = fld%grid%ny - 1
+
+    ! When updating a quantity on T points with a NE staggering
+    ! we write to (using x to indicate a location that is written):
+    !
+    ! i=1   i=M
+    !  o  x  x  x 
+    !  o  x  x  x   j=N
+    !  o  x  x  x
+    !  o  o  o  o   j=1
+    fld%internal%nx = M
+    fld%internal%ny = N
+
+    fld%internal%xstart = 2
+    fld%internal%xstop  = M+1
+    fld%internal%ystart = 2
+    fld%internal%ystop  = N+1
+
+  end subroutine ct_ne_init
 
   !===================================================
 
   subroutine cf_field_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
 
     fld%defined_on = F_POINTS
+
+    select case(fld%grid%stagger)
+
+    case(STAGGER_SW)
+       call cf_sw_init(fld)
+
+    case(STAGGER_NE)
+       call cf_ne_init(fld)
+
+    case default
+       stop 'cf_field_init: ERROR - unsupported stagger!'
+
+    end select
+
+  end subroutine cf_field_init
+
+  !===================================================
+
+  subroutine cf_sw_init(fld)
+    implicit none
+    type(r2d_field_type), intent(inout) :: fld
+    ! Locals
+    integer :: M, N
 
     M = fld%grid%nx - 1
     N = fld%grid%ny - 1
@@ -421,7 +628,37 @@ contains
     fld%halo(2)%source%xstart  = 1   ; fld%halo(2)%source%xstop  = M+1
     fld%halo(2)%source%ystart  = N+1 ; fld%halo(2)%source%ystop  = N+1
 
-  end subroutine cf_field_init
+  end subroutine cf_sw_init
+
+  !===================================================
+
+  subroutine cf_ne_init(fld)
+    implicit none
+    type(r2d_field_type), intent(inout) :: fld
+    ! Locals
+    integer :: M, N
+
+    M = fld%grid%nx - 1
+    N = fld%grid%ny - 1
+
+    ! When updating a quantity on F points we write to:
+    ! (using x to indicate a location that is written):
+    !
+    ! i=1   i=M
+    !  o  o  o  o 
+    !  x  x  x  o   j=N
+    !  x  x  x  o
+    !  x  x  x  o   j=1
+    fld%internal%nx = M
+    fld%internal%ny = N
+
+    fld%internal%xstart = 1
+    fld%internal%xstop  = M
+    fld%internal%ystart = 1
+    fld%internal%ystop  = N
+
+
+  end subroutine cf_ne_init
 
   !===================================================
 

@@ -143,11 +143,14 @@ contains
     grid%dx = dxarg
     grid%dy = dyarg
 
-    allocate(grid%e1t(m,n), grid%e2t(m,n), grid%e1u(0:m,n), grid%e2u(0:m,n), &
+    allocate(grid%e1t(m,n),   grid%e2t(m,n), &
+             grid%e1u(0:m,n), grid%e2u(0:m,n), &
              stat=ierr(1))
     allocate(grid%e1f(0:m,0:n), grid%e2f(0:m,0:n), &
-             grid%e1v(m,0:n),   grid%e2v(m,0:n), STAT=ierr(2)) 
-    allocate(grid%e12t(m,n), grid%e12u(0:m,n), grid%e12v(m,0:n), STAT=ierr(3))
+             grid%e1v(m,0:n),   grid%e2v(m,0:n),   &
+             stat=ierr(2)) 
+    allocate(grid%e12t(m,n), grid%e12u(0:m,n), grid%e12v(m,0:n), &
+             stat=ierr(3))
     allocate(grid%gphiu(0:m,n), grid%gphiv(m,0:n), grid%gphif(0:m,0:n), &
              stat=ierr(4))
     allocate(grid%xt(m,n), grid%yt(m,n), stat=ierr(5))
