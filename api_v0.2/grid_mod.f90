@@ -4,32 +4,56 @@ module grid_mod
 
   private
 
+  ! Enumeration of possible grid types (we only actually
+  ! support ARAKAWA_C at the moment)
   integer, public, parameter :: ARAKAWA_C = 0
   integer, public, parameter :: ARAKAWA_B = 1
 
+  ! Enumeration of the four possible ways of staggering
+  ! the fields.
+  !> Points to North and East of T point have same
+  !! i,j index (e.g. NEMO code).
+  integer, public, parameter :: STAGGER_NE = 0
+  integer, public, parameter :: STAGGER_NW = 1
+  integer, public, parameter :: STAGGER_SE = 2
+  !> Points to South and West of T point have same 
+  !! i,j index (e.g. 'shallow' code)
+  integer, public, parameter :: STAGGER_SW = 3
+
   type, public :: grid_type
      !> The type of grid this is (e.g. Arakawa C Grid)
-     integer :: grid_name
+     integer :: name
+     !> Specifies the convention by which grid-point
+     !! types are indexed.
+     integer :: stagger
      !> Total number of grid points
      integer :: npts
      !> Extent of grid in x
      integer :: nx
      !> Extent of grid in y
      integer :: ny
-     !> Grid spacing in x
+     !> Grid spacing in x (m)
      real(wp) :: dx
-     !> Grid spacing in y
+     !> Grid spacing in y (m)
      real(wp) :: dy
 
-     !> Horizontal scale factors
+     !> Horizontal scale factors at t point (m)
      real(wp), allocatable :: e1t(:,:), e2t(:,:)
+     !> Horizontal scale factors at u point (m)
      real(wp), allocatable :: e1u(:,:), e2u(:,:)
+     !> Horizontal scale factors at v point (m)
      real(wp), allocatable :: e1v(:,:), e2v(:,:)  
+     !> Horizontal scale factors at f point (m)
      real(wp), allocatable :: e1f(:,:), e2f(:,:)
+     !> Unknown \todo Name these fields!
      real(wp), allocatable :: e12t(:,:), e12u(:,:), e12v(:,:)
 
-     !> Latitude of grid points (?)
-     real(wp), allocatable :: gphiu(:,:), gphiv(:,:), gphif(:,:)
+     !> Latitude of u points
+     real(wp), allocatable :: gphiu(:,:)
+     !> Latitude of v points
+     real(wp), allocatable :: gphiv(:,:)
+     !> Latitude of f points
+     real(wp), allocatable :: gphif(:,:)
 
      !> Coordinates of grid points in horizontal plane
      real(wp), allocatable :: xt(:,:), yt(:,:)
@@ -46,9 +70,10 @@ contains
 
   !============================================
 
-  function grid_constructor(grid_name) result(self)
+  function grid_constructor(grid_name, grid_stagger) result(self)
     implicit none
     integer, intent(in) :: grid_name
+    integer, intent(in) :: grid_stagger
     type(grid_type), target :: self
 
     ! This case statement is mainly to check that the caller
@@ -56,11 +81,29 @@ contains
     select case(grid_name)
 
     case(ARAKAWA_C)
-       self%grid_name = ARAKAWA_C
+       self%name = ARAKAWA_C
     case(ARAKAWA_B)
-       self%grid_name = ARAKAWA_B
+       self%name = ARAKAWA_B
     case default
-       write(*,*) 'grid_constructor: ERROR: unsupported grid type: ',grid_name
+       write(*,*) 'grid_constructor: ERROR: unsupported grid type: ', &
+                  grid_name
+       stop
+    end select
+
+    ! Ditto for the choice of grid staggering
+    select case(grid_stagger)
+
+    case(STAGGER_NE)
+       self%stagger = STAGGER_NE
+    case(STAGGER_NW)
+       self%stagger = STAGGER_NW
+    case(STAGGER_SE)
+       self%stagger = STAGGER_SE
+    case(STAGGER_SW)
+       self%stagger = STAGGER_SW
+    case default
+       write(*,*) 'grid_constructor: ERROR: unsupported grid stagger: ', &
+                  grid_stagger
        stop
     end select
 
@@ -84,7 +127,7 @@ contains
     integer :: ierr(5)
     integer :: ji, jj
 
-    select case(grid%grid_name)
+    select case(grid%name)
 
     case(ARAKAWA_C)
        ! For an Arakawa C grid we need a grid that has extent 
@@ -100,39 +143,48 @@ contains
     grid%dx = dxarg
     grid%dy = dyarg
 
-    allocate(grid%e1t(m,n), grid%e2t(m,n), grid%e1u(0:m,n), grid%e2u(0:m,n), STAT=ierr(1))
-    allocate(grid%e1f(0:m,0:n), grid%e2f(0:m,0:n), grid%e1v(m,0:n), grid%e2v(m,0:n), STAT=ierr(2)) 
+    allocate(grid%e1t(m,n), grid%e2t(m,n), grid%e1u(0:m,n), grid%e2u(0:m,n), &
+             stat=ierr(1))
+    allocate(grid%e1f(0:m,0:n), grid%e2f(0:m,0:n), &
+             grid%e1v(m,0:n),   grid%e2v(m,0:n), STAT=ierr(2)) 
     allocate(grid%e12t(m,n), grid%e12u(0:m,n), grid%e12v(m,0:n), STAT=ierr(3))
-    allocate(grid%gphiu(0:m,n), grid%gphiv(m,0:n), grid%gphif(0:m,0:n), STAT=ierr(4))
-    allocate(grid%xt(m,n), grid%yt(m,n), STAT=ierr(5))
+    allocate(grid%gphiu(0:m,n), grid%gphiv(m,0:n), grid%gphif(0:m,0:n), &
+             stat=ierr(4))
+    allocate(grid%xt(m,n), grid%yt(m,n), stat=ierr(5))
+
     if( any(ierr /= 0, 1) )then
        stop 'grid_init: failed to allocate arrays'
     end if
 
-    grid%e1t(1:jpi, 1:jpj)   = grid%dx
-    grid%e2t(1:jpi, 1:jpj)   = grid%dy
-    grid%e1u(0:jpi, 1:jpj)   = grid%dx
-    grid%e2u(0:jpi, 1:jpj)   = grid%dy
-    grid%e1v(1:jpi, 0:jpj)   = grid%dx
-    grid%e2v(1:jpi, 0:jpj)   = grid%dy
-    grid%e1f(0:jpi, 0:jpj)   = grid%dx
-    grid%e2f(0:jpi, 0:jpj)   = grid%dy
+    ! Initialise the horizontal scale factors for a regular,
+    ! orthogonal mesh. (Constant spatial resolution.)
+    grid%e1t(1:m, 1:n)   = grid%dx
+    grid%e2t(1:m, 1:n)   = grid%dy
+
+    grid%e1u(0:m, 1:n)   = grid%dx
+    grid%e2u(0:m, 1:n)   = grid%dy
+
+    grid%e1v(1:m, 0:n)   = grid%dx
+    grid%e2v(1:m, 0:n)   = grid%dy
+
+    grid%e1f(0:m, 0:n)   = grid%dx
+    grid%e2f(0:m, 0:n)   = grid%dy
 
      
     ! -here is an f-plane testing case
-    grid%gphiu(0:jpi, 1:jpj) = 50._wp
-    grid%gphiv(1:jpi, 0:jpj) = 50._wp
-    grid%gphif(0:jpi, 0:jpj) = 50._wp
+    grid%gphiu(0:m, 1:n) = 50._wp
+    grid%gphiv(1:m, 0:n) = 50._wp
+    grid%gphif(0:m, 0:n) = 50._wp
 
     grid%xt(1,1) = 0.0_wp + 0.5_wp * grid%e1t(1,1)
     grid%yt(1,1) = 0.0_wp + 0.5_wp * grid%e2t(1,1)
 
-    DO ji = 2, jpi
-      grid%xt(ji,1:jpj) = grid%xt(ji-1, 1:jpj) + grid%dx
+    DO ji = 2, m
+      grid%xt(ji,1:n) = grid%xt(ji-1, 1:n) + grid%dx
     END DO
             
-    DO jj = 2, jpj
-      grid%yt(1:jpi,jj) = grid%yt(1:jpi, jj-1) + grid%dy
+    DO jj = 2, n
+      grid%yt(1:m,jj) = grid%yt(1:m, jj-1) + grid%dy
     END DO
 
   end subroutine grid_init
