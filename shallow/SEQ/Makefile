@@ -44,10 +44,10 @@ shallow_gen:
 	#${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
 
 # Normal targets
-shallow_base:
+shallow_base: ${API_LIB}
 	${MAKE} MODULE_LIST="shallow_base.o ${COMMON_MODULES}" shallow_base.exe
 
-${API_LIB}:
+${API_LIB}: ${API_DIR}/*.?90
 	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" API_LIB="gocean_api.a"
 
 shallow_base.o: $(COMMON_MODULES)
