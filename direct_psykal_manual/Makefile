@@ -16,7 +16,7 @@ API_LIB = ${API_DIR}/gocean_api.a
 EXECS = gocean2d
 
 # The modules that are common to both targets
-MODULES = model_mod.o physical_params_mod.o
+MODULES = model_mod.o momentum_mod.o physical_params_mod.o
 
 GENERATED_MODULES = psy.o
 
@@ -48,6 +48,10 @@ gocean2d_direct.o: $(COMMON_MODULES)
 shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
 # Interdependencies between modules, alphabetical order
+
+momentum_mod.o: model_mod.o physical_params_mod.o ${API_DIR}/kind_params_mod.o
+
+# Generic rules
 
 %.exe: $(MODULE_LIST)
 	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
