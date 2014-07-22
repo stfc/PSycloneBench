@@ -8,7 +8,7 @@ MODULE model_mod
   !> start-end and record time steps
   integer  :: nit000, nitend, irecord 
   !> type (source?) of grid
-  INTEGER  :: jphgr_msh
+  integer  :: jphgr_msh
 
   REAL(wp) :: rdt                                   !< time step
   REAL(wp) :: cbfr                                  !< bottom friction coefficient
@@ -82,8 +82,7 @@ CONTAINS
     irecord     =       1               !  intervals to save results
     rdt         =     10._wp            !  size of time step (second) 
     cbfr        =   0.001_wp            !  bottom friction coefficeint
-    visc        =     100._wp            !  horizontal kinematic viscosity coefficient 
- 
+    visc        =     100._wp           !  horiz. kinematic viscosity coeff. 
  
     OPEN(111, file='namelist', STATUS='OLD')
     REWIND(111)
