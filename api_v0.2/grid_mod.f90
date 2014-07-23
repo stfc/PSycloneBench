@@ -37,6 +37,13 @@ module grid_mod
      !> Grid spacing in y (m)
      real(wp) :: dy
 
+     !> Nature of each T point: 1 == wet inside simulated region
+     !!                         0 == land
+     !!                        -1 == wet outside simulated region
+     !! This is the key quantity that determines the region that
+     !! is actually simulated.
+     integer, allocatable :: tmask(:,:)
+
      !> Horizontal scale factors at t point (m)
      real(wp), allocatable :: e1t(:,:), e2t(:,:)
      !> Horizontal scale factors at u point (m)
@@ -47,7 +54,6 @@ module grid_mod
      real(wp), allocatable :: e1f(:,:), e2f(:,:)
      !> Unknown \todo Name these fields!
      real(wp), allocatable :: e12t(:,:), e12u(:,:), e12v(:,:)
-
      !> Latitude of u points
      real(wp), allocatable :: gphiu(:,:)
      !> Latitude of v points
@@ -114,8 +120,8 @@ contains
   !> Initialise the supplied grid object for a 2D model
   !! consisting of m x n points.
   !! @param[inout] grid The object to initialise
-  !! @param[in] m Extent of model in x dimension
-  !! @param[in] n Extent of model in y dimension
+  !! @param[in] m Extent in x of domain for which we have information
+  !! @param[in] n Extent in y of domain for which we have information
   !! @param[in] dxarg Grid spacing in x dimension
   !! @param[in] dyarg Grid spacing in y dimension
   subroutine grid_init(grid, m, n, dxarg, dyarg)
@@ -143,17 +149,17 @@ contains
     grid%dx = dxarg
     grid%dy = dyarg
 
-    allocate(grid%e1t(m,n),   grid%e2t(m,n), &
-             grid%e1u(0:m,n), grid%e2u(0:m,n), &
+    allocate(grid%e1t(m,n), grid%e2t(m,n), &
+             grid%e1u(m,n), grid%e2u(m,n), &
              stat=ierr(1))
-    allocate(grid%e1f(0:m,0:n), grid%e2f(0:m,0:n), &
-             grid%e1v(m,0:n),   grid%e2v(m,0:n),   &
+    allocate(grid%e1f(m,n), grid%e2f(m,n), &
+             grid%e1v(m,n), grid%e2v(m,n),   &
              stat=ierr(2)) 
-    allocate(grid%e12t(m,n), grid%e12u(0:m,n), grid%e12v(m,0:n), &
+    allocate(grid%e12t(m,n), grid%e12u(m,n), grid%e12v(m,n), &
              stat=ierr(3))
-    allocate(grid%gphiu(0:m,n), grid%gphiv(m,0:n), grid%gphif(0:m,0:n), &
+    allocate(grid%gphiu(m,n), grid%gphiv(m,n), grid%gphif(m,n), &
              stat=ierr(4))
-    allocate(grid%xt(m,n), grid%yt(m,n), stat=ierr(5))
+    allocate(grid%xt(m,n), grid%yt(m,n), grid%tmask(m,n), stat=ierr(5))
 
     if( any(ierr /= 0, 1) )then
        stop 'grid_init: failed to allocate arrays'
@@ -173,12 +179,31 @@ contains
     grid%e1f(0:m, 0:n)   = grid%dx
     grid%e2f(0:m, 0:n)   = grid%dy
 
-     
+    ! calculate t,u,v cell area
+    do jj = 1, n
+       do ji = 1, m
+          grid%e12t(ji,jj) = grid%e1t(ji,jj) * grid%e2t(ji,jj)
+       end do
+    end do
+  
+    DO jj = 1, n
+       DO ji = 0, m
+          grid%e12u(ji,jj) = grid%e1u(ji,jj) * grid%e2u(ji,jj)
+       END DO
+    END DO
+
+    DO jj = 0, n
+       DO ji = 1, m
+          grid%e12v(ji,jj) = grid%e1v(ji,jj) * grid%e2v(ji,jj)
+       END DO
+    END DO
+
     ! -here is an f-plane testing case
     grid%gphiu(0:m, 1:n) = 50._wp
     grid%gphiv(1:m, 0:n) = 50._wp
     grid%gphif(0:m, 0:n) = 50._wp
 
+    ! Co-ordinates of the T points
     grid%xt(1,1) = 0.0_wp + 0.5_wp * grid%e1t(1,1)
     grid%yt(1,1) = 0.0_wp + 0.5_wp * grid%e2t(1,1)
 
