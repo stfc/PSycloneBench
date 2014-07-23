@@ -80,7 +80,6 @@ subroutine initialisation(grid)
      END DO
   END DO
 
-            
   DO jj =1, jpj
      DO ji=0,jpi
         un(ji,jj) = 0._wp
@@ -93,7 +92,7 @@ subroutine initialisation(grid)
      END DO
   END DO
   
-  CALL bc(0._wp)
+  CALL bc(0._wp, grid)
   
 end subroutine initialisation
 
@@ -104,8 +103,7 @@ subroutine step(grid, istp)
   use grid_mod
   use model_mod, only: jpi, jpj, ua, va, un, vn, &
                        ssha, sshn, sshn_u, sshn_v, ssha_u, ssha_v, &
-                       pt, hu, hv, ht, &
-                       rdt, irecord
+                       hu, hv, ht, rdt, irecord
   use momentum_mod, only: momentum
   use continuity_mod, only: invoke_continuity
   use time_update_mod, only: next
@@ -123,9 +121,9 @@ subroutine step(grid, istp)
 
   CALL momentum(grid, jpi, jpj, ua, va, un, vn, &
                 sshn, sshn_u, sshn_v, ssha_u, ssha_v, &
-                pt, hu, hv, ht)
+                hu, hv, ht)
 
-  CALL bc(rtime)  ! open and solid boundary condition
+  CALL bc(rtime, grid)  ! open and solid boundary condition
 
   CALL next(grid)
 

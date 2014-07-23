@@ -11,7 +11,7 @@ contains
 
   subroutine momentum(grid, jpi, jpj, ua, va, un, vn, &
                       sshn, sshn_u, sshn_v, ssha_u, ssha_v, &
-                      pt, hu, hv, ht)
+                      hu, hv, ht)
     use grid_mod
     use model_mod, only: rdt, cbfr, visc
     implicit none
@@ -21,7 +21,6 @@ contains
     real(wp), dimension(:,:), intent(in)  :: un, vn
     real(wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, ssha_u, ssha_v
     real(wp), dimension(:,:), intent(in)  :: hu, hv, ht
-    integer,  dimension(:,:), intent(in)  :: pt
     ! Locals
     REAL(wp) :: u_e, u_w
     REAL(wp) :: v_s, v_n
@@ -42,8 +41,8 @@ contains
 
           ! kernel u adv 
 
-          IF(pt(ji,jj) + pt(ji+1,jj) <= 0)  CYCLE         !jump over non-computatinal domain
-          IF(pt(ji,jj) <= 0 .OR. pt(ji+1,jj) <= 0)  CYCLE           !jump over boundary u
+          IF(grid%tmask(ji,jj) + grid%tmask(ji+1,jj) <= 0)  CYCLE         !jump over non-computatinal domain
+          IF(grid%tmask(ji,jj) <= 0 .OR. grid%tmask(ji+1,jj) <= 0)  CYCLE           !jump over boundary u
 
           u_e  = 0.5 * (un(ji,jj) + un(ji+1,jj)) * grid%e2t(ji+1,jj)      !add length scale.
           depe = ht(ji+1,jj) + sshn(ji+1,jj)
@@ -65,14 +64,14 @@ contains
           uu_e = (0.5_wp + SIGN(0.5_wp, u_e)) * un(ji,jj)              + & 
                & (0.5_wp - SIGN(0.5_wp, u_e)) * un(ji+1,jj) 
 
-          IF(pt(ji,jj-1) <=0 .OR. pt(ji+1,jj-1) <= 0) THEN   
+          IF(grid%tmask(ji,jj-1) <=0 .OR. grid%tmask(ji+1,jj-1) <= 0) THEN   
              uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji,jj)   
           ELSE
              uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji,jj)              + & 
                   & (0.5_wp + SIGN(0.5_wp, v_s)) * un(ji,jj-1) 
           END If
 
-          IF(pt(ji,jj+1) <=0 .OR. pt(ji+1,jj+1) <= 0) THEN   
+          IF(grid%tmask(ji,jj+1) <=0 .OR. grid%tmask(ji+1,jj+1) <= 0) THEN   
              uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un(ji,jj)
           ELSE
              uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un(ji,jj)              + & 
@@ -87,14 +86,14 @@ contains
           !kernel  u vis 
           dudx_e = (un(ji+1,jj) - un(ji,  jj)) / grid%e1t(ji+1,jj) * (ht(ji+1,jj) + sshn(ji+1,jj))
           dudx_w = (un(ji,  jj) - un(ji-1,jj)) / grid%e1t(ji,  jj) * (ht(ji,  jj) + sshn(ji,  jj))
-          IF(pt(ji,jj-1) <=0 .OR. pt(ji+1,jj-1) <= 0) THEN   
+          IF(grid%tmask(ji,jj-1) <=0 .OR. grid%tmask(ji+1,jj-1) <= 0) THEN   
              dudy_s = 0.0_wp !slip boundary
           ELSE
              dudy_s = (un(ji,jj) - un(ji,jj-1)) / (grid%e2u(ji,jj) + grid%e2u(ji,jj-1)) * &
                   & (hu(ji,jj) + sshn_u(ji,jj) + hu(ji,jj-1) + sshn_u(ji,jj-1))
           END IF
 
-          IF(pt(ji,jj+1) <= 0 .OR. pt(ji+1,jj+1) <= 0) THEN   
+          IF(grid%tmask(ji,jj+1) <= 0 .OR. grid%tmask(ji+1,jj+1) <= 0) THEN   
              dudy_n = 0.0_wp ! slip boundary
           ELSE
              dudy_n = (un(ji,jj+1) - un(ji,jj)) / (grid%e2u(ji,jj) + grid%e2u(ji,jj+1)) * &
@@ -129,8 +128,8 @@ contains
     DO jj = 1, jpj-1
        DO ji = 1, jpi
 
-          IF(pt(ji,jj) + pt(ji+1,jj) <= 0)  CYCLE                    !jump over non-computatinal domain
-          IF(pt(ji,jj) <= 0 .OR. pt(ji,jj+1) <= 0)  CYCLE                !jump over v boundary cells
+          IF(grid%tmask(ji,jj) + grid%tmask(ji+1,jj) <= 0)  CYCLE                    !jump over non-computatinal domain
+          IF(grid%tmask(ji,jj) <= 0 .OR. grid%tmask(ji,jj+1) <= 0)  CYCLE                !jump over v boundary cells
 
           ! kernel v adv 
           v_n  = 0.5 * (vn(ji,jj) + vn(ji,jj+1)) * grid%e1t(ji,jj+1)  !add length scale.
@@ -153,14 +152,14 @@ contains
           vv_n = (0.5_wp + SIGN(0.5_wp, v_n)) * vn(ji,jj)              + & 
                & (0.5_wp - SIGN(0.5_wp, v_n)) * vn(ji,jj+1) 
 
-          IF(pt(ji-1,jj) <= 0 .OR. pt(ji-1,jj+1) <= 0) THEN   
+          IF(grid%tmask(ji-1,jj) <= 0 .OR. grid%tmask(ji-1,jj+1) <= 0) THEN   
              vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn(ji,jj)  
           ELSE
              vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn(ji,jj)              + & 
                   & (0.5_wp + SIGN(0.5_wp, u_w)) * vn(ji-1,jj) 
           END If
 
-          IF(pt(ji+1,jj) <= 0 .OR. pt(ji+1,jj+1) <= 0) THEN
+          IF(grid%tmask(ji+1,jj) <= 0 .OR. grid%tmask(ji+1,jj+1) <= 0) THEN
              vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn(ji,jj)
           ELSE
              vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn(ji,jj)              + & 
@@ -178,14 +177,14 @@ contains
           dvdy_n = (vn(ji,jj+1) - vn(ji,  jj)) / grid%e2t(ji,jj+1) * (ht(ji,jj+1) + sshn(ji,jj+1))
           dvdy_s = (vn(ji,  jj) - vn(ji,jj-1)) / grid%e2t(ji,  jj) * (ht(ji,  jj) + sshn(ji,  jj))
 
-          IF(pt(ji-1,jj) <= 0 .OR. pt(ji-1,jj+1) <= 0) THEN
+          IF(grid%tmask(ji-1,jj) <= 0 .OR. grid%tmask(ji-1,jj+1) <= 0) THEN
              dvdx_w = 0.0_wp !slip boundary
           ELSE
              dvdx_w = (vn(ji,jj) - vn(ji-1,jj)) / (grid%e1v(ji,jj) + grid%e1v(ji-1,jj)) * &
                   & (hv(ji,jj) + sshn_v(ji,jj) + hv(ji-1,jj) + sshn_v(ji-1,jj))
           END IF
 
-          IF(pt(ji+1,jj) <= 0 .OR. pt(ji+1,jj+1) <= 0) THEN
+          IF(grid%tmask(ji+1,jj) <= 0 .OR. grid%tmask(ji+1,jj+1) <= 0) THEN
              dvdx_e = 0.0_wp ! slip boundary
           ELSE
              dvdx_e = (vn(ji+1,jj) - vn(ji,jj)) / (grid%e1v(ji,jj) + grid%e1v(ji+1,jj)) * &
