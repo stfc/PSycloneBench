@@ -25,35 +25,59 @@ contains
 
   !> Reads the namelist file for user-specified control 
   !! parameters
-  SUBROUTINE read_namelist(m, n, itmax)
-    IMPLICIT none
-    INTEGER, INTENT(out) :: m, n
-    INTEGER, INTENT(out) :: itmax
+  SUBROUTINE read_namelist(jpiglo, jpjglo, dx, dy,   &
+                           nit000, nitend, irecord,  &
+                           jphgr_msh, dep_const, rdt, cbfr, visc)
+    implicit none
+    !> Extent of the mask that describes the area that
+    !! contains the simulation domain
+    integer,  intent(out) :: jpiglo, jpjglo
+    !> Grid spacing
+    real(wp), intent(out) :: dx, dy
+    !> Start time-step, stop time-step and output interval
+    integer, intent(out) :: nit000, nitend, irecord
+    !> Whether grid is to be read from file or not
+    integer, intent(out) :: jphgr_msh
+    !> (Constant) depth of water in domain
+    real(wp), intent(out) :: dep_const
+    !> Model time-step (seconds?)
+    real(wp), intent(out) :: rdt
+    !> Coefficient of bottom friction
+    real(wp), intent(out) :: cbfr
+    !> Background/constant viscosity
+    real(wp), intent(out) :: visc
     ! namelist input 
-    CHARACTER (LEN=8) :: nml_name = "namelist" 
-    INTEGER :: input_unit = 99
-    INTEGER :: ierr
+    character (len=8) :: nml_name = "namelist" 
+    integer :: input_unit = 99
+    integer :: ios
 
-    NAMELIST/global_domain/ m, n, itmax, mprint
-    NAMELIST/io_control/ l_out
+    !! Read in model setup parameters 
+    NAMELIST/namctl/ jpiglo, jpjglo, jphgr_msh, &
+                     dx    , dy    , dep_const, &
+                     nit000, nitend, irecord  , &
+                     rdt   , cbfr  , visc
 
-    ! Initialise these vars to problem values as defense
-    ! against failure to read them properly and also
-    ! to squelch incorrect compiler warnings about them
-    ! not being assigned to.
-    m = -1
-    n = -1
-    itmax = 0
+    !! Default values
 
-    !     Read in namelist 
-    OPEN(unit=input_unit, file=nml_name, status='old',iostat=ierr)
-
-    CALL check(ierr, "open "//nml_name)
-    READ(unit=input_unit, nml=global_domain, iostat=ierr)
-    CALL check(ierr, "read "//nml_name)
-    READ(unit=input_unit, nml=io_control, iostat=ierr)
-    CALL check(ierr, "read "//nml_name)
-
+    jpiglo      =      50               !  number of columns of model grid
+    jpjglo      =     100               !  number of rows of model grid
+    jphgr_msh   =       1               !  type of grid (0: read in a data file; 1: setup with following parameters)
+    dx          =   1000._wp            !  grid size in x direction (m)
+    dy          =   1000._wp            !  grid size in y direction (m)
+    dep_const   =    100._wp            !  constant depth (m)
+    nit000      =       1               !  first time step
+    nitend      =    1000               !  end time step
+    irecord     =       1               !  intervals to save results
+    rdt         =     10._wp            !  size of time step (second) 
+    cbfr        =   0.001_wp            !  bottom friction coefficeint
+    visc        =     100._wp           !  horiz. kinematic viscosity coeff. 
+ 
+    OPEN(input_unit, file=nml_name, STATUS='OLD')
+    REWIND(input_unit)
+    READ(input_unit, NML=namctl, IOSTAT = ios)
+    IF(ios /= 0) STOP "err found in reading namelist file"
+    WRITE(*,NML=namctl)
+    
     CLOSE(unit=input_unit)
 
   END SUBROUTINE read_namelist

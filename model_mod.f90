@@ -81,41 +81,17 @@ CONTAINS
     real(wp) :: dx, dy
 
     integer :: ierr(6)
-    integer :: ios
 
-    !! Read in model setup parameters 
-    NAMELIST/namctl/ jpiglo, jpjglo, jphgr_msh, &
-                     dx    , dy    , dep_const, &
-                     nit000, nitend, irecord  , &
-                     rdt   , cbfr  , visc
+    ! Initialise timing system
+    call timer_init()
 
-    CALL timer_init()
-
-    !! Default values
-
-    jpiglo      =      50               !  number of columns of model grid
-    jpjglo      =     100               !  number of rows of model grid
-    jphgr_msh   =       1               !  type of grid (0: read in a data file; 1: setup with following parameters)
-    dx          =   1000._wp            !  grid size in x direction (m)
-    dy          =   1000._wp            !  grid size in y direction (m)
-    dep_const   =    100._wp            !  constant depth (m)
-    nit000      =       1               !  first time step
-    nitend      =    1000               !  end time step
-    irecord     =       1               !  intervals to save results
-    rdt         =     10._wp            !  size of time step (second) 
-    cbfr        =   0.001_wp            !  bottom friction coefficeint
-    visc        =     100._wp           !  horiz. kinematic viscosity coeff. 
- 
-    OPEN(111, file='namelist', STATUS='OLD')
-    REWIND(111)
-    READ(111, NML=namctl, IOSTAT = ios, ERR = 901)
-901 IF(ios /= 0) STOP "err found in reading namelist file"
-    WRITE(*,NML=namctl)
-    
-    CLOSE(111)
+    ! Read model configuration from namelist
+    call read_namelist(jpiglo, jpjglo, dx, dy, &
+                       nit000, nitend, irecord, &
+                       jphgr_msh, dep_const, rdt, cbfr, visc)
 
     ! Set up mesh parameters
-    CALL grid_init(grid, jpiglo, jpjglo, dx, dy)
+    call grid_init(grid, jpiglo, jpjglo, dx, dy)
 
     ! Store the grid dimensions in module variables - this is a temporary
     ! fix prior to carrying everything around in the grid object.
