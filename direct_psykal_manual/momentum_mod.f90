@@ -9,19 +9,19 @@ module momentum_mod
 
 contains
 
-  subroutine momentum(ua, va, un, vn, &
+  subroutine momentum(grid, jpi, jpj, ua, va, un, vn, &
                       sshn, sshn_u, sshn_v, ssha_u, ssha_v, &
-                      pt, hu, hv, ht, &
-                      e1u, e1v, e1t, e2t, e2u, e2v, e12u, e12v, &
-                      gphiu, gphiv)
+                      pt, hu, hv, ht)
+    use grid_mod
     use model_mod, only: rdt, cbfr, visc
     implicit none
+    type(grid_type), intent(in) :: grid
+    integer, intent(in) :: jpi, jpj
     real(wp), dimension(:,:), intent(out) :: ua, va
     real(wp), dimension(:,:), intent(in)  :: un, vn
     real(wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, ssha_u, ssha_v
-    real(wp), dimension(:,:), intent(in)  :: pt, hu, hv, ht
-    real(wp), dimension(:,:), intent(in)  :: e1u, e1v, e1t, e2t, e2u, e2v, e12u, e12v
-    real(wp), dimension(:,:), intent(in)  :: gphiu, gphiv
+    real(wp), dimension(:,:), intent(in)  :: hu, hv, ht
+    integer,  dimension(:,:), intent(in)  :: pt
     ! Locals
     REAL(wp) :: u_e, u_w
     REAL(wp) :: v_s, v_n
@@ -45,18 +45,18 @@ contains
           IF(pt(ji,jj) + pt(ji+1,jj) <= 0)  CYCLE         !jump over non-computatinal domain
           IF(pt(ji,jj) <= 0 .OR. pt(ji+1,jj) <= 0)  CYCLE           !jump over boundary u
 
-          u_e  = 0.5 * (un(ji,jj) + un(ji+1,jj)) * e2t(ji+1,jj)      !add length scale.
+          u_e  = 0.5 * (un(ji,jj) + un(ji+1,jj)) * grid%e2t(ji+1,jj)      !add length scale.
           depe = ht(ji+1,jj) + sshn(ji+1,jj)
 
-          u_w  = 0.5 * (un(ji,jj) + un(ji-1,jj)) * e2t(ji,jj)        !add length scale
+          u_w  = 0.5 * (un(ji,jj) + un(ji-1,jj)) * grid%e2t(ji,jj)        !add length scale
           depw = ht(ji,jj) + sshn(ji,jj)
 
           v_sc = 0.5_wp * (vn(ji,jj-1) + vn(ji+1,jj-1))
-          v_s  = 0.5_wp * v_sc * (e1v(ji,jj-1) + e1v(ji+1,jj-1))
+          v_s  = 0.5_wp * v_sc * (grid%e1v(ji,jj-1) + grid%e1v(ji+1,jj-1))
           deps = 0.5_wp * (hv(ji,jj-1) + sshn_v(ji,jj-1) + hv(ji+1,jj-1) + sshn_v(ji+1,jj-1))
 
           v_nc = 0.5_wp * (vn(ji,jj) + vn(ji+1,jj))
-          v_n  = 0.5_wp * v_nc * (e1v(ji,jj) + e1v(ji+1,jj))
+          v_n  = 0.5_wp * v_nc * (grid%e1v(ji,jj) + grid%e1v(ji+1,jj))
           depn = 0.5_wp * (hv(ji,jj) + sshn_v(ji,jj) + hv(ji+1,jj) + sshn_v(ji+1,jj))
 
           ! -advection (currently first order upwind)
@@ -85,41 +85,41 @@ contains
           ! -viscosity
 
           !kernel  u vis 
-          dudx_e = (un(ji+1,jj) - un(ji,  jj)) / e1t(ji+1,jj) * (ht(ji+1,jj) + sshn(ji+1,jj))
-          dudx_w = (un(ji,  jj) - un(ji-1,jj)) / e1t(ji,  jj) * (ht(ji,  jj) + sshn(ji,  jj))
+          dudx_e = (un(ji+1,jj) - un(ji,  jj)) / grid%e1t(ji+1,jj) * (ht(ji+1,jj) + sshn(ji+1,jj))
+          dudx_w = (un(ji,  jj) - un(ji-1,jj)) / grid%e1t(ji,  jj) * (ht(ji,  jj) + sshn(ji,  jj))
           IF(pt(ji,jj-1) <=0 .OR. pt(ji+1,jj-1) <= 0) THEN   
              dudy_s = 0.0_wp !slip boundary
           ELSE
-             dudy_s = (un(ji,jj) - un(ji,jj-1)) / (e2u(ji,jj) + e2u(ji,jj-1)) * &
+             dudy_s = (un(ji,jj) - un(ji,jj-1)) / (grid%e2u(ji,jj) + grid%e2u(ji,jj-1)) * &
                   & (hu(ji,jj) + sshn_u(ji,jj) + hu(ji,jj-1) + sshn_u(ji,jj-1))
           END IF
 
           IF(pt(ji,jj+1) <= 0 .OR. pt(ji+1,jj+1) <= 0) THEN   
              dudy_n = 0.0_wp ! slip boundary
           ELSE
-             dudy_n = (un(ji,jj+1) - un(ji,jj)) / (e2u(ji,jj) + e2u(ji,jj+1)) * &
+             dudy_n = (un(ji,jj+1) - un(ji,jj)) / (grid%e2u(ji,jj) + grid%e2u(ji,jj+1)) * &
                   & (hu(ji,jj) + sshn_u(ji,jj) + hu(ji,jj+1) + sshn_u(ji,jj+1))
           END If
 
-          vis = (dudx_e - dudx_w ) * e2u(ji,jj)  + &
-               & (dudy_n - dudy_s ) * e1u(ji,jj) * 0.5_wp  
+          vis = (dudx_e - dudx_w ) * grid%e2u(ji,jj)  + &
+               & (dudy_n - dudy_s ) * grid%e1u(ji,jj) * 0.5_wp  
           vis = visc * vis   !visc will be an array visc(1:jpijglou) 
           !for variable viscosity, such as turbulent viscosity
           !End  kernel u vis 
 
           ! -Coriolis' force (can be implemented implicitly)
           !kernel cor 
-          cor = 0.5_wp * (2._wp * omega * SIN(gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * &
-               & e12u(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj))
+          cor = 0.5_wp * (2._wp * omega * SIN(grid%gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * &
+               & grid%e12u(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj))
           !end kernel cor 
 
           ! -pressure gradient
           !start kernel hpg 
-          hpg = -g * (hu(ji,jj) + sshn_u(ji,jj)) * e2u(ji,jj) * (sshn(ji+1,jj) - sshn(ji,jj))
+          hpg = -g * (hu(ji,jj) + sshn_u(ji,jj)) * grid%e2u(ji,jj) * (sshn(ji+1,jj) - sshn(ji,jj))
           !end kernel hpg 
           ! -linear bottom friction (implemented implicitly.
           !kernel ua calculation 
-          ua(ji,jj) = (un(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj)) + rdt * (adv + vis + cor + hpg) / e12u(ji,jj)) / &
+          ua(ji,jj) = (un(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj)) + rdt * (adv + vis + cor + hpg) / grid%e12u(ji,jj)) / &
                & (hu(ji,jj) + ssha_u(ji,jj)) / (1.0_wp + cbfr * rdt) 
           !end kernel ua 
        END DO
@@ -133,18 +133,18 @@ contains
           IF(pt(ji,jj) <= 0 .OR. pt(ji,jj+1) <= 0)  CYCLE                !jump over v boundary cells
 
           ! kernel v adv 
-          v_n  = 0.5 * (vn(ji,jj) + vn(ji,jj+1)) * e1t(ji,jj+1)  !add length scale.
+          v_n  = 0.5 * (vn(ji,jj) + vn(ji,jj+1)) * grid%e1t(ji,jj+1)  !add length scale.
           depn = ht(ji,jj+1) + sshn(ji,jj+1)
 
-          v_s  = 0.5 * (vn(ji,jj) + vn(ji,jj-1)) * e1t(ji,jj)    !add length scale
+          v_s  = 0.5 * (vn(ji,jj) + vn(ji,jj-1)) * grid%e1t(ji,jj)    !add length scale
           deps = ht(ji,jj) + sshn(ji,jj)
 
           u_wc = 0.5_wp * (un(ji-1,jj) + un(ji-1,jj+1))
-          u_w  = 0.5_wp * u_wc * (e2u(ji-1,jj) + e2u(ji-1,jj+1))
+          u_w  = 0.5_wp * u_wc * (grid%e2u(ji-1,jj) + grid%e2u(ji-1,jj+1))
           depw = 0.50_wp * (hu(ji-1,jj) + sshn_u(ji-1,jj) + hu(ji-1,jj+1) + sshn_u(ji-1,jj+1))
 
           u_ec = 0.5_wp * (un(ji,jj) + un(ji,jj+1))
-          u_e  = 0.5_wp * u_ec * (e2u(ji,jj) + e2u(ji,jj+1))
+          u_e  = 0.5_wp * u_ec * (grid%e2u(ji,jj) + grid%e2u(ji,jj+1))
           depe = 0.50_wp * (hu(ji,jj) + sshn_u(ji,jj) + hu(ji,jj+1) + sshn_u(ji,jj+1))
 
           ! -advection (currently first order upwind)
@@ -175,25 +175,25 @@ contains
 
 
           !kernel v dis 
-          dvdy_n = (vn(ji,jj+1) - vn(ji,  jj)) / e2t(ji,jj+1) * (ht(ji,jj+1) + sshn(ji,jj+1))
-          dvdy_s = (vn(ji,  jj) - vn(ji,jj-1)) / e2t(ji,  jj) * (ht(ji,  jj) + sshn(ji,  jj))
+          dvdy_n = (vn(ji,jj+1) - vn(ji,  jj)) / grid%e2t(ji,jj+1) * (ht(ji,jj+1) + sshn(ji,jj+1))
+          dvdy_s = (vn(ji,  jj) - vn(ji,jj-1)) / grid%e2t(ji,  jj) * (ht(ji,  jj) + sshn(ji,  jj))
 
           IF(pt(ji-1,jj) <= 0 .OR. pt(ji-1,jj+1) <= 0) THEN
              dvdx_w = 0.0_wp !slip boundary
           ELSE
-             dvdx_w = (vn(ji,jj) - vn(ji-1,jj)) / (e1v(ji,jj) + e1v(ji-1,jj)) * &
+             dvdx_w = (vn(ji,jj) - vn(ji-1,jj)) / (grid%e1v(ji,jj) + grid%e1v(ji-1,jj)) * &
                   & (hv(ji,jj) + sshn_v(ji,jj) + hv(ji-1,jj) + sshn_v(ji-1,jj))
           END IF
 
           IF(pt(ji+1,jj) <= 0 .OR. pt(ji+1,jj+1) <= 0) THEN
              dvdx_e = 0.0_wp ! slip boundary
           ELSE
-             dvdx_e = (vn(ji+1,jj) - vn(ji,jj)) / (e1v(ji,jj) + e1v(ji+1,jj)) * &
+             dvdx_e = (vn(ji+1,jj) - vn(ji,jj)) / (grid%e1v(ji,jj) + grid%e1v(ji+1,jj)) * &
                   & (hv(ji,jj) + sshn_v(ji,jj) + hv(ji+1,jj) + sshn_v(ji+1,jj))
           END If
 
-          vis = (dvdy_n - dvdy_s ) * e1v(ji,jj)  + &
-               & (dvdx_e - dvdx_w ) * e2v(ji,jj) * 0.5_wp  
+          vis = (dvdy_n - dvdy_s ) * grid%e1v(ji,jj)  + &
+               & (dvdx_e - dvdx_w ) * grid%e2v(ji,jj) * 0.5_wp  
 
           vis = visc * vis   !visc will be a array visc(1:jpijglou) 
           !for variable viscosity, such as turbulent viscosity
@@ -201,18 +201,18 @@ contains
 
           ! -Coriolis' force (can be implemented implicitly)
           !kernel v cor 
-          cor = -0.5_wp * (2._wp * omega * SIN(gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * &
-               & e12v(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj))
+          cor = -0.5_wp * (2._wp * omega * SIN(grid%gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * &
+               & grid%e12v(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj))
           !end kernel v cor 
 
           ! -pressure gradient
           !kernel v hpg 
-          hpg = -g * (hv(ji,jj) + sshn_v(ji,jj)) * e1v(ji,jj) * (sshn(ji,jj+1) - sshn(ji,jj))
+          hpg = -g * (hv(ji,jj) + sshn_v(ji,jj)) * grid%e1v(ji,jj) * (sshn(ji,jj+1) - sshn(ji,jj))
           !kernel v hpg 
 
           ! -linear bottom friction (implemented implicitly.
           !kernel ua calculation 
-          va(ji,jj) = (vn(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj)) + rdt * (adv + vis + cor + hpg) / e12v(ji,jj) ) / &
+          va(ji,jj) = (vn(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj)) + rdt * (adv + vis + cor + hpg) / grid%e12v(ji,jj) ) / &
                & ((hv(ji,jj) + ssha_v(ji,jj))) / (1.0_wp + cbfr * rdt) 
           !end kernel ua calculation 
        END DO

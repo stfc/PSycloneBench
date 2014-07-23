@@ -16,11 +16,15 @@ API_LIB = ${API_DIR}/gocean_api.a
 EXECS = gocean2d
 
 # The modules that are common to both targets
-MODULES = model_mod.o momentum_mod.o physical_params_mod.o
+MODULES = model_mod.o boundary_conditions_mod.o \
+          continuity_mod.o momentum_mod.o physical_params_mod.o \
+          time_update_mod.o gocean2d_io_mod.o
 
 GENERATED_MODULES = psy.o
 
-COMMON_MODULES = ${API_LIB} $(MODULES)
+# API lib is an archive that must come at the end of the list of objects
+# passed to the linker
+COMMON_MODULES = $(MODULES) ${API_LIB}
 
 all: $(EXECS)
 
@@ -49,7 +53,12 @@ shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
 # Interdependencies between modules, alphabetical order
 
+boundary_conditions_mod.o: physical_params_mod.o ${API_LIB} model_mod.o
+continuity_mod.o: model_mod.o ${API_LIB}
+gocean2d_io_mod.o: ${API_LIB}
+model_mod.o: ${API_LIB} gocean2d_io_mod.o
 momentum_mod.o: model_mod.o physical_params_mod.o ${API_DIR}/kind_params_mod.o
+time_update_mod.o: model_mod.o ${API_LIB}
 
 # Generic rules
 
