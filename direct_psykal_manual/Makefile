@@ -79,4 +79,4 @@ allclean: clean
 	rm -f *.exe fparser.log
 
 docs:
-	doxygen shallow.doxy.config
+	doxygen gocean2d.doxy.config
