@@ -1,4 +1,8 @@
 module continuity_mod
+  use kind_params_mod
+  use kernel_mod
+  use argument_mod
+  use grid_mod
   implicit none
 
   type, extends(kernel_type) :: continuity
@@ -18,12 +22,19 @@ contains
 
   !===================================================
 
-  subroutine invoke_continuity(ssha, sshn_u, sshn_v, hu, hv, un, vn)
+  subroutine invoke_continuity(grid, ssha, sshn, sshn_u, sshn_v, hu, hv, un, vn)
+    use model_mod, only: jpi, jpj, rdt
     implicit none
+    type(grid_type),           intent(in) :: grid
+    real(wp), dimension(:,:), intent(out) :: ssha
+    real(wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, hu, hv, un, vn
+    ! Locals
+    integer :: ji, jj
 
     do jj = 1, jpj
        do ji = 1, jpi
-          call continuity_code(ji, jj, ssha, sshn_u, sshn_v, hu, hv, un, vn)
+          call continuity_code(ji, jj, rdt, grid%e12t, &
+                               ssha, sshn, sshn_u, sshn_v, hu, hv, un, vn)
        end do
     end do
 
@@ -31,11 +42,15 @@ contains
 
   !===================================================
 
-  subroutine continuity_code(ji, jj, ssha, sshn_u, sshn_v, hu, hv, un, vn)
+  subroutine continuity_code(ji, jj, rdt, e12t,          &
+                             ssha, sshn, sshn_u, sshn_v, &
+                             hu, hv, un, vn)
     implicit none
     integer,                  intent(in)  :: ji, jj
+    real(wp),                 intent(in)  :: rdt
+    real(wp), dimension(:,:), intent(in)  :: e12t
     real(wp), dimension(:,:), intent(out) :: ssha
-    real(wp), dimension(:,:), intent(in)  :: sshn_u, sshn_v, hu, hv, un, vn
+    real(wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, hu, hv, un, vn
     ! Locals
     real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
 
