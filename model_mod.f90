@@ -21,11 +21,6 @@ MODULE model_mod
 
   REAL(wp), save :: dep_const                             !< constant depth
 
-  INTEGER, ALLOCATABLE, save :: pt(:,:)   ! properties of t-cells 
-                                    ! 1: water cell within computational domain
-                                    ! 0: land cell
-                                    !-1: water cell outside computational domain
-  
   REAL(wp), ALLOCATABLE, save :: ht(:,:), hu(:,:), hv(:,:), hf(:,:) 
   
   REAL(wp), ALLOCATABLE, save :: sshb(:,:), sshb_u(:,:), sshb_v(:,:)
@@ -80,7 +75,7 @@ CONTAINS
     integer :: jpiglo, jpjglo
     real(wp) :: dx, dy
 
-    integer :: ierr(6)
+    integer :: ierr(5)
 
     ! Initialise timing system
     call timer_init()
@@ -105,8 +100,6 @@ CONTAINS
     ALLOCATE(ssha(jpi,jpj), ssha_u(0:jpi,jpj), ssha_v(jpi,0:jpj), STAT=ierr(4))
 
     ALLOCATE(un(0:jpi,jpj), vn(jpi,0:jpj), ua(0:jpi,jpj), va(jpi,0:jpj), STAT=ierr(5))
-
-    ALLOCATE(pt(0:jpi+1,0:jpj+1), STAT=ierr(6))
 
     IF(ANY(ierr /= 0, 1)) STOP "Failed to allocate solution arrays"
 
@@ -139,7 +132,6 @@ CONTAINS
     DEALLOCATE(sshn, sshn_u, sshn_v)
     DEALLOCATE(ssha, ssha_u, ssha_v)
     DEALLOCATE(un, vn, ua, va)
-    DEALLOCATE(pt)
 
   END SUBROUTINE model_dealloc
 
