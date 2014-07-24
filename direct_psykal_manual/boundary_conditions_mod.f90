@@ -8,8 +8,8 @@ contains
   subroutine boundary_conditions_init(grid)
     use kind_params_mod
     use grid_mod
-    use model_mod, only: jpi, jpj, jphgr_msh, ht, hu, hv, &
-         dep_const
+    use model_mod, only: jphgr_msh, ht, hu, hv, &
+                         dep_const
     implicit none
     type(grid_type), intent(inout) :: grid
     ! Locals
@@ -47,47 +47,52 @@ contains
        ! -depth on each T points
        ! -grid dimension
 
+       ! Define Model solid/open Boundaries via the properties of t-cells
 
-       !Define Model solid/open Boundaries via the properties of t-cells
-
-       DO jj = 0, jpj+1
-          DO ji = 0, jpi+1
-             grid%tmask(ji,jj) = 1                        ! all inner celles
-          END DO
-       END DO
+       grid%tmask(:,:) = 1                 ! all inner cells
 
        ! -define solid/open boundaries
-       DO jj = 0, jpj+1
-          grid%tmask(0,    jj) = 0                        ! west solid boundary
-          grid%tmask(jpi+1,jj) = 0                        ! east solid boundary
+       DO jj = 1, grid%ny
+          grid%tmask(      1, jj) = 0              ! west solid boundary
+          grid%tmask(grid%nx, jj) = 0              ! east solid boundary
        END Do
 
-       DO ji = 0, jpi+1
-          grid%tmask(ji,jpj+1) = 0                        ! north solid boundary
+       DO ji = 1, grid%nx
+          grid%tmask(ji,grid%ny) = 0               ! north solid boundary
        END Do
 
-       DO ji = 1, jpi
-          grid%tmask(ji,0) = -1                           ! south open boundary
+       DO ji = 1, grid%nx
+          grid%tmask(ji,1) = -1                    ! south open boundary
        END Do
+
+       ! The actual part of this domain that is simulated. The outer-most 
+       ! rows and columns of T points are not in the domain but define the
+       ! hard or open boundaries.
+       grid%simulation_domain%xstart = 2
+       grid%simulation_domain%xstop  = grid%nx - 1
+       grid%simulation_domain%ystart = 2
+       grid%simulation_domain%ystop  = grid%ny - 1
+       grid%simulation_domain%nx = grid%nx - 2
+       grid%simulation_domain%ny = grid%ny - 2
 
        !Depth 
 
        ! -depth on grid points
 
-       DO jj = 1, jpj
-          DO ji = 1, jpi
+       DO jj = 1, grid%ny
+          DO ji = 1, grid%nx
              ht(ji,jj) = dep_const 
           END DO
        END DO
 
-       DO jj = 1, jpj
-          DO ji = 0, jpi
+       DO jj = 1, grid%ny
+          DO ji = 0, grid%nx
              hu(ji,jj) = dep_const 
           END DO
        END DO
 
-       DO jj = 0, jpj
-          DO ji = 1, jpi
+       DO jj = 0, grid%ny
+          DO ji = 1, grid%nx
              hv(ji,jj) = dep_const 
           END DO
        END DO
