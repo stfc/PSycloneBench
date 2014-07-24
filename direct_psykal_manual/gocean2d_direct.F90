@@ -56,15 +56,11 @@ subroutine initialisation(grid)
   integer :: itmp1, itmp2
   real(wp) :: rtmp1
 
-  DO ji=1,jpi
-     DO jj =1, jpj
-        sshn(ji,jj) = 0.0_wp
-     END DO
-  END DO
+  sshn(:,:) = 0.0_wp
 
-  DO ji=0,jpi
-     DO jj =1, jpj
-        itmp1 = min(ji+1,jpi)
+  DO ji=1,grid%nx
+     DO jj =1, grid%ny
+        itmp1 = min(ji+1,grid%nx)
         itmp2 = max(ji,1)
         rtmp1 = grid%e12t(itmp1,jj) * sshn(itmp1,jj) + grid%e12t(itmp2,jj) * sshn(itmp2,jj)
         sshn_u(ji,jj) = 0.5_wp * rtmp1 / grid%e12u(ji,jj)

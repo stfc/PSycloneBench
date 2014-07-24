@@ -148,6 +148,7 @@ contains
 
     ! kernel"solid boundary conditions for u-velocity" 
     DO jj = 1, grid%ny
+       !> \todo Use field-specific bounds in this loop
        DO ji = 1, grid%nx-1
           IF(grid%tmask(ji,jj) * grid%tmask(ji+1,jj) == 0) ua(ji,jj) = 0._wp
        END DO
@@ -155,6 +156,7 @@ contains
     !end kernel "solid boundary conditions for u-velocity" 
 
     !kernel "solid boundary conditions for v-velocity" 
+    !> \todo Use field-specific bounds in this loop
     DO jj = 1, grid%ny-1
        DO ji = 1, grid%nx
           IF(grid%tmask(ji,jj) * grid%tmask(ji,jj+1) == 0) va(ji,jj) = 0._wp
@@ -170,6 +172,7 @@ contains
 
     ! kernel Flather u 
     DO jj = 1, grid%ny
+       !> \todo Use field-specific bounds in this loop
        DO ji = 1, grid%nx-1  
 
           IF(grid%tmask(ji,jj) + grid%tmask(ji+1,jj) <= -1) CYCLE                         ! not in the domain
@@ -186,6 +189,7 @@ contains
     !end kernel flather u .
 
     !kernel Flather v 
+    !> \todo Use field-specific bounds in this loop
     DO jj = 1, grid%ny-1
        DO ji = 1, grid%nx
 
