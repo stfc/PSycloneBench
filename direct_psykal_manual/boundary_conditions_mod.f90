@@ -86,12 +86,12 @@ contains
        END DO
 
        DO jj = 1, grid%ny
-          DO ji = 0, grid%nx
+          DO ji = 1, grid%nx
              hu(ji,jj) = dep_const 
           END DO
        END DO
 
-       DO jj = 0, grid%ny
+       DO jj = 1, grid%ny
           DO ji = 1, grid%nx
              hv(ji,jj) = dep_const 
           END DO
@@ -108,15 +108,18 @@ contains
 
   !===========================================================
 
-  subroutine bc(rtime, grid)
+  subroutine bc(rtime, grid, sshn_u, sshn_v, ssha, ua, va, hu, hv)
     use kind_params_mod
     use physical_params_mod
-    use model_mod, only: jpi, jpj, ua, va, hu, hv
-    use model_mod, only: ssha, sshn_u, sshn_v
     use grid_mod
     implicit none
     real(wp),        intent(in) :: rtime
     type(grid_type), intent(in) :: grid
+    real(wp), dimension(:,:), intent(in)    :: sshn_u, sshn_v
+    real(wp), dimension(:,:), intent(inout) :: ssha
+    real(wp), dimension(:,:), intent(in)    :: hu, hv
+    real(wp), dimension(:,:), intent(inout) :: ua, va
+    ! Locals
     real(wp) :: amp_tide, omega_tide
     integer :: jiu, jiv
     integer :: ji, jj
@@ -126,8 +129,8 @@ contains
     !kernel ssh clamped obc
     amp_tide   = 0.2_wp
     omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
-    DO jj = 1, jpj  
-       DO ji = 1, jpi 
+    DO jj = 1, grid%ny
+       DO ji = 1, grid%nx
           IF(grid%tmask(ji,jj) <= 0) CYCLE
           IF     (grid%tmask(ji,jj-1) < 0) THEN
              ssha(ji,jj) = amp_tide * sin(omega_tide * rtime)
@@ -144,16 +147,16 @@ contains
 
 
     ! kernel"solid boundary conditions for u-velocity" 
-    DO jj = 1, jpj
-       DO ji = 0, jpi
+    DO jj = 1, grid%ny
+       DO ji = 1, grid%nx-1
           IF(grid%tmask(ji,jj) * grid%tmask(ji+1,jj) == 0) ua(ji,jj) = 0._wp
        END DO
     END DO
     !end kernel "solid boundary conditions for u-velocity" 
 
     !kernel "solid boundary conditions for v-velocity" 
-    DO jj = 0, jpj
-       DO ji = 1, jpi
+    DO jj = 1, grid%ny-1
+       DO ji = 1, grid%nx
           IF(grid%tmask(ji,jj) * grid%tmask(ji,jj+1) == 0) va(ji,jj) = 0._wp
        END DO
     END DO
@@ -166,8 +169,8 @@ contains
 
 
     ! kernel Flather u 
-    DO jj = 1, jpj
-       DO ji = 0, jpi  
+    DO jj = 1, grid%ny
+       DO ji = 1, grid%nx-1  
 
           IF(grid%tmask(ji,jj) + grid%tmask(ji+1,jj) <= -1) CYCLE                         ! not in the domain
 
@@ -183,8 +186,8 @@ contains
     !end kernel flather u .
 
     !kernel Flather v 
-    DO jj = 0, jpj
-       DO ji = 1, jpi
+    DO jj = 1, grid%ny-1
+       DO ji = 1, grid%nx
 
           ! Check whether this point is inside the simulated domain
           IF(grid%tmask(ji,jj) + grid%tmask(ji,jj+1) <= -1) CYCLE

@@ -92,7 +92,7 @@ subroutine initialisation(grid)
      END DO
   END DO
   
-  CALL bc(0._wp, grid)
+  CALL bc(0._wp, grid, sshn_u, sshn_v, ssha, ua, va, hu, hv)
   
 end subroutine initialisation
 
@@ -123,7 +123,8 @@ subroutine step(grid, istp)
                 sshn, sshn_u, sshn_v, ssha_u, ssha_v, &
                 hu, hv, ht)
 
-  CALL bc(rtime, grid)  ! open and solid boundary condition
+  ! open and solid boundary condition
+  CALL bc(rtime, grid, sshn_u, sshn_v, ssha, ua, va, hu, hv)
 
   CALL next(grid)
 
