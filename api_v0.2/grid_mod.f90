@@ -1,5 +1,6 @@
 module grid_mod
   use kind_params_mod
+  use region_mod
   implicit none
 
   private
@@ -28,9 +29,11 @@ module grid_mod
      integer :: stagger
      !> Total number of grid points
      integer :: npts
-     !> Extent of grid in x
+     !> Extent of grid in x. Note that this is the whole grid,
+     !! not just the region that is simulated.
      integer :: nx
-     !> Extent of grid in y
+     !> Extent of grid in y. Note that this is the whole grid,
+     !! not just the region that is simulated.
      integer :: ny
      !> Grid spacing in x (m)
      real(wp) :: dx
@@ -43,6 +46,10 @@ module grid_mod
      !! This is the key quantity that determines the region that
      !! is actually simulated.
      integer, allocatable :: tmask(:,:)
+
+     !> Where on the grid our simulated domain sits.
+     !! \todo Decide whether this is useful.
+     type(region_type) :: simulation_domain
 
      !> Horizontal scale factors at t point (m)
      real(wp), allocatable :: e1t(:,:), e2t(:,:)
@@ -136,11 +143,8 @@ contains
     select case(grid%name)
 
     case(ARAKAWA_C)
-       ! For an Arakawa C grid we need a grid that has extent 
-       ! 1 greater than the extent of the model fields in
-       ! order to allow for variable staggering 
-       grid%nx = m+1
-       grid%ny = n+1
+       grid%nx = m
+       grid%ny = n
     case default
        stop 'grid_init: ERROR: only Arakawa C grid implemented!'
     end select
@@ -167,17 +171,17 @@ contains
 
     ! Initialise the horizontal scale factors for a regular,
     ! orthogonal mesh. (Constant spatial resolution.)
-    grid%e1t(1:m, 1:n)   = grid%dx
-    grid%e2t(1:m, 1:n)   = grid%dy
+    grid%e1t(:, :)   = grid%dx
+    grid%e2t(:, :)   = grid%dy
 
-    grid%e1u(0:m, 1:n)   = grid%dx
-    grid%e2u(0:m, 1:n)   = grid%dy
+    grid%e1u(:, :)   = grid%dx
+    grid%e2u(:, :)   = grid%dy
 
-    grid%e1v(1:m, 0:n)   = grid%dx
-    grid%e2v(1:m, 0:n)   = grid%dy
+    grid%e1v(:, :)   = grid%dx
+    grid%e2v(:, :)   = grid%dy
 
-    grid%e1f(0:m, 0:n)   = grid%dx
-    grid%e2f(0:m, 0:n)   = grid%dy
+    grid%e1f(:, :)   = grid%dx
+    grid%e2f(:, :)   = grid%dy
 
     ! calculate t,u,v cell area
     do jj = 1, n

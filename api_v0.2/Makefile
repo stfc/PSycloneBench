@@ -18,9 +18,12 @@ ${API_LIB}: ${MODULES}
 clean:
 	rm -f *.o *.mod *.a
 
+# Inter-module dependencies, alphabetical order
 argument_mod.o: global_parameters_mod.o
 
 field_mod.o: kind_params_mod.o grid_mod.o halo_mod.o region_mod.o
+
+grid_mod.o: kind_params_mod.o region_mod.o
 
 halo_mod.o: region_mod.o
 
