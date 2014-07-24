@@ -283,40 +283,91 @@ contains
     ! Locals
     integer :: M, N
 
-    M = fld%grid%nx - 1
-    N = fld%grid%ny - 1
+    M = fld%grid%nx
+    N = fld%grid%ny
 
     ! Set up a field defined on U points when the grid has
     ! a North-East staggering:
 
-    !   vi-1j---fi-1j---vij-----fij
-    !   |       |       |       |
-    !   |       |       |       |
-    !   Ti-1j---ui-1j---Tij-----uij
-    !   |       |       |       |
-    !   |       |       |       |
-    !   vi-1j-1-fi-1j-1-vij-1---fij-1
-    !   |       |       |       |
-    !   |       |       |       |
-    !   Ti-1j-1-u-1ij-1-Tij-1---uij-1
+    !
+    ! v(1,ny)-----f(1,ny)-- -v(i-1,ny)--f(i-1,ny)--v(i,ny)----f(i,ny)-  -v(nx,ny)---f(nx,ny)  
+    ! |           |          |          |          |          |          |          |        
+    ! |           |          |          |          |          |          |          |        
+    ! T[1,ny]-----u(1,ny)-- -T(i-1,ny)--u(i-1,ny)--T(i,ny)----u(i,ny)-  -T(nx,ny)---u(nx,ny)  
+    ! |           |          |          |          |          |          |          |        
+    ! |           |          |          |          |          |          |          |        
+    ! v(1,j)------f(1,j)--- -v(i-1,j)---f(i-1,j)---v(i,j)-----f(i,j)--  -v(nx,j)----f(nx,j)   
+    ! |           |          |          |          |          |          |          |        
+    ! |           |          |          |          |          |          |          |        
+    ! T[1,j]------u(1,j)--- -T(i-1,j)---u(i-1,j)---T(i,j)-----u(i,j)--  -T(nx,j)----u(nx,j)   
+    ! |           |          |          |          |          |          |          |        
+    ! |           |          |          |          |          |          |          |        
+    ! v(1,j-1)----f(1,j-1)- -v(i-1,j-1)-f(i-1,j-1)-v(i,j-1)---f(i,j-1)- -v(nx,j-1)--f(nx,j-1) 
+    ! |           |          |          |          |          |          |          |        
+    ! |           |          |          |          |          |          |          |        
+    ! T[1,j-1]----u(1,j-1)- -T(i-1,j-1)-u(i-1,j-1)-T(i,j-1)---u(i,j-1)- -T(nx,j-1)--u(nx,j-1) 
+    ! |           |          |          |          |          |          |          |        
+    ! |           |          |          |          |          |          |          |        
+    ! v(1,1)------f(1,1)--- -v(i-1,1)---f(i-1,1)---v(i,1)-----f(i,1)--  -v(nx,1)----f(nx,1)   
+    ! |           |          |          |          |          |          |          |        
+    ! |           |          |          |          |          |          |          |        
+    ! T[1,1]      u(1,1)     T(i-1,1)---u(i-1,1)---T(i,1)-----u(i,1)--  -T(nx,1)----u(nx,1)   
+
+    ! It is the T points that define the whole domain and we are
+    ! simulating a region within this domain. As a minimum, we will
+    ! require one external T point around the whole perimeter of the
+    ! simulated domain in order to specify boundary conditions. The U
+    ! pts on the boundary will then lie between the last external and
+    ! first internal T points. 
+    ! With a (N)E stagger this means:
+
+    ! ji indexing: 
+    ! Lowermost i index of the u points will be the same as the T's.
+    ! i.e. if we start at 1 then T(1,:) are external and u(1,:) are 
+    ! boundary points too.
+    ! However, the U points with ji==nx will lie outside the model
+    ! domain. U points with ji==nx-1 will be the Eastern-most *boundary*
+    ! points.
+    ! jj indexing:
+    ! Lowermost j index of the U points - U pts with jj the same as external T points 
+    ! will also be external to domain and therefore unused. U points with jj one greater 
+    ! than lowest ext. T pts will be *boundary* points. U pts with jj==ny will be 
+    ! boundary points.
 
     ! When updating a quantity on U points with this staggering
-    ! we write to (using 'x' to indicate a location that is written):
+    ! we write to (using 'x' to indicate a location that is written and 'b' a boundary 
+    ! point):
     !
-    ! i=1   i=M
-    !  x  x  x  o 
-    !  x  x  x  o   j=N
-    !  x  x  x  o
-    !  o  o  o  o   j=1
-    !
+    ! i= 1          nx-1  nx
+    !    b   b   b   b    o   ny
+    !    b   x   x   b    o 
+    !    b   x   x   b    o 
+    !    b   x   x   b    o   
+    !    b   b   b   b    o
+    !    o   o   o   o    o   1
+    !                         j
+
     ! i.e. fld(2:M,2:N+1) = ...
 
-    fld%internal%nx = M
-    fld%internal%ny = N
-    fld%internal%xstart = 1
-    fld%internal%xstop  = M
-    fld%internal%ystart = 2
-    fld%internal%ystop  = N+1
+    fld%internal%nx = M - 3
+    fld%internal%ny = N - 3
+    fld%internal%xstart = 2
+    fld%internal%xstop  = M-2
+    fld%internal%ystart = 3
+    fld%internal%ystop  = N-1
+
+    fld%num_halos = 2
+    allocate(fld%halo(fld%num_halos))
+
+    fld%halo(1)%dest%xstart   = 1   ; fld%halo(1)%dest%xstop = 1
+    fld%halo(1)%dest%ystart   = 1   ; fld%halo(1)%dest%ystop = N
+    fld%halo(1)%source%xstart = M+1 ; fld%halo(1)%source%xstop = M+1
+    fld%halo(1)%source%ystart = 1   ; fld%halo(1)%source%ystop = N
+
+    fld%halo(2)%dest%xstart   = 1   ; fld%halo(2)%dest%xstop = M+1
+    fld%halo(2)%dest%ystart   = N+1 ; fld%halo(2)%dest%ystop = N+1
+    fld%halo(2)%source%xstart = 1 ; fld%halo(2)%source%xstop = M+1
+    fld%halo(2)%source%ystart = 1 ; fld%halo(2)%source%ystop = 1
 
   end subroutine cu_ne_init
 
