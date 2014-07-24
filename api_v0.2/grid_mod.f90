@@ -21,6 +21,28 @@ module grid_mod
   !! i,j index (e.g. 'shallow' code)
   integer, public, parameter :: STAGGER_SW = 3
 
+! If our model grid has total extent (i.e. including pts
+! necessary to define the boundaries of the domain) of nx x ny.
+! The type of the the points around the edges of the grid
+! are determined according to the way in which the fields are
+! staggered:
+!
+! e.g. for a NE stagger:
+!
+!     1       2       3.....          nx
+!     V   F                           V    F
+! ny  T   U   T       T       T   U   T    U
+!     V   F   V   F   V   F   V   F   V    F
+!     T       T   U   T   U   T   U   T    U
+!             V   F   V   F   V
+! 3   T       T   U   T   U   T       T
+!             V   F   V   F   V
+! 2   T   U   T   U   T   U   T       T
+!     V   F
+! 1   T   U   T       T       T       T
+!
+! That way, we have nx x ny grids of every grid-point type.
+
   type, public :: grid_type
      !> The type of grid this is (e.g. Arakawa C Grid)
      integer :: name
@@ -203,9 +225,9 @@ contains
     END DO
 
     ! -here is an f-plane testing case
-    grid%gphiu(0:m, 1:n) = 50._wp
-    grid%gphiv(1:m, 0:n) = 50._wp
-    grid%gphif(0:m, 0:n) = 50._wp
+    grid%gphiu(:, :) = 50._wp
+    grid%gphiv(:, :) = 50._wp
+    grid%gphif(:, :) = 50._wp
 
     ! Co-ordinates of the T points
     grid%xt(1,1) = 0.0_wp + 0.5_wp * grid%e1t(1,1)
