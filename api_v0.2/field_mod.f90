@@ -31,7 +31,10 @@ module field_mod
      !> The grid on which this field is defined
      type(grid_type), pointer :: grid
      !> The type of boundary conditions applied to this field
-     integer :: boundary_conditions
+     !! in the x, y and z dimensions. Note that at this stage
+     !! this is really only required for Periodic Boundary
+     !! conditions.
+     integer, dimension(3) :: boundary_conditions
      !> The internal region of this field
      type(region_type) :: internal
      !> The number of halo regions that this field has.
@@ -82,6 +85,31 @@ module field_mod
   public set
   public field_checksum
 
+! Grid points on an Arakawa C grid with NE staggering are arranged like so:
+!
+! v(1,ny)-----f(1,ny)-- -v(i-1,ny)--f(i-1,ny)--v(i,ny)----f(i,ny)-  -v(nx,ny)---f(nx,ny)  
+! |           |          |          |          |          |          |          |        
+! |           |          |          |          |          |          |          |        
+! T[1,ny]-----u(1,ny)-- -T(i-1,ny)--u(i-1,ny)--T(i,ny)----u(i,ny)-  -T(nx,ny)---u(nx,ny)  
+! |           |          |          |          |          |          |          |        
+! |           |          |          |          |          |          |          |        
+! v(1,j)------f(1,j)--- -v(i-1,j)---f(i-1,j)---v(i,j)-----f(i,j)--  -v(nx,j)----f(nx,j)   
+! |           |          |          |          |          |          |          |        
+! |           |          |          |          |          |          |          |        
+! T[1,j]------u(1,j)--- -T(i-1,j)---u(i-1,j)---T(i,j)-----u(i,j)--  -T(nx,j)----u(nx,j)   
+! |           |          |          |          |          |          |          |        
+! |           |          |          |          |          |          |          |        
+! v(1,j-1)----f(1,j-1)- -v(i-1,j-1)-f(i-1,j-1)-v(i,j-1)---f(i,j-1)- -v(nx,j-1)--f(nx,j-1) 
+! |           |          |          |          |          |          |          |        
+! |           |          |          |          |          |          |          |        
+! T[1,j-1]----u(1,j-1)- -T(i-1,j-1)-u(i-1,j-1)-T(i,j-1)---u(i,j-1)- -T(nx,j-1)--u(nx,j-1) 
+! |           |          |          |          |          |          |          |        
+! |           |          |          |          |          |          |          |        
+! v(1,1)------f(1,1)--- -v(i-1,1)---f(i-1,1)---v(i,1)-----f(i,1)--  -v(nx,1)----f(nx,1)   
+! |           |          |          |          |          |          |          |        
+! |           |          |          |          |          |          |          |        
+! T[1,1]      u(1,1)     T(i-1,1)---u(i-1,1)---T(i,1)-----u(i,1)--  -T(nx,1)----u(nx,1)   
+
 contains
 
   !===================================================
@@ -92,11 +120,11 @@ contains
     implicit none
     ! Arguments
     !> Pointer to the grid on which this field lives
-    type(grid_type), intent(in), pointer :: grid_ptr
+    type(grid_type),       intent(in), pointer :: grid_ptr
     !> Which grid-point type the field is defined on
-    integer,         intent(in)          :: grid_points
+    integer,               intent(in)          :: grid_points
     !> The boundary conditions that this field is subject to
-    integer,         intent(in)          :: boundary_conditions
+    integer, dimension(3), intent(in)          :: boundary_conditions
     ! Local declarations
     type(field_type) :: self
 
@@ -115,13 +143,18 @@ contains
     type(grid_type), intent(in), target  :: grid
     !> Which grid-point type the field is defined on
     integer,         intent(in)          :: grid_points
-    !> The boundary conditions that this field is subject to
-    integer,         intent(in)          :: boundary_conditions
+    !> The boundary conditions that this field is subject to in the
+    !! x and y dimensions
+    integer, dimension(2), intent(in)    :: boundary_conditions
     ! Local declarations
     type(r2d_field_type) :: self
     integer :: ierr
 
-    self%boundary_conditions = boundary_conditions
+    self%boundary_conditions(1:2) = boundary_conditions(1:2)
+    ! This is the constructor for a 2D field so we obviously
+    ! don't have any BC's for the 3rd dimension.
+    self%boundary_conditions(3) = BC_NONE
+
     ! Set this field's grid pointer to point to the grid pointed to
     ! by the supplied grid_ptr argument
     self%grid => grid
@@ -148,6 +181,10 @@ contains
     end select
 
 
+    ! Compute and store dimensions of internal region of field
+    self%internal%nx = self%internal%xstop - self%internal%xstart + 1
+    self%internal%ny = self%internal%ystop - self%internal%ystart + 1
+
   end function r2d_field_constructor
 
   !===================================================
@@ -164,8 +201,6 @@ contains
     N = fld%grid%ny
 
     ! An 'all points' field is defined upon every point in the grid
-    fld%internal%nx = M
-    fld%internal%ny = N
     fld%internal%xstart = 1
     fld%internal%xstop  = M
     fld%internal%ystart = 1
@@ -207,8 +242,8 @@ contains
     ! Locals
     integer :: M, N
 
-    M = fld%grid%nx - 1
-    N = fld%grid%ny - 1
+    M = fld%grid%nx
+    N = fld%grid%ny
 
     ! Set up a field defined on U points when the grid has
     ! a South-West staggering:
@@ -225,31 +260,40 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
 
     ! When updating a quantity on U points with this staggering
-    ! we write to (using 'x' to indicate a location that is written):
+    ! we write to (using 'x' to indicate a location that is written,
+    !                    'b' a boundary point and
+    !                    'o' a point that is external to the domain):
     !
-    ! i=1   i=M
-    !  o  o  o  o 
-    !  o  x  x  x   j=N
-    !  o  x  x  x
-    !  o  x  x  x   j=1
+    ! i=1         i=M
+    !  o  b  b  b  b   j=N 
+    !  o  b  x  x  b
+    !  o  b  x  x  b
+    !  o  b  x  x  b
+    !  o  b  b  b  b   j=1
     !
-    ! i.e. fld(2:M+1,1:N) = ...
+    if(fld%boundary_conditions(1) == BC_PERIODIC)then
+       ! When implementing periodic boundary conditions, all
+       ! mesh point types have the same extents as the grid of
+       ! T points. We then have a halo of width 1 on either side
+       ! of the domain.
+       fld%internal%xstart = 2
+       fld%internal%xstop  = M-1
+    else
+       fld%internal%xstart = 3
+       fld%internal%xstop  = M-1
+    end if
 
-    fld%internal%nx = M
-    fld%internal%ny = N
-    fld%internal%xstart = 2
-    fld%internal%xstop  = M+1
-    fld%internal%ystart = 1
-    fld%internal%ystop  = N
+    fld%internal%ystart = 2
+    fld%internal%ystop  = N-1
 
     ! When applying periodic (wrap-around) boundary conditions (PBCs)
-    ! we must fill the regions marked with an 'o' above.
+    ! we must fill the regions marked with 'b' above.
     ! This looks like (using x to indicate a location that is written
     ! first and y a location that is written second):
     !
-    !  i=1   i=M
-    ! _ y  y  y  y 
-    ! /|x  o  o  o   j=N 
+    !  i=2      i=M
+    ! _ y  y  y  y   j=N  
+    ! /|x  o  o  o
     ! | x  o  o  o
     ! \ x  o  o  o
     !  \x_ o  o  o   j=1
@@ -257,21 +301,21 @@ contains
 
     ! In array notation this looks like:
     !
-    ! (1    , 1:N) = (M+1  , 1:N)
-    ! (1:M+1, n+1) = (1:M+1, 1)
+    ! (2    , 1:N-1) = (M  , 1:N-1)
+    ! (2:M, N) = (2:M, 1)
 
     fld%num_halos = 2
     allocate(fld%halo(fld%num_halos))
 
     fld%halo(1)%dest%xstart   = 1   ; fld%halo(1)%dest%xstop = 1
     fld%halo(1)%dest%ystart   = 1   ; fld%halo(1)%dest%ystop = N
-    fld%halo(1)%source%xstart = M+1 ; fld%halo(1)%source%xstop = M+1
+    fld%halo(1)%source%xstart = M-1 ; fld%halo(1)%source%xstop = M-1
     fld%halo(1)%source%ystart = 1   ; fld%halo(1)%source%ystop = N
 
-    fld%halo(2)%dest%xstart   = 1   ; fld%halo(2)%dest%xstop = M+1
-    fld%halo(2)%dest%ystart   = N+1 ; fld%halo(2)%dest%ystop = N+1
-    fld%halo(2)%source%xstart = 1 ; fld%halo(2)%source%xstop = M+1
-    fld%halo(2)%source%ystart = 1 ; fld%halo(2)%source%ystop = 1
+    fld%halo(2)%dest%xstart   = 1 ; fld%halo(2)%dest%xstop = M
+    fld%halo(2)%dest%ystart   = N ; fld%halo(2)%dest%ystop = N
+    fld%halo(2)%source%xstart = 1 ; fld%halo(2)%source%xstop = M
+    fld%halo(2)%source%ystart = 2 ; fld%halo(2)%source%ystop = 2
 
   end subroutine cu_sw_init
 
@@ -288,30 +332,6 @@ contains
 
     ! Set up a field defined on U points when the grid has
     ! a North-East staggering:
-
-    !
-    ! v(1,ny)-----f(1,ny)-- -v(i-1,ny)--f(i-1,ny)--v(i,ny)----f(i,ny)-  -v(nx,ny)---f(nx,ny)  
-    ! |           |          |          |          |          |          |          |        
-    ! |           |          |          |          |          |          |          |        
-    ! T[1,ny]-----u(1,ny)-- -T(i-1,ny)--u(i-1,ny)--T(i,ny)----u(i,ny)-  -T(nx,ny)---u(nx,ny)  
-    ! |           |          |          |          |          |          |          |        
-    ! |           |          |          |          |          |          |          |        
-    ! v(1,j)------f(1,j)--- -v(i-1,j)---f(i-1,j)---v(i,j)-----f(i,j)--  -v(nx,j)----f(nx,j)   
-    ! |           |          |          |          |          |          |          |        
-    ! |           |          |          |          |          |          |          |        
-    ! T[1,j]------u(1,j)--- -T(i-1,j)---u(i-1,j)---T(i,j)-----u(i,j)--  -T(nx,j)----u(nx,j)   
-    ! |           |          |          |          |          |          |          |        
-    ! |           |          |          |          |          |          |          |        
-    ! v(1,j-1)----f(1,j-1)- -v(i-1,j-1)-f(i-1,j-1)-v(i,j-1)---f(i,j-1)- -v(nx,j-1)--f(nx,j-1) 
-    ! |           |          |          |          |          |          |          |        
-    ! |           |          |          |          |          |          |          |        
-    ! T[1,j-1]----u(1,j-1)- -T(i-1,j-1)-u(i-1,j-1)-T(i,j-1)---u(i,j-1)- -T(nx,j-1)--u(nx,j-1) 
-    ! |           |          |          |          |          |          |          |        
-    ! |           |          |          |          |          |          |          |        
-    ! v(1,1)------f(1,1)--- -v(i-1,1)---f(i-1,1)---v(i,1)-----f(i,1)--  -v(nx,1)----f(nx,1)   
-    ! |           |          |          |          |          |          |          |        
-    ! |           |          |          |          |          |          |          |        
-    ! T[1,1]      u(1,1)     T(i-1,1)---u(i-1,1)---T(i,1)-----u(i,1)--  -T(nx,1)----u(nx,1)   
 
     ! It is the T points that define the whole domain and we are
     ! simulating a region within this domain. As a minimum, we will
@@ -343,31 +363,29 @@ contains
     !    b   x   x   b    o 
     !    b   x   x   b    o 
     !    b   x   x   b    o   
-    !    b   b   b   b    o
-    !    o   o   o   o    o   1
+    !    b   b   b   b    o   1
     !                         j
 
     ! i.e. fld(2:M,2:N+1) = ...
 
-    fld%internal%nx = M - 3
-    fld%internal%ny = N - 3
     fld%internal%xstart = 2
     fld%internal%xstop  = M-2
-    fld%internal%ystart = 3
+    fld%internal%ystart = 2
     fld%internal%ystop  = N-1
 
-    fld%num_halos = 2
-    allocate(fld%halo(fld%num_halos))
+!> \todo Is this concept of halo definitions useful?
+    fld%num_halos = 0
+!    allocate(fld%halo(fld%num_halos))
 
-    fld%halo(1)%dest%xstart   = 1   ; fld%halo(1)%dest%xstop = 1
-    fld%halo(1)%dest%ystart   = 1   ; fld%halo(1)%dest%ystop = N
-    fld%halo(1)%source%xstart = M+1 ; fld%halo(1)%source%xstop = M+1
-    fld%halo(1)%source%ystart = 1   ; fld%halo(1)%source%ystop = N
+!    fld%halo(1)%dest%xstart   = 1   ; fld%halo(1)%dest%xstop = 1
+!    fld%halo(1)%dest%ystart   = 1   ; fld%halo(1)%dest%ystop = N
+!    fld%halo(1)%source%xstart = M+1 ; fld%halo(1)%source%xstop = M+1
+!    fld%halo(1)%source%ystart = 1   ; fld%halo(1)%source%ystop = N
 
-    fld%halo(2)%dest%xstart   = 1   ; fld%halo(2)%dest%xstop = M+1
-    fld%halo(2)%dest%ystart   = N+1 ; fld%halo(2)%dest%ystop = N+1
-    fld%halo(2)%source%xstart = 1 ; fld%halo(2)%source%xstop = M+1
-    fld%halo(2)%source%ystart = 1 ; fld%halo(2)%source%ystop = 1
+!    fld%halo(2)%dest%xstart   = 1   ; fld%halo(2)%dest%xstop = M+1
+!    fld%halo(2)%dest%ystart   = N+1 ; fld%halo(2)%dest%ystop = N+1
+!    fld%halo(2)%source%xstart = 1 ; fld%halo(2)%source%xstop = M+1
+!    fld%halo(2)%source%ystart = 1 ; fld%halo(2)%source%ystop = 1
 
   end subroutine cu_ne_init
 
@@ -402,42 +420,50 @@ contains
     ! Locals
     integer :: M, N
 
-    M = fld%grid%nx - 1
-    N = fld%grid%ny - 1
+    M = fld%grid%nx
+    N = fld%grid%ny
 
     ! When updating a quantity on V points we write to:
     ! (using x to indicate a location that is written):
     !
-    ! i=1   i=M
-    !  x  x  x  o 
-    !  x  x  x  o   j=N
-    !  x  x  x  o
+    ! i=1      i=M
+    !  b  b  b  b   j=N 
+    !  b  x  x  b
+    !  b  x  x  b
+    !  b  b  b  b
     !  o  o  o  o   j=1
-    fld%internal%nx = M
-    fld%internal%ny = N
-    fld%internal%xstart = 1
-    fld%internal%xstop  = M
-    fld%internal%ystart = 2
-    fld%internal%ystop  = N+1
+    fld%internal%xstart = 2
+    fld%internal%xstop  = M-1
+    if(fld%boundary_conditions(2) == BC_PERIODIC)then
+       ! When implementing periodic boundary conditions, all
+       ! mesh point types have the same extents as the grid of
+       ! T points. We then have a halo of width 1 on either side
+       ! of the domain.
+       fld%internal%ystart = 2
+       fld%internal%ystop  = N-1
+    else
+       fld%internal%ystart = 3
+       fld%internal%ystop  = N-1
+    endif
 
     ! When applying periodic (wrap-around) boundary conditions (PBCs)
-    ! we must fill the regions marked with an 'o' above.
+    ! we must fill the regions marked with 'b' above.
     ! This looks like (using x to indicate a location that is written
     ! first and y a location that is written second):
     !
-    !  i=1   i=M
-    !  -o  o  o  y 
-    ! / o  o  o  y   j=N 
+    !  i=1     i=M
+    !  -o  o  o  y   j=N  
+    ! / o  o  o  y
     ! | o  o  o  y
     ! \ o  o  o  y
-    !  \x  x  x _y   j=1
+    !  \x  x  x _y   j=2
     !    \______/|
 
     ! In array notation this looks like:
-    ! First row = last row
-    ! field(1:M    ,1:1  ) = field(1:M,NP1:NP1)
-    ! Last col = first col
-    ! field(MP1:MP1,1:NP1) = field(1:1,  1:NP1)
+    ! First row = last internal row
+    ! field(1:M    ,1:1  ) = field(1:M,N-1:N-1)
+    ! Last col = first internal col
+    ! field(M:M,1:N) = field(2:2,  1:N)
 
     fld%num_halos = 2
     ALLOCATE(fld%halo(fld%num_halos))
@@ -445,12 +471,12 @@ contains
     fld%halo(1)%dest%xstart = 1   ; fld%halo(1)%dest%xstop = M
     fld%halo(1)%dest%ystart = 1   ; fld%halo(1)%dest%ystop = 1
     fld%halo(1)%source%xstart  = 1   ; fld%halo(1)%source%xstop  = M
-    fld%halo(1)%source%ystart  = N+1 ; fld%halo(1)%source%ystop  = N+1
+    fld%halo(1)%source%ystart  = N-1 ; fld%halo(1)%source%ystop  = N-1
 
-    fld%halo(2)%dest%xstart = M+1 ; fld%halo(2)%dest%xstop = M+1
-    fld%halo(2)%dest%ystart = 1   ; fld%halo(2)%dest%ystop = N+1
-    fld%halo(2)%source%xstart  = 1   ; fld%halo(2)%source%xstop  = 1
-    fld%halo(2)%source%ystart  = 1   ; fld%halo(2)%source%ystop  = N+1
+    fld%halo(2)%dest%xstart = M ; fld%halo(2)%dest%xstop = M
+    fld%halo(2)%dest%ystart = 1   ; fld%halo(2)%dest%ystop = N
+    fld%halo(2)%source%xstart  = 2   ; fld%halo(2)%source%xstop  = 2
+    fld%halo(2)%source%ystart  = 1   ; fld%halo(2)%source%ystop  = N
 
   end subroutine cv_sw_init
 
@@ -462,26 +488,38 @@ contains
     ! Locals
     integer :: M, N
 
-    M = fld%grid%nx - 1
-    N = fld%grid%ny - 1
+    M = fld%grid%nx
+    N = fld%grid%ny
+
+    ! ji indexing:
+    ! Lowermost ji index of the V points will be the same as the T's.
+    ! If the domain starts at 1 then T(1,:) are external and v(1,:)
+    ! are boundary points.
+    ! Uppermost ji index is nx. T(nx,:) are external and v(nx,:)
+    ! are boundary points.
+
+    ! jj indexing:
+    ! If domain starts at 1 then T(:,1) are external and V(:,1) are
+    ! boundary points.
+    ! Uppermost jj index is ny. T(ny,:) are external and so are V(ny,:)
+    ! (see diagram at start of module). It is V(ny-1,:) that are the 
+    ! boundary points.
 
     ! When updating a quantity on V points with this staggering
     ! we write to (using 'x' to indicate a location that is written):
     !
-    ! i=1   i=M
-    !  o  o  o  o 
-    !  o  x  x  x   j=N
-    !  o  x  x  x
-    !  o  x  x  x   j=1
+    ! i=1       Nx
+    !  o  o  o  o   Ny
+    !  b  b  b  b   Ny-1
+    !  b  x  x  b
+    !  b  x  x  b
+    !  b  b  b  b   j=1
     !
-    ! i.e. fld(2:M+1,1:N) = ...
 
-    fld%internal%nx = M
-    fld%internal%ny = N
     fld%internal%xstart = 2
-    fld%internal%xstop  = M+1
-    fld%internal%ystart = 1
-    fld%internal%ystop  = N
+    fld%internal%xstop  = M-1
+    fld%internal%ystart = 2
+    fld%internal%ystop  = N-2
 
   end subroutine cv_ne_init
 
@@ -516,33 +554,31 @@ contains
     ! Locals
     integer :: M, N
 
-    M = fld%grid%nx - 1
-    N = fld%grid%ny - 1
+    M = fld%grid%nx
+    N = fld%grid%ny
 
     ! When updating a quantity on T points we write to:
     ! (using x to indicate a location that is written):
     !
-    ! i=1   i=M
-    !  o  o  o  o 
-    !  x  x  x  o   j=N
-    !  x  x  x  o
-    !  x  x  x  o   j=1
-    fld%internal%nx = M
-    fld%internal%ny = N
+    ! i=1      i=M
+    !  b  b  b  b   j=N 
+    !  b  x  x  b
+    !  b  x  x  b
+    !  b  b  b  b   j=1
 
-    fld%internal%xstart = 1
-    fld%internal%xstop  = M
-    fld%internal%ystart = 1
-    fld%internal%ystop  = N
+    fld%internal%xstart = 2
+    fld%internal%xstop  = M-1
+    fld%internal%ystart = 2
+    fld%internal%ystop  = N-1
 
     ! When applying periodic (wrap-around) boundary conditions
-    ! (PBCs) we must fill the regions marked with an 'o' above.
+    ! (PBCs) we must fill the regions marked with 'b' above.
     ! This looks like (using x to indicate a location that is 
     ! written first and y a location that is written second):
     !
-    !  i=1   i=M
-    ! _ y  y  y  y 
-    ! /|o  o  o  x   j=N 
+    !  i=1      i=M
+    ! _ y  y  y  y   j=N  
+    ! /|o  o  o  x
     ! | o  o  o  x
     ! \ o  o  o  x
     !  \o  o  o _x   j=1
@@ -550,22 +586,22 @@ contains
 
     ! In array notation this looks like:
     ! Last col = first col
-    ! field(MP1:MP1,  1:N  ) = field(1:1  ,1:N)
+    ! field(M:M,  1:N-1  ) = field(1:1  ,1:N-1)
     ! Last row = first row
-    ! field(1  :MP1,NP1:NP1) = field(1:MP1,1:1)
+    ! field(1:M,N:N) = field(1:M,1:1)
 
     fld%num_halos = 2
     ALLOCATE( fld%halo(fld%num_halos) )
 
-    fld%halo(1)%dest%xstart = M+1 ; fld%halo(1)%dest%xstop = M+1
-    fld%halo(1)%dest%ystart = 1   ; fld%halo(1)%dest%ystop = N
-    fld%halo(1)%source%xstart  = 1   ; fld%halo(1)%source%xstop  = 1
-    fld%halo(1)%source%ystart  = 1   ; fld%halo(1)%source%ystop  = N
+    fld%halo(1)%dest%xstart = M ; fld%halo(1)%dest%xstop = M
+    fld%halo(1)%dest%ystart = 1   ; fld%halo(1)%dest%ystop = N-1
+    fld%halo(1)%source%xstart  = 2   ; fld%halo(1)%source%xstop  = 2
+    fld%halo(1)%source%ystart  = 1   ; fld%halo(1)%source%ystop  = N-1
 
-    fld%halo(2)%dest%xstart = 1   ; fld%halo(2)%dest%xstop = M+1
-    fld%halo(2)%dest%ystart = N+1 ; fld%halo(2)%dest%ystop = N+1
-    fld%halo(2)%source%xstart  = 1   ; fld%halo(2)%source%xstop  = M+1
-    fld%halo(2)%source%ystart  = 1   ; fld%halo(2)%source%ystop  = 1
+    fld%halo(2)%dest%xstart = 1   ; fld%halo(2)%dest%xstop = M
+    fld%halo(2)%dest%ystart = N ; fld%halo(2)%dest%ystop = N
+    fld%halo(2)%source%xstart  = 1   ; fld%halo(2)%source%xstop  = M
+    fld%halo(2)%source%ystart  = 2   ; fld%halo(2)%source%ystop  = 2
 
   end subroutine ct_sw_init
 
@@ -577,24 +613,30 @@ contains
     ! Locals
     integer :: M, N
 
-    M = fld%grid%nx - 1
-    N = fld%grid%ny - 1
+    M = fld%grid%nx
+    N = fld%grid%ny
+
+    ! The mesh of T points defines the simulation domain. 
+    ! Currently we assume a shell of thickness one around the actual
+    ! simulation domain - this is the minimum required to specify
+    ! boundary conditions.
 
     ! When updating a quantity on T points with a NE staggering
     ! we write to (using x to indicate a location that is written):
     !
-    ! i=1   i=M
-    !  o  x  x  x 
-    !  o  x  x  x   j=N
-    !  o  x  x  x
-    !  o  o  o  o   j=1
-    fld%internal%nx = M
-    fld%internal%ny = N
+    ! i=1          Nx
+    !  b  b  b  b  b Ny
+    !  b  x  x  x  b
+    !  b  x  x  x  b 
+    !  b  x  x  x  b
+    !  b  b  b  b  b j=1
+    fld%internal%nx = M-2
+    fld%internal%ny = N-2
 
     fld%internal%xstart = 2
-    fld%internal%xstop  = M+1
+    fld%internal%xstop  = M-1
     fld%internal%ystart = 2
-    fld%internal%ystop  = N+1
+    fld%internal%ystop  = N-1
 
   end subroutine ct_ne_init
 
@@ -629,55 +671,65 @@ contains
     ! Locals
     integer :: M, N
 
-    M = fld%grid%nx - 1
-    N = fld%grid%ny - 1
+    M = fld%grid%nx
+    N = fld%grid%ny
 
     ! When updating a quantity on F points we write to:
     ! (using x to indicate a location that is written):
     !
-    ! i=1   i=M
-    !  o  x  x  x 
-    !  o  x  x  x   j=N
-    !  o  x  x  x
-    !  o  o  o  o   j=1
-    fld%internal%nx = M
-    fld%internal%ny = N
-    fld%internal%xstart = 2
-    fld%internal%xstop  = M+1
-    fld%internal%ystart = 2
-    fld%internal%ystop  = N+1
+    ! i=1         i=M
+    !  o  b  b  b  b   j=N 
+    !  o  b  x  x  b
+    !  o  b  x  x  b
+    !  o  b  b  b  b
+    !  o  o  o  o  o   j=1
+    if(fld%boundary_conditions(1) == BC_PERIODIC)then
+       fld%internal%xstart = 2
+       fld%internal%xstop  = M-1
+    else
+       fld%internal%xstart = 3
+       fld%internal%xstop  = M-1
+    end if
+
+    if(fld%boundary_conditions(2) == BC_PERIODIC)then
+       fld%internal%ystart = 2
+       fld%internal%ystop  = N-1
+    else
+       fld%internal%ystart = 3
+       fld%internal%ystop  = N-1
+    end if
 
     ! When applying periodic (wrap-around) boundary conditions
-    ! (PBCs) we must fill the regions marked with an 'o' above.
+    ! (PBCs) we must fill the regions marked with 'b' above.
     ! This looks like (using x to indicate a location that is 
     ! written first and y a location that is written second):
     !
-    !  i=1   i=M
-    ! .-x  o  o  o 
-    ! | x  o  o  o   j=N 
+    !  i=2      i=M
+    ! .-x  o  o  o   j=N  
     ! | x  o  o  o
     ! | x  o  o  o
-    ! ->y_ y  y  y   j=1
+    ! | x  o  o  o
+    ! ->y_ y  y  y   j=2
     !   |\______/ 
 
     ! In array notation this looks like:
     ! First col = last col
-    ! field(1:1  ,2:NP1) = field(MP1:MP1,  2:NP1)
+    ! field(2:2, 2:N) = field(M:M, 2:N)
     ! First row = last row
-    ! field(1:MP1,1:1  ) = field(  1:MP1,NP1:NP1)
+    ! field(2:M, 2:2) = field(2:M, N:N)
 
     fld%num_halos = 2
     ALLOCATE( fld%halo(fld%num_halos) )
 
     fld%halo(1)%dest%xstart = 1   ; fld%halo(1)%dest%xstop = 1
-    fld%halo(1)%dest%ystart = 2   ; fld%halo(1)%dest%ystop = N+1
-    fld%halo(1)%source%xstart  = M+1 ; fld%halo(1)%source%xstop  = M+1
-    fld%halo(1)%source%ystart  = 2   ; fld%halo(1)%source%ystop  = N+1
+    fld%halo(1)%dest%ystart = 1   ; fld%halo(1)%dest%ystop = N
+    fld%halo(1)%source%xstart  = M-1 ; fld%halo(1)%source%xstop  = M-1
+    fld%halo(1)%source%ystart  = 1   ; fld%halo(1)%source%ystop  = N
 
-    fld%halo(2)%dest%xstart = 1   ; fld%halo(2)%dest%xstop = M+1
+    fld%halo(2)%dest%xstart = 1   ; fld%halo(2)%dest%xstop = M
     fld%halo(2)%dest%ystart = 1   ; fld%halo(2)%dest%ystop = 1
-    fld%halo(2)%source%xstart  = 1   ; fld%halo(2)%source%xstop  = M+1
-    fld%halo(2)%source%ystart  = N+1 ; fld%halo(2)%source%ystop  = N+1
+    fld%halo(2)%source%xstart  = 1  ; fld%halo(2)%source%xstop  = M
+    fld%halo(2)%source%ystart  = N-1 ; fld%halo(2)%source%ystop  = N-1
 
   end subroutine cf_sw_init
 
@@ -689,25 +741,25 @@ contains
     ! Locals
     integer :: M, N
 
-    M = fld%grid%nx - 1
-    N = fld%grid%ny - 1
+    M = fld%grid%nx
+    N = fld%grid%ny
 
     ! When updating a quantity on F points we write to:
-    ! (using x to indicate a location that is written):
+    ! (using x to indicate a location that is written
+    !        b a boundary point - defined by ext. b.c.
+    !        o a point that is external to the domain):
     !
-    ! i=1   i=M
-    !  o  o  o  o 
-    !  x  x  x  o   j=N
-    !  x  x  x  o
-    !  x  x  x  o   j=1
-    fld%internal%nx = M
-    fld%internal%ny = N
+    ! i=1       Nx
+    !  o  o  o  o   Ny
+    !  b  b  b  o   
+    !  b  x  b  o   
+    !  b  x  b  o
+    !  b  b  b  o   j=1
 
-    fld%internal%xstart = 1
-    fld%internal%xstop  = M
-    fld%internal%ystart = 1
-    fld%internal%ystop  = N
-
+    fld%internal%xstart = 2
+    fld%internal%xstop  = M-2
+    fld%internal%ystart = 2
+    fld%internal%ystop  = N-2
 
   end subroutine cf_ne_init
 
@@ -807,7 +859,8 @@ contains
     type(r2d_field_type), intent(in) :: field
     real(wp) :: val
 
-    val = SUM(field%data)
+    val = SUM(field%data(field%internal%xstart:field%internal%xstop, &
+                         field%internal%ystart:field%internal%ystop))
 
   end function field_checksum
 

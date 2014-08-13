@@ -51,10 +51,10 @@ module grid_mod
      integer :: stagger
      !> Total number of grid points
      integer :: npts
-     !> Extent of grid in x. Note that this is the whole grid,
+     !> Extent of T-point grid in x. Note that this is the whole grid,
      !! not just the region that is simulated.
      integer :: nx
-     !> Extent of grid in y. Note that this is the whole grid,
+     !> Extent of T-point grid in y. Note that this is the whole grid,
      !! not just the region that is simulated.
      integer :: ny
      !> Grid spacing in x (m)
@@ -213,12 +213,12 @@ contains
     end do
   
     DO jj = 1, n
-       DO ji = 0, m
+       DO ji = 1, m
           grid%e12u(ji,jj) = grid%e1u(ji,jj) * grid%e2u(ji,jj)
        END DO
     END DO
 
-    DO jj = 0, n
+    DO jj = 1, n
        DO ji = 1, m
           grid%e12v(ji,jj) = grid%e1v(ji,jj) * grid%e2v(ji,jj)
        END DO
@@ -233,10 +233,12 @@ contains
     grid%xt(1,1) = 0.0_wp + 0.5_wp * grid%e1t(1,1)
     grid%yt(1,1) = 0.0_wp + 0.5_wp * grid%e2t(1,1)
 
+    !> \todo Look-up these loop bounds!
     DO ji = 2, m
       grid%xt(ji,1:n) = grid%xt(ji-1, 1:n) + grid%dx
     END DO
             
+    !> \todo Look-up these loop bounds!
     DO jj = 2, n
       grid%yt(1:m,jj) = grid%yt(1:m, jj-1) + grid%dy
     END DO
