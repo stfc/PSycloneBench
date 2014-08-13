@@ -82,53 +82,53 @@ program shallow
   ! Create fields on this grid
   p_fld    = r2d_field_type(model_grid, &
                             T_POINTS,   &
-                            BC_PERIODIC)
+                            (/BC_PERIODIC,BC_PERIODIC/))
   pold_fld = r2d_field_type(model_grid, &
                             T_POINTS,   &
-                            BC_PERIODIC)
+                            (/BC_PERIODIC,BC_PERIODIC/))
   pnew_fld = r2d_field_type(model_grid, &
                             T_POINTS,   &
-                            BC_PERIODIC)
+                            (/BC_PERIODIC,BC_PERIODIC/))
 
   u_fld    = r2d_field_type(model_grid, &
                             U_POINTS,   &
-                            BC_PERIODIC)
+                            (/BC_PERIODIC,BC_PERIODIC/))
   uold_fld = r2d_field_type(model_grid, &
                             U_POINTS,   &
-                            BC_PERIODIC)
+                            (/BC_PERIODIC,BC_PERIODIC/))
   unew_fld = r2d_field_type(model_grid, &
                             U_POINTS,   &
-                            BC_PERIODIC)
+                            (/BC_PERIODIC,BC_PERIODIC/))
 
   v_fld    = r2d_field_type(model_grid, &
                             V_POINTS,   &
-                            BC_PERIODIC)
+                            (/BC_PERIODIC,BC_PERIODIC/))
   vold_fld = r2d_field_type(model_grid, &
                             V_POINTS,   &
-                            BC_PERIODIC)
+                            (/BC_PERIODIC,BC_PERIODIC/))
   vnew_fld = r2d_field_type(model_grid, &
                             V_POINTS,   &
-                            BC_PERIODIC)
+                            (/BC_PERIODIC,BC_PERIODIC/))
 
   cu_fld = r2d_field_type(model_grid, &
                           U_POINTS,   &
-                          BC_PERIODIC)
+                          (/BC_PERIODIC,BC_PERIODIC/))
 
   cv_fld = r2d_field_type(model_grid, &
                           V_POINTS,   &
-                          BC_PERIODIC)
+                          (/BC_PERIODIC,BC_PERIODIC/))
 
   z_fld = r2d_field_type(model_grid, &
                          F_POINTS,   &
-                         BC_PERIODIC)
+                         (/BC_PERIODIC,BC_PERIODIC/))
 
   h_fld = r2d_field_type(model_grid, &
                          T_POINTS,   &
-                         BC_PERIODIC)
+                         (/BC_PERIODIC,BC_PERIODIC/))
 
   psi_fld = r2d_field_type(model_grid,   &
-                           ALL_POINTS,   &
-                           BC_NONE)
+                           T_POINTS,   &
+                           (/BC_NONE,BC_NONE/))
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
@@ -141,6 +141,7 @@ program shallow
   CALL init_initial_condition_params(p_fld)
   CALL invoke_init_stream_fn_kernel(psi_fld)
   CALL init_pressure(p_fld)
+  CALL manual_invoke_apply_bcs(p_fld)
 
   !     INITIALIZE VELOCITIES
  

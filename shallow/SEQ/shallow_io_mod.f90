@@ -130,25 +130,37 @@ contains
     real(kind=wp), dimension(:,:), pointer :: p, u, v
     INTEGER :: m, n
 
-    u => ufld%data
-    v => vfld%data
-    p => pfld%data
+    u => ufld%data(ufld%internal%xstart:ufld%internal%xstop, &
+                   ufld%internal%ystart:ufld%internal%ystop)
+
+    v => vfld%data(vfld%internal%xstart:vfld%internal%xstop, &
+                   vfld%internal%ystart:vfld%internal%ystop)
+
+    p => pfld%data(pfld%internal%xstart:pfld%internal%xstop, &
+                   pfld%internal%ystart:pfld%internal%ystop)
+
 
     IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
 
-       CALL print_diagonals(p, u, v)
+       !CALL print_diagonals(p, u, v)
     
-       m = SIZE(p, 1) - 1
-       n = SIZE(p, 2) - 1
+       m = ufld%internal%nx
+       n = ufld%internal%ny
 
        !           Append calculated values of p, u, and v to netCDF file
        istart(3) = ncycle/mprint + 1
        t_val = ncycle
 
        !           Shape of record to be written (one ncycle at a time)
-       call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
-       call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
-       call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
+       call my_ncwrite(ncid,p_id,istart,icount, &
+                       p, &
+                       m,n,t_id,t_val)
+       call my_ncwrite(ncid,u_id,istart,icount, &
+                       u, &
+                       m,n,t_id,t_val)
+       call my_ncwrite(ncid,v_id,istart,icount, &
+                       v, &
+                       m,n,t_id,t_val)
     END IF
 
   END SUBROUTINE model_write

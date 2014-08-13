@@ -85,6 +85,12 @@ CONTAINS
 
     CALL read_namelist(m,n,itmax)
 
+    ! Assume the namelist specifies the extent of the
+    ! internal domain so allow for boundaries/halos used
+    ! to implement periodic boundary conditions.
+    m = m + 2
+    n = n + 2
+
     ! Set up mesh parameters
     CALL grid_init(grid, m, n, dxloc, dyloc)
 
@@ -95,7 +101,7 @@ CONTAINS
     CALL time_smooth_init(alpha_loc)
 
     ! Initialise model IO 'system'
-    CALL model_write_init(m,n)
+    CALL model_write_init(m-2,n-2)
 
     ! Log model parameters
     CALL print_initial_values(m,n,dxloc,dyloc, dt%data, alpha_loc)

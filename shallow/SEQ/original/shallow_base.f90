@@ -178,6 +178,12 @@
          WRITE(6,393) (V(I,I),I=1,MNMIN)
  393     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF V ' //,(8E15.6))
 
+         ! Generate and output checksums of initial fields
+         write(*,"('psi initial CHECKSUM = ',E15.7)")  sum(psi(1:m,1:n))
+         write(*,"('P initial CHECKSUM = ',E15.7)")    sum(p(1:m,1:n))
+         write(*,"('U initial CHECKSUM = ',E15.7)")    sum(u(2:M+1,1:N))
+         write(*,"('V initial CHECKSUM = ',E15.7)")    sum(v(1:m,2:N+1))
+
 !        Write intial values of p, u, and v into a netCDF file   
          t_val = 0   
          call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)

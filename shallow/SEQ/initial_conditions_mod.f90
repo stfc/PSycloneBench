@@ -51,24 +51,28 @@ CONTAINS
     DO J=1, idim2
       DO I=1, idim1
 
-        CALL init_stream_fn_code(i, j, psifld%data)
+        CALL init_stream_fn_code(i, j, &
+                                 psifld%internal%xstart, & 
+                                 psifld%internal%ystart, &
+                                 psifld%data)
 
       END DO
     END DO
 
   CONTAINS
 
-    SUBROUTINE init_stream_fn_code(i, j, psi)
+    SUBROUTINE init_stream_fn_code(i, j, istart, jstart, psi)
       IMPLICIT none
       !> The grid point (column) to act on
       INTEGER,      INTENT(in)                  :: i, j
+      INTEGER,      INTENT(in)                  :: istart, jstart
       !> Array holding the stream function values
       REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: psi
 
       ! di = 2Pi/(Extent of mesh in x)
       ! dj = 2Pi/(Extent of mesh in y)
 
-      PSI(I,J) = A*SIN((I-.5)*DI)*SIN((J-.5)*DJ)
+      PSI(I,J) = A*SIN((I-istart+.5)*DI)*SIN((J-jstart+.5)*DJ)
 
     END SUBROUTINE init_stream_fn_code
 
@@ -104,10 +108,12 @@ CONTAINS
     ! offset from pressure but this not dealt with that
     ! explicitly. Only field(1:m,1:n) is sent to be
     ! written to the netcdf file.
-    DO J=1,idim2
-       DO I=1,idim1
-          P(I,J) = PCF*(COS(2.*(I-1)*DI)   & 
-               +COS(2.*(J-1)*DJ))+50000.
+!    DO J=1,idim2
+!       DO I=1,idim1
+    DO J=pfld%internal%ystart, pfld%internal%ystop
+       DO I=pfld%internal%xstart, pfld%internal%xstop
+          P(I,J) = PCF*(COS(2.*(I-pfld%internal%xstart)*DI)   & 
+               +COS(2.*(J-pfld%internal%ystart)*DJ))+50000.
        END DO
     END DO
 
