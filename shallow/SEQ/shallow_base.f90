@@ -127,8 +127,8 @@ program shallow
                          (/BC_PERIODIC,BC_PERIODIC/))
 
   psi_fld = r2d_field_type(model_grid,   &
-                           T_POINTS,   &
-                           (/BC_NONE,BC_NONE/))
+                           F_POINTS,   &
+                           (/BC_PERIODIC,BC_PERIODIC/))
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
