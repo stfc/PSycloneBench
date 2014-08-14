@@ -187,8 +187,12 @@
 !        Write intial values of p, u, and v into a netCDF file   
          t_val = 0   
          call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
-         call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
-         call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
+         call my_ncwrite(ncid,u_id,istart,icount,u(2:m+1,1:n),m,n,t_id,t_val)
+         call my_ncwrite(ncid,v_id,istart,icount,v(1:m,2:n+1),m,n,t_id,t_val)
+         call ascii_write(m+1,n+1,2,1,u,'u_array.dat')
+         call ascii_write(m+1,n+1,1,2,v,'v_array.dat')
+         call ascii_write(m+1,n+1,1,1,p,'p_array.dat')
+         call ascii_write(m+1,n+1,1,1,psi,'psi_array.dat')
       ENDIF
 
 !     Start timer
@@ -335,8 +339,8 @@
 
 !           Shape of record to be written (one ncycle at a time)
             call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
-            call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
-            call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
+            call my_ncwrite(ncid,u_id,istart,icount,u(2:m+1,1:n),m,n,t_id,t_val)
+            call my_ncwrite(ncid,v_id,istart,icount,v(1:m,2:n+1),m,n,t_id,t_val)
 
          endif
 
@@ -575,3 +579,30 @@
 
       end subroutine my_ncwrite
 
+    subroutine ascii_write(m, n, xstart, ystart, var, fname)
+      implicit none
+      integer, intent(in) :: m, n
+      integer, intent(in) :: xstart, ystart
+      real(8), dimension(m,n), intent(in) :: var
+      character(len=*), intent(in) :: fname
+      ! Locals
+      integer :: ji, jj
+      integer, parameter :: iounit = 24
+
+      open(unit=iounit, file=TRIM(ADJUSTL(fname)), status='unknown', &
+           action='write', iostat=ji)
+      if( ji /= 0 )then
+         write (*,*) 'ascii_write: ERROR: failed to open file'
+         return
+      end if
+
+      do jj=1, n, 1
+         do ji=1, m, 1
+            write(iounit,*) ji-xstart+1, jj-ystart+1, var(ji,jj)
+         end do
+         write(iounit,*)
+      end do
+
+      close(unit=iounit)
+
+    end subroutine ascii_write
