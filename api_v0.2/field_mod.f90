@@ -630,8 +630,6 @@ contains
     !  b  x  x  x  b 
     !  b  x  x  x  b
     !  b  b  b  b  b j=1
-    fld%internal%nx = M-2
-    fld%internal%ny = N-2
 
     fld%internal%xstart = 2
     fld%internal%xstop  = M-1
