@@ -259,17 +259,6 @@ contains
     !   |        |       |       |
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
 
-    ! When updating a quantity on U points with this staggering
-    ! we write to (using 'x' to indicate a location that is written,
-    !                    'b' a boundary point and
-    !                    'o' a point that is external to the domain):
-    !
-    ! i=1         i=M
-    !  o  b  b  b  b   j=N 
-    !  o  b  x  x  b
-    !  o  b  x  x  b
-    !  o  b  x  x  b
-    !  o  b  b  b  b   j=1
     !
     if(fld%boundary_conditions(1) == BC_PERIODIC)then
        ! When implementing periodic boundary conditions, all
@@ -279,6 +268,17 @@ contains
        fld%internal%xstart = 2
        fld%internal%xstop  = M-1
     else
+       ! When updating a quantity on U points with this staggering
+       ! we write to (using 'x' to indicate a location that is written,
+       !                    'b' a boundary point and
+       !                    'o' a point that is external to the domain):
+       !
+       ! i=1         i=M
+       !  o  b  b  b  b   j=N 
+       !  o  b  x  x  b
+       !  o  b  x  x  b
+       !  o  b  x  x  b
+       !  o  b  b  b  b   j=1
        fld%internal%xstart = 3
        fld%internal%xstop  = M-1
     end if
