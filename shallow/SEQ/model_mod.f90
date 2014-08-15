@@ -88,6 +88,8 @@ CONTAINS
     ! Assume the namelist specifies the extent of the
     ! internal domain so allow for boundaries/halos used
     ! to implement periodic boundary conditions.
+    !> \todo this addition of extra rows/cols should be
+    !! handled by the infrastructure.
     m = m + 2
     n = n + 2
 
