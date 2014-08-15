@@ -103,13 +103,6 @@ CONTAINS
 
     ! di = 2Pi/(Extent of mesh in x)
     ! dj = 2Pi/(Extent of mesh in y)
-    ! Fields have one extra row and column than the mesh
-    ! extent. Presumably because e.g. velocity fields are
-    ! offset from pressure but this not dealt with that
-    ! explicitly. Only field(1:m,1:n) is sent to be
-    ! written to the netcdf file.
-!    DO J=1,idim2
-!       DO I=1,idim1
     DO J=pfld%internal%ystart, pfld%internal%ystop
        DO I=pfld%internal%xstart, pfld%internal%xstop
           P(I,J) = PCF*(COS(2.*(I-pfld%internal%xstart)*DI)   & 
@@ -138,11 +131,14 @@ CONTAINS
     ! dy is a property of the mesh
     dy = ufld%grid%dy
 
-!    do J=1,N
-!       do I=1,M+1
     do J=ufld%internal%ystart,ufld%internal%ystop
        do I=ufld%internal%xstart,ufld%internal%xstop
-          U(I,J) = -(PSI(I,J+1)-PSI(I,J))/dy
+          ! Have to shift i right by one because psi is defined on f points
+          ! which have xstart=2. This means it is shifted right relative
+          ! to U points in original shallow which already had a halo at
+          ! x=1. This ensures initial conditions are identical to those
+          ! in original 'shallow.'
+          U(I,J) = -(PSI(I+1,J+1)-PSI(I+1,J))/dy
        end do
     end do
 
@@ -168,7 +164,6 @@ CONTAINS
     DO J=vfld%internal%ystart, vfld%internal%ystop
        DO I=vfld%internal%xstart, vfld%internal%xstop
           call init_velocity_v_code(i,j,dx,v,psi)
-!          V(I,J) = (PSI(I+1,J)-PSI(I,J))/DX
        END DO
     END DO
 
@@ -181,7 +176,12 @@ CONTAINS
       real(kind=wp), dimension(:,:), intent(out) :: v
       real(kind=wp), dimension(:,:), intent(in)  :: psi
 
-      V(I,J) = (PSI(I+1,J)-PSI(I,J))/DX
+      ! Have to shift j up by one because psi is defined on f points
+      ! which have ystart=2. This means it is shifted upwards relative
+      ! to V points in original shallow which already had a halo at
+      ! y=1. This ensures initial conditions are identical to those
+      ! in original 'shallow.'
+      V(I,J) = (PSI(I+1,J+1)-PSI(I,J+1))/DX
 
     end subroutine init_velocity_v_code
 
