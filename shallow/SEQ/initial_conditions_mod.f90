@@ -85,26 +85,24 @@ CONTAINS
     type(r2d_field_type), target, intent(inout) :: pfld
     REAL(KIND=wp), DIMENSION(:,:), pointer :: p
     ! Locals
-    INTEGER :: idim1, idim2
     INTEGER :: i, j
     !> Extent in x of model domain
     REAL(wp) :: el
-    !> Computed amplitude of initial osciallations in
+    !> Computed amplitude of initial oscillations in
     !! pressure field.
     REAL(wp) :: pcf
 
     p => pfld%data
-
-    idim1 = pfld%grid%nx
-    idim2 = pfld%grid%ny
 
     EL = pfld%internal%nx * pfld%grid%dx
     PCF = PI*PI*A*A/(EL*EL)
 
     ! di = 2Pi/(Extent of mesh in x)
     ! dj = 2Pi/(Extent of mesh in y)
-    DO J=pfld%internal%ystart, pfld%internal%ystop
-       DO I=pfld%internal%xstart, pfld%internal%xstop
+!    DO J=pfld%internal%ystart, pfld%internal%ystop
+!       DO I=pfld%internal%xstart, pfld%internal%xstop
+    DO J=1, pfld%grid%ny
+       DO I=1, pfld%grid%nx
           P(I,J) = PCF*(COS(2.*(I-pfld%internal%xstart)*DI)   & 
                +COS(2.*(J-pfld%internal%ystart)*DJ))+50000.
        END DO
