@@ -304,18 +304,22 @@ contains
     ! (2    , 1:N-1) = (M  , 1:N-1)
     ! (2:M, N) = (2:M, 1)
 
-    fld%num_halos = 2
-    allocate(fld%halo(fld%num_halos))
+!!$    fld%num_halos = 2
+!!$    allocate(fld%halo(fld%num_halos))
+!!$
+!!$    fld%halo(1)%dest%xstart   = 1   ; fld%halo(1)%dest%xstop = 1
+!!$    fld%halo(1)%dest%ystart   = 1   ; fld%halo(1)%dest%ystop = N-1
+!!$    fld%halo(1)%source%xstart = fld%internal%xstop 
+!!$    fld%halo(1)%source%xstop  = fld%internal%xstop
+!!$    fld%halo(1)%source%ystart = 1   ; fld%halo(1)%source%ystop = N-1
+!!$
+!!$    fld%halo(2)%dest%xstart   = 1 ; fld%halo(2)%dest%xstop = M
+!!$    fld%halo(2)%dest%ystart   = N ; fld%halo(2)%dest%ystop = N
+!!$    fld%halo(2)%source%xstart = 1 ; fld%halo(2)%source%xstop = M
+!!$    fld%halo(2)%source%ystart = fld%internal%ystart
+!!$    fld%halo(2)%source%ystop  = fld%internal%ystart
 
-    fld%halo(1)%dest%xstart   = 1   ; fld%halo(1)%dest%xstop = 1
-    fld%halo(1)%dest%ystart   = 1   ; fld%halo(1)%dest%ystop = N
-    fld%halo(1)%source%xstart = M-1 ; fld%halo(1)%source%xstop = M-1
-    fld%halo(1)%source%ystart = 1   ; fld%halo(1)%source%ystop = N
-
-    fld%halo(2)%dest%xstart   = 1 ; fld%halo(2)%dest%xstop = M
-    fld%halo(2)%dest%ystart   = N ; fld%halo(2)%dest%ystop = N
-    fld%halo(2)%source%xstart = 1 ; fld%halo(2)%source%xstop = M
-    fld%halo(2)%source%ystart = 2 ; fld%halo(2)%source%ystop = 2
+    call init_periodic_bc_halos(fld)
 
   end subroutine cu_sw_init
 
@@ -465,18 +469,20 @@ contains
     ! Last col = first internal col
     ! field(M:M,1:N) = field(2:2,  1:N)
 
-    fld%num_halos = 2
-    ALLOCATE(fld%halo(fld%num_halos))
+!!$    fld%num_halos = 2
+!!$    ALLOCATE(fld%halo(fld%num_halos))
+!!$
+!!$    fld%halo(1)%dest%xstart = 1   ; fld%halo(1)%dest%xstop = M-1
+!!$    fld%halo(1)%dest%ystart = 1   ; fld%halo(1)%dest%ystop = 1
+!!$    fld%halo(1)%source%xstart  = 1   ; fld%halo(1)%source%xstop  = M-1
+!!$    fld%halo(1)%source%ystart  = N-1 ; fld%halo(1)%source%ystop  = N-1
+!!$
+!!$    fld%halo(2)%dest%xstart = M ; fld%halo(2)%dest%xstop = M
+!!$    fld%halo(2)%dest%ystart = 1   ; fld%halo(2)%dest%ystop = N
+!!$    fld%halo(2)%source%xstart  = 2   ; fld%halo(2)%source%xstop  = 2
+!!$    fld%halo(2)%source%ystart  = 1   ; fld%halo(2)%source%ystop  = N
 
-    fld%halo(1)%dest%xstart = 1   ; fld%halo(1)%dest%xstop = M
-    fld%halo(1)%dest%ystart = 1   ; fld%halo(1)%dest%ystop = 1
-    fld%halo(1)%source%xstart  = 1   ; fld%halo(1)%source%xstop  = M
-    fld%halo(1)%source%ystart  = N-1 ; fld%halo(1)%source%ystop  = N-1
-
-    fld%halo(2)%dest%xstart = M ; fld%halo(2)%dest%xstop = M
-    fld%halo(2)%dest%ystart = 1   ; fld%halo(2)%dest%ystop = N
-    fld%halo(2)%source%xstart  = 2   ; fld%halo(2)%source%xstop  = 2
-    fld%halo(2)%source%ystart  = 1   ; fld%halo(2)%source%ystop  = N
+    call init_periodic_bc_halos(fld)
 
   end subroutine cv_sw_init
 
@@ -590,18 +596,7 @@ contains
     ! Last row = first row
     ! field(1:M,N:N) = field(1:M,1:1)
 
-    fld%num_halos = 2
-    ALLOCATE( fld%halo(fld%num_halos) )
-
-    fld%halo(1)%dest%xstart = M ; fld%halo(1)%dest%xstop = M
-    fld%halo(1)%dest%ystart = 1   ; fld%halo(1)%dest%ystop = N-1
-    fld%halo(1)%source%xstart  = 2   ; fld%halo(1)%source%xstop  = 2
-    fld%halo(1)%source%ystart  = 1   ; fld%halo(1)%source%ystop  = N-1
-
-    fld%halo(2)%dest%xstart = 1   ; fld%halo(2)%dest%xstop = M
-    fld%halo(2)%dest%ystart = N ; fld%halo(2)%dest%ystop = N
-    fld%halo(2)%source%xstart  = 1   ; fld%halo(2)%source%xstop  = M
-    fld%halo(2)%source%ystart  = 2   ; fld%halo(2)%source%ystop  = 2
+    call init_periodic_bc_halos(fld)
 
   end subroutine ct_sw_init
 
@@ -716,18 +711,22 @@ contains
     ! First row = last row
     ! field(2:M, 2:2) = field(2:M, N:N)
 
-    fld%num_halos = 2
-    ALLOCATE( fld%halo(fld%num_halos) )
+    call init_periodic_bc_halos(fld)
 
-    fld%halo(1)%dest%xstart = 1   ; fld%halo(1)%dest%xstop = 1
-    fld%halo(1)%dest%ystart = 1   ; fld%halo(1)%dest%ystop = N
-    fld%halo(1)%source%xstart  = M-1 ; fld%halo(1)%source%xstop  = M-1
-    fld%halo(1)%source%ystart  = 1   ; fld%halo(1)%source%ystop  = N
-
-    fld%halo(2)%dest%xstart = 1   ; fld%halo(2)%dest%xstop = M
-    fld%halo(2)%dest%ystart = 1   ; fld%halo(2)%dest%ystop = 1
-    fld%halo(2)%source%xstart  = 1  ; fld%halo(2)%source%xstop  = M
-    fld%halo(2)%source%ystart  = N-1 ; fld%halo(2)%source%ystop  = N-1
+!!$    fld%num_halos = 2
+!!$    ALLOCATE( fld%halo(fld%num_halos) )
+!!$
+!!$    ! W-most column set to E-most internal column
+!!$    fld%halo(1)%dest%xstart = 1   ; fld%halo(1)%dest%xstop = 1
+!!$    fld%halo(1)%dest%ystart = 2   ; fld%halo(1)%dest%ystop = N
+!!$    fld%halo(1)%source%xstart  = M-1 ; fld%halo(1)%source%xstop  = M-1
+!!$    fld%halo(1)%source%ystart  = 2   ; fld%halo(1)%source%ystop  = N
+!!$
+!!$    ! S-most row set to N-most internal row
+!!$    fld%halo(2)%dest%xstart = 1   ; fld%halo(2)%dest%xstop = M
+!!$    fld%halo(2)%dest%ystart = 1   ; fld%halo(2)%dest%ystop = 1
+!!$    fld%halo(2)%source%xstart  = 1  ; fld%halo(2)%source%xstop  = M
+!!$    fld%halo(2)%source%ystart  = N-1 ; fld%halo(2)%source%ystop  = N-1
 
   end subroutine cf_sw_init
 
@@ -863,5 +862,48 @@ contains
   end function field_checksum
 
   !===================================================
+
+  subroutine init_periodic_bc_halos(fld)
+    implicit none
+    type(r2d_field_type), intent(inout) :: fld
+    ! Locals
+    integer :: ihalo
+    integer :: M, N
+
+    M = fld%grid%nx
+    N = fld%grid%ny
+
+    fld%num_halos = 4
+    ALLOCATE( fld%halo(fld%num_halos) )
+
+    ! E-most column set to W-most internal column
+    ihalo = 1
+    fld%halo(ihalo)%dest%xstart = M ; fld%halo(ihalo)%dest%xstop = M
+    fld%halo(ihalo)%dest%ystart = 1   ; fld%halo(ihalo)%dest%ystop = N
+    fld%halo(ihalo)%source%xstart  = 2   ; fld%halo(ihalo)%source%xstop  = 2
+    fld%halo(ihalo)%source%ystart  = 1   ; fld%halo(ihalo)%source%ystop  = N
+
+    ! W-most column set to E-most internal column
+    ihalo = ihalo + 1
+    fld%halo(ihalo)%dest%xstart   = 1   ; fld%halo(ihalo)%dest%xstop = 1
+    fld%halo(ihalo)%dest%ystart   = 1   ; fld%halo(ihalo)%dest%ystop = N
+    fld%halo(ihalo)%source%xstart = M-1 ; fld%halo(ihalo)%source%xstop = M-1
+    fld%halo(ihalo)%source%ystart = 1   ; fld%halo(ihalo)%source%ystop = N
+
+    ! N-most row set to S-most internal row
+    ihalo = ihalo + 1
+    fld%halo(ihalo)%dest%xstart = 1   ; fld%halo(ihalo)%dest%xstop = M
+    fld%halo(ihalo)%dest%ystart = N   ; fld%halo(ihalo)%dest%ystop = N
+    fld%halo(ihalo)%source%xstart = 1 ; fld%halo(ihalo)%source%xstop = M
+    fld%halo(ihalo)%source%ystart = 2 ; fld%halo(ihalo)%source%ystop = 2
+
+    ! S-most row set to N-most internal row
+    ihalo = ihalo + 1
+    fld%halo(ihalo)%dest%xstart = 1   ; fld%halo(ihalo)%dest%xstop = M
+    fld%halo(ihalo)%dest%ystart = 1   ; fld%halo(ihalo)%dest%ystop = 1
+    fld%halo(ihalo)%source%xstart = 1 ; fld%halo(ihalo)%source%xstop = M
+    fld%halo(ihalo)%source%ystart = N-1 ; fld%halo(ihalo)%source%ystop = N-1
+
+  end subroutine init_periodic_bc_halos
 
 end module field_mod
