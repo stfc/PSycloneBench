@@ -140,19 +140,17 @@ contains
                    pfld%internal%ystart:pfld%internal%ystop)
 
 
-    if(ncycle == 0)then
-       call ascii_write(ufld%grid%nx, ufld%grid%ny, &
+    IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
+
+       call ascii_write(ncycle, ufld%grid%nx, ufld%grid%ny, &
                         ufld%internal%xstart, ufld%internal%ystart, &
                         ufld%data, 'ufld.dat')
-       call ascii_write(vfld%grid%nx, vfld%grid%ny, &
+       call ascii_write(ncycle, vfld%grid%nx, vfld%grid%ny, &
                         vfld%internal%xstart, vfld%internal%ystart, &
                         vfld%data, 'vfld.dat')
-       call ascii_write(pfld%grid%nx, pfld%grid%ny, &
+       call ascii_write(ncycle, pfld%grid%nx, pfld%grid%ny, &
                         pfld%internal%xstart, pfld%internal%ystart, &
                         pfld%data, 'pfld.dat')
-    end if
-
-    IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
 
        !CALL print_diagonals(p, u, v)
     
@@ -353,17 +351,22 @@ contains
 
     !===================================================
 
-    subroutine ascii_write(m, n, xstart, ystart, var, fname)
+    subroutine ascii_write(tag, m, n, xstart, ystart, var, fname)
       implicit none
-      integer, intent(in) :: m, n
+      integer, intent(in) :: tag, m, n
       integer, intent(in) :: xstart, ystart
       real(8), dimension(m,n), intent(in) :: var
       character(len=*), intent(in) :: fname
       ! Locals
       integer :: ji, jj
       integer, parameter :: iounit = 24
+      character(len=100) :: fname_full
+      character(len=10) :: tag_str
 
-      open(unit=iounit, file=TRIM(ADJUSTL(fname)), status='unknown', &
+      write(tag_str, fmt="(I10)") tag
+      write(fname_full, fmt="((A),'.',(A))") TRIM(ADJUSTL(fname)), &
+                                             TRIM(ADJUSTL(tag_str))
+      open(unit=iounit, file=TRIM(fname_full), status='unknown', &
            action='write', iostat=ji)
       if( ji /= 0 )then
          write (*,*) 'ascii_write: ERROR: failed to open file'

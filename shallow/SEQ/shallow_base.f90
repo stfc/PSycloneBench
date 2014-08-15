@@ -168,9 +168,9 @@ program shallow
   CALL copy_field(p_fld, pold_fld)
      
   ! Write intial values of p, u, and v into a netCDF file   
-  call ascii_write(psi_fld%grid%nx, psi_fld%grid%ny, &
+  call ascii_write(0, psi_fld%grid%nx, psi_fld%grid%ny, &
                    psi_fld%internal%xstart, psi_fld%internal%ystart, &
-                   psi_fld%data, 'psi_fld.dat')
+                   psi_fld%data, 'psifld.dat')
   CALL model_write(0, p_fld, u_fld, v_fld)
 
   !     Start timer
@@ -199,6 +199,13 @@ program shallow
     CALL manual_invoke_apply_bcs(H_fld)
     CALL manual_invoke_apply_bcs(Z_fld)
     CALL timer_stop(idxt1)
+
+    call ascii_write(ncycle, z_fld%grid%nx, z_fld%grid%ny, &
+                     z_fld%internal%xstart, z_fld%internal%ystart, &
+                     z_fld%data, 'zfld.dat')
+    call ascii_write(ncycle, cu_fld%grid%nx, cu_fld%grid%ny, &
+                     cu_fld%internal%xstart, cu_fld%internal%ystart, &
+                     cu_fld%data, 'cufld.dat')
 
     ! COMPUTE NEW VALUES U,V AND P
 
