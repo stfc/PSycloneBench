@@ -8,7 +8,7 @@ module initial_conditions_mod
   !! Used by invoke_init_stream_fn_kernel()
   REAL(wp), PARAMETER :: A = 1.0E6
   !> 2PI/{m,n}
-  REAL(wp)  :: di, dj
+  REAL(wp), SAVE  :: di, dj
 
   PUBLIC init_initial_condition_params
   PUBLIC invoke_init_stream_fn_kernel
@@ -41,17 +41,21 @@ CONTAINS
     implicit none
     type(r2d_field_type), intent(inout) :: psifld
     ! Locals
-    !integer :: idim1, idim2
+    integer :: idim1, idim2
     integer :: i, j
 
-    !idim1 = SIZE(psifld%data, 1)
-    !idim2 = SIZE(psifld%data, 2)
+    idim1 = SIZE(psifld%data, 1)
+    idim2 = SIZE(psifld%data, 2)
 
+    write(*,*) 'psi field, internal region: (',psifld%internal%xstart, ':', &
+                                               psifld%internal%xstop,  ',', &
+                                               psifld%internal%ystart, ':', &
+                                               psifld%internal%ystop,  ')'
     ! Loop over 'columns'
-    !DO J=1, idim2
-    !  DO I=1, idim1
-    DO J=psifld%internal%ystart, psifld%internal%ystop
-       DO I=psifld%internal%xstart, psifld%internal%xstop
+    DO J=1, idim2
+      DO I=1, idim1
+    !DO J=psifld%internal%ystart, psifld%internal%ystop
+    !   DO I=psifld%internal%xstart, psifld%internal%xstop
 
         CALL init_stream_fn_code(i, j, &
                                  psifld%internal%xstart, & 
@@ -74,7 +78,7 @@ CONTAINS
       ! di = 2Pi/(Extent of mesh in x)
       ! dj = 2Pi/(Extent of mesh in y)
 
-      PSI(I,J) = A*SIN((I-istart+.5)*DI)*SIN((J-jstart+.5)*DJ)
+      PSI(I,J) = A*SIN((I-istart+1.5)*DI)*SIN((J-jstart+1.5)*DJ)
 
     END SUBROUTINE init_stream_fn_code
 
@@ -120,7 +124,7 @@ CONTAINS
     type(r2d_field_type), intent(in),    target :: psifld
     ! Locals
     real(kind=wp), pointer, dimension(:,:) :: u, psi
-    integer  :: i, j
+    integer  :: i, j, ipsi, jpsi
     real(wp) :: dy
 
     u => ufld%data
@@ -131,12 +135,15 @@ CONTAINS
 
     do J=ufld%internal%ystart,ufld%internal%ystop
        do I=ufld%internal%xstart,ufld%internal%xstop
+
+          ipsi = i - ufld%internal%xstart + psifld%internal%xstart
+          jpsi = j - ufld%internal%ystart + psifld%internal%ystart
           ! Have to shift i right by one because psi is defined on f points
           ! which have xstart=2. This means it is shifted right relative
           ! to U points in original shallow which already had a halo at
           ! x=1. This ensures initial conditions are identical to those
           ! in original 'shallow.'
-          U(I,J) = -(PSI(I+1,J+1)-PSI(I+1,J))/dy
+          U(I,J) = -(PSI(ipsi,j+1)-PSI(ipsi,j))/dy
        end do
     end do
 

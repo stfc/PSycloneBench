@@ -64,6 +64,7 @@ CONTAINS
   !================================================
 
   subroutine model_init(grid)
+    use physical_params_mod, only: physical_params_init
     use time_smooth_mod, only: time_smooth_init
     IMPLICIT none
     type(grid_type), intent(inout) :: grid
@@ -78,7 +79,9 @@ CONTAINS
     !> Problem size, read from namelist
     integer :: m, n
 
-    CALL timer_init()
+    call timer_init()
+
+    call physical_params_init()
 
     CALL read_namelist(m,n,itmax)
 

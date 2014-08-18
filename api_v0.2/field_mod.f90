@@ -182,18 +182,18 @@ contains
     write(*,*) 'allocating field with bounds: (', &
                self%internal%xstart-1,':', self%internal%xstop+1, ',', &
                self%internal%ystart-1,':',self%internal%ystop+1,')'
-    allocate(self%data(self%internal%xstart-1:self%internal%xstop+1, &
-                       self%internal%ystart-1:self%internal%ystop+1),&
+    !allocate(self%data(self%internal%xstart-1:self%internal%xstop+1, &
+    !                   self%internal%ystart-1:self%internal%ystop+1),&
+    !                   Stat=ierr)
+    ! Allocating with a lower bound != 1 causes problems whenever
+    ! array passed as assumed-shape dummy argument because lower
+    ! bounds default to 1 in called unit.
+    allocate(self%data(1:self%internal%xstop+1, &
+                       1:self%internal%ystop+1),&
                        Stat=ierr)
     if(ierr /= 0)then
        stop 'r2d_field_constructor: ERROR: failed to allocate field'
     end if
-
-      write(*,*) 'new field, array bounds dim 1: ',lbound(self%data,1), &
-                                                   ubound(self%data,1)
-      write(*,*) 'new field, array bounds dim 2: ',lbound(self%data,2), &
-                                                   ubound(self%data,2)
-
 
   end function r2d_field_constructor
 
@@ -276,7 +276,7 @@ contains
        ! T points. We then have a halo of width 1 on either side
        ! of the domain.
        fld%internal%xstart = 2
-       fld%internal%xstop  = M+2-1
+       fld%internal%xstop  = fld%internal%xstart + M - 1
     else
        ! When updating a quantity on U points with this staggering
        ! we write to (using 'x' to indicate a location that is written,
@@ -290,11 +290,11 @@ contains
        !  o  b  x  x  b
        !  o  b  b  b  b   j=1
        fld%internal%xstart = 3
-       fld%internal%xstop  = M+3-1
+       fld%internal%xstop  = fld%internal%xstart + M - 1
     end if
 
     fld%internal%ystart = 2
-    fld%internal%ystop  = N+2-1
+    fld%internal%ystop  = fld%internal%ystart + N - 1
 
     ! When applying periodic (wrap-around) boundary conditions (PBCs)
     ! we must fill the regions marked with 'b' above.
@@ -637,9 +637,9 @@ contains
     !  b  b  b  b  b j=1
 
     fld%internal%xstart = 2
-    fld%internal%xstop  = M+2-1
+    fld%internal%xstop  = fld%internal%xstart + M - 1
     fld%internal%ystart = 2
-    fld%internal%ystop  = N+2-1
+    fld%internal%ystop  = fld%internal%ystart + N - 1
 
   end subroutine ct_ne_init
 
@@ -688,19 +688,17 @@ contains
     !  o  o  o  o  o   j=1
     if(fld%boundary_conditions(1) == BC_PERIODIC)then
        fld%internal%xstart = 3
-       fld%internal%xstop  = M+3-1
     else
        fld%internal%xstart = 3
-       fld%internal%xstop  = M+3-1
     end if
+    fld%internal%xstop  = fld%internal%xstart + M - 1
 
     if(fld%boundary_conditions(2) == BC_PERIODIC)then
        fld%internal%ystart = 3
-       fld%internal%ystop  = N+3-1
     else
        fld%internal%ystart = 3
-       fld%internal%ystop  = N+3-1
     end if
+    fld%internal%ystop  = fld%internal%ystart + N - 1
 
     ! When applying periodic (wrap-around) boundary conditions
     ! (PBCs) we must fill the regions marked with 'b' above.
@@ -878,10 +876,10 @@ contains
     type(r2d_field_type), intent(inout) :: fld
     ! Locals
     integer :: ihalo
-    integer :: M, N
+    !integer :: M, N
 
-    M = fld%grid%nx
-    N = fld%grid%ny
+    !M = fld%grid%nx
+    !N = fld%grid%ny
 
     fld%num_halos = 4
     ALLOCATE( fld%halo(fld%num_halos) )

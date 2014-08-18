@@ -373,9 +373,6 @@ contains
          return
       end if
 
-      write(*,*) 'ascii_write, array bounds dim 1: ',lbound(var,1),ubound(var,1)
-      write(*,*) 'ascii_write, array bounds dim 2: ',lbound(var,2),ubound(var,2)
-
       do jj=ystart-1, ystart+n, 1
          do ji=xstart-1, xstart+m, 1
             write(iounit,*) ji-xstart+1, jj-ystart+1, var(ji,jj)

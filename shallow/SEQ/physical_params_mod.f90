@@ -5,11 +5,21 @@ MODULE physical_params_mod
 
   PUBLIC
 
-  !> Pi. Is this sufficient or should we keep 
-  !! computation using 4.0*ATAN(1.0)?
-  REAL(wp), PARAMETER :: pi = 3.1415927410125732
-
+  !> Pi =  4.0*ATAN(1.0)
+  REAL(wp), save :: pi
   !> 2 x Pi
-  REAL(wp), PARAMETER :: tpi = pi + pi
+  REAL(wp), save :: tpi
+
+contains
+
+  subroutine physical_params_init
+    implicit none
+
+    pi = 4.0_wp*ATAN(1.0_wp)
+    tpi = pi + pi
+
+    write (*,*) 'PI set to: ',pi
+
+  end subroutine physical_params_init
 
 END MODULE physical_params_mod

@@ -141,6 +141,7 @@ program shallow
   CALL init_initial_condition_params(p_fld)
   CALL invoke_init_stream_fn_kernel(psi_fld)
   CALL init_pressure(p_fld)
+  !CALL manual_invoke_apply_bcs(psi_fld)
   CALL manual_invoke_apply_bcs(p_fld)
 
   !     INITIALIZE VELOCITIES

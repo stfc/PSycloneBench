@@ -119,7 +119,7 @@
       MP1 = M+1
       NP1 = N+1
       EL = N*DX
-      PI = 4.*ATAN(1.)
+      PI = 4.0d0*ATAN(1.0d0)
       TPI = PI+PI
       DI = TPI/M
       DJ = TPI/N
@@ -179,7 +179,7 @@
  393     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF V ' //,(8E15.6))
 
          ! Generate and output checksums of initial fields
-         write(*,"('psi initial CHECKSUM = ',E15.7)")  sum(psi(1:m,1:n))
+         write(*,"('psi initial CHECKSUM = ',E15.7)")  sum(psi(2:m+1,2:n+1))
          write(*,"('P initial CHECKSUM = ',E15.7)")    sum(p(1:m,1:n))
          write(*,"('U initial CHECKSUM = ',E15.7)")    sum(u(2:M+1,1:N))
          write(*,"('V initial CHECKSUM = ',E15.7)")    sum(v(1:m,2:N+1))
@@ -192,7 +192,7 @@
          call ascii_write(0,m+1,n+1,2,1,u,'u_array.dat')
          call ascii_write(0,m+1,n+1,1,2,v,'v_array.dat')
          call ascii_write(0,m+1,n+1,1,1,p,'p_array.dat')
-         call ascii_write(0,m+1,n+1,1,1,psi,'psi_array.dat')
+         call ascii_write(0,m+1,n+1,2,2,psi,'psi_array.dat')
       ENDIF
 
 !     Start timer
