@@ -342,8 +342,10 @@
             call my_ncwrite(ncid,u_id,istart,icount,u(2:m+1,1:n),m,n,t_id,t_val)
             call my_ncwrite(ncid,v_id,istart,icount,v(1:m,2:n+1),m,n,t_id,t_val)
             call ascii_write(ncycle,m+1,n+1,2,1,u,'u_array.dat')
+            call ascii_write(ncycle,m+1,n+1,2,1,cu,'cu_array.dat')
             call ascii_write(ncycle,m+1,n+1,1,2,v,'v_array.dat')
             call ascii_write(ncycle,m+1,n+1,1,1,p,'p_array.dat')
+            call ascii_write(ncycle,m+1,n+1,2,2,z,'z_array.dat')
 
          endif
 

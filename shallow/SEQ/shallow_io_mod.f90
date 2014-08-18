@@ -355,7 +355,7 @@ contains
       implicit none
       integer, intent(in) :: tag, m, n
       integer, intent(in) :: xstart, ystart
-      real(8), dimension(m,n), intent(in) :: var
+      real(8), dimension(:,:), intent(in) :: var
       character(len=*), intent(in) :: fname
       ! Locals
       integer :: ji, jj
@@ -373,8 +373,11 @@ contains
          return
       end if
 
-      do jj=1, n, 1
-         do ji=1, m, 1
+      write(*,*) 'ascii_write, array bounds dim 1: ',lbound(var,1),ubound(var,1)
+      write(*,*) 'ascii_write, array bounds dim 2: ',lbound(var,2),ubound(var,2)
+
+      do jj=ystart-1, ystart+n, 1
+         do ji=xstart-1, xstart+m, 1
             write(iounit,*) ji-xstart+1, jj-ystart+1, var(ji,jj)
          end do
          write(iounit,*)

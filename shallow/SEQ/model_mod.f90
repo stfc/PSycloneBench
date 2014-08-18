@@ -6,9 +6,6 @@ MODULE model_mod
   use timing_mod, ONLY: timer_init, timer_report
   implicit none
 
-  !INTEGER :: m, n      !< global domain size (no. of grid pts)
-  !INTEGER :: mp1, np1  !< m+1 and n+1 == array extents
-
   INTEGER :: itmax   !< number of timesteps
 
   TYPE(scalar_field_type) :: dt  !< model timestep (seconds)
@@ -88,10 +85,6 @@ CONTAINS
     ! Assume the namelist specifies the extent of the
     ! internal domain so allow for boundaries/halos used
     ! to implement periodic boundary conditions.
-    !> \todo this addition of extra rows/cols should be
-    !! handled by the infrastructure.
-    m = m + 2
-    n = n + 2
 
     ! Set up mesh parameters
     CALL grid_init(grid, m, n, dxloc, dyloc)
@@ -103,7 +96,7 @@ CONTAINS
     CALL time_smooth_init(alpha_loc)
 
     ! Initialise model IO 'system'
-    CALL model_write_init(m-2,n-2)
+    CALL model_write_init(m,n)
 
     ! Log model parameters
     CALL print_initial_values(m,n,dxloc,dyloc, dt%data, alpha_loc)

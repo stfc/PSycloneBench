@@ -159,11 +159,6 @@ contains
     ! by the supplied grid_ptr argument
     self%grid => grid
 
-    allocate(self%data(self%grid%nx,self%grid%ny), Stat=ierr)
-    if(ierr /= 0)then
-       stop 'r2d_field_constructor: ERROR: failed to allocate field'
-    end if
-
     select case(grid_points)
 
     case(U_POINTS)
@@ -180,10 +175,25 @@ contains
        stop 'r2d_field_constructor: ERROR: invalid specifier for type of mesh points'
     end select
 
-
     ! Compute and store dimensions of internal region of field
     self%internal%nx = self%internal%xstop - self%internal%xstart + 1
     self%internal%ny = self%internal%ystop - self%internal%ystart + 1
+
+    write(*,*) 'allocating field with bounds: (', &
+               self%internal%xstart-1,':', self%internal%xstop+1, ',', &
+               self%internal%ystart-1,':',self%internal%ystop+1,')'
+    allocate(self%data(self%internal%xstart-1:self%internal%xstop+1, &
+                       self%internal%ystart-1:self%internal%ystop+1),&
+                       Stat=ierr)
+    if(ierr /= 0)then
+       stop 'r2d_field_constructor: ERROR: failed to allocate field'
+    end if
+
+      write(*,*) 'new field, array bounds dim 1: ',lbound(self%data,1), &
+                                                   ubound(self%data,1)
+      write(*,*) 'new field, array bounds dim 2: ',lbound(self%data,2), &
+                                                   ubound(self%data,2)
+
 
   end function r2d_field_constructor
 
@@ -266,7 +276,7 @@ contains
        ! T points. We then have a halo of width 1 on either side
        ! of the domain.
        fld%internal%xstart = 2
-       fld%internal%xstop  = M-1
+       fld%internal%xstop  = M+2-1
     else
        ! When updating a quantity on U points with this staggering
        ! we write to (using 'x' to indicate a location that is written,
@@ -280,11 +290,11 @@ contains
        !  o  b  x  x  b
        !  o  b  b  b  b   j=1
        fld%internal%xstart = 3
-       fld%internal%xstop  = M-1
+       fld%internal%xstop  = M+3-1
     end if
 
     fld%internal%ystart = 2
-    fld%internal%ystop  = N-1
+    fld%internal%ystop  = N+2-1
 
     ! When applying periodic (wrap-around) boundary conditions (PBCs)
     ! we must fill the regions marked with 'b' above.
@@ -373,9 +383,9 @@ contains
     ! i.e. fld(2:M,2:N+1) = ...
 
     fld%internal%xstart = 2
-    fld%internal%xstop  = M-2
+    fld%internal%xstop  = M+2-2
     fld%internal%ystart = 2
-    fld%internal%ystop  = N-1
+    fld%internal%ystop  = N+2-1
 
 !> \todo Is this concept of halo definitions useful?
     fld%num_halos = 0
@@ -437,17 +447,17 @@ contains
     !  b  b  b  b
     !  o  o  o  o   j=1
     fld%internal%xstart = 2
-    fld%internal%xstop  = M-1
+    fld%internal%xstop  = M+2-1
     if(fld%boundary_conditions(2) == BC_PERIODIC)then
        ! When implementing periodic boundary conditions, all
        ! mesh point types have the same extents as the grid of
        ! T points. We then have a halo of width 1 on either side
        ! of the domain.
        fld%internal%ystart = 2
-       fld%internal%ystop  = N-1
+       fld%internal%ystop  = N+2-1
     else
        fld%internal%ystart = 3
-       fld%internal%ystop  = N-1
+       fld%internal%ystop  = N+3-1
     endif
 
     ! When applying periodic (wrap-around) boundary conditions (PBCs)
@@ -523,9 +533,9 @@ contains
     !
 
     fld%internal%xstart = 2
-    fld%internal%xstop  = M-1
+    fld%internal%xstop  = M+2-1
     fld%internal%ystart = 2
-    fld%internal%ystop  = N-2
+    fld%internal%ystop  = N+2-1
 
   end subroutine cv_ne_init
 
@@ -573,9 +583,9 @@ contains
     !  b  b  b  b   j=1
 
     fld%internal%xstart = 2
-    fld%internal%xstop  = M-1
+    fld%internal%xstop  = M+2-1
     fld%internal%ystart = 2
-    fld%internal%ystop  = N-1
+    fld%internal%ystop  = N+2-1
 
     ! When applying periodic (wrap-around) boundary conditions
     ! (PBCs) we must fill the regions marked with 'b' above.
@@ -627,9 +637,9 @@ contains
     !  b  b  b  b  b j=1
 
     fld%internal%xstart = 2
-    fld%internal%xstop  = M-1
+    fld%internal%xstop  = M+2-1
     fld%internal%ystart = 2
-    fld%internal%ystop  = N-1
+    fld%internal%ystop  = N+2-1
 
   end subroutine ct_ne_init
 
@@ -677,19 +687,19 @@ contains
     !  o  b  b  b  b
     !  o  o  o  o  o   j=1
     if(fld%boundary_conditions(1) == BC_PERIODIC)then
-       fld%internal%xstart = 2
-       fld%internal%xstop  = M-1
+       fld%internal%xstart = 3
+       fld%internal%xstop  = M+3-1
     else
        fld%internal%xstart = 3
-       fld%internal%xstop  = M-1
+       fld%internal%xstop  = M+3-1
     end if
 
     if(fld%boundary_conditions(2) == BC_PERIODIC)then
-       fld%internal%ystart = 2
-       fld%internal%ystop  = N-1
+       fld%internal%ystart = 3
+       fld%internal%ystop  = N+3-1
     else
        fld%internal%ystart = 3
-       fld%internal%ystop  = N-1
+       fld%internal%ystop  = N+3-1
     end if
 
     ! When applying periodic (wrap-around) boundary conditions
@@ -754,9 +764,9 @@ contains
     !  b  b  b  o   j=1
 
     fld%internal%xstart = 2
-    fld%internal%xstop  = M-2
+    fld%internal%xstop  = M+2-1
     fld%internal%ystart = 2
-    fld%internal%ystop  = N-2
+    fld%internal%ystop  = N+2-1
 
   end subroutine cf_ne_init
 
@@ -878,31 +888,51 @@ contains
 
     ! E-most column set to W-most internal column
     ihalo = 1
-    fld%halo(ihalo)%dest%xstart = M ; fld%halo(ihalo)%dest%xstop = M
-    fld%halo(ihalo)%dest%ystart = 1   ; fld%halo(ihalo)%dest%ystop = N
-    fld%halo(ihalo)%source%xstart  = 2   ; fld%halo(ihalo)%source%xstop  = 2
-    fld%halo(ihalo)%source%ystart  = 1   ; fld%halo(ihalo)%source%ystop  = N
+    fld%halo(ihalo)%dest%xstart = fld%internal%xstop + 1
+    fld%halo(ihalo)%dest%xstop  = fld%internal%xstop + 1
+    fld%halo(ihalo)%dest%ystart = fld%internal%ystart   
+    fld%halo(ihalo)%dest%ystop  = fld%internal%ystop
+
+    fld%halo(ihalo)%source%xstart = fld%internal%xstart   
+    fld%halo(ihalo)%source%xstop  = fld%internal%xstart
+    fld%halo(ihalo)%source%ystart = fld%internal%ystart  
+    fld%halo(ihalo)%source%ystop  = fld%internal%ystop
 
     ! W-most column set to E-most internal column
     ihalo = ihalo + 1
-    fld%halo(ihalo)%dest%xstart   = 1   ; fld%halo(ihalo)%dest%xstop = 1
-    fld%halo(ihalo)%dest%ystart   = 1   ; fld%halo(ihalo)%dest%ystop = N
-    fld%halo(ihalo)%source%xstart = M-1 ; fld%halo(ihalo)%source%xstop = M-1
-    fld%halo(ihalo)%source%ystart = 1   ; fld%halo(ihalo)%source%ystop = N
+    fld%halo(ihalo)%dest%xstart = fld%internal%xstart-1   
+    fld%halo(ihalo)%dest%xstop  = fld%internal%xstart-1
+    fld%halo(ihalo)%dest%ystart = fld%internal%ystart   
+    fld%halo(ihalo)%dest%ystop  = fld%internal%ystop
+
+    fld%halo(ihalo)%source%xstart = fld%internal%xstop 
+    fld%halo(ihalo)%source%xstop  = fld%internal%xstop
+    fld%halo(ihalo)%source%ystart = fld%internal%ystart
+    fld%halo(ihalo)%source%ystop  = fld%internal%ystop
 
     ! N-most row set to S-most internal row
     ihalo = ihalo + 1
-    fld%halo(ihalo)%dest%xstart = 1   ; fld%halo(ihalo)%dest%xstop = M
-    fld%halo(ihalo)%dest%ystart = N   ; fld%halo(ihalo)%dest%ystop = N
-    fld%halo(ihalo)%source%xstart = 1 ; fld%halo(ihalo)%source%xstop = M
-    fld%halo(ihalo)%source%ystart = 2 ; fld%halo(ihalo)%source%ystop = 2
+    fld%halo(ihalo)%dest%xstart = fld%internal%xstart - 1   
+    fld%halo(ihalo)%dest%xstop  = fld%internal%xstop  + 1
+    fld%halo(ihalo)%dest%ystart = fld%internal%ystop+1   
+    fld%halo(ihalo)%dest%ystop  = fld%internal%ystop+1
+
+    fld%halo(ihalo)%source%xstart = fld%internal%xstart - 1
+    fld%halo(ihalo)%source%xstop  = fld%internal%xstop  + 1
+    fld%halo(ihalo)%source%ystart = fld%internal%ystart 
+    fld%halo(ihalo)%source%ystop  = fld%internal%ystart
 
     ! S-most row set to N-most internal row
     ihalo = ihalo + 1
-    fld%halo(ihalo)%dest%xstart = 1   ; fld%halo(ihalo)%dest%xstop = M
-    fld%halo(ihalo)%dest%ystart = 1   ; fld%halo(ihalo)%dest%ystop = 1
-    fld%halo(ihalo)%source%xstart = 1 ; fld%halo(ihalo)%source%xstop = M
-    fld%halo(ihalo)%source%ystart = N-1 ; fld%halo(ihalo)%source%ystop = N-1
+    fld%halo(ihalo)%dest%xstart = fld%internal%xstart - 1   
+    fld%halo(ihalo)%dest%xstop  = fld%internal%xstop  + 1
+    fld%halo(ihalo)%dest%ystart = fld%internal%ystart - 1   
+    fld%halo(ihalo)%dest%ystop  = fld%internal%ystart - 1
+
+    fld%halo(ihalo)%source%xstart = fld%internal%xstart - 1 
+    fld%halo(ihalo)%source%xstop  = fld%internal%xstop  + 1
+    fld%halo(ihalo)%source%ystart = fld%internal%ystop 
+    fld%halo(ihalo)%source%ystop  = fld%internal%ystop
 
   end subroutine init_periodic_bc_halos
 

@@ -41,15 +41,17 @@ CONTAINS
     implicit none
     type(r2d_field_type), intent(inout) :: psifld
     ! Locals
-    integer :: idim1, idim2
+    !integer :: idim1, idim2
     integer :: i, j
 
-    idim1 = SIZE(psifld%data, 1)
-    idim2 = SIZE(psifld%data, 2)
+    !idim1 = SIZE(psifld%data, 1)
+    !idim2 = SIZE(psifld%data, 2)
 
     ! Loop over 'columns'
-    DO J=1, idim2
-      DO I=1, idim1
+    !DO J=1, idim2
+    !  DO I=1, idim1
+    DO J=psifld%internal%ystart, psifld%internal%ystop
+       DO I=psifld%internal%xstart, psifld%internal%xstop
 
         CALL init_stream_fn_code(i, j, &
                                  psifld%internal%xstart, & 
@@ -99,10 +101,8 @@ CONTAINS
 
     ! di = 2Pi/(Extent of mesh in x)
     ! dj = 2Pi/(Extent of mesh in y)
-!    DO J=pfld%internal%ystart, pfld%internal%ystop
-!       DO I=pfld%internal%xstart, pfld%internal%xstop
-    DO J=1, pfld%grid%ny
-       DO I=1, pfld%grid%nx
+    DO J=pfld%internal%ystart, pfld%internal%ystop
+       DO I=pfld%internal%xstart, pfld%internal%xstop
           P(I,J) = PCF*(COS(2.*(I-pfld%internal%xstart)*DI)   & 
                +COS(2.*(J-pfld%internal%ystart)*DJ))+50000.
        END DO
