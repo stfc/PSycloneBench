@@ -91,7 +91,7 @@ CONTAINS
     type(r2d_field_type), target, intent(inout) :: pfld
     REAL(KIND=wp), DIMENSION(:,:), pointer :: p
     ! Locals
-    INTEGER :: i, j
+    INTEGER :: i, j, idim1, idim2
     !> Extent in x of model domain
     REAL(wp) :: el
     !> Computed amplitude of initial oscillations in
@@ -103,10 +103,15 @@ CONTAINS
     EL = pfld%internal%nx * pfld%grid%dx
     PCF = PI*PI*A*A/(EL*EL)
 
+    idim1 = SIZE(pfld%data, 1)
+    idim2 = SIZE(pfld%data, 2)
+
     ! di = 2Pi/(Extent of mesh in x)
     ! dj = 2Pi/(Extent of mesh in y)
-    DO J=pfld%internal%ystart, pfld%internal%ystop
-       DO I=pfld%internal%xstart, pfld%internal%xstop
+!    DO J=pfld%internal%ystart, pfld%internal%ystop
+!       DO I=pfld%internal%xstart, pfld%internal%xstop
+    DO J=1,idim2
+       DO I=1, idim1
           P(I,J) = PCF*(COS(2.*(I-pfld%internal%xstart)*DI)   & 
                +COS(2.*(J-pfld%internal%ystart)*DJ))+50000.
        END DO
@@ -124,7 +129,7 @@ CONTAINS
     type(r2d_field_type), intent(in),    target :: psifld
     ! Locals
     real(kind=wp), pointer, dimension(:,:) :: u, psi
-    integer  :: i, j, ipsi, jpsi
+    integer  :: i, j, ipsi
     real(wp) :: dy
 
     u => ufld%data
@@ -136,13 +141,12 @@ CONTAINS
     do J=ufld%internal%ystart,ufld%internal%ystop
        do I=ufld%internal%xstart,ufld%internal%xstop
 
-          ipsi = i - ufld%internal%xstart + psifld%internal%xstart
-          jpsi = j - ufld%internal%ystart + psifld%internal%ystart
           ! Have to shift i right by one because psi is defined on f points
           ! which have xstart=2. This means it is shifted right relative
           ! to U points in original shallow which already had a halo at
           ! x=1. This ensures initial conditions are identical to those
           ! in original 'shallow.'
+          ipsi = i - ufld%internal%xstart + psifld%internal%xstart
           U(I,J) = -(PSI(ipsi,j+1)-PSI(ipsi,j))/dy
        end do
     end do
@@ -180,13 +184,16 @@ CONTAINS
       real(kind=wp),                 intent(in)  :: dx
       real(kind=wp), dimension(:,:), intent(out) :: v
       real(kind=wp), dimension(:,:), intent(in)  :: psi
+      ! Locals
+      integer :: jpsi
 
       ! Have to shift j up by one because psi is defined on f points
       ! which have ystart=2. This means it is shifted upwards relative
       ! to V points in original shallow which already had a halo at
       ! y=1. This ensures initial conditions are identical to those
       ! in original 'shallow.'
-      V(I,J) = (PSI(I+1,J+1)-PSI(I,J+1))/DX
+      jpsi = j + 1 !- ufld%internal%ystart + psifld%internal%ystart
+      V(I,J) = (PSI(I+1,jpsi)-PSI(I,jpsi))/DX
 
     end subroutine init_velocity_v_code
 

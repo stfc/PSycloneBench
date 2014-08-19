@@ -44,6 +44,8 @@ contains
     ! Locals
     integer :: I, J
     real(wp) :: dx, dy
+    integer :: uxshift, uyshift, vxshift, vyshift, txshift, tyshift
+    real(wp), dimension(:,:), pointer :: u, v, p, z
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -92,12 +94,42 @@ contains
     dx = zfld%grid%dx
     dy = zfld%grid%dy
 
+    ! In original shallow, F field internal points began at (2,2), U internal
+    ! points at (2,1), V internal points at (1,2) and T internal pts at 1,1.
+    !                    F      U      V       T
+    !                  (2,2)  (2, 1) (1, 2)  (1,1)
+    ! Original shift          (0,-1) (-1,0)  (-1,-1)
+    !             (fxstart,fystart) (uxstart,uystart)
+    ! If we're looping over F internal pts and kernel assumes a shift
+    ! of (0,-1) to U internal pts then we need to shift by:
+    ! iu = if - (fxstart - uxstart - 0)
+    ! ju = jf - (fystart - uystart - 1)
+    ! For V pts the kernel assumes a shift of (-1,0) relative to F:
+    ! iv = if - (fxstart - vxstart - 1)
+    ! jv = jf - (fystart - vystart - 0)
+    ! For T pts the kernel assumes a shift of (-1,-1) relative to T:
+    ! it = if - (fxstart - txstart - 1)
+    ! jt = jf - (fystart - tystart - 1)
+    uxshift = ufld%internal%xstart - zfld%internal%xstart
+    uyshift = ufld%internal%ystart - zfld%internal%ystart + 1
+    vxshift = vfld%internal%xstart - zfld%internal%xstart + 1
+    vyshift = vfld%internal%ystart - zfld%internal%ystart
+    txshift = pfld%internal%xstart - zfld%internal%xstart + 1
+    tyshift = pfld%internal%ystart - zfld%internal%ystart + 1
+
     do J=zfld%internal%ystart, zfld%internal%ystop, 1
        do I=zfld%internal%xstart, zfld%internal%xstop, 1
 
-          call compute_z_code(i, j, dx, dy,         &
-                              zfld%data, pfld%data, &
-                              ufld%data, vfld%data)
+!          call compute_z_code(i, j, dx, dy,         &
+!                              zfld%data, pfld%data, &
+!                              ufld%data, vfld%data)
+          Zfld%data(I,J) =((4.0/dx)*(Vfld%data(i+vxshift,J+vyshift)-Vfld%data(i+vxshift-1,J+vyshift)) - &
+                   (4.0/dy)*(Ufld%data(i+uxshift,J+uyshift)-Ufld%data(i+uxshift,J-1+uyshift)))/ &
+                 (Pfld%data(I-1+txshift,J-1+tyshift)+ &
+                  Pfld%data(I+txshift,J-1+tyshift)+ &
+                  Pfld%data(I+txshift,J+tyshift)+ &
+                  Pfld%data(I-1+txshift,J+tyshift))
+
        end do
     end do
 
