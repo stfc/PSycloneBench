@@ -131,21 +131,22 @@ contains
     real(wp), intent(in) :: tdt
     ! Locals
     real(wp) :: tdts8, tdtsdx
-   
+    integer :: vi, vj, ti, tj, fi, fj
+
     !> These quantities are computed here because tdt is not
     !! constant. (It is == dt for first time step, 2xdt for
     !! all remaining time steps.)
     tdts8 = tdt/8.0d0
     tdtsdx = tdt/dx
 
-    UNEW(I,J) = UOLD(I,J) +                          &
-                TDTS8*(Z(I+fshift(1),J+1+fshift(2))+ &
-                       Z(I+fshift(1),J+fshift(2))) * &
-                (CV(I+vshift(1),J+1+vshift(2))  + &
-                 CV(I-1+vshift(1),J+1+vshift(2))+ &
-                 CV(I-1+vshift(1),J+vshift(2))  + &
-                 CV(I+vshift(1),J+vshift(2))) -   &
-                TDTSDX*(H(I+tshift(1),J+tshift(2))-H(I-1+tshift(1),J+tshift(2)))
+    vi = i + vshift(1) ; vj = j + vshift(2)
+    ti = i + tshift(1) ; tj = j + tshift(2)
+    fi = i + fshift(1) ; fj = j + fshift(2)
+
+    UNEW(I,J) = UOLD(I,J) +                     &
+                TDTS8*(Z(fI,fJ+1) + Z(fI,fJ)) * &
+                (CV(vI,vJ+1)+CV(vI-1,vJ+1)+CV(vI-1,vJ)+CV(vI,vJ)) -   &
+                TDTSDX*(H(tI,tJ)-H(tI-1,tJ))
 
   end subroutine compute_unew_code
 

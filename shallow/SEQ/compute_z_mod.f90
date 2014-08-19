@@ -53,7 +53,7 @@ contains
     ! Locals
     integer :: I, J
     real(wp) :: dx, dy
-    integer :: kern_uxshift, kern_uyshift, kern_vxshift, kern_vyshift, kern_txshift, kern_tyshift
+    integer, dimension(2) :: kern_ushift, kern_vshift, kern_tshift
     integer, dimension(2) :: ushift, vshift, tshift
     type(compute_z_type) :: this_kernel
 
@@ -67,22 +67,22 @@ contains
     ! Original shift          (0,-1) (-1,0)  (-1,-1)
 
     ! The shifts from F to xx pts assumed by this kernel
-    kern_uxshift = this_kernel%ustart(1) - this_kernel%fstart(1)
-    kern_uyshift = this_kernel%ustart(2) - this_kernel%fstart(2)
-    kern_vxshift = this_kernel%vstart(1) - this_kernel%fstart(1)
-    kern_vyshift = this_kernel%vstart(2) - this_kernel%fstart(2)
-    kern_txshift = this_kernel%tstart(1) - this_kernel%fstart(1)
-    kern_tyshift = this_kernel%tstart(2) - this_kernel%fstart(2)
+    kern_ushift(1) = this_kernel%ustart(1) - this_kernel%fstart(1)
+    kern_ushift(2) = this_kernel%ustart(2) - this_kernel%fstart(2)
+    kern_vshift(1) = this_kernel%vstart(1) - this_kernel%fstart(1)
+    kern_vshift(2) = this_kernel%vstart(2) - this_kernel%fstart(2)
+    kern_tshift(1) = this_kernel%tstart(1) - this_kernel%fstart(1)
+    kern_tshift(2) = this_kernel%tstart(2) - this_kernel%fstart(2)
 
     ! The shifts we must apply to account for the fact that our
     ! fields may not have the same relative positioning as
     ! assumed by the kernel
-    ushift(1) = ufld%internal%xstart - zfld%internal%xstart - kern_uxshift
-    ushift(2) = ufld%internal%ystart - zfld%internal%ystart - kern_uyshift
-    vshift(1) = vfld%internal%xstart - zfld%internal%xstart - kern_vxshift
-    vshift(2) = vfld%internal%ystart - zfld%internal%ystart - kern_vyshift
-    tshift(1) = pfld%internal%xstart - zfld%internal%xstart - kern_txshift
-    tshift(2) = pfld%internal%ystart - zfld%internal%ystart - kern_tyshift
+    ushift(1) = ufld%internal%xstart - zfld%internal%xstart - kern_ushift(1)
+    ushift(2) = ufld%internal%ystart - zfld%internal%ystart - kern_ushift(2)
+    vshift(1) = vfld%internal%xstart - zfld%internal%xstart - kern_vshift(1)
+    vshift(2) = vfld%internal%ystart - zfld%internal%ystart - kern_vshift(2)
+    tshift(1) = pfld%internal%xstart - zfld%internal%xstart - kern_tshift(1)
+    tshift(2) = pfld%internal%ystart - zfld%internal%ystart - kern_tshift(2)
 
     do J=zfld%internal%ystart, zfld%internal%ystop, 1
        do I=zfld%internal%xstart, zfld%internal%xstop, 1
@@ -108,13 +108,19 @@ contains
     real(wp), intent(in) :: dx, dy
     real(wp), intent(out), dimension(:,:) :: z
     real(wp), intent(in),  dimension(:,:) :: p, u, v
+    ! Locals
+    integer :: ui, uj, vi, vj, ti, tj
 
-    Z(I,J) =((4.0/dx)*( &
-            V(I+vshift(1),J+vshift(2))-V(I-1+vshift(1),J+vshift(2)))- &
-            (4.0/dy)*(  &
-            U(I+ushift(1),J+ushift(2))-U(I+ushift(1),J-1+ushift(2))))/ &
-            (P(I-1+tshift(1),J-1+tshift(2))+P(I+tshift(1),J-1+tshift(2))+&
-             P(I+tshift(1),J+tshift(2))+P(I-1+tshift(1),J+tshift(2)))
+    ui = i + ushift(1)
+    uj = j + ushift(2)
+    vi = i + vshift(1)
+    vj = j + vshift(2)
+    ti = i + tshift(1)
+    tj = j + tshift(2)
+
+    Z(I,J) =( (4.0d0/dx)*( V(vI,vJ)-V(vI-1,vJ))-    &
+              (4.0d0/dy)*( U(uI,uJ)-U(uI,uJ-1)) ) / &
+            (P(tI-1,tJ-1)+P(tI,tJ-1)+ P(tI,tJ)+P(tI-1,tJ))
 
   end subroutine compute_z_code
 

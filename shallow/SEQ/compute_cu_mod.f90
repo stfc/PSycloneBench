@@ -22,6 +22,15 @@ module compute_cu_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
+
+     !> This kernel is written assuming that the internal
+     !! regions for each grid-point type begin at the
+     !! following locations on the grid:
+     integer :: tstart(2) = (/ 1, 1 /)
+     integer :: ustart(2) = (/ 2, 1 /)
+     integer :: vstart(2) = (/ 1, 2 /)
+     integer :: fstart(2) = (/ 2, 2 /)
+
   contains
     procedure, nopass :: code => compute_cu_code
   end type compute_cu_type
@@ -38,6 +47,9 @@ contains
     type(r2d_field_type), intent(in)    :: pfld, ufld
     ! Locals
     integer :: I, J
+    integer, dimension(2) :: kern_tshift
+    integer, dimension(2) :: tshift
+    type(compute_cu_type) :: this_kernel
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -79,11 +91,20 @@ contains
     !   |        |       |       |
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
     !
+    ! The shifts from U to xx pts assumed by this kernel
+    kern_tshift(1) = this_kernel%tstart(1) - this_kernel%ustart(1)
+    kern_tshift(2) = this_kernel%tstart(2) - this_kernel%ustart(2)
+
+    ! The shifts we must apply to account for the fact that our
+    ! fields may not have the same relative positioning as
+    ! assumed by the kernel
+    tshift(1) = cufld%internal%xstart - pfld%internal%xstart - kern_tshift(1)
+    tshift(2) = cufld%internal%ystart - pfld%internal%ystart - kern_tshift(2)
 
     do J=cufld%internal%ystart, cufld%internal%ystop
        do I=cufld%internal%xstart, cufld%internal%xstop
 
-          call compute_cu_code(i, j, cufld%data, pfld%data, ufld%data)
+          call compute_cu_code(i, j, tshift, cufld%data, pfld%data, ufld%data)
        end do
     end do
 
@@ -92,13 +113,19 @@ contains
   !===================================================
 
   !> Compute the mass flux in the x direction at point (i,j)
-  subroutine compute_cu_code(i, j, cu, p, u)
+  subroutine compute_cu_code(i, j, tshift, cu, p, u)
     implicit none
     integer,  intent(in) :: I, J
+    integer,  intent(in),  dimension(2) :: tshift
     real(wp), intent(out), dimension(:,:) :: cu
     real(wp), intent(in),  dimension(:,:) :: p, u
+    ! Locals
+    integer :: ti, tj
 
-    CU(I,J) = .5*(P(I,J)+P(I-1,J))*U(I,J)
+    ti = i + tshift(1)
+    tj = j + tshift(2)
+
+    CU(I,J) = .5*(P(ti,tJ)+P(tI-1,tJ))*U(I,J)
 
   end subroutine compute_cu_code
 

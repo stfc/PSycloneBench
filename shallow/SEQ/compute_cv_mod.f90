@@ -22,6 +22,15 @@ module compute_cv_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
+
+     !> This kernel is written assuming that the internal
+     !! regions for each grid-point type begin at the
+     !! following locations on the grid:
+     integer :: tstart(2) = (/ 1, 1 /)
+     integer :: ustart(2) = (/ 2, 1 /)
+     integer :: vstart(2) = (/ 1, 2 /)
+     integer :: fstart(2) = (/ 2, 2 /)
+
   contains
     procedure, nopass :: code => compute_cv_code
   end type compute_cv_type
@@ -38,6 +47,9 @@ contains
     type(r2d_field_type), intent(in)    :: pfld, vfld
     ! Locals
     integer :: I, J
+    integer, dimension(2) :: kern_tshift
+    integer, dimension(2) :: tshift
+    type(compute_cv_type) :: this_kernel
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -79,11 +91,20 @@ contains
     !   |        |       |       |
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
     !
+    ! The shifts from V to xx pts assumed by this kernel
+    kern_tshift(1) = this_kernel%tstart(1) - this_kernel%vstart(1)
+    kern_tshift(2) = this_kernel%tstart(2) - this_kernel%vstart(2)
+
+    ! The shifts we must apply to account for the fact that our
+    ! fields may not have the same relative positioning as
+    ! assumed by the kernel
+    tshift(1) = cvfld%internal%xstart - pfld%internal%xstart - kern_tshift(1)
+    tshift(2) = cvfld%internal%ystart - pfld%internal%ystart - kern_tshift(2)
 
     do J=cvfld%internal%ystart, cvfld%internal%ystop
        do I=cvfld%internal%xstart, cvfld%internal%xstop
 
-          call compute_cv_code(i, j, cvfld%data, pfld%data, vfld%data)
+          call compute_cv_code(i, j, tshift, cvfld%data, pfld%data, vfld%data)
        end do
     end do
 
@@ -92,13 +113,19 @@ contains
   !===================================================
 
   !> Compute the mass flux in the y direction at point (i,j)
-  subroutine compute_cv_code(i, j, cv, p, v)
+  subroutine compute_cv_code(i, j, tshift, cv, p, v)
     implicit none
     integer,  intent(in) :: I, J
+    integer,  intent(in), dimension(2) :: tshift
     real(wp), intent(out), dimension(:,:) :: cv
     real(wp), intent(in),  dimension(:,:) :: p, v
+    ! Locals
+    integer :: ti, tj
 
-    CV(I,J) = .5*(P(I,J)+P(I,J-1))*V(I,J)
+    ti = i + tshift(1)
+    tj = j + tshift(2)
+
+    CV(I,J) = .5*(P(tI,tJ)+P(tI,tJ-1))*V(I,J)
 
   end subroutine compute_cv_code
 

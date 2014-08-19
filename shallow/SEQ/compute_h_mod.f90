@@ -20,6 +20,15 @@ module compute_h_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
+
+     !> This kernel is written assuming that the internal
+     !! regions for each grid-point type begin at the
+     !! following locations on the grid:
+     integer :: tstart(2) = (/ 1, 1 /)
+     integer :: ustart(2) = (/ 2, 1 /)
+     integer :: vstart(2) = (/ 1, 2 /)
+     integer :: fstart(2) = (/ 2, 2 /)
+
   contains
     procedure, nopass :: code => compute_h_code
   end type compute_h_type
@@ -34,6 +43,9 @@ contains
     type(r2d_field_type), intent(in)    :: pfld, ufld,vfld
     ! Locals
     integer :: I, J
+    integer, dimension(2) :: kern_ushift, kern_vshift
+    integer, dimension(2) :: ushift, vshift
+    type(compute_h_type) :: this_kernel
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -79,11 +91,24 @@ contains
     !   |       |       |
     !   uij-1- -Tij-1---ui+1j-1
     !
+    ! The shifts from T to xx pts assumed by this kernel
+    kern_ushift(1) = this_kernel%ustart(1) - this_kernel%tstart(1)
+    kern_ushift(2) = this_kernel%ustart(2) - this_kernel%tstart(2)
+    kern_vshift(1) = this_kernel%vstart(1) - this_kernel%tstart(1)
+    kern_vshift(2) = this_kernel%vstart(2) - this_kernel%tstart(2)
+
+    ! The shifts we must apply to account for the fact that our
+    ! fields may not have the same relative positioning as
+    ! assumed by the kernel
+    ushift(1) = ufld%internal%xstart - hfld%internal%xstart - kern_ushift(1)
+    ushift(2) = ufld%internal%ystart - hfld%internal%ystart - kern_ushift(2)
+    vshift(1) = vfld%internal%xstart - hfld%internal%xstart - kern_vshift(1)
+    vshift(2) = vfld%internal%ystart - hfld%internal%ystart - kern_vshift(2)
 
     DO J=hfld%internal%ystart, hfld%internal%ystop, 1
        DO I=hfld%internal%xstart, hfld%internal%xstop, 1
 
-          CALL compute_h_code(i, j, hfld%data, &
+          CALL compute_h_code(i, j, ushift, vshift, hfld%data, &
                               pfld%data, ufld%data, vfld%data)
        END DO
     END DO
@@ -92,14 +117,22 @@ contains
 
   !===================================================
 
-  SUBROUTINE compute_h_code(i, j, h, p, u, v)
+  SUBROUTINE compute_h_code(i, j, ushift, vshift, h, p, u, v)
     IMPLICIT none
-    INTEGER, INTENT(in) :: I, J
+    integer,  intent(in) :: I, J
+    integer,  intent(in), dimension(2) :: ushift, vshift
     REAL(wp), INTENT(out), DIMENSION(:,:) :: h
     REAL(wp), INTENT(in),  DIMENSION(:,:) :: p, u, v
+    ! Locals
+    integer :: ui, uj, vi, vj
 
-    H(I,J) = P(I,J)+.25*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)     & 
-                        +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
+    ui = i + ushift(1)
+    uj = j + ushift(2)
+    vi = i + vshift(1)
+    vj = j + vshift(2)
+
+    H(I,J) = P(I,J)+.25*(U(uI+1,uJ)*U(uI+1,uJ)+U(uI,uJ)*U(uI,uJ)     & 
+                        +V(vI,vJ+1)*V(vI,vJ+1)+V(vI,vJ)*V(vI,vJ))
 
   END SUBROUTINE compute_h_code
 
