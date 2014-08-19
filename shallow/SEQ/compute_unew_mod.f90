@@ -26,6 +26,14 @@ MODULE compute_unew_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
+
+     !> This kernel is written assuming that the internal
+     !! regions for each grid-point type begin at the
+     !! following locations on the grid:
+     integer :: tstart(2) = (/ 1, 1 /)
+     integer :: ustart(2) = (/ 2, 1 /)
+     integer :: vstart(2) = (/ 1, 2 /)
+     integer :: fstart(2) = (/ 2, 2 /)
   contains
     procedure, nopass :: code => compute_unew_code
   end type compute_unew_type
@@ -42,6 +50,9 @@ contains
     ! Locals
     integer  :: I, J
     real(wp) :: dx, dy
+    integer, dimension(2) :: kern_vshift, kern_tshift, kern_fshift
+    integer, dimension(2) :: vshift, tshift, fshift
+    type(compute_unew_type) :: this_kernel
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -78,10 +89,28 @@ contains
     dx = unew%grid%dx
     dy = unew%grid%dy
 
+    ! The shifts from U to xx pts assumed by this kernel
+    kern_vshift(1) = this_kernel%vstart(1) - this_kernel%ustart(1)
+    kern_vshift(2) = this_kernel%vstart(2) - this_kernel%ustart(2)
+    kern_tshift(1) = this_kernel%tstart(1) - this_kernel%ustart(1)
+    kern_tshift(2) = this_kernel%tstart(2) - this_kernel%ustart(2)
+    kern_fshift(1) = this_kernel%fstart(1) - this_kernel%ustart(1)
+    kern_fshift(2) = this_kernel%fstart(2) - this_kernel%ustart(2)
+
+    ! The shifts we must apply to account for the fact that our
+    ! fields may not have the same relative positioning as
+    ! assumed by the kernel
+    vshift(1) = cv%internal%xstart - unew%internal%xstart - kern_vshift(1)
+    vshift(2) = cv%internal%ystart - unew%internal%ystart - kern_vshift(2)
+    tshift(1) = h%internal%xstart  - unew%internal%xstart - kern_tshift(1)
+    tshift(2) = h%internal%ystart  - unew%internal%ystart - kern_tshift(2)
+    fshift(1) = z%internal%xstart  - unew%internal%xstart - kern_fshift(1)
+    fshift(2) = z%internal%ystart  - unew%internal%ystart - kern_fshift(2)
+
     DO J=unew%internal%ystart, unew%internal%ystop, 1
        DO I=unew%internal%xstart, unew%internal%xstop, 1
 
-          CALL compute_unew_code(i, j, dx, dy, &
+          CALL compute_unew_code(i, j, vshift, tshift, fshift, dx, dy, &
                                  unew%data, uold%data, &
                                  z%data, cv%data, h%data, tdt)
        END DO
@@ -91,9 +120,11 @@ contains
 
   !===================================================
 
-  subroutine compute_unew_code(i, j, dx, dy, unew, uold, z, cv, h, tdt)
+  subroutine compute_unew_code(i, j, vshift, tshift, fshift, dx, dy, &
+                               unew, uold, z, cv, h, tdt)
     implicit none
     integer,  intent(in) :: I, J
+    integer, intent(in), dimension(2) :: vshift, tshift, fshift
     real(wp), intent(in) :: dx, dy
     real(wp), intent(out), dimension(:,:) :: unew
     real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
@@ -107,10 +138,14 @@ contains
     tdts8 = tdt/8.0d0
     tdtsdx = tdt/dx
 
-    UNEW(I,J) = UOLD(I,J) +                                 &
-                TDTS8*(Z(I,J+1)+Z(I,J)) *                   &
-                (CV(I,J+1)+CV(I-1,J+1)+CV(I-1,J)+CV(I,J)) - &
-                TDTSDX*(H(I,J)-H(I-1,J))
+    UNEW(I,J) = UOLD(I,J) +                          &
+                TDTS8*(Z(I+fshift(1),J+1+fshift(2))+ &
+                       Z(I+fshift(1),J+fshift(2))) * &
+                (CV(I+vshift(1),J+1+vshift(2))  + &
+                 CV(I-1+vshift(1),J+1+vshift(2))+ &
+                 CV(I-1+vshift(1),J+vshift(2))  + &
+                 CV(I+vshift(1),J+vshift(2))) -   &
+                TDTSDX*(H(I+tshift(1),J+tshift(2))-H(I-1+tshift(1),J+tshift(2)))
 
   end subroutine compute_unew_code
 

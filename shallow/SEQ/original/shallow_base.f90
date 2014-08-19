@@ -113,8 +113,8 @@
  
       DX = 1.E5
       DY = 1.E5
-      A = 1.E6
-      ALPHA = .001
+      A = 1.0D6
+      ALPHA = 0.001d0
 
       MP1 = M+1
       NP1 = N+1
@@ -209,8 +209,8 @@
       DO ncycle=1,itmax
     
 !        COMPUTE CAPITAL U, CAPITAL V, Z AND H
-         FSDX = 4./DX
-         FSDY = 4./DY
+         FSDX = 4.0d0/DX
+         FSDY = 4.0d0/DY
 
          !call system_clock(count=c1, count_rate=r,count_max=max)
          !T100 = c1
@@ -218,11 +218,11 @@
 
          DO J=1,N
             DO I=1,M
-               CU(I+1,J) = .5*(P(I+1,J)+P(I,J))*U(I+1,J)
-               CV(I,J+1) = .5*(P(I,J+1)+P(I,J))*V(I,J+1)
+               CU(I+1,J) = .5d0*(P(I+1,J)+P(I,J))*U(I+1,J)
+               CV(I,J+1) = .5d0*(P(I,J+1)+P(I,J))*V(I,J+1)
                Z(I+1,J+1) =(FSDX*(V(I+1,J+1)-V(I,J+1))-FSDY*(U(I+1,J+1) & 
                     -U(I+1,J)))/(P(I,J)+P(I+1,J)+P(I+1,J+1)+P(I,J+1))
-               H(I,J) = P(I,J)+.25*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)     & 
+               H(I,J) = P(I,J)+0.25d0*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)  & 
                     +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
             END DO
          END DO
@@ -253,7 +253,7 @@
          CALL timer_stop(idxt1)
 
 !        COMPUTE NEW VALUES U,V AND P
-         TDTS8 = TDT/8.
+         TDTS8 = TDT/8.0d0
          TDTSDX = TDT/DX
          TDTSDY = TDT/DY
 
@@ -432,11 +432,11 @@
       CALL timer_stop(idxt0)
 
       WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax, SUM(PNEW(:,:))
+           itmax, SUM(PNEW(1:m,1:n))
       WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax,SUM(UNEW(:,:))
+           itmax,SUM(UNEW(2:M+1,1:N))
       WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax,SUM(VNEW(:,:))
+           itmax,SUM(VNEW(1:m,2:N+1))
 
  !     Close the netCDF file
 

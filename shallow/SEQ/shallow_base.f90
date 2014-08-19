@@ -48,7 +48,9 @@ program shallow
   use compute_cv_mod, ONLY: manual_invoke_compute_cv
   use compute_z_mod,  ONLY: manual_invoke_compute_z
   use compute_h_mod,  ONLY: manual_invoke_compute_h
-  use manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
+  use compute_unew_mod, ONLY: manual_invoke_compute_unew
+  use compute_vnew_mod, ONLY: manual_invoke_compute_vnew
+  use compute_pnew_mod, ONLY: manual_invoke_compute_pnew
   implicit none
 
   type(grid_type), target :: model_grid
@@ -211,11 +213,12 @@ program shallow
     ! COMPUTE NEW VALUES U,V AND P
 
     CALL timer_start('Compute new fields', idxt1)
-    CALL manual_invoke_compute_new_fields(unew_fld, uold_fld, &
-                                          vnew_fld, vold_fld, &
-                                          pnew_fld, pold_fld, &
-                                          z_fld, cu_fld, cv_fld, &
-                                          h_fld, tdt%data)
+    CALL manual_invoke_compute_unew(unew_fld, uold_fld, z_fld, &
+                                    cv_fld, h_fld, tdt%data)
+    CALL manual_invoke_compute_vnew(vnew_fld, vold_fld, z_fld, &
+                                    cu_fld, h_fld, tdt%data)
+    CALL manual_invoke_compute_pnew(pnew_fld, pold_fld,        &
+                                    cu_fld, cv_fld, tdt%data)
     CALL timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION

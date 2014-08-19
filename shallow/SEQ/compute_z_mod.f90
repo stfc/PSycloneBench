@@ -27,6 +27,15 @@ module compute_z_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
+
+     !> This kernel is written assuming that the internal
+     !! regions for each grid-point type begin at the
+     !! following locations on the grid:
+     integer :: tstart(2) = (/ 1, 1 /)
+     integer :: ustart(2) = (/ 2, 1 /)
+     integer :: vstart(2) = (/ 1, 2 /)
+     integer :: fstart(2) = (/ 2, 2 /)
+
   contains
     procedure, nopass :: code => compute_z_code
   end type compute_z_type
@@ -44,52 +53,9 @@ contains
     ! Locals
     integer :: I, J
     real(wp) :: dx, dy
-    integer :: uxshift, uyshift, vxshift, vyshift, txshift, tyshift
-    real(wp), dimension(:,:), pointer :: u, v, p, z
-
-    ! Note that we do not loop over the full extent of the field.
-    ! Fields are allocated with extents (M+1,N+1).
-    ! Presumably the extra row and column are needed for periodic BCs.
-    ! We are updating a quantity on CF.
-    ! This loop writes to z(2:M+1,2:N+1) so this looks like
-    ! (using x to indicate a location that is written):
-    !
-    ! i=1   i=M
-    !  o  x  x  x 
-    !  o  x  x  x   j=N
-    !  o  x  x  x
-    !  o  o  o  o   j=1
-
-    ! Quantity Z is Potential Enstrophy
-
-    ! Original code looked like:
-    !
-    !   DO J=1,N
-    !      DO I=1,M
-    !         Z(I+1,J+1) =(FSDX*(V(I+1,J+1)-V(I,J+1))-FSDY*(U(I+1,J+1) & 
-    !                -U(I+1,J)))/(P(I,J)+P(I+1,J)+P(I+1,J+1)+P(I,J+1))
-    !      END DO
-    !    END DO
-
-    ! z(i,j) depends upon:
-    !   p(i-1,j-1), p(i,j-1), p(i-1,j), p(i,j) : CT
-    !    => all CT neighbours of the CF pt being updated
-    !   u(i,j), u(i,j-1)                      : CU
-    !    => vertical CU neighbours of the CF pt being updated 
-    !   v(i,j), v(i-1,j)                      : CV
-    !    => lateral CV neighbours of the CF pt being updated
-
-    !   vi-1j+1--fij+1---vij+1---fi+1j+1
-    !   |        |       |       |
-    !   |        |       |       |
-    !   Ti-1j----uij-----Tij-----ui+1j
-    !   |        |       |       |
-    !   |        |       |       |
-    !   vi-1j----fij-----vij-----fi+1j
-    !   |        |       |       |
-    !   |        |       |       |
-    !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
-    !
+    integer :: kern_uxshift, kern_uyshift, kern_vxshift, kern_vyshift, kern_txshift, kern_tyshift
+    integer, dimension(2) :: ushift, vshift, tshift
+    type(compute_z_type) :: this_kernel
 
     dx = zfld%grid%dx
     dy = zfld%grid%dy
@@ -99,36 +65,33 @@ contains
     !                    F      U      V       T
     !                  (2,2)  (2, 1) (1, 2)  (1,1)
     ! Original shift          (0,-1) (-1,0)  (-1,-1)
-    !             (fxstart,fystart) (uxstart,uystart)
-    ! If we're looping over F internal pts and kernel assumes a shift
-    ! of (0,-1) to U internal pts then we need to shift by:
-    ! iu = if - (fxstart - uxstart - 0)
-    ! ju = jf - (fystart - uystart - 1)
-    ! For V pts the kernel assumes a shift of (-1,0) relative to F:
-    ! iv = if - (fxstart - vxstart - 1)
-    ! jv = jf - (fystart - vystart - 0)
-    ! For T pts the kernel assumes a shift of (-1,-1) relative to T:
-    ! it = if - (fxstart - txstart - 1)
-    ! jt = jf - (fystart - tystart - 1)
-    uxshift = ufld%internal%xstart - zfld%internal%xstart
-    uyshift = ufld%internal%ystart - zfld%internal%ystart + 1
-    vxshift = vfld%internal%xstart - zfld%internal%xstart + 1
-    vyshift = vfld%internal%ystart - zfld%internal%ystart
-    txshift = pfld%internal%xstart - zfld%internal%xstart + 1
-    tyshift = pfld%internal%ystart - zfld%internal%ystart + 1
+
+    ! The shifts from F to xx pts assumed by this kernel
+    kern_uxshift = this_kernel%ustart(1) - this_kernel%fstart(1)
+    kern_uyshift = this_kernel%ustart(2) - this_kernel%fstart(2)
+    kern_vxshift = this_kernel%vstart(1) - this_kernel%fstart(1)
+    kern_vyshift = this_kernel%vstart(2) - this_kernel%fstart(2)
+    kern_txshift = this_kernel%tstart(1) - this_kernel%fstart(1)
+    kern_tyshift = this_kernel%tstart(2) - this_kernel%fstart(2)
+
+    ! The shifts we must apply to account for the fact that our
+    ! fields may not have the same relative positioning as
+    ! assumed by the kernel
+    ushift(1) = ufld%internal%xstart - zfld%internal%xstart - kern_uxshift
+    ushift(2) = ufld%internal%ystart - zfld%internal%ystart - kern_uyshift
+    vshift(1) = vfld%internal%xstart - zfld%internal%xstart - kern_vxshift
+    vshift(2) = vfld%internal%ystart - zfld%internal%ystart - kern_vyshift
+    tshift(1) = pfld%internal%xstart - zfld%internal%xstart - kern_txshift
+    tshift(2) = pfld%internal%ystart - zfld%internal%ystart - kern_tyshift
 
     do J=zfld%internal%ystart, zfld%internal%ystop, 1
        do I=zfld%internal%xstart, zfld%internal%xstop, 1
 
-!          call compute_z_code(i, j, dx, dy,         &
-!                              zfld%data, pfld%data, &
-!                              ufld%data, vfld%data)
-          Zfld%data(I,J) =((4.0/dx)*(Vfld%data(i+vxshift,J+vyshift)-Vfld%data(i+vxshift-1,J+vyshift)) - &
-                   (4.0/dy)*(Ufld%data(i+uxshift,J+uyshift)-Ufld%data(i+uxshift,J-1+uyshift)))/ &
-                 (Pfld%data(I-1+txshift,J-1+tyshift)+ &
-                  Pfld%data(I+txshift,J-1+tyshift)+ &
-                  Pfld%data(I+txshift,J+tyshift)+ &
-                  Pfld%data(I-1+txshift,J+tyshift))
+          call compute_z_code(i, j, ushift, vshift, tshift, dx, dy, &
+                              zfld%data, &
+                              pfld%data, &
+                              ufld%data, &
+                              vfld%data)
 
        end do
     end do
@@ -138,15 +101,20 @@ contains
   !===================================================
 
   !> Compute the potential vorticity on the grid point (i,j)
-  subroutine compute_z_code(i, j, dx, dy, z, p, u, v)
+  subroutine compute_z_code(i, j, ushift, vshift, tshift, dx, dy, z, p, u, v)
     implicit none
     integer,  intent(in) :: I, J
+    integer,  intent(in),  dimension(2) :: ushift, vshift, tshift
     real(wp), intent(in) :: dx, dy
     real(wp), intent(out), dimension(:,:) :: z
     real(wp), intent(in),  dimension(:,:) :: p, u, v
 
-    Z(I,J) =((4.0/dx)*(V(I,J)-V(I-1,J))-(4.0/dy)*(U(I,J)-U(I,J-1)))/ &
-                 (P(I-1,J-1)+P(I,J-1)+P(I,J)+P(I-1,J))
+    Z(I,J) =((4.0/dx)*( &
+            V(I+vshift(1),J+vshift(2))-V(I-1+vshift(1),J+vshift(2)))- &
+            (4.0/dy)*(  &
+            U(I+ushift(1),J+ushift(2))-U(I+ushift(1),J-1+ushift(2))))/ &
+            (P(I-1+tshift(1),J-1+tshift(2))+P(I+tshift(1),J-1+tshift(2))+&
+             P(I+tshift(1),J+tshift(2))+P(I-1+tshift(1),J+tshift(2)))
 
   end subroutine compute_z_code
 

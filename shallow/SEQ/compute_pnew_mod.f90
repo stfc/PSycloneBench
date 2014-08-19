@@ -25,6 +25,14 @@ module compute_pnew_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      INTEGER :: ITERATES_OVER = DOFS
+
+     !> This kernel is written assuming that the internal
+     !! regions for each grid-point type begin at the
+     !! following locations on the grid:
+     integer :: tstart(2) = (/ 1, 1 /)
+     integer :: ustart(2) = (/ 2, 1 /)
+     integer :: vstart(2) = (/ 1, 2 /)
+     integer :: fstart(2) = (/ 2, 2 /)
   CONTAINS
     procedure, nopass :: code => compute_pnew_code
   END TYPE compute_pnew_type
@@ -41,6 +49,9 @@ contains
     ! Locals
     integer :: I, J
     real(wp) :: dx, dy
+    integer, dimension(2) :: kern_ushift, kern_vshift
+    integer, dimension(2) :: ushift, vshift
+    type(compute_pnew_type) :: this_kernel
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -85,10 +96,24 @@ contains
     dx = pnew%grid%dx
     dy = pnew%grid%dy
 
+    ! The shifts from T to xx pts assumed by this kernel
+    kern_ushift(1) = this_kernel%ustart(1) - this_kernel%tstart(1)
+    kern_ushift(2) = this_kernel%ustart(2) - this_kernel%tstart(2)
+    kern_vshift(1) = this_kernel%vstart(1) - this_kernel%tstart(1)
+    kern_vshift(2) = this_kernel%vstart(2) - this_kernel%tstart(2)
+
+    ! The shifts we must apply to account for the fact that our
+    ! fields may not have the same relative positioning as
+    ! assumed by the kernel
+    ushift(1) = cu%internal%xstart - pnew%internal%xstart - kern_ushift(1)
+    ushift(2) = cu%internal%ystart - pnew%internal%ystart - kern_ushift(2)
+    vshift(1) = cv%internal%xstart - pnew%internal%xstart - kern_vshift(1)
+    vshift(2) = cv%internal%ystart - pnew%internal%ystart - kern_vshift(2)
+
     DO J=pnew%internal%ystart, pnew%internal%ystop, 1
        DO I=pnew%internal%xstart, pnew%internal%xstop, 1
 
-          CALL compute_pnew_code(i, j, dx, dy, &
+          CALL compute_pnew_code(i, j, ushift, vshift, dx, dy, &
                                  pnew%data, pold%data, &
                                  cu%data, cv%data, tdt)
        END DO
@@ -98,24 +123,32 @@ contains
 
   !===================================================
 
-  subroutine compute_pnew_code(i, j, dx, dy, pnew, pold, cu, cv, tdt)
+  subroutine compute_pnew_code(i, j, ushift, vshift, dx, dy, &
+                               pnew, pold, cu, cv, tdt)
     implicit none
     integer,  intent(in) :: I, J
+    integer,  intent(in), dimension(2) :: ushift, vshift
     real(wp), intent(in) :: dx, dy
     real(wp), intent(out), dimension(:,:) :: pnew
     real(wp), intent(in),  dimension(:,:) :: pold, cu, cv
     real(wp), intent(in) :: tdt
     ! Locals
     real(wp) :: tdtsdx, tdtsdy
-   
+    integer :: ui, uj, vi, vj
+
     !> These quantities are computed here because tdt is not
     !! constant. (It is == dt for first time step, 2xdt for
     !! all remaining time steps.)
     tdtsdx = tdt/dx
     tdtsdy = tdt/dy
 
-    PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I+1,J)-CU(I,J))   & 
-                         -TDTSDY*(CV(I,J+1)-CV(I,J))
+    ui = i + ushift(1)
+    uj = j + ushift(2)
+    vi = i + vshift(1)
+    vj = j + vshift(2)
+
+    PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(uI+1,uJ)-CU(uI,uJ))   & 
+                         -TDTSDY*(CV(vI,vJ+1)-CV(vI,vJ))
 
   END SUBROUTINE compute_pnew_code
 

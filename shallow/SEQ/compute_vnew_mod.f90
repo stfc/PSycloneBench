@@ -26,6 +26,14 @@ MODULE compute_vnew_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      INTEGER :: ITERATES_OVER = DOFS
+
+     !> This kernel is written assuming that the internal
+     !! regions for each grid-point type begin at the
+     !! following locations on the grid:
+     integer :: tstart(2) = (/ 1, 1 /)
+     integer :: ustart(2) = (/ 2, 1 /)
+     integer :: vstart(2) = (/ 1, 2 /)
+     integer :: fstart(2) = (/ 2, 2 /)
   CONTAINS
     procedure, nopass :: code => compute_vnew_code
   END TYPE compute_vnew_type
@@ -42,6 +50,9 @@ CONTAINS
     ! Locals
     integer :: I, J
     real(wp) :: dx, dy
+    integer, dimension(2) :: kern_ushift, kern_tshift, kern_fshift
+    integer, dimension(2) :: ushift, tshift, fshift
+    type(compute_vnew_type) :: this_kernel
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -90,10 +101,28 @@ CONTAINS
     dx = vnew%grid%dx
     dy = vnew%grid%dy
 
+    ! The shifts from V to xx pts assumed by this kernel
+    kern_ushift(1) = this_kernel%ustart(1) - this_kernel%vstart(1)
+    kern_ushift(2) = this_kernel%ustart(2) - this_kernel%vstart(2)
+    kern_tshift(1) = this_kernel%tstart(1) - this_kernel%vstart(1)
+    kern_tshift(2) = this_kernel%tstart(2) - this_kernel%vstart(2)
+    kern_fshift(1) = this_kernel%fstart(1) - this_kernel%vstart(1)
+    kern_fshift(2) = this_kernel%fstart(2) - this_kernel%vstart(2)
+
+    ! The shifts we must apply to account for the fact that our
+    ! fields may not have the same relative positioning as
+    ! assumed by the kernel
+    ushift(1) = cu%internal%xstart - vnew%internal%xstart - kern_ushift(1)
+    ushift(2) = cu%internal%ystart - vnew%internal%ystart - kern_ushift(2)
+    tshift(1) = h%internal%xstart  - vnew%internal%xstart - kern_tshift(1)
+    tshift(2) = h%internal%ystart  - vnew%internal%ystart - kern_tshift(2)
+    fshift(1) = z%internal%xstart  - vnew%internal%xstart - kern_fshift(1)
+    fshift(2) = z%internal%ystart  - vnew%internal%ystart - kern_fshift(2)
+
     DO J=vnew%internal%ystart, vnew%internal%ystop, 1
        DO I=vnew%internal%xstart, vnew%internal%xstop, 1
 
-          CALL compute_vnew_code(i, j, dx, dy, &
+          CALL compute_vnew_code(i, j, ushift, tshift, fshift, dx, dy, &
                                  vnew%data, vold%data, &
                                  z%data, cu%data, h%data, tdt)
        END DO
@@ -103,25 +132,36 @@ CONTAINS
 
   !===================================================
 
-  subroutine compute_vnew_code(i, j, dx, dy, vnew, vold, z, cu, h, tdt)
+  subroutine compute_vnew_code(i, j, ushift, tshift, fshift, &
+                               dx, dy, vnew, vold, z, cu, h, tdt)
     implicit none
     integer,  intent(in) :: I, J
+    integer,  intent(in), dimension(2) :: ushift, tshift, fshift
     real(wp), intent(in) :: dx, dy
-    REAL(wp), INTENT(out), DIMENSION(:,:) :: vnew
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: vold, z, cu, h
-    REAL(wp), INTENT(in) :: tdt
+    REAL(wp), intent(out), DIMENSION(:,:) :: vnew
+    REAL(wp), intent(in),  DIMENSION(:,:) :: vold, z, cu, h
+    REAL(wp), intent(in) :: tdt
     ! Locals
     REAL(wp) :: tdts8, tdtsdy
-   
+    integer :: fi, fj, ui, uj, ti, tj
+
     !> These quantities are computed here because tdt is not
     !! constant. (It is == dt for first time step, 2xdt for
     !! all remaining time steps.)
     tdts8 = tdt/8.0d0
     tdtsdy = tdt/dy
 
-    VNEW(I,J) = VOLD(I,J)-TDTS8*(Z(I+1,J)+Z(I,J))                 & 
-                *(CU(I+1,J)+CU(I,J)+CU(I,J-1)+CU(I+1,J-1))        & 
-                 -TDTSDY*(H(I,J)-H(I,J-1))
+    fi = i + fshift(1)
+    fj = j + fshift(2)
+    ui = i + ushift(1)
+    uj = j + ushift(2)
+    ti = i + tshift(1)
+    tj = j + tshift(2)
+
+    VNEW(I,J) = VOLD(I,J)- &
+                TDTS8*(Z(FI+1,FJ)+Z(FI,FJ)) & 
+                *(CU(UI+1,UJ)+CU(UI,UJ)+CU(UI,UJ-1)+CU(UI+1,UJ-1)) & 
+                 -TDTSDY*(H(TI,TJ)-H(TI,TJ-1))
 
   END SUBROUTINE compute_vnew_code
 
