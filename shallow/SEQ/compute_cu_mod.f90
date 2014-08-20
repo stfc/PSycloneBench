@@ -125,7 +125,7 @@ contains
     ti = i + tshift(1)
     tj = j + tshift(2)
 
-    CU(I,J) = .5*(P(ti,tJ)+P(tI-1,tJ))*U(I,J)
+    CU(I,J) = 0.5d0*(P(ti,tJ)+P(tI-1,tJ))*U(I,J)
 
   end subroutine compute_cu_code
 

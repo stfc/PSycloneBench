@@ -71,11 +71,11 @@ CONTAINS
 
     !> Grid spacings currently hard-wired, as in original
     !! version of code.
-    REAL(KIND=wp), PARAMETER :: dxloc=1.0E5, dyloc=1.0E5
+    REAL(KIND=wp), PARAMETER :: dxloc=1.0D5, dyloc=1.0D5
     !> Parameter for time smoothing
-    REAL(KIND=wp), PARAMETER :: alpha_loc = .001
+    REAL(KIND=wp), PARAMETER :: alpha_loc = .001d0
     !> Hardwired model time-step (seconds)
-    REAL(KIND=wp), PARAMETER :: dt_loc = 90.
+    REAL(KIND=wp), PARAMETER :: dt_loc = 90.0d0
     !> Problem size, read from namelist
     integer :: m, n
 

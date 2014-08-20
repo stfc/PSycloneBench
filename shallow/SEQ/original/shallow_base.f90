@@ -111,8 +111,8 @@
       DT = 90.
       TDT = DT
  
-      DX = 1.E5
-      DY = 1.E5
+      DX = 1.0D5
+      DY = 1.0D5
       A = 1.0D6
       ALPHA = 0.001d0
 
@@ -128,9 +128,9 @@
 !     INITIAL VALUES OF THE STREAM FUNCTION AND P
       DO J=1,NP1
          DO I=1,MP1
-            PSI(I,J) = A*SIN((I-.5)*DI)*SIN((J-.5)*DJ)
-            P(I,J) = PCF*(COS(2.*(I-1)*DI)   & 
-                 +COS(2.*(J-1)*DJ))+50000.
+            PSI(I,J) = A*SIN((I-.5d0)*DI)*SIN((J-.5d0)*DJ)
+            P(I,J) = PCF*(COS(2.0d0*(I-1)*DI)   & 
+                 +COS(2.0d0*(J-1)*DJ))+50000.0d0
          END DO
       END DO
 
@@ -179,10 +179,10 @@
  393     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF V ' //,(8E15.6))
 
          ! Generate and output checksums of initial fields
-         write(*,"('psi initial CHECKSUM = ',E15.7)")  sum(psi(2:m+1,2:n+1))
-         write(*,"('P initial CHECKSUM = ',E15.7)")    sum(p(1:m,1:n))
-         write(*,"('U initial CHECKSUM = ',E15.7)")    sum(u(2:M+1,1:N))
-         write(*,"('V initial CHECKSUM = ',E15.7)")    sum(v(1:m,2:N+1))
+         write(*,"('psi initial CHECKSUM = ',E24.16)")  sum(psi(2:m+1,2:n+1))
+         write(*,"('P initial CHECKSUM = ',E24.16)")    sum(p(1:m,1:n))
+         write(*,"('U initial CHECKSUM = ',E24.16)")    sum(u(2:M+1,1:N))
+         write(*,"('V initial CHECKSUM = ',E24.16)")    sum(v(1:m,2:N+1))
 
 !        Write intial values of p, u, and v into a netCDF file   
          t_val = 0   
@@ -367,9 +367,9 @@
 
             DO J=1,N
                DO I=1,M
-                  UOLD(I,J) = U(I,J)+ALPHA*(UNEW(I,J)-2.*U(I,J)+UOLD(I,J))
-                  VOLD(I,J) = V(I,J)+ALPHA*(VNEW(I,J)-2.*V(I,J)+VOLD(I,J))
-                  POLD(I,J) = P(I,J)+ALPHA*(PNEW(I,J)-2.*P(I,J)+POLD(I,J))
+                  UOLD(I,J) = U(I,J)+ALPHA*(UNEW(I,J)-2.0d0*U(I,J)+UOLD(I,J))
+                  VOLD(I,J) = V(I,J)+ALPHA*(VNEW(I,J)-2.0d0*V(I,J)+VOLD(I,J))
+                  POLD(I,J) = P(I,J)+ALPHA*(PNEW(I,J)-2.0d0*P(I,J)+POLD(I,J))
                   U(I,J) = UNEW(I,J)
                   V(I,J) = VNEW(I,J)
                   P(I,J) = PNEW(I,J)
@@ -426,16 +426,16 @@
 
          endif
 
-      End do
+     End do
 
 !  ** End of time loop ** 
       CALL timer_stop(idxt0)
 
-      WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
+      WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E24.16)") &
            itmax, SUM(PNEW(1:m,1:n))
-      WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E15.7)") &
+      WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E24.16)") &
            itmax,SUM(UNEW(2:M+1,1:N))
-      WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E15.7)") &
+      WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E24.16)") &
            itmax,SUM(VNEW(1:m,2:N+1))
 
  !     Close the netCDF file

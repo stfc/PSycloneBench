@@ -11,7 +11,7 @@ MODULE time_smooth_mod
   PUBLIC time_smooth_type, time_smooth_code
 
   !> Parameter for time smoothing
-  REAL(wp) :: alpha
+  REAL(wp), save :: alpha
 
   !> The time smoothing operates in time rather than space
   !! and therefore takes three fields defined on any one
@@ -84,7 +84,7 @@ CONTAINS
     REAL(wp), INTENT(inout), DIMENSION(:,:) :: field_old
 
     field_old(i,j) = field(i,j) + &
-         alpha*(field_new(i,j) - 2.*field(i,j) + field_old(i,j))
+         alpha*(field_new(i,j) - 2.0d0*field(i,j) + field_old(i,j))
 
   END SUBROUTINE time_smooth_code
 

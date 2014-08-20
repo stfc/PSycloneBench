@@ -125,7 +125,7 @@ contains
     ti = i + tshift(1)
     tj = j + tshift(2)
 
-    CV(I,J) = .5*(P(tI,tJ)+P(tI,tJ-1))*V(I,J)
+    CV(I,J) = .5d0*(P(tI,tJ)+P(tI,tJ-1))*V(I,J)
 
   end subroutine compute_cv_code
 

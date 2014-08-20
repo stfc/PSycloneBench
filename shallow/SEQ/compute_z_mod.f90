@@ -106,7 +106,7 @@ contains
     integer,  intent(in) :: I, J
     integer,  intent(in),  dimension(2) :: ushift, vshift, tshift
     real(wp), intent(in) :: dx, dy
-    real(wp), intent(out), dimension(:,:) :: z
+    real(wp), intent(inout), dimension(:,:) :: z
     real(wp), intent(in),  dimension(:,:) :: p, u, v
     ! Locals
     integer :: ui, uj, vi, vj, ti, tj

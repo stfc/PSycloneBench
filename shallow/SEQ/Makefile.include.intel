@@ -7,7 +7,7 @@ F90 = ifort
 NETCDF_INC = ${HOME}/MyInstalls/include
 NETCDF_LIB = ${HOME}/MyInstalls/lib
 
-F90FLAGS =  -g -O0 -check all
+F90FLAGS =  -g -O0 -check all -fp-model strict
 #F90FLAGS = -O4 -axCORE-AVX2 -fast -opt-report
 #F90FLAGS += -vec-report6
 # -guide=4

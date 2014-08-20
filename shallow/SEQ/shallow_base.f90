@@ -156,13 +156,13 @@ program shallow
   CALL manual_invoke_apply_bcs(v_fld)
 
   ! Generate and output checksums of initial fields
-  CALL model_write_log("('psi initial CHECKSUM = ',E15.7)", &
+  CALL model_write_log("('psi initial CHECKSUM = ',E24.16)", &
                        field_checksum(psi_fld))
-  CALL model_write_log("('P initial CHECKSUM = ',E15.7)", &
+  CALL model_write_log("('P initial CHECKSUM = ',E24.16)", &
                          field_checksum(p_fld))
-  CALL model_write_log("('U initial CHECKSUM = ',E15.7)",  &
+  CALL model_write_log("('U initial CHECKSUM = ',E24.16)",  &
                        field_checksum(u_fld))
-  CALL model_write_log("('V initial CHECKSUM = ',E15.7)", &
+  CALL model_write_log("('V initial CHECKSUM = ',E24.16)", &
                        field_checksum(v_fld))
 
   ! Initialise fields that will hold data at previous time step
@@ -202,13 +202,6 @@ program shallow
     CALL manual_invoke_apply_bcs(H_fld)
     CALL manual_invoke_apply_bcs(Z_fld)
     CALL timer_stop(idxt1)
-
-    call ascii_write(ncycle, z_fld%grid%nx, z_fld%grid%ny, &
-                     z_fld%internal%xstart, z_fld%internal%ystart, &
-                     z_fld%data, 'zfld.dat')
-    call ascii_write(ncycle, cu_fld%grid%nx, cu_fld%grid%ny, &
-                     cu_fld%internal%xstart, cu_fld%internal%ystart, &
-                     cu_fld%data, 'cufld.dat')
 
     ! COMPUTE NEW VALUES U,V AND P
 
@@ -267,11 +260,11 @@ program shallow
   CALL timer_stop(idxt0)
 
   ! Output field checksums at end of run for correctness check
-  CALL model_write_log("('P CHECKSUM after ',I6,' steps = ',E15.7)", &
+  CALL model_write_log("('P CHECKSUM after ',I6,' steps = ',E24.16)", &
                        itmax, field_checksum(pnew_fld))
-  CALL model_write_log("('U CHECKSUM after ',I6,' steps = ',E15.7)", &
+  CALL model_write_log("('U CHECKSUM after ',I6,' steps = ',E24.16)", &
                        itmax, field_checksum(unew_fld))
-  CALL model_write_log("('V CHECKSUM after ',I6,' steps = ',E15.7)", &
+  CALL model_write_log("('V CHECKSUM after ',I6,' steps = ',E24.16)", &
                        itmax, field_checksum(vnew_fld))
 
   CALL model_finalise()

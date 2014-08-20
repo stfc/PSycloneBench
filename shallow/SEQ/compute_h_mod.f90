@@ -131,7 +131,7 @@ contains
     vi = i + vshift(1)
     vj = j + vshift(2)
 
-    H(I,J) = P(I,J)+.25*(U(uI+1,uJ)*U(uI+1,uJ)+U(uI,uJ)*U(uI,uJ)     & 
+    H(I,J) = P(I,J)+.25d0*(U(uI+1,uJ)*U(uI+1,uJ)+U(uI,uJ)*U(uI,uJ)     & 
                         +V(vI,vJ+1)*V(vI,vJ+1)+V(vI,vJ)*V(vI,vJ))
 
   END SUBROUTINE compute_h_code

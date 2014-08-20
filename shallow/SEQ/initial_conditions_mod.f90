@@ -6,7 +6,7 @@ module initial_conditions_mod
 
   !> Amplitude of initial oscillations in stream function
   !! Used by invoke_init_stream_fn_kernel()
-  REAL(wp), PARAMETER :: A = 1.0E6
+  REAL(wp), PARAMETER :: A = 1.0D6
   !> 2PI/{m,n}
   REAL(wp), SAVE  :: di, dj
 
@@ -78,7 +78,7 @@ CONTAINS
       ! di = 2Pi/(Extent of mesh in x)
       ! dj = 2Pi/(Extent of mesh in y)
 
-      PSI(I,J) = A*SIN((I-istart+1.5)*DI)*SIN((J-jstart+1.5)*DJ)
+      PSI(I,J) = A*SIN((I-istart+1.5d0)*DI)*SIN((J-jstart+1.5d0)*DJ)
 
     END SUBROUTINE init_stream_fn_code
 
@@ -112,8 +112,8 @@ CONTAINS
 !       DO I=pfld%internal%xstart, pfld%internal%xstop
     DO J=1,idim2
        DO I=1, idim1
-          P(I,J) = PCF*(COS(2.*(I-pfld%internal%xstart)*DI)   & 
-               +COS(2.*(J-pfld%internal%ystart)*DJ))+50000.
+          P(I,J) = PCF*(COS(2.0d0*(I-pfld%internal%xstart)*DI)   & 
+               +COS(2.0d0*(J-pfld%internal%ystart)*DJ))+50000.d0
        END DO
     END DO
 
