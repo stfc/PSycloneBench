@@ -17,7 +17,8 @@ EXECS = gocean2d
 
 # The modules that are common to both targets
 MODULES = model_mod.o boundary_conditions_mod.o \
-          continuity_mod.o momentum_mod.o physical_params_mod.o \
+          continuity_mod.o initialisation_mod.o \
+          momentum_mod.o physical_params_mod.o \
           time_update_mod.o gocean2d_io_mod.o
 
 GENERATED_MODULES = psy.o
