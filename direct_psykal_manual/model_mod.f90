@@ -24,6 +24,7 @@ MODULE model_mod
   REAL(wp), ALLOCATABLE, save :: ht(:,:), hu(:,:), hv(:,:), hf(:,:) 
   
   REAL(wp), ALLOCATABLE, save :: sshb(:,:), sshb_u(:,:), sshb_v(:,:)
+  !> Sea-surface height at T, U and V points
   REAL(wp), ALLOCATABLE, save :: sshn(:,:), sshn_u(:,:), sshn_v(:,:)
   REAL(wp), ALLOCATABLE, save :: ssha(:,:), ssha_u(:,:), ssha_v(:,:)
   

@@ -3,13 +3,19 @@ module continuity_mod
   use kernel_mod
   use argument_mod
   use grid_mod
+  use field_mod
   implicit none
 
   type, extends(kernel_type) :: continuity
-     type(arg), dimension(3) :: meta_args =    &
+     type(arg), dimension(8) :: meta_args =    &
           (/ arg(WRITE, CT, POINTWISE),        & ! ssha
-             arg(READ,  CT, POINTWISE),        & ! 
-             arg(READ,  CV, POINTWISE)         & ! 
+             arg(READ,  CT, POINTWISE),        & ! sshn
+             arg(READ,  CU, POINTWISE),        & ! sshn_u
+             arg(READ,  CV, POINTWISE),        & ! sshn_v
+             arg(READ,  CU, POINTWISE),        & ! hu
+             arg(READ,  CV, POINTWISE),        & ! hv
+             arg(READ,  CU, POINTWISE),        & ! un
+             arg(READ,  CV, POINTWISE)         & ! vn
            /)
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
@@ -22,19 +28,22 @@ contains
 
   !===================================================
 
-  subroutine invoke_continuity(grid, ssha, sshn, sshn_u, sshn_v, hu, hv, un, vn)
-    use model_mod, only: jpi, jpj, rdt
+  subroutine invoke_continuity(ssha, sshn, sshn_u, sshn_v, hu, hv, un, vn)
+    use model_mod, only: rdt
     implicit none
-    type(grid_type),           intent(in) :: grid
-    real(wp), dimension(:,:), intent(out) :: ssha
-    real(wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, hu, hv, un, vn
+    type(r2d_field_type),     intent(inout) :: ssha
+    type(r2d_field_type),     intent(in) :: sshn, sshn_u, sshn_v
+    type(r2d_field_type),     intent(in) :: hu, hv, un, vn
     ! Locals
     integer :: ji, jj
 
-    do jj = 1, jpj
-       do ji = 1, jpi
-          call continuity_code(ji, jj, rdt, grid%e12t, &
-                               ssha, sshn, sshn_u, sshn_v, hu, hv, un, vn)
+    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
+       do ji = ssha%internal%xstart, ssha%internal%xstop, 1
+
+          call continuity_code(ji, jj, rdt, ssha%grid%e12t,   &
+                               ssha%data, sshn%data,     &
+                               sshn_u%data, sshn_v%data, &
+                               hu%data, hv%data, un%data, vn%data)
        end do
     end do
 

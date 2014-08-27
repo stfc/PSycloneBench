@@ -1,5 +1,15 @@
 module boundary_conditions_mod
+  use kind_params_mod
+  use physical_params_mod
+  use field_mod
   implicit none
+
+  private
+
+  public boundary_conditions_init
+  public bc_u_solid, bc_v_solid
+  public bc_u_flather, bc_v_flather
+  public bc_ssh
 
 contains
   
@@ -8,8 +18,7 @@ contains
   subroutine boundary_conditions_init(grid)
     use kind_params_mod
     use grid_mod
-    use model_mod, only: jphgr_msh, ht, hu, hv, &
-                         dep_const
+    use model_mod, only: jphgr_msh
     implicit none
     type(grid_type), intent(inout) :: grid
     ! Locals
@@ -66,37 +75,14 @@ contains
        END Do
 
        ! The actual part of this domain that is simulated. The outer-most 
-       ! rows and columns of T points are not in the domain but define the
-       ! hard or open boundaries.
+       ! rows and columns of T points are not in the domain but are needed
+       ! to specify the type of boundary (whether hard or open).
        grid%simulation_domain%xstart = 2
        grid%simulation_domain%xstop  = grid%nx - 1
        grid%simulation_domain%ystart = 2
        grid%simulation_domain%ystop  = grid%ny - 1
        grid%simulation_domain%nx = grid%nx - 2
        grid%simulation_domain%ny = grid%ny - 2
-
-       !Depth 
-
-       ! -depth on grid points
-
-       DO jj = 1, grid%ny
-          DO ji = 1, grid%nx
-             ht(ji,jj) = dep_const 
-          END DO
-       END DO
-
-       DO jj = 1, grid%ny
-          DO ji = 1, grid%nx
-             hu(ji,jj) = dep_const 
-          END DO
-       END DO
-
-       DO jj = 1, grid%ny
-          DO ji = 1, grid%nx
-             hv(ji,jj) = dep_const 
-          END DO
-       END DO
-
 
     CASE DEFAULT
        ! undefined jphgr_msh value
@@ -107,106 +93,247 @@ contains
   end subroutine boundary_conditions_init
 
   !===========================================================
+!!$
+!!$  subroutine bc(rtime, sshn_u, sshn_v, ssha, ua, va, hu, hv)
+!!$    use kind_params_mod
+!!$    use physical_params_mod
+!!$    use grid_mod
+!!$    implicit none
+!!$    real(wp),        intent(in) :: rtime
+!!$    type(r2d_field_type), intent(in)    :: sshn_u, sshn_v
+!!$    type(r2d_field_type), intent(inout) :: ssha
+!!$    type(r2d_field_type), intent(in)    :: hu, hv
+!!$    type(r2d_field_type), intent(inout) :: ua, va
+!!$    ! Locals
+!!$    real(wp) :: amp_tide, omega_tide
+!!$    integer :: jiu, jiv
+!!$    integer :: ji, jj
+!!$
+!!$    !open boundary condition of clamped ssh
+!!$
+!!$    !kernel ssh clamped obc
+!!$    amp_tide   = 0.2_wp
+!!$    omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
+!!$    DO jj = 1, grid%ny
+!!$       DO ji = 1, grid%nx
+!!$          IF(grid%tmask(ji,jj) <= 0) CYCLE
+!!$          IF     (grid%tmask(ji,jj-1) < 0) THEN
+!!$             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+!!$          ELSE IF(grid%tmask(ji,jj+1) < 0) THEN
+!!$             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+!!$          ELSE IF(grid%tmask(ji+1,jj) < 0) THEN
+!!$             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+!!$          ELSE IF(grid%tmask(ji-1,jj) < 0) THEN
+!!$             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+!!$          END IF
+!!$       END DO
+!!$    END DO
+!!$    !end kernel ssh clamped obc
+!!$
+!!$
+!!$    ! kernel"solid boundary conditions for u-velocity" 
+!!$    DO jj = 1, grid%ny
+!!$       !> \todo Use field-specific bounds in this loop
+!!$       DO ji = 1, grid%nx-1
+!!$          IF(grid%tmask(ji,jj) * grid%tmask(ji+1,jj) == 0) ua%data(ji,jj) = 0._wp
+!!$       END DO
+!!$    END DO
+!!$    !end kernel "solid boundary conditions for u-velocity" 
+!!$
+!!$    !kernel "solid boundary conditions for v-velocity" 
+!!$    !> \todo Use field-specific bounds in this loop
+!!$    DO jj = 1, grid%ny-1
+!!$       DO ji = 1, grid%nx
+!!$          IF(grid%tmask(ji,jj) * grid%tmask(ji,jj+1) == 0) va%data(ji,jj) = 0._wp
+!!$       END DO
+!!$    END DO
+!!$    !end kernel "solid boundary conditions for v-velocity" 
+!!$
+!!$    !                                            Du                 Dssh
+!!$    !start of "Flather open boundary condition [---- = sqrt(g/H) * ------]" Kernel
+!!$    !                                            Dn                 Dn
+!!$    ! ua and va in du/dn should be the specified tidal forcing
+!!$
+!!$
+!!$    ! kernel Flather u 
+!!$    DO jj = 1, grid%ny
+!!$       !> \todo Use field-specific bounds in this loop
+!!$       DO ji = 1, grid%nx-1  
+!!$
+!!$          IF(grid%tmask(ji,jj) + grid%tmask(ji+1,jj) <= -1) CYCLE  ! not in the domain
+!!$
+!!$          IF(grid%tmask(ji,jj) < 0) THEN
+!!$             jiu = ji + 1
+!!$             ua%data(ji,jj) = ua%data(jiu,jj) + SQRT(g/hu%data(ji,jj)) * (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
+!!$          ELSE IF(grid%tmask(ji+1,jj )< 0) THEN
+!!$             jiu = ji - 1 
+!!$             ua%data(ji,jj) = ua%data(jiu,jj) + &
+!!$                              SQRT(g/hu%data(ji,jj)) * (sshn_u%data(ji,jj) - &
+!!$                              sshn_u%data(jiu,jj))
+!!$          END IF
+!!$       END DO
+!!$    END DO
+!!$    !end kernel flather u .
+!!$
+!!$    !kernel Flather v 
+!!$    !> \todo Use field-specific bounds in this loop
+!!$    DO jj = 1, grid%ny-1
+!!$       DO ji = 1, grid%nx
+!!$
+!!$          ! Check whether this point is inside the simulated domain
+!!$          IF(grid%tmask(ji,jj) + grid%tmask(ji,jj+1) <= -1) CYCLE
+!!$
+!!$          IF(grid%tmask(ji,jj) < 0) THEN
+!!$             jiv = jj + 1
+!!$             va(ji,jj) = va(ji,jiv) + SQRT(g/hv(ji,jj)) * (sshn_v(ji,jj) - sshn_v(ji,jiv))
+!!$          ELSE IF(grid%tmask(ji,jj+1) < 0) THEN
+!!$             jiv = jj - 1 
+!!$             va(ji,jj) = va(ji,jiv) + SQRT(g/hv(ji,jj)) * (sshn_v(ji,jj) - sshn_v(ji,jiv))
+!!$          END IF
+!!$       END DO
+!!$    END DO
+!!$    !end kernel flather v .
+!!$
+!!$  END SUBROUTINE bc
+  
+  !================================================
 
-  subroutine bc(rtime, grid, sshn_u, sshn_v, ssha, ua, va, hu, hv)
-    use kind_params_mod
-    use physical_params_mod
-    use grid_mod
+  subroutine bc_ssh(rtime, ssha)
     implicit none
-    real(wp),        intent(in) :: rtime
-    type(grid_type), intent(in) :: grid
-    real(wp), dimension(:,:), intent(in)    :: sshn_u, sshn_v
-    real(wp), dimension(:,:), intent(inout) :: ssha
-    real(wp), dimension(:,:), intent(in)    :: hu, hv
-    real(wp), dimension(:,:), intent(inout) :: ua, va
+    real(wp),             intent(in)    :: rtime
+    type(r2d_field_type), intent(inout) :: ssha
     ! Locals
     real(wp) :: amp_tide, omega_tide
-    integer :: jiu, jiv
-    integer :: ji, jj
+    integer  :: ji, jj
 
-    !open boundary condition of clamped ssh
-
-    !kernel ssh clamped obc
     amp_tide   = 0.2_wp
     omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
-    DO jj = 1, grid%ny
-       DO ji = 1, grid%nx
-          IF(grid%tmask(ji,jj) <= 0) CYCLE
-          IF     (grid%tmask(ji,jj-1) < 0) THEN
-             ssha(ji,jj) = amp_tide * sin(omega_tide * rtime)
-          ELSE IF(grid%tmask(ji,jj+1) < 0) THEN
-             ssha(ji,jj) = amp_tide * sin(omega_tide * rtime)
-          ELSE IF(grid%tmask(ji+1,jj) < 0) THEN
-             ssha(ji,jj) = amp_tide * sin(omega_tide * rtime)
-          ELSE IF(grid%tmask(ji-1,jj) < 0) THEN
-             ssha(ji,jj) = amp_tide * sin(omega_tide * rtime)
+
+    DO jj = ssha%internal%ystart, ssha%internal%ystop
+       DO ji = ssha%internal%xstart, ssha%internal%xstop
+          IF(ssha%grid%tmask(ji,jj) <= 0) CYCLE
+          IF     (ssha%grid%tmask(ji,jj-1) < 0) THEN
+             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+          ELSE IF(ssha%grid%tmask(ji,jj+1) < 0) THEN
+             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+          ELSE IF(ssha%grid%tmask(ji+1,jj) < 0) THEN
+             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+          ELSE IF(ssha%grid%tmask(ji-1,jj) < 0) THEN
+             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
           END IF
        END DO
     END DO
-    !end kernel ssh clamped obc
 
+  end subroutine bc_ssh
+  
+  !================================================
 
-    ! kernel"solid boundary conditions for u-velocity" 
-    DO jj = 1, grid%ny
-       !> \todo Use field-specific bounds in this loop
-       DO ji = 1, grid%nx-1
-          IF(grid%tmask(ji,jj) * grid%tmask(ji+1,jj) == 0) ua(ji,jj) = 0._wp
-       END DO
-    END DO
-    !end kernel "solid boundary conditions for u-velocity" 
+  subroutine bc_u_solid(ua)
+    implicit none
+    type(r2d_field_type), intent(inout) :: ua
+    ! Locals
+    integer  :: ji, jj
 
-    !kernel "solid boundary conditions for v-velocity" 
-    !> \todo Use field-specific bounds in this loop
-    DO jj = 1, grid%ny-1
-       DO ji = 1, grid%nx
-          IF(grid%tmask(ji,jj) * grid%tmask(ji,jj+1) == 0) va(ji,jj) = 0._wp
-       END DO
-    END DO
-    !end kernel "solid boundary conditions for v-velocity" 
+    ! solid boundary conditions for u-velocity
 
-    !                                            Du                 Dssh
-    !start of "Flather open boundary condition [---- = sqrt(g/H) * ------]" Kernel
-    !                                            Dn                 Dn
+    do jj = ua%internal%ystart, ua%internal%ystop, 1
+       do ji = ua%internal%xstart, ua%internal%xstop, 1
+
+          if(ua%grid%tmask(ji,jj) * ua%grid%tmask(ji+1,jj) == 0)then
+            ua%data(ji,jj) = 0._wp
+          end if
+       end do
+    end do
+
+  end subroutine bc_u_solid
+  
+  !================================================
+
+  subroutine bc_v_solid(va)
+    implicit none
+    type(r2d_field_type), intent(inout) :: va
+    ! Locals
+    integer  :: ji, jj
+
+    ! solid boundary conditions for v-velocity
+
+    do jj = va%internal%ystart, va%internal%ystop, 1
+       do ji = va%internal%xstart, va%internal%xstop, 1
+
+        if(va%grid%tmask(ji,jj) * va%grid%tmask(ji,jj+1) == 0)then
+          va%data(ji,jj) = 0._wp
+        end if
+      end do
+    end do
+
+  end subroutine bc_v_solid
+  
+  !================================================
+
+  subroutine bc_u_flather(ua, hu, sshn_u)
+    implicit none
+    type(r2d_field_type), intent(inout) :: ua
+    type(r2d_field_type), intent(in) :: hu, sshn_u
+    ! Locals
+    integer  :: ji, jj, jiu
+
+    !                                  Du                 Dssh
+    !Flather open boundary condition [---- = sqrt(g/H) * ------]
+    !                                  Dn                 Dn
     ! ua and va in du/dn should be the specified tidal forcing
 
+    ! Flather u 
+    DO jj = ua%internal%ystart, ua%internal%ystop, 1
+       DO ji = ua%internal%xstart, ua%internal%xstop, 1
 
-    ! kernel Flather u 
-    DO jj = 1, grid%ny
-       !> \todo Use field-specific bounds in this loop
-       DO ji = 1, grid%nx-1  
+          IF(ua%grid%tmask(ji,jj) + ua%grid%tmask(ji+1,jj) <= -1) CYCLE  ! not in the domain
 
-          IF(grid%tmask(ji,jj) + grid%tmask(ji+1,jj) <= -1) CYCLE                         ! not in the domain
-
-          IF(grid%tmask(ji,jj) < 0) THEN
+          IF(ua%grid%tmask(ji,jj) < 0) THEN
              jiu = ji + 1
-             ua(ji,jj) = ua(jiu,jj) + SQRT(g/hu(ji,jj)) * (sshn_u(ji,jj) - sshn_u(jiu,jj))
-          ELSE IF(grid%tmask(ji+1,jj )< 0) THEN
+             ua%data(ji,jj) = ua%data(jiu,jj) + &
+                              SQRT(g/hu%data(ji,jj)) * (sshn_u%data(ji,jj) - &
+                              sshn_u%data(jiu,jj))
+          ELSE IF(ua%grid%tmask(ji+1,jj )< 0) THEN
              jiu = ji - 1 
-             ua(ji,jj) = ua(jiu,jj) + SQRT(g/hu(ji,jj)) * (sshn_u(ji,jj) - sshn_u(jiu,jj))
+             ua%data(ji,jj) = ua%data(jiu,jj) + SQRT(g/hu%data(ji,jj)) * &
+                                 (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
           END IF
        END DO
     END DO
-    !end kernel flather u .
+  
+  end subroutine bc_u_flather
+
+  !================================================
+
+  subroutine bc_v_flather(va, hv, sshn_v)
+    implicit none
+    type(r2d_field_type), intent(inout) :: va
+    type(r2d_field_type), intent(in) :: hv, sshn_v
+    ! Locals
+    integer  :: ji, jj, jiv
 
     !kernel Flather v 
-    !> \todo Use field-specific bounds in this loop
-    DO jj = 1, grid%ny-1
-       DO ji = 1, grid%nx
+
+    DO jj = va%internal%ystart, va%internal%ystop, 1
+       DO ji = va%internal%xstart, va%internal%xstop, 1
 
           ! Check whether this point is inside the simulated domain
-          IF(grid%tmask(ji,jj) + grid%tmask(ji,jj+1) <= -1) CYCLE
+          IF(va%grid%tmask(ji,jj) + va%grid%tmask(ji,jj+1) <= -1) CYCLE
 
-          IF(grid%tmask(ji,jj) < 0) THEN
+          IF(va%grid%tmask(ji,jj) < 0) THEN
              jiv = jj + 1
-             va(ji,jj) = va(ji,jiv) + SQRT(g/hv(ji,jj)) * (sshn_v(ji,jj) - sshn_v(ji,jiv))
-          ELSE IF(grid%tmask(ji,jj+1) < 0) THEN
+             va%data(ji,jj) = va%data(ji,jiv) + SQRT(g/hv%data(ji,jj)) * &
+                                    (sshn_v%data(ji,jj) - sshn_v%data(ji,jiv))
+          ELSE IF(va%grid%tmask(ji,jj+1) < 0) THEN
              jiv = jj - 1 
-             va(ji,jj) = va(ji,jiv) + SQRT(g/hv(ji,jj)) * (sshn_v(ji,jj) - sshn_v(ji,jiv))
+             va%data(ji,jj) = va%data(ji,jiv) + SQRT(g/hv%data(ji,jj)) * &
+                                    (sshn_v%data(ji,jj) - sshn_v%data(ji,jiv))
           END IF
        END DO
     END DO
-    !end kernel flather v .
 
-  END SUBROUTINE bc
+  end subroutine bc_v_flather
+
+  !================================================
 
 end module boundary_conditions_mod
