@@ -104,7 +104,7 @@ contains
     implicit none
     type(grid_type), intent(in) :: grid
     integer, intent(in) :: istp
-    real(wp), dimension(:,:), intent(in) :: ht, sshn, un, vn
+    type(r2d_field_type), intent(in) :: ht, sshn, un, vn
     ! Locals
     integer :: ji, jj
     real(wp) :: rtmp1, rtmp2
@@ -118,16 +118,18 @@ contains
        open(21, file='go2d_'//fname//'.csv', STATUS='UNKNOWN')
        rewind(21)
 
-       DO jj = 1, jpj
-          DO ji = 1, jpi
-             rtmp1 = 0.5_wp * (un(ji-1,jj) + un(ji,jj))
-             rtmp2 = 0.5_wp * (vn(ji,jj-1) + vn(ji,jj))
+       DO jj = sshn%internal%ystart, sshn%internal%ystop, 1
+          DO ji = sshn%internal%xstart, sshn%internal%xstop, 1
+
+             rtmp1 = 0.5_wp * (un%data(ji-1,jj) + un%data(ji,jj))
+             rtmp2 = 0.5_wp * (vn%data(ji,jj-1) + vn%data(ji,jj))
 
              ! write "x-coord, y-coord, depth, ssh, u-velocity, v-velocity" to ASCII files
 
              !WRITE(1,'(2f20.3, 2f15.4, 2e18.3)')  &            
              WRITE(21,'(f20.3,'','',f20.3,'','',f15.4,'','',f15.4,'','',f18.3,'','',f18.3)') &
-             & grid%xt(ji,jj), grid%yt(ji,jj), ht(ji,jj), sshn(ji,jj),rtmp1, rtmp2 
+             & grid%xt(ji,jj), grid%yt(ji,jj), ht%data(ji,jj), sshn%data(ji,jj), &
+               rtmp1, rtmp2 
           END DO
        END DO
           
