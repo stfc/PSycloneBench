@@ -13,12 +13,12 @@ module halo_mod
      type(region_type) :: source
      type(region_type) :: dest
 
-   contains
+!   contains
 
      !> Flag that this halo is out of date
-     procedure, public :: set_dirty
+!     procedure, public :: set_dirty
      !> Query whether this halo is out of date
-     procedure, public :: is_dirty
+!     procedure, public :: is_dirty
 
   end type halo_type
 
