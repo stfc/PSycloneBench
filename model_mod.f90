@@ -21,16 +21,7 @@ MODULE model_mod
 
   REAL(wp), save :: dep_const                 !< constant depth
 
-  REAL(wp), ALLOCATABLE, save :: ht(:,:), hu(:,:), hv(:,:), hf(:,:) 
   
-  REAL(wp), ALLOCATABLE, save :: sshb(:,:), sshb_u(:,:), sshb_v(:,:)
-  !> Sea-surface height at T, U and V points
-  REAL(wp), ALLOCATABLE, save :: sshn(:,:), sshn_u(:,:), sshn_v(:,:)
-  REAL(wp), ALLOCATABLE, save :: ssha(:,:), ssha_u(:,:), ssha_v(:,:)
-  
-  REAL(wp), ALLOCATABLE, save :: un(:,:),  vn(:,:)
-  REAL(wp), ALLOCATABLE, save :: ua(:,:),  va(:,:)
-
 CONTAINS
 
   !================================================
@@ -43,8 +34,6 @@ CONTAINS
     !> Problem size, read from namelist
     integer :: jpiglo, jpjglo
     real(wp) :: dx, dy
-
-    integer :: ierr(5)
 
     ! Initialise timing system
     call timer_init()
@@ -61,19 +50,6 @@ CONTAINS
     ! fix prior to carrying everything around in the grid object.
     jpi = grid%nx
     jpj = grid%ny
-
-    ! Allocate all our fields with the same extents as the T-mask defining
-    ! the whole model domain (i.e. including points that are outside the
-    ! simulated region).
-    ALLOCATE(ht(jpi,jpj), hu(jpi,jpj), hv(jpi,jpj), hf(jpi,jpj), STAT=ierr(1))
-
-    ALLOCATE(sshb(jpi,jpj), sshb_u(jpi,jpj), sshb_v(jpi,jpj), STAT=ierr(2))
-    ALLOCATE(sshn(jpi,jpj), sshn_u(jpi,jpj), sshn_v(jpi,jpj), STAT=ierr(3))
-    ALLOCATE(ssha(jpi,jpj), ssha_u(jpi,jpj), ssha_v(jpi,jpj), STAT=ierr(4))
-
-    ALLOCATE(un(jpi,jpj), vn(jpi,jpj), ua(jpi,jpj), va(jpi,jpj), STAT=ierr(5))
-
-    IF(ANY(ierr /= 0, 1)) STOP "Failed to allocate solution arrays"
 
     ! Initialise model IO 'system'
     call model_write_init(jpiglo, jpjglo, irecord)
@@ -98,12 +74,6 @@ CONTAINS
 
   subroutine model_dealloc()
     implicit none
-
-    DEALLOCATE(ht, hu, hv, hf)
-    DEALLOCATE(sshb, sshb_u, sshb_v)
-    DEALLOCATE(sshn, sshn_u, sshn_v)
-    DEALLOCATE(ssha, ssha_u, ssha_v)
-    DEALLOCATE(un, vn, ua, va)
 
   END SUBROUTINE model_dealloc
 

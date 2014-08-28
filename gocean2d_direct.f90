@@ -57,6 +57,7 @@ program gocean2d
                               T_POINTS,   &
                               (/BC_EXTERNAL,BC_EXTERNAL/))
 
+  ! Distance from sea-bed to mean sea level
   hu_fld = r2d_field_type(model_grid, &
                           U_POINTS,   &
                           (/BC_EXTERNAL,BC_EXTERNAL/))
