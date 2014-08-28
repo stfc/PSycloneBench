@@ -175,19 +175,19 @@ contains
   !===================================================
 
   ! Check error code
-  subroutine check(status, text)
-    implicit none
-      
-    integer, intent(in) :: status
-    character (len=*)   :: text
-    
-    if (status /= 0) then
-       write(6,*) "error ", status
-       write(6,*) text
-       stop 2
-    endif
-
-  end subroutine check
+!!$  subroutine check(status, text)
+!!$    implicit none
+!!$      
+!!$    integer, intent(in) :: status
+!!$    character (len=*)   :: text
+!!$    
+!!$    if (status /= 0) then
+!!$       write(6,*) "error ", status
+!!$       write(6,*) text
+!!$       stop 2
+!!$    endif
+!!$
+!!$  end subroutine check
 
   !===================================================
 
