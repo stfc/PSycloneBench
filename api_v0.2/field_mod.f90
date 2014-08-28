@@ -180,8 +180,8 @@ contains
     self%internal%ny = self%internal%ystop - self%internal%ystart + 1
 
     write(*,*) 'allocating field with bounds: (', &
-               self%internal%xstart-1,':', self%internal%xstop+1, ',', &
-               self%internal%ystart-1,':',self%internal%ystop+1,')'
+               1,':', self%internal%xstop+1, ',', &
+               1,':',self%internal%ystop+1,')'
     !allocate(self%data(self%internal%xstart-1:self%internal%xstop+1, &
     !                   self%internal%ystart-1:self%internal%ystop+1),&
     !                   Stat=ierr)
@@ -382,10 +382,23 @@ contains
 
     ! i.e. fld(2:M,2:N+1) = ...
 
-    fld%internal%xstart = 2
-    fld%internal%xstop  = M+2-2
-    fld%internal%ystart = 2
-    fld%internal%ystop  = N+2-1
+    if(fld%boundary_conditions(1) /= BC_PERIODIC)then
+      ! If we do not have periodic boundary conditions then we do
+      ! not need to allow for boundary points here - they are
+      ! already contained within the region defined by T mask.
+      fld%internal%xstart = fld%grid%simulation_domain%xstart
+      fld%internal%xstop  = fld%grid%simulation_domain%xstop - 1
+    else
+      write(*,*) 'ERROR: cu_ne_init: implement periodic boundary conditions!'
+      stop
+    end if
+    if(fld%boundary_conditions(2) /= BC_PERIODIC)then
+      fld%internal%ystart = fld%grid%simulation_domain%ystart
+      fld%internal%ystop  = fld%grid%simulation_domain%ystop
+    else
+      write(*,*) 'ERROR: cu_ne_init: implement periodic boundary conditions!'
+      stop
+    end if
 
 !> \todo Is this concept of halo definitions useful?
     fld%num_halos = 0
@@ -501,11 +514,6 @@ contains
   subroutine cv_ne_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
-
-    M = fld%grid%nx
-    N = fld%grid%ny
 
     ! ji indexing:
     ! Lowermost ji index of the V points will be the same as the T's.
@@ -532,10 +540,24 @@ contains
     !  b  b  b  b   j=1
     !
 
-    fld%internal%xstart = 2
-    fld%internal%xstop  = M+2-1
-    fld%internal%ystart = 2
-    fld%internal%ystop  = N+2-1
+    if(fld%boundary_conditions(1) /= BC_PERIODIC)then
+      ! If we do not have periodic boundary conditions then we do
+      ! not need to allow for boundary points here - they are
+      ! already contained within the region.
+      fld%internal%xstart = fld%grid%simulation_domain%xstart
+      fld%internal%xstop  = fld%grid%simulation_domain%xstop
+    else
+      write(*,*) 'ERROR: cv_ne_init: implement periodic boundary conditions!'
+      stop
+    end if
+
+    if(fld%boundary_conditions(2) /= BC_PERIODIC)then
+      fld%internal%ystart = fld%grid%simulation_domain%ystart
+      fld%internal%ystop  = fld%grid%simulation_domain%ystop - 1
+    else
+      write(*,*) 'ERROR: cv_ne_init: implement periodic boundary conditions!'
+      stop
+    end if
 
   end subroutine cv_ne_init
 
@@ -615,11 +637,6 @@ contains
   subroutine ct_ne_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
-
-    M = fld%grid%nx
-    N = fld%grid%ny
 
     ! The mesh of T points defines the simulation domain. 
     ! Currently we assume a shell of thickness one around the actual
@@ -636,10 +653,28 @@ contains
     !  b  x  x  x  b
     !  b  b  b  b  b j=1
 
-    fld%internal%xstart = 2
-    fld%internal%xstop  = fld%internal%xstart + M - 1
-    fld%internal%ystart = 2
-    fld%internal%ystop  = fld%internal%ystart + N - 1
+    if(fld%boundary_conditions(1) /= BC_PERIODIC)then
+      ! If we do not have periodic boundary conditions then we do
+      ! not need to allow for boundary points here - they are
+      ! already contained within the region.
+      ! Start and stop are just the same as those calculated from the T mask
+      ! earlier because this is a field on T points.
+      fld%internal%xstart = fld%grid%simulation_domain%xstart
+      fld%internal%xstop  = fld%grid%simulation_domain%xstop
+    else
+      write(*,*) 'ERROR: ct_ne_init: implement periodic boundary conditions!'
+      stop
+    end if
+
+    if(fld%boundary_conditions(2) /= BC_PERIODIC)then
+      ! Start and stop are just the same as those calculated from the T mask
+      ! earlier because this is a field on T points.
+      fld%internal%ystart = fld%grid%simulation_domain%ystart
+      fld%internal%ystop  = fld%grid%simulation_domain%ystop
+    else
+      write(*,*) 'ERROR: ct_ne_init: implement periodic boundary conditions!'
+      stop
+    end if
 
   end subroutine ct_ne_init
 
@@ -743,11 +778,6 @@ contains
   subroutine cf_ne_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
-
-    M = fld%grid%nx
-    N = fld%grid%ny
 
     ! When updating a quantity on F points we write to:
     ! (using x to indicate a location that is written
@@ -761,10 +791,24 @@ contains
     !  b  x  b  o
     !  b  b  b  o   j=1
 
-    fld%internal%xstart = 2
-    fld%internal%xstop  = M+2-1
-    fld%internal%ystart = 2
-    fld%internal%ystop  = N+2-1
+    if(fld%boundary_conditions(1) /= BC_PERIODIC)then
+      ! If we do not have periodic boundary conditions then we do
+      ! not need to allow for boundary points here - they are
+      ! already contained within the region.
+      fld%internal%xstart = fld%grid%simulation_domain%xstart
+      fld%internal%xstop  = fld%grid%simulation_domain%xstop - 1
+    else
+      write(*,*) 'ERROR: cf_ne_init: implement periodic boundary conditions!'
+      stop
+    end if
+
+    if(fld%boundary_conditions(2) /= BC_PERIODIC)then
+      fld%internal%ystart = fld%grid%simulation_domain%ystart
+      fld%internal%ystop  = fld%grid%simulation_domain%ystop - 1
+    else
+      write(*,*) 'ERROR: cf_ne_init: implement periodic boundary conditions!'
+      stop
+    end if
 
   end subroutine cf_ne_init
 

@@ -147,17 +147,21 @@ contains
   !============================================
 
   !> Initialise the supplied grid object for a 2D model
-  !! consisting of m x n points.
+  !! consisting of m x n points. Ultimately, this routine should be
+  !! general purpose but it is currently evolving towards that...
   !! @param[inout] grid The object to initialise
   !! @param[in] m Extent in x of domain for which we have information
   !! @param[in] n Extent in y of domain for which we have information
   !! @param[in] dxarg Grid spacing in x dimension
   !! @param[in] dyarg Grid spacing in y dimension
-  subroutine grid_init(grid, m, n, dxarg, dyarg)
+  !! @param[in] tmask Array holding the T-point mask which defines
+  !!                  the contents of the domain.
+  subroutine grid_init(grid, m, n, dxarg, dyarg, tmask)
     implicit none
     type(grid_type), intent(inout) :: grid
     integer, intent(in) :: m, n
     real(wp), intent(in) :: dxarg, dyarg
+    integer, dimension(:,:), intent(in) :: tmask
     ! Locals
     integer :: ierr(5)
     integer :: ji, jj
@@ -190,6 +194,13 @@ contains
     if( any(ierr /= 0, 1) )then
        stop 'grid_init: failed to allocate arrays'
     end if
+
+    ! Copy-in the externally-supplied T-mask
+    grid%tmask(:,:) = tmask(:,:)
+
+    ! Use the T mask to determine the dimensions of the
+    ! internal, simulated region of the grid.
+    call compute_internal_region(grid)
 
     ! Initialise the horizontal scale factors for a regular,
     ! orthogonal mesh. (Constant spatial resolution.)
@@ -243,6 +254,45 @@ contains
       grid%yt(1:m,jj) = grid%yt(1:m, jj-1) + grid%dy
     END DO
 
+
   end subroutine grid_init
+
+  !================================================
+
+  !> Use the T-mask to deduce the inner or simulated region
+  !! of the supplied grid.
+  subroutine compute_internal_region(grid)
+    implicit none
+    type(grid_type), intent(inout) :: grid
+
+    ! Here we will loop over the grid points, looking for
+    ! the first occurrence of wet points.
+    ! However, for the moment we just hardwire the routine
+    ! to return results appropriate for a T mask that has
+    ! a shell of unit depth of boundary/external points:
+
+    ! i= 1           nx 
+    !    b   b   b   b   ny
+    !    b   x   x   b  
+    !    b   x   x   b  
+    !    b   x   x   b   
+    !    b   b   b   b   1
+    !                    j
+
+    ! The actual part of this domain that is simulated. The outer-most 
+    ! rows and columns of T points are not in the domain but are needed
+    ! to specify the type of boundary (whether hard or open).
+    !> \todo Generate the bounds of the simulation domain by
+    !! examining the T-point mask.
+    grid%simulation_domain%xstart = 2
+    grid%simulation_domain%xstop  = grid%nx - 1
+    grid%simulation_domain%ystart = 2
+    grid%simulation_domain%ystop  = grid%ny - 1
+    grid%simulation_domain%nx = grid%nx - 2
+    grid%simulation_domain%ny = grid%ny - 2
+
+  end subroutine compute_internal_region
+
+  !================================================
 
 end module grid_mod
