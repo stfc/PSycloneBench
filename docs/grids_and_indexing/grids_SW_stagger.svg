@@ -13,8 +13,8 @@
    height="1052.3622047"
    id="svg2"
    version="1.1"
-   inkscape:version="0.48.4 r9939"
-   sodipodi:docname="grids_SW_stagger2.svg">
+   inkscape:version="0.48.5 r10040"
+   sodipodi:docname="grids_SW_stagger.svg">
   <defs
      id="defs4">
     <inkscape:path-effect
@@ -29,16 +29,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.97035431"
-     inkscape:cx="237.36047"
-     inkscape:cy="629.75511"
+     inkscape:zoom="1.59"
+     inkscape:cx="301.64828"
+     inkscape:cy="127.01208"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:snap-global="true"
      inkscape:snap-grids="true"
-     inkscape:window-width="1103"
-     inkscape:window-height="936"
+     inkscape:window-width="1791"
+     inkscape:window-height="1017"
      inkscape:window-x="1"
      inkscape:window-y="50"
      inkscape:window-maximized="0"
@@ -56,7 +56,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -1793,58 +1793,6 @@
            style="font-size:20px;font-style:italic;fill:#ff0000;-inkscape-font-specification:Sans Italic"
            id="flowPara3927-0">T</flowPara></flowRoot>    </g>
     <g
-       id="g4019-3"
-       transform="matrix(0.80118233,0,0,0.80118233,60.365012,333.7602)">
-      <path
-         transform="translate(-3.075269,-3.2258065)"
-         d="m 352.68817,369.02884 c 0,4.45391 -3.6106,8.06452 -8.06451,8.06452 -4.45391,0 -8.06452,-3.61061 -8.06452,-8.06452 0,-4.45391 3.61061,-8.06452 8.06452,-8.06452 4.45391,0 8.06451,3.61061 8.06451,8.06452 z"
-         sodipodi:ry="8.0645161"
-         sodipodi:rx="8.0645161"
-         sodipodi:cy="369.02884"
-         sodipodi:cx="344.62366"
-         id="path3911-0"
-         style="fill:#ff0000;stroke:#ff0000"
-         sodipodi:type="arc" />
-      <flowRoot
-         transform="translate(2.2215071,19.253062)"
-         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-         id="flowRoot3921-1"
-         xml:space="preserve"><flowRegion
-           id="flowRegion3923-4"><rect
-             y="318.52432"
-             x="351.73862"
-             height="45.170647"
-             width="39.987129"
-             id="rect3925-8" /></flowRegion><flowPara
-           style="font-size:20px;font-style:italic;fill:#ff0000;-inkscape-font-specification:Sans Italic"
-           id="flowPara3927-4">T</flowPara></flowRoot>    </g>
-    <g
-       id="g4019-5"
-       transform="matrix(0.80118233,0,0,0.80118233,153.67947,334.22593)">
-      <path
-         transform="translate(-3.075269,-3.2258065)"
-         d="m 352.68817,369.02884 c 0,4.45391 -3.6106,8.06452 -8.06451,8.06452 -4.45391,0 -8.06452,-3.61061 -8.06452,-8.06452 0,-4.45391 3.61061,-8.06452 8.06452,-8.06452 4.45391,0 8.06451,3.61061 8.06451,8.06452 z"
-         sodipodi:ry="8.0645161"
-         sodipodi:rx="8.0645161"
-         sodipodi:cy="369.02884"
-         sodipodi:cx="344.62366"
-         id="path3911-7"
-         style="fill:#ff0000;stroke:#ff0000"
-         sodipodi:type="arc" />
-      <flowRoot
-         transform="translate(2.2215071,19.253062)"
-         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-         id="flowRoot3921-9"
-         xml:space="preserve"><flowRegion
-           id="flowRegion3923-9"><rect
-             y="318.52432"
-             x="351.73862"
-             height="45.170647"
-             width="39.987129"
-             id="rect3925-29" /></flowRegion><flowPara
-           style="font-size:20px;font-style:italic;fill:#ff0000;-inkscape-font-specification:Sans Italic"
-           id="flowPara3927-05">T</flowPara></flowRoot>    </g>
-    <g
        id="g4019-1"
        transform="matrix(0.80118233,0,0,0.80118233,247.03222,334.65335)">
       <path
@@ -2056,20 +2004,20 @@
        width="85.323891"
        height="35.323879"
        x="14.409203"
-       y="859.11688" />
+       y="851.11688" />
     <text
        xml:space="preserve"
        style="font-size:24px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
        x="108.95052"
-       y="886.02887"
+       y="878.02887"
        id="text7556"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan7558"
          x="108.95052"
-         y="886.02887">Model domain</tspan></text>
+         y="878.02887">Model domain</tspan></text>
     <g
-       transform="translate(33.76096,571.90419)"
+       transform="translate(33.76096,563.90419)"
        id="g6133-1-62-2">
       <path
          transform="matrix(0.80118233,0,0,0.80118233,-225.49402,59.608708)"
@@ -2099,16 +2047,16 @@
        xml:space="preserve"
        style="font-size:24px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
        x="111.3763"
-       y="933.76331"
+       y="925.76331"
        id="text7556-4"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan7558-7"
          x="111.3763"
-         y="933.76331">T-point outside domain</tspan></text>
+         y="925.76331">T-point outside domain</tspan></text>
     <g
        id="g4019-3-1"
-       transform="matrix(0.80118233,0,0,0.80118233,-189.26921,678.26864)">
+       transform="matrix(0.80118233,0,0,0.80118233,-189.26921,670.26864)">
       <path
          transform="translate(-3.075269,-3.2258065)"
          d="m 352.68817,369.02884 c 0,4.45391 -3.6106,8.06452 -8.06451,8.06452 -4.45391,0 -8.06452,-3.61061 -8.06452,-8.06452 0,-4.45391 3.61061,-8.06452 8.06452,-8.06452 4.45391,0 8.06451,3.61061 8.06451,8.06452 z"
@@ -2136,15 +2084,15 @@
        xml:space="preserve"
        style="font-size:24px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
        x="111.3763"
-       y="978.15002"
+       y="970.15002"
        id="text7556-4-2"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan7558-7-3"
          x="111.3763"
-         y="978.15002">T-point inside domain</tspan></text>
+         y="970.15002">T-point inside domain</tspan></text>
     <g
-       transform="matrix(0.80118233,0,0,0.80118233,-5.728196,721.66628)"
+       transform="matrix(0.80118233,0,0,0.80118233,-5.728196,713.66628)"
        id="g4064-1-3-8-6-3-8-80">
       <path
          transform="translate(-235.07527,-1.2258065)"
@@ -2174,13 +2122,13 @@
        xml:space="preserve"
        style="font-size:24px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
        x="114.16667"
-       y="1021.3622"
+       y="1013.3622"
        id="text7701"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan7703"
          x="114.16667"
-         y="1021.3622">Land point</tspan></text>
+         y="1013.3622">Land point</tspan></text>
     <path
        style="fill:#44aa00;stroke:none"
        d="m 307.34146,196.22565 c -12.51946,-0.9586 -22.79818,-1.77514 -22.84162,-1.81454 -0.0434,-0.0394 -0.13098,-4.83682 -0.19455,-10.66094 l -0.11558,-10.58931 20.89676,3.2e-4 20.89677,3.1e-4 0.26444,1.40957 c 0.39495,2.10526 3.04551,4.70836 5.13432,5.04237 l 1.64039,0.26231 0,9.09424 0,9.09424 -1.45914,-0.0478 c -0.80253,-0.0263 -11.70234,-0.83214 -24.22179,-1.79074 z"
@@ -2307,32 +2255,6 @@
              id="rect3925-9" /></flowRegion><flowPara
            style="font-size:20px;font-style:italic;fill:#ff0000;-inkscape-font-specification:Sans Italic"
            id="flowPara3927-5">T</flowPara></flowRoot>    </g>
-    <g
-       id="g4019-103"
-       transform="matrix(0.80118233,0,0,0.80118233,341.55254,247.10585)">
-      <path
-         transform="translate(-3.075269,-3.2258065)"
-         d="m 352.68817,369.02884 c 0,4.45391 -3.6106,8.06452 -8.06451,8.06452 -4.45391,0 -8.06452,-3.61061 -8.06452,-8.06452 0,-4.45391 3.61061,-8.06452 8.06452,-8.06452 4.45391,0 8.06451,3.61061 8.06451,8.06452 z"
-         sodipodi:ry="8.0645161"
-         sodipodi:rx="8.0645161"
-         sodipodi:cy="369.02884"
-         sodipodi:cx="344.62366"
-         id="path3911-19"
-         style="fill:#ff0000;stroke:#ff0000"
-         sodipodi:type="arc" />
-      <flowRoot
-         transform="translate(2.2215071,19.253062)"
-         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-         id="flowRoot3921-24"
-         xml:space="preserve"><flowRegion
-           id="flowRegion3923-5"><rect
-             y="318.52432"
-             x="351.73862"
-             height="45.170647"
-             width="39.987129"
-             id="rect3925-5" /></flowRegion><flowPara
-           style="font-size:20px;font-style:italic;fill:#ff0000;-inkscape-font-specification:Sans Italic"
-           id="flowPara3927-99">T</flowPara></flowRoot>    </g>
     <path
        style="fill:#44aa00;fill-opacity:1;stroke:#00ff00;stroke-width:0.77519381"
        d="m 602.40827,412.72669 c -5.11628,-1.06358 -9.38913,-2.01609 -9.49523,-2.1167 -0.1061,-0.10061 -0.49711,-1.81123 -0.86891,-3.80138 l -0.676,-3.61846 11.14022,0 11.14023,0 0,5.81395 c 0,4.17639 -0.27292,5.79176 -0.96899,5.73516 -0.53295,-0.0433 -5.15504,-0.94899 -10.27132,-2.01257 l 0,0 z"
@@ -2791,22 +2713,22 @@
        y="130.47717" />
     <path
        style="fill:#ff00ff;fill-opacity:0.11764706;stroke:#ff00ff;stroke-width:0.54945058;stroke-opacity:0.11764706"
-       d="m 417.11167,869.90272 0,-20.32967 19.78022,0 19.78022,0 0,17.3077 c 0,16.48699 -0.0483,17.30769 -1.01867,17.30769 -1.38511,0 -3.85681,2.38368 -4.5583,4.39598 l -0.57449,1.64797 -16.70449,0 -16.70449,0 0,-20.32967 z"
+       d="m 417.11167,861.90272 0,-20.32967 19.78022,0 19.78022,0 0,17.3077 c 0,16.48699 -0.0483,17.30769 -1.01867,17.30769 -1.38511,0 -3.85681,2.38368 -4.5583,4.39598 l -0.57449,1.64797 -16.70449,0 -16.70449,0 0,-20.32967 z"
        id="path4679-3"
        inkscape:connector-curvature="0" />
     <text
        xml:space="preserve"
        style="font-size:24px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
        x="470.7027"
-       y="877.41626"
+       y="869.41626"
        id="text5044"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan5046"
          x="470.7027"
-         y="877.41626">Boundary region</tspan></text>
+         y="869.41626">Boundary region</tspan></text>
     <g
-       transform="matrix(0.80118233,0,0,0.80118233,106.89927,679.93155)"
+       transform="matrix(0.80118233,0,0,0.80118233,106.89927,671.93155)"
        id="g3955-4-72-8-8">
       <g
          style="fill:#0000ff;stroke:#0000ff"
@@ -2842,15 +2764,15 @@
        xml:space="preserve"
        style="font-size:24px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
        x="472.87067"
-       y="934.63245"
+       y="926.63245"
        id="text5087"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan5089"
          x="472.87067"
-         y="934.63245">V-point inside domain</tspan></text>
+         y="926.63245">V-point inside domain</tspan></text>
     <g
-       transform="matrix(0.80118233,0,0,0.80118233,107.52089,729.74573)"
+       transform="matrix(0.80118233,0,0,0.80118233,107.52089,721.74573)"
        id="g3955-4-7-50"
        style="opacity:0.6625">
       <g
@@ -2887,13 +2809,13 @@
        xml:space="preserve"
        style="font-size:24px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
        x="470.7027"
-       y="981.68933"
+       y="973.68933"
        id="text5130"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan5132"
          x="470.7027"
-         y="981.68933">Boundary V-point</tspan></text>
+         y="973.68933">Boundary V-point</tspan></text>
     <g
        id="g3955-47-9"
        transform="matrix(0.80118233,0,0,0.80118233,55.613579,-26.989874)">
@@ -3063,5 +2985,144 @@
          x="67.953247"
          y="165.31073"
          id="tspan7552-9" /></text>
+    <g
+       id="g4947-2"
+       transform="matrix(0.80118233,0,0,0.80118233,152.93389,63.876656)">
+      <path
+         transform="translate(-63.023066,-3.506277)"
+         d="m 352.68817,369.02884 c 0,4.45391 -3.6106,8.06452 -8.06451,8.06452 -4.45391,0 -8.06452,-3.61061 -8.06452,-8.06452 0,-4.45391 3.61061,-8.06452 8.06452,-8.06452 4.45391,0 8.06451,3.61061 8.06451,8.06452 z"
+         sodipodi:ry="8.0645161"
+         sodipodi:rx="8.0645161"
+         sodipodi:cy="369.02884"
+         sodipodi:cx="344.62366"
+         id="path3911-3-7-58"
+         style="fill:#00ff00;stroke:#00ff00"
+         sodipodi:type="arc" />
+      <flowRoot
+         transform="translate(-119.99251,51.60608)"
+         style="font-size:20px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#00ff00;fill-opacity:1;stroke:#00ff00;font-family:Sans"
+         id="flowRoot3947-0-79"
+         xml:space="preserve"><flowRegion
+           id="flowRegion3949-7-97"><rect
+             y="287.42322"
+             x="412.45981"
+             height="22.955574"
+             width="21.474569"
+             id="rect3951-1-85"
+             style="fill:#00ff00;stroke:#00ff00" /></flowRegion><flowPara
+           style="font-style:italic;fill:#00ff00;stroke:#00ff00;-inkscape-font-specification:Sans Italic"
+           id="flowPara3953-0-6">u</flowPara><flowPara
+           style="font-style:italic;fill:#00ff00;stroke:#00ff00;-inkscape-font-specification:Sans Italic"
+           id="flowPara3995-12" /></flowRoot>    </g>
+    <g
+       id="g3955-47-2"
+       transform="matrix(0.80118233,0,0,0.80118233,56.53448,158.46466)">
+      <path
+         transform="translate(58.969444,-63.112357)"
+         d="m 352.68817,369.02884 c 0,4.45391 -3.6106,8.06452 -8.06451,8.06452 -4.45391,0 -8.06452,-3.61061 -8.06452,-8.06452 0,-4.45391 3.61061,-8.06452 8.06452,-8.06452 4.45391,0 8.06451,3.61061 8.06451,8.06452 z"
+         sodipodi:ry="8.0645161"
+         sodipodi:rx="8.0645161"
+         sodipodi:cy="369.02884"
+         sodipodi:cx="344.62366"
+         id="path3911-3-0-6"
+         style="fill:#000000;stroke:#000000"
+         sodipodi:type="arc" />
+      <flowRoot
+         transform="translate(2,-8)"
+         style="font-size:20px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         id="flowRoot3947-3-2"
+         xml:space="preserve"><flowRegion
+           id="flowRegion3949-4-4"><rect
+             y="287.42322"
+             x="412.45981"
+             height="22.955574"
+             width="21.474569"
+             id="rect3951-3-4" /></flowRegion><flowPara
+           style="font-style:italic;-inkscape-font-specification:Sans Italic"
+           id="flowPara3953-1-72">f</flowPara></flowRoot>    </g>
+    <g
+       id="g4019-10-0"
+       transform="matrix(0.80118233,0,0,0.80118233,152.19819,63.730286)">
+      <path
+         transform="translate(-3.075269,-3.2258065)"
+         d="m 352.68817,369.02884 c 0,4.45391 -3.6106,8.06452 -8.06451,8.06452 -4.45391,0 -8.06452,-3.61061 -8.06452,-8.06452 0,-4.45391 3.61061,-8.06452 8.06452,-8.06452 4.45391,0 8.06451,3.61061 8.06451,8.06452 z"
+         sodipodi:ry="8.0645161"
+         sodipodi:rx="8.0645161"
+         sodipodi:cy="369.02884"
+         sodipodi:cx="344.62366"
+         id="path3911-9-7"
+         style="fill:#ff0000;stroke:#ff0000"
+         sodipodi:type="arc" />
+      <flowRoot
+         transform="translate(2.2215071,19.253062)"
+         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         id="flowRoot3921-4-3"
+         xml:space="preserve"><flowRegion
+           id="flowRegion3923-42-6"><rect
+             y="318.52432"
+             x="351.73862"
+             height="45.170647"
+             width="39.987129"
+             id="rect3925-9-2" /></flowRegion><flowPara
+           style="font-size:20px;font-style:italic;fill:#ff0000;-inkscape-font-specification:Sans Italic"
+           id="flowPara3927-5-4">T</flowPara></flowRoot>    </g>
+    <g
+       transform="matrix(0.80118233,0,0,0.80118233,104.73744,158.64437)"
+       id="g3955-4-72-8-7">
+      <g
+         style="fill:#0000ff;stroke:#0000ff"
+         id="g4016-1-7-5">
+        <path
+           transform="translate(58.969444,-63.112357)"
+           d="m 352.68817,369.02884 c 0,4.45391 -3.6106,8.06452 -8.06451,8.06452 -4.45391,0 -8.06452,-3.61061 -8.06452,-8.06452 0,-4.45391 3.61061,-8.06452 8.06452,-8.06452 4.45391,0 8.06451,3.61061 8.06451,8.06452 z"
+           sodipodi:ry="8.0645161"
+           sodipodi:rx="8.0645161"
+           sodipodi:cy="369.02884"
+           sodipodi:cx="344.62366"
+           id="path3911-3-8-62-9-3"
+           style="fill:#0000ff;stroke:#0000ff"
+           sodipodi:type="arc" />
+        <flowRoot
+           transform="translate(2,-8)"
+           style="font-size:20px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#0000ff;fill-opacity:1;stroke:#0000ff;font-family:Sans"
+           id="flowRoot3947-00-8-7-7"
+           xml:space="preserve"><flowRegion
+             id="flowRegion3949-6-6-7-9"><rect
+               style="fill:#0000ff;stroke:#0000ff"
+               y="287.42322"
+               x="412.45981"
+               height="22.955574"
+               width="21.474569"
+               id="rect3951-2-2-4-7" /></flowRegion><flowPara
+             style="font-style:italic;fill:#0000ff;stroke:#0000ff;-inkscape-font-specification:Sans Italic"
+             id="flowPara3953-02-6-2-9">v</flowPara><flowPara
+             style="font-style:italic;fill:#0000ff;stroke:#0000ff;-inkscape-font-specification:Sans Italic"
+             id="flowPara4014-5-3-4" /></flowRoot>      </g>
+    </g>
+    <rect
+       style="opacity:0.66249999999999998;fill:none;fill-opacity:1;stroke:#2d3129;stroke-width:4.09045839000000022;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:16.36183211000000171, 4.09045802999999975;stroke-dashoffset:0"
+       id="rect7607"
+       width="95.05201"
+       height="91.719078"
+       x="356.5708"
+       y="332.00674" />
+    <rect
+       style="opacity:0.6625;fill:none;stroke:#2d3129;stroke-width:1.70440638;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:6.81762478, 1.7044062;stroke-dashoffset:0"
+       id="rect7607-5"
+       width="57.815418"
+       height="26.180601"
+       x="397.14261"
+       y="994.24042" />
+    <text
+       xml:space="preserve"
+       style="font-size:24px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="471.81131"
+       y="1013.8339"
+       id="text8135"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan8137"
+         x="471.81131"
+         y="1013.8339">Grid pts with same i,j</tspan></text>
   </g>
 </svg>
