@@ -34,8 +34,6 @@ program gocean2d
   !! read in model parameters and read in or setup model grid 
   CALL model_init(model_grid)
 
-  call boundary_conditions_init(model_grid)
-
   ! Create fields on this grid
   sshn_u_fld = r2d_field_type(model_grid, &
                               U_POINTS,   &
