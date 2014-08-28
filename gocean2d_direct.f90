@@ -115,13 +115,15 @@ subroutine step(grid, istp, &
   use model_mod, only: rdt, irecord
   use momentum_mod, only: invoke_momentum_u, invoke_momentum_v
   use continuity_mod, only: invoke_continuity
-  use time_update_mod, only: next
+  use time_update_mod, only: invoke_next_u, invoke_next_v, &
+                             invoke_next_ssht, invoke_next_sshu, &
+                             invoke_next_sshv
   use boundary_conditions_mod
   use gocean2d_io_mod, only: model_write
   implicit none
   type(grid_type), intent(in) :: grid
   integer,         intent(in) :: istp
-  type(r2d_field_type), intent(in) :: un, vn, sshn, sshn_u, sshn_v
+  type(r2d_field_type), intent(inout) :: un, vn, sshn, sshn_u, sshn_v
   type(r2d_field_type), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
   type(r2d_field_type), intent(in) :: hu, hv, ht
   ! Locals
@@ -147,7 +149,12 @@ subroutine step(grid, istp, &
   CALL bc_u_flather(ua, hu, sshn_u)
   CALL bc_v_flather(va, hv, sshn_v)
 
-  CALL next(grid)
+  ! Time update of fields
+  call invoke_next_u(un, ua)
+  call invoke_next_v(vn, va)
+  call invoke_next_ssht(sshn, ssha)
+  call invoke_next_sshu(sshn_u, sshn)
+  call invoke_next_sshv(sshn_v, sshn)
 
   IF(MOD(istp, irecord) == 0)  CALL model_write(grid, istp, ht%data, &
                                                 sshn%data, un%data, vn%data)
