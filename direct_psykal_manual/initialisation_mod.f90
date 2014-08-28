@@ -32,9 +32,10 @@ contains
     sshn_t_fld%data(:,:) = 0.0_wp
 
     ! Sea-surface height at u points
-    DO ji=1,sshn_u_fld%grid%nx
-       DO jj =1, sshn_u_fld%grid%ny
-          itmp1 = min(ji+1,sshn_u_fld%grid%nx)
+    ! In original code this loop is over 0:jpi,1:jpj
+    DO ji=1,sshn_u_fld%internal%xstop
+       DO jj =1, sshn_u_fld%internal%ystop
+          itmp1 = min(ji+1,sshn_u_fld%internal%nx)
           itmp2 = max(ji  ,1)
           rtmp1 = sshn_u_fld%grid%e12t(itmp1,jj) * sshn_t_fld%data(itmp1,jj) + &
                   sshn_u_fld%grid%e12t(itmp2,jj) * sshn_t_fld%data(itmp2,jj)
@@ -43,9 +44,10 @@ contains
     END DO
 
     ! Sea-surface height at v points
-    DO jj =1, sshn_v_fld%grid%ny
-      DO ji=1, sshn_v_fld%grid%nx
-        itmp1 = min(jj+1,sshn_v_fld%grid%ny)
+    ! In original code this loop is over 1:jpi,0:jpj
+    DO jj =1, sshn_v_fld%internal%ystop
+      DO ji=1, sshn_v_fld%internal%xstop
+        itmp1 = min(jj+1,sshn_v_fld%internal%ny)
         itmp2 = max(jj  ,1)
         rtmp1 = sshn_v_fld%grid%e12t(ji,itmp1) * sshn_t_fld%data(ji,itmp1) + &
                 sshn_v_fld%grid%e12t(ji,itmp2) * sshn_t_fld%data(ji,itmp2)
