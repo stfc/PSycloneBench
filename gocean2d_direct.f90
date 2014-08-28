@@ -157,8 +157,8 @@ subroutine step(grid, istp, &
   call invoke_next_sshu(sshn_u, sshn)
   call invoke_next_sshv(sshn_v, sshn)
 
-  IF(MOD(istp, irecord) == 0)  CALL model_write(grid, istp, ht%data, &
-                                                sshn%data, un%data, vn%data)
+  IF(MOD(istp, irecord) == 0)  CALL model_write(grid, istp, ht, &
+                                                sshn, un, vn)
 
 end subroutine step
 
