@@ -4,6 +4,7 @@ program gocean2d
   use initialisation_mod, only: initialisation
   use model_mod
   use boundary_conditions_mod
+  use gocean2d_io_mod, only: model_write
   !!! A Horizontal 2D hydrodynamic ocean model which
   !!   1) using structured grid
   !!   2) using direct data addressing structures
@@ -85,6 +86,8 @@ program gocean2d
                       sshn_u_fld, sshn_v_fld, sshn_t_fld, &
                       un_fld, vn_fld)
 
+  call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
+
   !! time stepping 
   DO istp = nit000, nitend, 1
      print*, 'istp == ', istp
@@ -111,7 +114,7 @@ subroutine step(grid, istp, &
   use kind_params_mod
   use grid_mod
   use field_mod
-  use model_mod, only: rdt, irecord
+  use model_mod, only: rdt
   use momentum_mod, only: invoke_momentum_u, invoke_momentum_v
   use continuity_mod, only: invoke_continuity
   use time_update_mod, only: invoke_next_u, invoke_next_v, &
@@ -155,8 +158,7 @@ subroutine step(grid, istp, &
   call invoke_next_sshu(sshn_u, sshn)
   call invoke_next_sshv(sshn_v, sshn)
 
-  IF(MOD(istp, irecord) == 0)  CALL model_write(grid, istp, ht, &
-                                                sshn, un, vn)
+  call model_write(grid, istp, ht, sshn, un, vn)
 
 end subroutine step
 
