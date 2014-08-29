@@ -165,6 +165,8 @@ contains
     ! Locals
     integer :: ierr(5)
     integer :: ji, jj
+    integer :: xstart, ystart ! Start of internal region of T-pts
+    integer :: xstop, ystop ! End of internal region of T-pts
 
     select case(grid%name)
 
@@ -241,17 +243,19 @@ contains
     grid%gphif(:, :) = 50._wp
 
     ! Co-ordinates of the T points
-    grid%xt(1,1) = 0.0_wp + 0.5_wp * grid%e1t(1,1)
-    grid%yt(1,1) = 0.0_wp + 0.5_wp * grid%e2t(1,1)
+    xstart = grid%simulation_domain%xstart
+    xstop  = grid%simulation_domain%xstop
+    ystart = grid%simulation_domain%ystart
+    ystop  = grid%simulation_domain%ystop
+    grid%xt(xstart, ystart) = 0.0_wp + 0.5_wp * grid%e1t(xstart,ystart)
+    grid%yt(xstart, ystart) = 0.0_wp + 0.5_wp * grid%e2t(xstart,ystart)
 
-    !> \todo Look-up these loop bounds!
-    DO ji = 2, m
-      grid%xt(ji,1:n) = grid%xt(ji-1, 1:n) + grid%dx
+    DO ji = xstart+1, xstop
+      grid%xt(ji,ystart:ystop) = grid%xt(ji-1, ystart:ystop) + grid%dx
     END DO
             
-    !> \todo Look-up these loop bounds!
-    DO jj = 2, n
-      grid%yt(1:m,jj) = grid%yt(1:m, jj-1) + grid%dy
+    DO jj = ystart+1, ystop
+      grid%yt(xstart:xstop,jj) = grid%yt(xstart:xstop, jj-1) + grid%dy
     END DO
 
 
@@ -284,6 +288,8 @@ contains
     ! to specify the type of boundary (whether hard or open).
     !> \todo Generate the bounds of the simulation domain by
     !! examining the T-point mask.
+    !> \todo Isn't this just the same as the internal region of
+    !! any T-point field??
     grid%simulation_domain%xstart = 2
     grid%simulation_domain%xstop  = grid%nx - 1
     grid%simulation_domain%ystart = 2
