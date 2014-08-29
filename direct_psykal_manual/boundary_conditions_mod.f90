@@ -52,8 +52,15 @@ contains
 
     ! solid boundary conditions for u-velocity
 
-    do jj = ua%internal%ystart, ua%internal%ystop, 1
-       do ji = ua%internal%xstart, ua%internal%xstop, 1
+! Original loop was:
+!            DO jj = 1, jpj
+!              DO ji = 0, jpi
+! In original code, tmask is declared with one more row and column than
+! any other field. ji==jpi IS last column of u field.
+! 1/ How do I determine the full range of array indices to loop over for ua?
+! 2/ If I do that, is tmask(ji+1,jj) going to stay within bounds?
+    do jj = ua%whole%ystart, ua%whole%ystop, 1
+       do ji = ua%whole%xstart, ua%whole%xstop, 1
 
           if(ua%grid%tmask(ji,jj) * ua%grid%tmask(ji+1,jj) == 0)then
             ua%data(ji,jj) = 0._wp
@@ -73,8 +80,8 @@ contains
 
     ! solid boundary conditions for v-velocity
 
-    do jj = va%internal%ystart, va%internal%ystop, 1
-       do ji = va%internal%xstart, va%internal%xstop, 1
+    do jj = va%whole%ystart, va%whole%ystop, 1
+       do ji = va%whole%xstart, va%whole%xstop, 1
 
         if(va%grid%tmask(ji,jj) * va%grid%tmask(ji,jj+1) == 0)then
           va%data(ji,jj) = 0._wp
@@ -98,9 +105,13 @@ contains
     !                                  Dn                 Dn
     ! ua and va in du/dn should be the specified tidal forcing
 
+    ! Original loop was:
+    !            DO jj = 1, jpj
+    !              DO ji = 0, jpi  
+
     ! Flather u 
-    DO jj = ua%internal%ystart, ua%internal%ystop, 1
-       DO ji = ua%internal%xstart, ua%internal%xstop, 1
+    DO jj = ua%whole%ystart, ua%whole%ystop, 1
+       DO ji = ua%whole%xstart, ua%whole%xstop, 1
 
           IF(ua%grid%tmask(ji,jj) + ua%grid%tmask(ji+1,jj) <= -1) CYCLE  ! not in the domain
 
@@ -130,8 +141,8 @@ contains
 
     !kernel Flather v 
 
-    DO jj = va%internal%ystart, va%internal%ystop, 1
-       DO ji = va%internal%xstart, va%internal%xstop, 1
+    DO jj = va%whole%ystart, va%whole%ystop, 1
+       DO ji = va%whole%xstart, va%whole%xstop, 1
 
           ! Check whether this point is inside the simulated domain
           IF(va%grid%tmask(ji,jj) + va%grid%tmask(ji,jj+1) <= -1) CYCLE

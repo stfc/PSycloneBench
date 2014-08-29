@@ -37,6 +37,9 @@ module field_mod
      integer, dimension(3) :: boundary_conditions
      !> The internal region of this field
      type(region_type) :: internal
+     !> The whole region covered by this field - includes 
+     !! boundary points
+     type(region_type) :: whole
      !> The number of halo regions that this field has.
      !! Halo region values are not computed but copied
      !! from elsewhere.
@@ -110,6 +113,10 @@ module field_mod
 ! |           |          |          |          |          |          |          |        
 ! T[1,1]      u(1,1)     T(i-1,1)---u(i-1,1)---T(i,1)-----u(i,1)--  -T(nx,1)----u(nx,1)   
 
+  !> The no. of cols/rows used to define boundary data in the absence
+  !! of periodic BCs.
+  integer, parameter :: NBOUNDARY = 1
+
 contains
 
   !===================================================
@@ -172,12 +179,36 @@ contains
     case(ALL_POINTS)
        call field_init(self)
     case default
-       stop 'r2d_field_constructor: ERROR: invalid specifier for type of mesh points'
+       stop 'r2d_field_constructor: ERROR: invalid specifier for '//&
+            'type of mesh points'
     end select
 
     ! Compute and store dimensions of internal region of field
     self%internal%nx = self%internal%xstop - self%internal%xstart + 1
     self%internal%ny = self%internal%ystop - self%internal%ystart + 1
+
+    if(self%boundary_conditions(1) /= BC_PERIODIC)then
+       self%whole%xstart = self%internal%xstart - NBOUNDARY
+       self%whole%xstop  = self%internal%xstop  + NBOUNDARY
+    else
+       !> \todo What is the whole/complete extent of the field when
+       !! we have PBCs?
+       self%whole%xstart = self%internal%xstart - NBOUNDARY
+       self%whole%xstop  = self%internal%xstop  + NBOUNDARY
+       WRITE (*,*) 'WARNING: r2d_field_constructor: setting whole '// &
+                   'field extent for PBCs not yet properly implemented!'
+    end if
+    if(self%boundary_conditions(2) /= BC_PERIODIC)then
+       self%whole%ystart = self%internal%ystart - NBOUNDARY
+       self%whole%ystop  = self%internal%ystop  + NBOUNDARY
+    else
+       !> \todo What is the whole/complete extent of the field when
+       !! we have PBCs?
+       self%whole%ystart = self%internal%ystart - NBOUNDARY
+       self%whole%ystop  = self%internal%ystop  + NBOUNDARY
+       WRITE (*,*) 'WARNING: r2d_field_constructor: setting whole '// &
+                   'field extent for PBCs not yet properly implemented!'
+    end if
 
     write(*,*) 'allocating field with bounds: (', &
                1,':', self%internal%xstop+1, ',', &
@@ -363,14 +394,14 @@ contains
     ! domain. U points with ji==nx-1 will be the Eastern-most *boundary*
     ! points.
     ! jj indexing:
-    ! Lowermost j index of the U points - U pts with jj the same as external T points 
-    ! will also be external to domain and therefore unused. U points with jj one greater 
-    ! than lowest ext. T pts will be *boundary* points. U pts with jj==ny will be 
-    ! boundary points.
+    ! Lowermost j index of the U points - U pts with jj the same as
+    ! external T points will also be external to domain and therefore
+    ! unused. U points with jj one greater than lowest ext. T pts will
+    ! be *boundary* points. U pts with jj==ny will be boundary points.
 
     ! When updating a quantity on U points with this staggering
-    ! we write to (using 'x' to indicate a location that is written and 'b' a boundary 
-    ! point):
+    ! we write to (using 'x' to indicate a location that is written and 
+    ! 'b' a boundary point):
     !
     ! i= 1          nx-1  nx
     !    b   b   b   b    o   ny
