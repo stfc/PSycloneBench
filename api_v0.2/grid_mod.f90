@@ -247,8 +247,8 @@ contains
     xstop  = grid%simulation_domain%xstop
     ystart = grid%simulation_domain%ystart
     ystop  = grid%simulation_domain%ystop
-    grid%xt(xstart, ystart) = 0.0_wp + 0.5_wp * grid%e1t(xstart,ystart)
-    grid%yt(xstart, ystart) = 0.0_wp + 0.5_wp * grid%e2t(xstart,ystart)
+    grid%xt(xstart, :) = 0.0_wp + 0.5_wp * grid%e1t(xstart,:)
+    grid%yt(:,ystart) = 0.0_wp + 0.5_wp * grid%e2t(:,ystart)
 
     DO ji = xstart+1, xstop
       grid%xt(ji,ystart:ystop) = grid%xt(ji-1, ystart:ystop) + grid%dx
