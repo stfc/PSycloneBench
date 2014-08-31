@@ -25,6 +25,9 @@ contains
     amp_tide   = 0.2_wp
     omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
 
+    !        DO jj = 1, jpj  
+    !          DO ji = 1, jpi 
+
     DO jj = ssha%internal%ystart, ssha%internal%ystop
        DO ji = ssha%internal%xstart, ssha%internal%xstop
           IF(ssha%grid%tmask(ji,jj) <= 0) CYCLE
@@ -158,6 +161,8 @@ contains
           END IF
        END DO
     END DO
+
+    write(*,"((E24.16))") va%data(:,va%internal%ystart)
 
   end subroutine bc_v_flather
 
