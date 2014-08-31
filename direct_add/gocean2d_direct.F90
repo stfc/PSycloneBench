@@ -208,8 +208,8 @@ CONTAINS
             gphif(0:jpi, 0:jpj) = 50._wp
 
 
-            xt(1,1) = 0.0_wp + 0.5_wp * e1t(1,1)
-            yt(1,1) = 0.0_wp + 0.5_wp * e2t(1,1)
+            xt(1,:) = 0.0_wp + 0.5_wp * e1t(1,:)
+            yt(:,1) = 0.0_wp + 0.5_wp * e2t(:,1)
 
             DO ji = 2, jpi
               xt(ji,1:jpj) = xt(ji-1, 1:jpj) + dx
@@ -342,7 +342,9 @@ CONTAINS
               END DO
             END DO
 
-            CALL bc(0._wp)
+! This call updates 'a' quantities which are not used before the code
+! in step again updates them. Therefore I think it does nothing. ARP.
+!            CALL bc(0._wp)
 
 
         END SUBROUTINE initialisation
@@ -604,7 +606,7 @@ CONTAINS
               END DO
             END DO
 !end kernel ssh clamped obc
-            
+
 
 ! kernel"solid boundary conditions for u-velocity" 
             DO jj = 1, jpj
@@ -657,6 +659,9 @@ CONTAINS
               END DO
             END DO
 !end kernel flather v .
+
+    write(*,"((E24.16))") va(:,1)
+            
 
         END SUBROUTINE bc
 
