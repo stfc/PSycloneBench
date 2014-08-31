@@ -673,6 +673,8 @@ contains
     ! Currently we assume a shell of thickness one around the actual
     ! simulation domain - this is the minimum required to specify
     ! boundary conditions.
+    !> \todo We can compute the dimensions of the simulated domain
+    !! once the T mask has been set.
 
     ! When updating a quantity on T points with a NE staggering
     ! we write to (using x to indicate a location that is written):
