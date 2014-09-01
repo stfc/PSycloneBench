@@ -40,19 +40,14 @@ program shallow
   use timing_mod
   use model_mod
   use initial_conditions_mod
-  use time_smooth_mod,  ONLY: manual_invoke_time_smooth
-  use apply_bcs_cu_mod, ONLY: manual_invoke_apply_bcs_cu
-  use apply_bcs_cv_mod, ONLY: manual_invoke_apply_bcs_cv
-  use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvtf
-  use manual_invoke_apply_bcs_mod, ONLY: manual_invoke_apply_bcs_uvt
-  use compute_cu_mod, ONLY: manual_invoke_compute_cu
-  use compute_cv_mod, ONLY: manual_invoke_compute_cv
-  use compute_z_mod,  ONLY: manual_invoke_compute_z
-  use compute_h_mod,  ONLY: manual_invoke_compute_h
-  use manual_invoke_compute_new_fields_mod, ONLY: manual_invoke_compute_new_fields
+  use time_smooth_mod,  ONLY: invoke_time_smooth
+  use apply_bcs_cu_mod, ONLY: invoke_apply_bcs_cu
+  use apply_bcs_cv_mod, ONLY: invoke_apply_bcs_cv
+  use apply_bcs_mod, ONLY: invoke_apply_bcs_uvtf
+  use apply_bcs_mod, ONLY: invoke_apply_bcs_uvt
+  use compute_fluxes_mod, only: invoke_compute_fluxes
+  use compute_new_fields_mod, ONLY: invoke_compute_new_fields
   implicit none
-
-  !type(field_type) :: pressure
 
   !> Checksum used for each array
   REAL(KIND=8) :: csum
@@ -71,10 +66,6 @@ program shallow
   ! dt and tdt are prototypical fields that are actually a 
   ! single parameter.
   CALL copy_field(dt, tdt)
- 
-  ! Create a new field, pressure, which is defined at the T points
-  ! of the mesh
-  !CALL field_create(pressure, CT)
 
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
@@ -88,8 +79,8 @@ program shallow
   CALL init_velocity_v(v, psi, m, n)
 
   !     PERIODIC CONTINUATION
-  CALL manual_invoke_apply_bcs_cu(U)
-  CALL manual_invoke_apply_bcs_cv(V)
+  CALL invoke_apply_bcs_cu(U)
+  CALL invoke_apply_bcs_cv(V)
 
   ! Initialise fields that will hold data at previous time step
   CALL copy_field(U, UOLD)
@@ -102,37 +93,37 @@ program shallow
   !     Start timer
   CALL timer_start('Time-stepping',idxt0)
 
-  !  ** Start of time loop ** 
+  !  ** Start of time-stepping loop ** 
   DO ncycle=1,itmax
     
     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
 
     CALL timer_start('Compute c{u,v},z,h', idxt1)
 
-    CALL manual_invoke_compute_cu(CU, P, U)
-    CALL manual_invoke_compute_cv(CV, P, V)
-    CALL manual_invoke_compute_z(z, P, U, V)
-    CALL manual_invoke_compute_h(h, P, U, V)
-
+!    CALL invoke_compute_cu(CU, P, U)
+!    CALL invoke_compute_cv(CV, P, V)
+!    CALL invoke_compute_z(z, P, U, V)
+!    CALL invoke_compute_h(h, P, U, V)
+    call invoke_compute_fluxes(CU, CV, z, h, P, U, V)
     CALL timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
 
     CALL timer_start('PBCs-1',idxt1)
-    CALL manual_invoke_apply_bcs_uvtf(CU, CV, H, Z)
+    CALL invoke_apply_bcs_uvtf(CU, CV, H, Z)
     CALL timer_stop(idxt1)
 
     ! COMPUTE NEW VALUES U,V AND P
 
     CALL timer_start('Compute new fields', idxt1)
-    CALL manual_invoke_compute_new_fields(unew, uold, vnew, vold, &
-                                          pnew, pold, &
-                                          z, cu, cv, h, tdt%data)
+    CALL invoke_compute_new_fields(unew, uold, vnew, vold, &
+                                   pnew, pold, &
+                                   z, cu, cv, h, tdt%data)
     CALL timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
     CALL timer_start('PBCs-2',idxt1)
-    CALL manual_invoke_apply_bcs_uvt(UNEW, VNEW, PNEW)
+    CALL invoke_apply_bcs_uvt(UNEW, VNEW, PNEW)
     CALL timer_stop(idxt1)
 
     ! Time is in seconds but we never actually need it
@@ -145,9 +136,9 @@ program shallow
 
       CALL timer_start('Time smoothing',idxt1)
 
-      CALL manual_invoke_time_smooth(U, UNEW, UOLD)
-      CALL manual_invoke_time_smooth(V, VNEW, VOLD)
-      CALL manual_invoke_time_smooth(P, PNEW, POLD)
+      CALL invoke_time_smooth(U, UNEW, UOLD, &
+                              V, VNEW, VOLD, &
+                              P, PNEW, POLD)
 
       CALL timer_stop(idxt1)
 
