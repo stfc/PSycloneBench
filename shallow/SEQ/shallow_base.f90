@@ -40,13 +40,13 @@ program shallow
   use timing_mod
   use model_mod
   use initial_conditions_mod
-  use time_smooth_mod,  ONLY: invoke_time_smooth
-  use apply_bcs_cu_mod, ONLY: invoke_apply_bcs_cu
-  use apply_bcs_cv_mod, ONLY: invoke_apply_bcs_cv
-  use apply_bcs_mod, ONLY: invoke_apply_bcs_uvtf
-  use apply_bcs_mod, ONLY: invoke_apply_bcs_uvt
-  use compute_fluxes_mod, only: invoke_compute_fluxes
-  use compute_new_fields_mod, ONLY: invoke_compute_new_fields
+  use time_smooth_mod,        only: invoke_time_smooth
+  use apply_bcs_cu_mod,       only: invoke_apply_bcs_cu
+  use apply_bcs_cv_mod,       only: invoke_apply_bcs_cv
+  use apply_bcs_mod,          only: invoke_apply_bcs_uvtf
+  use apply_bcs_mod,          only: invoke_apply_bcs_uvt
+  use compute_fluxes_mod,     only: invoke_compute_fluxes
+  use compute_new_fields_mod, only: invoke_compute_new_fields
   implicit none
 
   !> Checksum used for each array
@@ -100,17 +100,16 @@ program shallow
 
     CALL timer_start('Compute c{u,v},z,h', idxt1)
 
-!    CALL invoke_compute_cu(CU, P, U)
-!    CALL invoke_compute_cv(CV, P, V)
-!    CALL invoke_compute_z(z, P, U, V)
-!    CALL invoke_compute_h(h, P, U, V)
     call invoke_compute_fluxes(CU, CV, z, h, P, U, V)
+
     CALL timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
 
     CALL timer_start('PBCs-1',idxt1)
+
     CALL invoke_apply_bcs_uvtf(CU, CV, H, Z)
+
     CALL timer_stop(idxt1)
 
     ! COMPUTE NEW VALUES U,V AND P
