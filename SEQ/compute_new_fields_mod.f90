@@ -1,16 +1,16 @@
-MODULE manual_invoke_compute_new_fields_mod
+MODULE compute_new_fields_mod
   USE kind_params_mod
   IMPLICIT none
   PRIVATE
 
-  PUBLIC manual_invoke_compute_new_fields
+  PUBLIC invoke_compute_new_fields
 
 CONTAINS
 
-  SUBROUTINE manual_invoke_compute_new_fields(unew, uold, &
-                                              vnew, vold, &
-                                              pnew, pold, &
-                                              z, cufld, cvfld, hfld, tdt)
+  SUBROUTINE invoke_compute_new_fields(unew, uold, &
+                                       vnew, vold, &
+                                       pnew, pold, &
+                                       z, cufld, cvfld, hfld, tdt)
     USE compute_unew_mod, ONLY: compute_unew_code
     USE compute_vnew_mod, ONLY: compute_vnew_code
     USE compute_pnew_mod, ONLY: compute_pnew_code
@@ -49,6 +49,6 @@ CONTAINS
        END DO
     END DO
 
-  END SUBROUTINE manual_invoke_compute_new_fields
+  END SUBROUTINE invoke_compute_new_fields
 
-END MODULE manual_invoke_compute_new_fields_mod
+END MODULE compute_new_fields_mod

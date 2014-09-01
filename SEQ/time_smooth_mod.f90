@@ -6,7 +6,7 @@ MODULE time_smooth_mod
 
   PRIVATE
 
-  PUBLIC time_smooth_init, manual_invoke_time_smooth
+  PUBLIC time_smooth_init, invoke_time_smooth
   PUBLIC time_smooth_type, time_smooth_code
 
   !> Parameter for time smoothing
@@ -48,28 +48,50 @@ CONTAINS
 
   !> Manual implementation of code to invoke the time-smoothing
   !! kernel
-  SUBROUTINE manual_invoke_time_smooth(field, field_new, field_old)
+  SUBROUTINE invoke_time_smooth(field1, field1_new, field1_old, &
+                                field2, field2_new, field2_old, &
+                                field3, field3_new, field3_old)
     IMPLICIT none
-    REAL(wp), INTENT(in), DIMENSION(:,:) :: field
-    REAL(wp), INTENT(in), DIMENSION(:,:) :: field_new
-    REAL(wp), INTENT(inout), DIMENSION(:,:) :: field_old
+    REAL(wp), INTENT(in), DIMENSION(:,:) :: field1, field2, field3
+    REAL(wp), INTENT(in), DIMENSION(:,:) :: field1_new, field2_new, field3_new
+    REAL(wp), INTENT(inout), DIMENSION(:,:) :: field1_old, field2_old, field3_old
     ! Locals
     INTEGER :: i, j
     INTEGER :: idim1, idim2
     
     ! Here we will query what should be field objects to get at
     ! raw data.
-    idim1 = SIZE(field, 1)
-    idim2 = SIZE(field, 2)
+    idim1 = SIZE(field1, 1)
+    idim2 = SIZE(field1, 2)
 
     ! Loop over 'columns'
     DO J=1,idim2
       DO I=1,idim1
-         CALL time_smooth_code(i,j,field,field_new,field_old)
+         CALL time_smooth_code(i,j,field1,field1_new,field1_old)
       END DO
     END DO
 
-  END SUBROUTINE manual_invoke_time_smooth
+    idim1 = SIZE(field2, 1)
+    idim2 = SIZE(field2, 2)
+
+    ! Loop over 'columns'
+    DO J=1,idim2
+      DO I=1,idim1
+         CALL time_smooth_code(i,j,field2,field2_new,field2_old)
+      END DO
+    END DO
+
+    idim1 = SIZE(field3, 1)
+    idim2 = SIZE(field3, 2)
+
+    ! Loop over 'columns'
+    DO J=1,idim2
+      DO I=1,idim1
+         CALL time_smooth_code(i,j,field3,field3_new,field3_old)
+      END DO
+    END DO
+
+  END SUBROUTINE invoke_time_smooth
 
   !===================================================
 
