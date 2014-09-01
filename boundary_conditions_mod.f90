@@ -162,8 +162,6 @@ contains
        END DO
     END DO
 
-    write(*,"((E24.16))") va%data(:,va%internal%ystart)
-
   end subroutine bc_v_flather
 
   !================================================
