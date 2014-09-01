@@ -7,63 +7,6 @@ contains
 
   !================================================
 
-  subroutine invoke_next_u(un, ua)
-    implicit none
-    type(r2d_field_type), intent(inout) :: un
-    type(r2d_field_type), intent(in)    :: ua
-    ! Locals
-    integer :: ji, jj
-
-    do jj = un%internal%ystart, un%internal%ystop, 1
-      do ji = un%internal%xstart, un%internal%xstop, 1
-        call next_u_code(ji,jj, un%data, ua%data)
-      end do
-    end do
-
-  contains
-
-    subroutine next_u_code(ji,jj,un,ua)
-      implicit none
-      integer, intent(in) :: ji, jj
-      real(wp), dimension(:,:), intent(inout) :: un
-      real(wp), dimension(:,:), intent(in)    :: ua
-
-      un(ji,jj)   = ua(ji,jj)
-
-    end subroutine next_u_code
-
-  end subroutine invoke_next_u
-
-  !================================================
-
-  subroutine invoke_next_v(vn, va)
-    implicit none
-    type(r2d_field_type), intent(inout) :: vn
-    type(r2d_field_type), intent(in)    :: va
-    ! Locals
-    integer :: ji, jj
-
-    do jj = vn%internal%ystart, vn%internal%ystop, 1
-      do ji = vn%internal%xstart, vn%internal%xstop, 1
-        call next_v_code(ji,jj, vn%data, va%data)
-      end do
-    end do
-
-  contains
-
-    subroutine next_v_code(ji,jj,vn,va)
-      implicit none
-      integer, intent(in) :: ji, jj
-      real(wp), dimension(:,:), intent(inout) :: vn
-      real(wp), dimension(:,:), intent(in)    :: va
-
-      vn(ji,jj)   = va(ji,jj)
-    end subroutine next_v_code
-
-  end subroutine invoke_next_v
-
-  !================================================
-
   subroutine invoke_next_ssht(sshn, ssha)
     implicit none
     type(r2d_field_type), intent(inout) :: sshn
