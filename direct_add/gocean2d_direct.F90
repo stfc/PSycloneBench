@@ -660,9 +660,6 @@ CONTAINS
             END DO
 !end kernel flather v .
 
-    write(*,"((E24.16))") va(:,1)
-            
-
         END SUBROUTINE bc
 
 !+++++++++++++++++++++++++++++++++++
