@@ -109,6 +109,7 @@ program shallow
     CALL timer_start('PBCs-1',idxt1)
 
     CALL invoke_apply_bcs_uvtf(CU, CV, H, Z)
+    !call invoke(periodic_bc(cu), periodic_bc(cv), ....)
 
     CALL timer_stop(idxt1)
 

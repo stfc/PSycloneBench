@@ -23,6 +23,9 @@ contains
     integer :: i, j
 
     !CALL invoke_compute_cu(CU, P, U)
+    ! Change to hard-code lower-loop bounds with variable
+    ! trip count expressed in terms of M/N+/-1
+    ! M/N obtained from topology  look-up
     do J=cu%jstart, cu%jstop
        do I=cu%istart, cu%istop
 
