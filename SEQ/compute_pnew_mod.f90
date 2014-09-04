@@ -78,8 +78,6 @@ CONTAINS
     !   uij-1- -Tij-1---ui+1j-1
     !
 
-!    DO J=1,SIZE(pnew, 2) - 1
-!       DO I=1,SIZE(pnew, 1) - 1
     DO J= 1, N, 1
        DO I= 1, M, 1
 
