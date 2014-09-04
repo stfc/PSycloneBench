@@ -51,42 +51,33 @@ CONTAINS
   SUBROUTINE invoke_time_smooth(field1, field1_new, field1_old, &
                                 field2, field2_new, field2_old, &
                                 field3, field3_new, field3_old)
+    use topology_mod, only: M, N
     IMPLICIT none
     REAL(wp), INTENT(in), DIMENSION(:,:) :: field1, field2, field3
     REAL(wp), INTENT(in), DIMENSION(:,:) :: field1_new, field2_new, field3_new
     REAL(wp), INTENT(inout), DIMENSION(:,:) :: field1_old, field2_old, field3_old
     ! Locals
     INTEGER :: i, j
-    INTEGER :: idim1, idim2
-    
-    ! Here we will query what should be field objects to get at
-    ! raw data.
-    idim1 = SIZE(field1, 1)
-    idim2 = SIZE(field1, 2)
 
+    ! The time-smoothing is applied to a field at *every* grid point
+    
     ! Loop over 'columns'
-    DO J=1,idim2
-      DO I=1,idim1
-         CALL time_smooth_code(i,j,field1,field1_new,field1_old)
+    DO J=1,N+1 !idim2
+      DO I=1,M+1 !idim1
+        CALL time_smooth_code(i,j,field1,field1_new,field1_old)
       END DO
     END DO
 
-    idim1 = SIZE(field2, 1)
-    idim2 = SIZE(field2, 2)
-
     ! Loop over 'columns'
-    DO J=1,idim2
-      DO I=1,idim1
+    DO J=1,N+1 ! idim2
+      DO I=1,M+1 ! idim1
          CALL time_smooth_code(i,j,field2,field2_new,field2_old)
       END DO
     END DO
 
-    idim1 = SIZE(field3, 1)
-    idim2 = SIZE(field3, 2)
-
     ! Loop over 'columns'
-    DO J=1,idim2
-      DO I=1,idim1
+    DO J=1,N+1 ! idim2
+      DO I=1,M+1 ! idim1
          CALL time_smooth_code(i,j,field3,field3_new,field3_old)
       END DO
     END DO

@@ -31,8 +31,12 @@ module topology_mod
 
   type(topology_type) :: cu, cv, ct, cf
 
+  !> Extent in x and y of the model fields
+  integer :: M, N
+
   public region
   public cu, cv, ct, cf
+  public M, N
   public topology_init
 
 contains
@@ -44,8 +48,7 @@ contains
     !> Extent in x and y of the computational mesh (arrays).
     !! Fields sit on a sub-array within these extents.
     integer, intent(in) :: nx, ny
-    ! Locals
-    integer :: M, N
+
 
     M = nx - 1
     N = ny - 1
