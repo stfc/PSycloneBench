@@ -46,6 +46,7 @@ program shallow
                                     invoke_apply_bcs_uv
   use compute_fluxes_mod,     only: invoke_compute_fluxes
   use compute_new_fields_mod, only: invoke_compute_new_fields
+  use topology_mod,           only: M, N
   implicit none
 
   !> Checksum used for each array

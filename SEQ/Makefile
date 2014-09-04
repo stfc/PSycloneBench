@@ -57,7 +57,7 @@ shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
 # Interdependencies between modules, alphabetical order
 
-apply_bcs_cu_mod.o: field_mod.o topology_mod.o model_mod.o
+apply_bcs_mod.o: kind_params_mod.o topology_mod.o
 
 compute_cu_mod.o: topology_mod.o
 
@@ -65,7 +65,7 @@ field_mod.o: kind_params_mod.o topology_mod.o
 
 initial_conditions_mod.o: physical_params_mod.o model_mod.o
 
-time_smooth_mod.o: kind_params_mod.o $(GUNGHO_MODULES)
+time_smooth_mod.o: kind_params_mod.o topology_mod.o $(GUNGHO_MODULES)
 
 timing_mod.o: intel_timer_mod.o
 

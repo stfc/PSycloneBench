@@ -26,7 +26,7 @@ CONTAINS
   !! rely on compiler magic to make sure they're not
   !! recomputed for every grid point.
   SUBROUTINE init_initial_condition_params()
-    USE model_mod, ONLY: m, n
+    USE topology_mod, ONLY: m, n
     IMPLICIT none
 
     di = TPI/m
@@ -77,7 +77,8 @@ CONTAINS
   !===================================================
 
   SUBROUTINE init_pressure(p)
-    USE model_mod, ONLY: m, dx
+    use model_mod, only: dx
+    use topology_mod, only: m
     IMPLICIT none
     REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: p
 !    TYPE(field_type), INTENT(out) :: p

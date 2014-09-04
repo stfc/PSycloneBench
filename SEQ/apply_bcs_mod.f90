@@ -13,8 +13,8 @@ CONTAINS
 
   SUBROUTINE invoke_apply_bcs_uvtf(ufield, vfield, tfield, ffield)
     !> The dimensions of the model grid
-    use model_mod, only: M, N
-    IMPLICIT none
+    use topology_mod, only: M, N
+    implicit none
     REAL(wp), INTENT(inout), DIMENSION(:,:) :: ufield, vfield, tfield, ffield
 
     !call invoke_apply_bcs_cu(ufield)
@@ -48,7 +48,7 @@ CONTAINS
 
   subroutine invoke_apply_bcs_uvt(ufield, vfield, tfield)
     !> The dimensions of the model grid
-    use model_mod, only: M, N
+    use topology_mod, only: M, N
     implicit none
     real(wp), intent(inout), dimension(:,:) :: ufield, vfield, tfield
 
@@ -78,7 +78,7 @@ CONTAINS
 
   subroutine invoke_apply_bcs_uv(ufield, vfield)
     !> The dimensions of the model grid
-    use model_mod, only: M, N
+    use topology_mod, only: M, N
     implicit none
     real(wp), intent(inout), dimension(:,:) :: ufield, vfield
 
