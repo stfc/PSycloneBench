@@ -2,17 +2,12 @@
 # Makefile.include.<compiler> file.
 include Makefile.include
 
-# Location of the psyclone source files (for doing the code
-# generation)
-PSYCLONE_DIR = ../../../PSyclone/src
-
 # For linking with netcdf libraries
 LDFLAGS += -lnetcdff -lnetcdf
 
 # The two targets that this Makefile supports
 #  - shallow_base is the version of the code with manual invokes
-#  - shallow_gen uses PSyClone to generate the invokes
-EXECS = shallow_base shallow_gen
+EXECS = shallow_base
 
 # The modules that are common to both targets
 MODULES = kind_params_mod.o physical_params_mod.o field_mod.o model_mod.o \
@@ -35,17 +30,6 @@ GUNGHO_MODULES = global_parameters_mod.o argument_mod.o kernel_mod.o
 COMMON_MODULES = $(GUNGHO_MODULES) $(MODULES)
 
 all: $(EXECS)
-
-# Targets involving the code-generation framework
-shallow_gen.f90: shallow_gocean.f90
-	python ${PSYCLONE_DIR}/generator.py -api gocean shallow_gocean.f90 -oalg shallow_gen.f90 -opsy psy.f90
-
-# psy.f90 is generated at the same time as shallow_gen.f90
-psy.f90: shallow_gen.f90
-
-# The generated code depends on the generated Psy middle-layer
-shallow_gen:
-	${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
 
 # Normal targets
 shallow_base:
