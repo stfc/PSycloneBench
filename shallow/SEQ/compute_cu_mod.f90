@@ -32,7 +32,7 @@ contains
   !> Manual implementation of the code needed to invoke
   !! compute_cu_code().
   subroutine invoke_compute_cu(cufld, p, u)
-    use topology_mod, only: cu
+    use topology_mod, only: M, N
     implicit none
     real(wp), intent(out), dimension(:,:) :: cufld
     real(wp), intent(in),  dimension(:,:) :: p, u
@@ -80,8 +80,8 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
     !
 
-    do J=cu%jstart, cu%jstop
-       do I=cu%istart, cu%istop
+    do J= 1, N, 1
+       do I= 2, M+1, 1
 
           call compute_cu_code(i, j, cufld, p, u)
        end do

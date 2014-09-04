@@ -29,7 +29,7 @@ CONTAINS
   !===================================================
 
   subroutine manual_invoke_compute_pnew(pnew, pold, cu, cv, tdt)
-    use topology_mod, only: ct
+    use topology_mod, only: M, N
     implicit none
     real(wp), intent(out), dimension(:,:) :: pnew
     real(wp), intent(in),  dimension(:,:) :: pold, cu, cv
@@ -80,8 +80,8 @@ CONTAINS
 
 !    DO J=1,SIZE(pnew, 2) - 1
 !       DO I=1,SIZE(pnew, 1) - 1
-    DO J=ct%jstart, ct%jstop, 1
-       DO I=ct%istart, ct%istop, 1
+    DO J= 1, N, 1
+       DO I= 1, M, 1
 
           CALL compute_pnew_code(i, j, pnew, pold, &
                                  cu, cv, tdt)

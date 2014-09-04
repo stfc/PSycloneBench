@@ -28,7 +28,7 @@ CONTAINS
   !===================================================
 
   subroutine invoke_compute_h(h, p, u, v)
-    use topology_mod, only: ct
+    use topology_mod, only: M, N
     implicit none
     real(wp), intent(out), dimension(:,:) :: h
     real(wp), intent(in),  dimension(:,:) :: p, u,v
@@ -80,8 +80,8 @@ CONTAINS
     !   uij-1- -Tij-1---ui+1j-1
     !
 
-    DO J=ct%jstart, ct%jstop !1, SIZE(h, 2) - 1
-       DO I=ct%istart, ct%istop !1, SIZE(h, 1) - 1
+    DO J= 1, N, 1
+       DO I= 1, M, 1
 
           CALL compute_h_code(i, j, h, p, u, v)
        END DO
