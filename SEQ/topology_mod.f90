@@ -107,9 +107,9 @@ contains
     !  x  x  x  o
     !  o  o  o  o   j=1
     cv%istart = 1
-    cv%istop  = nx-1
+    cv%istop  = M
     cv%jstart = 2
-    cv%jstop  = ny
+    cv%jstop  = N+1
 
     ! When applying periodic (wrap-around) boundary conditions (PBCs)
     ! we must fill the regions marked with an 'o' above.
@@ -152,9 +152,9 @@ contains
     !  x  x  x  o
     !  x  x  x  o   j=1
     ct%istart = 1
-    ct%istop  = nx-1
+    ct%istop  = M
     ct%jstart = 1
-    ct%jstop  = ny-1
+    ct%jstop  = N
 
     ! When applying periodic (wrap-around) boundary conditions
     ! (PBCs) we must fill the regions marked with an 'o' above.
@@ -197,9 +197,9 @@ contains
     !  o  x  x  x
     !  o  o  o  o   j=1
     cf%istart = 2
-    cf%istop  = nx
+    cf%istop  = M+1
     cf%jstart = 2
-    cf%jstop  = ny
+    cf%jstop  = N+1
 
     ! When applying periodic (wrap-around) boundary conditions
     ! (PBCs) we must fill the regions marked with an 'o' above.
