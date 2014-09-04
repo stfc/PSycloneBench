@@ -75,8 +75,8 @@ program shallow
 
   !     INITIALIZE VELOCITIES
  
-  CALL init_velocity_u(u, psi, m, n)
-  CALL init_velocity_v(v, psi, m, n)
+  CALL init_velocity_u(u, psi)
+  CALL init_velocity_v(v, psi)
 
   !     PERIODIC CONTINUATION
   CALL invoke_apply_bcs_uv(U, V)

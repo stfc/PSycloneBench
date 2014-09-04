@@ -78,21 +78,16 @@ CONTAINS
 
   SUBROUTINE init_pressure(p)
     use model_mod, only: dx
-    use topology_mod, only: m
+    use topology_mod, only: m, n
     IMPLICIT none
     REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: p
-!    TYPE(field_type), INTENT(out) :: p
     ! Locals
-    INTEGER :: idim1, idim2
     INTEGER :: i, j
     !> Extent in x of model domain
     REAL(wp) :: el
     !> Computed amplitude of initial osciallations in
     !! pressure field.
     REAL(wp) :: pcf
-
-    idim1 = SIZE(p, 1)
-    idim2 = SIZE(p, 2)
 
     EL = m*dx
     PCF = PI*PI*A*A/(EL*EL)
@@ -104,8 +99,8 @@ CONTAINS
     ! offset from pressure but this not dealt with that
     ! explicitly. Only field(1:m,1:n) is sent to be
     ! written to the netcdf file.
-    DO J=1,idim2
-       DO I=1,idim1
+    DO J=1,N+1
+       DO I=1,M+1
           P(I,J) = PCF*(COS(2.*(I-1)*DI)   & 
                +COS(2.*(J-1)*DJ))+50000.
        END DO
@@ -115,12 +110,12 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE init_velocity_u(u, psi, m, n)
+  SUBROUTINE init_velocity_u(u, psi)
     USE mesh_mod, ONLY: dy
+    use topology_mod, only: m, n
     IMPLICIT none
     REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: u
     REAL(KIND=wp), INTENT(in),  DIMENSION(:,:) :: psi
-    INTEGER,      INTENT(in) :: m, n
     ! Locals
     INTEGER :: I, J
 
@@ -134,12 +129,12 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE init_velocity_v(v, psi, m, n)
+  SUBROUTINE init_velocity_v(v, psi)
     USE mesh_mod, ONLY: dx
+    use topology_mod, only: m, n
     IMPLICIT none
     REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: v
     REAL(KIND=wp), INTENT(in),  DIMENSION(:,:) :: psi
-    INTEGER, INTENT(in) :: m, n
     ! Locals
     INTEGER :: I, J
 
