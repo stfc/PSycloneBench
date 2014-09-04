@@ -63,7 +63,7 @@ compute_cu_mod.o: topology_mod.o
 
 field_mod.o: kind_params_mod.o topology_mod.o
 
-initial_conditions_mod.o: physical_params_mod.o model_mod.o
+initial_conditions_mod.o: physical_params_mod.o topology_mod.o model_mod.o
 
 time_smooth_mod.o: kind_params_mod.o topology_mod.o $(GUNGHO_MODULES)
 
