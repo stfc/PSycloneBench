@@ -57,7 +57,7 @@ shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
 # Interdependencies between modules, alphabetical order
 
-apply_bcs_cu_mod.o: field_mod.o topology_mod.o
+apply_bcs_cu_mod.o: field_mod.o topology_mod.o model_mod.o
 
 compute_cu_mod.o: topology_mod.o
 

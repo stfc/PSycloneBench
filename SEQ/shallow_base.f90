@@ -41,10 +41,9 @@ program shallow
   use model_mod
   use initial_conditions_mod
   use time_smooth_mod,        only: invoke_time_smooth
-  use apply_bcs_cu_mod,       only: invoke_apply_bcs_cu
-  use apply_bcs_cv_mod,       only: invoke_apply_bcs_cv
-  use apply_bcs_mod,          only: invoke_apply_bcs_uvtf
-  use apply_bcs_mod,          only: invoke_apply_bcs_uvt
+  use apply_bcs_mod,          only: invoke_apply_bcs_uvtf, &
+                                    invoke_apply_bcs_uvt,  &
+                                    invoke_apply_bcs_uv
   use compute_fluxes_mod,     only: invoke_compute_fluxes
   use compute_new_fields_mod, only: invoke_compute_new_fields
   implicit none
@@ -79,8 +78,7 @@ program shallow
   CALL init_velocity_v(v, psi, m, n)
 
   !     PERIODIC CONTINUATION
-  CALL invoke_apply_bcs_cu(U)
-  CALL invoke_apply_bcs_cv(V)
+  CALL invoke_apply_bcs_uv(U, V)
 
   ! Initialise fields that will hold data at previous time step
   CALL copy_field(U, UOLD)
