@@ -35,7 +35,7 @@ module topology_mod
   integer :: M, N
 
   public region
-  public cu, cv, ct, cf
+  !public cu, cv, ct, cf
   public M, N
   public topology_init
 

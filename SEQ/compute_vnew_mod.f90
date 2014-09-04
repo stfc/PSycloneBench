@@ -30,7 +30,7 @@ CONTAINS
   !===================================================
 
   subroutine manual_invoke_compute_vnew(vnew, vold, z, cu, h, tdt)
-    use topology_mod, only: cv
+    use topology_mod, only: M, N
     implicit none
     real(wp), intent(out), dimension(:,:) :: vnew
     real(wp), intent(in),  dimension(:,:) :: vold, z, cu, h
@@ -82,8 +82,8 @@ CONTAINS
     !   uij-1- -Tij-1---ui+1j-1
     !
 
-    DO J=cv%jstart, cv%jstop, 1
-       DO I=cv%istart, cv%istop, 1
+    DO J= 2, N+1, 1
+       DO I= 1, M, 1
 
           CALL compute_vnew_code(i, j, vnew, vold, &
                                  z, cu, h, tdt)
