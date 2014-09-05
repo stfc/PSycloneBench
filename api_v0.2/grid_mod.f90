@@ -76,7 +76,11 @@ module grid_mod
      !!                         0 == land
      !!                        -1 == wet outside simulated region
      !! This is the key quantity that determines the region that
-     !! is actually simulated.
+     !! is actually simulated. However, we also support the
+     !! specification of a model consisting entirely of wet points
+     !! with periodic boundary conditions. Since this does not
+     !! require a T-mask, we do not allocate this array for that
+     !! case.
      integer, allocatable :: tmask(:,:)
 
      !> The type of boundary conditions applied to the model domain
@@ -106,7 +110,7 @@ module grid_mod
      !> Latitude of f points
      real(wp), allocatable :: gphif(:,:)
 
-     !> Coordinates of grid points in horizontal plane
+     !> Coordinates of grid (T) points in horizontal plane
      real(wp), allocatable :: xt(:,:), yt(:,:)
 
   end type grid_type
@@ -121,6 +125,8 @@ contains
 
   !============================================
 
+  !> Basic constructor for the grid type. Full details
+  !! are fleshed-out by the grid_init() routine.
   function grid_constructor(grid_name, grid_stagger, &
                             boundary_conditions) result(self)
     implicit none
@@ -171,7 +177,16 @@ contains
 
   !> Initialise the supplied grid object for a 2D model
   !! consisting of m x n points. Ultimately, this routine should be
-  !! general purpose but it is currently evolving towards that...
+  !! general purpose but it is not there yet.
+  !! N.B. the definition of m and n (the grid extents) depends on
+  !! the type of boundary conditions that the model is subject to.
+  !! For periodic boundary conditions they specify the extent of the
+  !! simulated region (since we don't require the user to specify 
+  !! the halos required to *implement* the PBCs). However, when a
+  !! T-mask is used to define the model domain, m and n give the
+  !! extents of that mask/grid. This, of necessity, includes boundary
+  !! points. Therefore, the actual simulated region has an extent
+  !! which is less than m x n.
   !! @param[inout] grid The object to initialise
   !! @param[in] m Extent in x of domain for which we have information
   !! @param[in] n Extent in y of domain for which we have information
@@ -185,21 +200,31 @@ contains
     type(grid_type), intent(inout) :: grid
     integer,         intent(in)    :: m, n
     real(wp),        intent(in)    :: dxarg, dyarg
-    integer, dimension(:,:), intent(in), optional :: tmask
+    integer, dimension(m,n), intent(in), optional :: tmask
     ! Locals
     integer :: ierr(5)
     integer :: ji, jj
     integer :: xstart, ystart ! Start of internal region of T-pts
     integer :: xstop, ystop ! End of internal region of T-pts
 
-    select case(grid%name)
-
-    case(ARAKAWA_C)
+    ! Store the global dimensions of the grid.
+    if( present(tmask) )then
+       ! A T-mask has been supplied and that tells us everything
+       ! about the extent of this model.
        grid%nx = m
        grid%ny = n
-    case default
-       call gocean_stop('grid_init: ERROR: only Arakawa C grid implemented!')
-    end select
+    else
+       ! No T-mask has been supplied so we assume we're implementing
+       ! periodic boundary conditions and allow for halos here.
+       ! Currently we put a halo on all four sides of our rectangular
+       ! domain. This is actually unnecessary - depending on the
+       ! variable staggering used only one of the E/W halos and one
+       ! of the N/S halos are required. However, this is an optimisation
+       ! and this framework must be developed in such a way that
+       ! that optimisation is supported.
+       grid%nx = m + 2
+       grid%ny = n + 2
+    end if
 
     ! For a regular, orthogonal mesh the spatial resolution is constant
     grid%dx = dxarg
@@ -215,7 +240,7 @@ contains
              stat=ierr(3))
     allocate(grid%gphiu(m,n), grid%gphiv(m,n), grid%gphif(m,n), &
              stat=ierr(4))
-    allocate(grid%xt(m,n), grid%yt(m,n), grid%tmask(m,n), stat=ierr(5))
+    allocate(grid%xt(m,n), grid%yt(m,n), stat=ierr(5))
 
     if( any(ierr /= 0, 1) )then
        call gocean_stop('grid_init: failed to allocate arrays')
@@ -223,6 +248,10 @@ contains
 
     ! Copy-in the externally-supplied T-mask, if any
     if( present(tmask) )then
+       allocate(grid%tmask(m,n), stat=ierr(1))
+       if( ierr(1) /= 0 )then
+          call gocean_stop('grid_init: failed to allocate array for T mask')
+       end if
        grid%tmask(:,:) = tmask(:,:)
     else
        ! No T-mask supplied. Check that grid has PBCs in both
@@ -272,6 +301,7 @@ contains
     END DO
 
     ! -here is an f-plane testing case
+    ! i.e. the Coriolis parameter is set to a constant value.
     grid%gphiu(:, :) = 50._wp
     grid%gphiv(:, :) = 50._wp
     grid%gphif(:, :) = 50._wp
@@ -303,33 +333,50 @@ contains
     implicit none
     type(grid_type), intent(inout) :: grid
 
-    ! Here we will loop over the grid points, looking for
-    ! the first occurrence of wet points.
-    ! However, for the moment we just hardwire the routine
-    ! to return results appropriate for a T mask that has
-    ! a shell of unit depth of boundary/external points:
 
-    ! i= 1           nx 
-    !    b   b   b   b   ny
-    !    b   x   x   b  
-    !    b   x   x   b  
-    !    b   x   x   b   
-    !    b   b   b   b   1
-    !                    j
+    if( allocated(grid%tmask) )then
 
-    ! The actual part of this domain that is simulated. The outer-most 
-    ! rows and columns of T points are not in the domain but are needed
-    ! to specify the type of boundary (whether hard or open).
-    !> \todo Generate the bounds of the simulation domain by
-    !! examining the T-point mask.
-    !> \todo Isn't this just the same as the internal region of
-    !! any T-point field??
-    grid%simulation_domain%xstart = 2
-    grid%simulation_domain%xstop  = grid%nx - 1
-    grid%simulation_domain%ystart = 2
-    grid%simulation_domain%ystop  = grid%ny - 1
-    grid%simulation_domain%nx = grid%nx - 2
-    grid%simulation_domain%ny = grid%ny - 2
+       ! Here we will loop over the grid points, looking for
+       ! the first occurrence of wet points.
+       ! However, for the moment we just hardwire the routine
+       ! to return results appropriate for a T mask that has
+       ! a shell of unit depth of boundary/external points:
+
+       ! i= 1           nx 
+       !    b   b   b   b   ny
+       !    b   x   x   b  
+       !    b   x   x   b  
+       !    b   x   x   b   
+       !    b   b   b   b   1
+       !                    j
+
+       ! The actual part of this domain that is simulated. The outer-most 
+       ! rows and columns of T points are not in the domain but are needed
+       ! to specify the type of boundary (whether hard or open).
+       !> \todo Generate the bounds of the simulation domain by
+       !! examining the T-point mask.
+       ! This defines the internal region of any T-point field.
+       grid%simulation_domain%xstart = 2
+       grid%simulation_domain%xstop  = grid%nx - 1
+       grid%simulation_domain%ystart = 2
+       grid%simulation_domain%ystop  = grid%ny - 1
+       grid%simulation_domain%nx = grid%nx - 2
+       grid%simulation_domain%ny = grid%ny - 2
+
+    else
+
+       ! We don't have a T mask so we must have PBCs in both x and y
+       ! dimensions. In this case, the grid dimensions stored in grid%{nx,ny}
+       ! have already been adjusted in grid_init() such that they
+       ! include the halos required to implement the PBCs.
+       grid%simulation_domain%xstart = 2
+       grid%simulation_domain%xstop  = grid%nx - 1
+       grid%simulation_domain%ystart = 2
+       grid%simulation_domain%ystop  = grid%ny - 1
+       grid%simulation_domain%nx = grid%nx - 2
+       grid%simulation_domain%ny = grid%ny - 2
+
+    end if
 
   end subroutine compute_internal_region
 

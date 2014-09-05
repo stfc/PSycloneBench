@@ -161,27 +161,25 @@ contains
     self%internal%nx = self%internal%xstop - self%internal%xstart + 1
     self%internal%ny = self%internal%ystop - self%internal%ystart + 1
 
+    ! In addition to the 'internal region' of the field, we may have
+    ! external points that define B.C.'s or that act as halos. Here
+    ! we store the full extent of the field, inclusive of such
+    ! points.
+    !> \todo Replace the use of NBOUNDARY here with info. computed
+    !! from the T-point mask.
     if(self%grid%boundary_conditions(1) /= BC_PERIODIC)then
        self%whole%xstart = self%internal%xstart - NBOUNDARY
        self%whole%xstop  = self%internal%xstop  + NBOUNDARY
     else
-       !> \todo What is the whole/complete extent of the field when
-       !! we have PBCs?
        self%whole%xstart = self%internal%xstart - NBOUNDARY
        self%whole%xstop  = self%internal%xstop  + NBOUNDARY
-       WRITE (*,*) 'WARNING: r2d_field_constructor: setting whole '// &
-                   'field extent for PBCs not yet properly implemented!'
     end if
     if(self%grid%boundary_conditions(2) /= BC_PERIODIC)then
        self%whole%ystart = self%internal%ystart - NBOUNDARY
        self%whole%ystop  = self%internal%ystop  + NBOUNDARY
     else
-       !> \todo What is the whole/complete extent of the field when
-       !! we have PBCs?
        self%whole%ystart = self%internal%ystart - NBOUNDARY
        self%whole%ystop  = self%internal%ystop  + NBOUNDARY
-       WRITE (*,*) 'WARNING: r2d_field_constructor: setting whole '// &
-                   'field extent for PBCs not yet properly implemented!'
     end if
 
     write(*,*) 'allocating field with bounds: (', &
