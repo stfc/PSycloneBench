@@ -30,56 +30,31 @@ program gocean2d
   ! Create the model grid. We use a NE staggering (i.e. the U, V and F 
   ! points to the North and East of a T point all have the same i,j index). 
   ! This is the same staggering as used by NEMO.
-  model_grid = grid_type(ARAKAWA_C, STAGGER_NE)
+  model_grid = grid_type(ARAKAWA_C, STAGGER_NE, &
+                         (/BC_EXTERNAL,BC_EXTERNAL,BC_NONE/))
 
   !! read in model parameters and read in or setup model grid 
   CALL model_init(model_grid)
 
   ! Create fields on this grid
-  sshn_u_fld = r2d_field_type(model_grid, &
-                              U_POINTS,   &
-                              (/BC_EXTERNAL,BC_EXTERNAL/))
-  sshn_v_fld = r2d_field_type(model_grid, &
-                              V_POINTS,   &
-                              (/BC_EXTERNAL,BC_EXTERNAL/))
-  sshn_t_fld = r2d_field_type(model_grid, &
-                              T_POINTS,   &
-                              (/BC_EXTERNAL,BC_EXTERNAL/))
+  sshn_u_fld = r2d_field_type(model_grid, U_POINTS)
+  sshn_v_fld = r2d_field_type(model_grid, V_POINTS)
+  sshn_t_fld = r2d_field_type(model_grid, T_POINTS)
 
-  ssha_u_fld = r2d_field_type(model_grid, &
-                              U_POINTS,   &
-                              (/BC_EXTERNAL,BC_EXTERNAL/))
-  ssha_v_fld = r2d_field_type(model_grid, &
-                              V_POINTS,   &
-                              (/BC_EXTERNAL,BC_EXTERNAL/))
-  ssha_t_fld = r2d_field_type(model_grid, &
-                              T_POINTS,   &
-                              (/BC_EXTERNAL,BC_EXTERNAL/))
+  ssha_u_fld = r2d_field_type(model_grid, U_POINTS)
+  ssha_v_fld = r2d_field_type(model_grid, V_POINTS)
+  ssha_t_fld = r2d_field_type(model_grid, T_POINTS)
 
   ! Distance from sea-bed to mean sea level
-  hu_fld = r2d_field_type(model_grid, &
-                          U_POINTS,   &
-                          (/BC_EXTERNAL,BC_EXTERNAL/))
-  hv_fld = r2d_field_type(model_grid, &
-                          V_POINTS,   &
-                          (/BC_EXTERNAL,BC_EXTERNAL/))
-  ht_fld = r2d_field_type(model_grid, &
-                          T_POINTS,   &
-                          (/BC_EXTERNAL,BC_EXTERNAL/))
+  hu_fld = r2d_field_type(model_grid, U_POINTS)
+  hv_fld = r2d_field_type(model_grid, V_POINTS)
+  ht_fld = r2d_field_type(model_grid, T_POINTS)
 
-  un_fld = r2d_field_type(model_grid, &
-                          U_POINTS,   &
-                          (/BC_EXTERNAL,BC_EXTERNAL/))
-  vn_fld = r2d_field_type(model_grid, &
-                          V_POINTS,   &
-                          (/BC_EXTERNAL,BC_EXTERNAL/))
+  un_fld = r2d_field_type(model_grid, U_POINTS)
+  vn_fld = r2d_field_type(model_grid, V_POINTS)
 
-  ua_fld = r2d_field_type(model_grid, &
-                          U_POINTS,   &
-                          (/BC_EXTERNAL,BC_EXTERNAL/))
-  va_fld = r2d_field_type(model_grid, &
-                          V_POINTS,   &
-                          (/BC_EXTERNAL,BC_EXTERNAL/))
+  ua_fld = r2d_field_type(model_grid, U_POINTS)
+  va_fld = r2d_field_type(model_grid, V_POINTS)
 
   !! setup model initial conditions
   call initialisation(ht_fld, hu_fld, hv_fld, &
