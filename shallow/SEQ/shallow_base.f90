@@ -38,6 +38,7 @@ program shallow
 
   use shallow_io_mod
   use timing_mod
+  use gocean_mod, only: model_write_log
   use model_mod
   use grid_mod
   use field_mod
