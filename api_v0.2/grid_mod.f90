@@ -1,6 +1,7 @@
 module grid_mod
   use kind_params_mod
   use region_mod
+  use gocean_mod
   implicit none
 
   private
@@ -20,6 +21,15 @@ module grid_mod
   !> Points to South and West of T point have same 
   !! i,j index (e.g. 'shallow' code)
   integer, public, parameter :: STAGGER_SW = 3
+
+  ! Enumeration of boundary-condition types
+  !> Grid (model domain) has periodic boundary condition
+  integer, public, parameter :: BC_PERIODIC = 0
+  !> Grid (model domain) has external boundary conditions. This is a
+  !! placeholder really as this is a complex area.
+  integer, public, parameter :: BC_EXTERNAL = 1
+  !> Grid (model domain) has no boundary conditions
+  integer, public, parameter :: BC_NONE = 2
 
 ! If our model grid has total extent (i.e. including pts
 ! necessary to define the boundaries of the domain) of nx x ny.
@@ -69,6 +79,12 @@ module grid_mod
      !! is actually simulated.
      integer, allocatable :: tmask(:,:)
 
+     !> The type of boundary conditions applied to the model domain
+     !! in the x, y and z dimensions. Note that at this stage
+     !! this is really only required for Periodic Boundary
+     !! conditions.
+     integer, dimension(3) :: boundary_conditions
+
      !> Where on the grid our simulated domain sits.
      !! \todo Decide whether this is useful.
      type(region_type) :: simulation_domain
@@ -105,10 +121,13 @@ contains
 
   !============================================
 
-  function grid_constructor(grid_name, grid_stagger) result(self)
+  function grid_constructor(grid_name, grid_stagger, &
+                            boundary_conditions) result(self)
     implicit none
     integer, intent(in) :: grid_name
     integer, intent(in) :: grid_stagger
+    !> The boundary conditions that this field is subject to
+    integer, dimension(3), intent(in) :: boundary_conditions
     type(grid_type), target :: self
 
     ! This case statement is mainly to check that the caller
@@ -142,6 +161,10 @@ contains
        stop
     end select
 
+    ! Store the boundary conditions that the model domain is
+    ! subject to.
+    self%boundary_conditions(1:3) = boundary_conditions(1:3)
+
   end function grid_constructor
 
   !============================================
@@ -155,13 +178,14 @@ contains
   !! @param[in] dxarg Grid spacing in x dimension
   !! @param[in] dyarg Grid spacing in y dimension
   !! @param[in] tmask Array holding the T-point mask which defines
-  !!                  the contents of the domain.
+  !!                  the contents of the domain. Need not be
+  !!                  supplied if domain is all wet and has PBCs.
   subroutine grid_init(grid, m, n, dxarg, dyarg, tmask)
     implicit none
     type(grid_type), intent(inout) :: grid
-    integer, intent(in) :: m, n
-    real(wp), intent(in) :: dxarg, dyarg
-    integer, dimension(:,:), intent(in) :: tmask
+    integer,         intent(in)    :: m, n
+    real(wp),        intent(in)    :: dxarg, dyarg
+    integer, dimension(:,:), intent(in), optional :: tmask
     ! Locals
     integer :: ierr(5)
     integer :: ji, jj
@@ -174,7 +198,7 @@ contains
        grid%nx = m
        grid%ny = n
     case default
-       stop 'grid_init: ERROR: only Arakawa C grid implemented!'
+       call gocean_stop('grid_init: ERROR: only Arakawa C grid implemented!')
     end select
 
     ! For a regular, orthogonal mesh the spatial resolution is constant
@@ -194,11 +218,21 @@ contains
     allocate(grid%xt(m,n), grid%yt(m,n), grid%tmask(m,n), stat=ierr(5))
 
     if( any(ierr /= 0, 1) )then
-       stop 'grid_init: failed to allocate arrays'
+       call gocean_stop('grid_init: failed to allocate arrays')
     end if
 
-    ! Copy-in the externally-supplied T-mask
-    grid%tmask(:,:) = tmask(:,:)
+    ! Copy-in the externally-supplied T-mask, if any
+    if( present(tmask) )then
+       grid%tmask(:,:) = tmask(:,:)
+    else
+       ! No T-mask supplied. Check that grid has PBCs in both
+       ! x and y dimensions otherwise we won't know what to do.
+       if( .not. ( (grid%boundary_conditions(1) == BC_PERIODIC) .and. &
+                   (grid%boundary_conditions(2) == BC_PERIODIC) ) )then
+          call gocean_stop('grid_init: ERROR: No T-mask supplied and '// &
+                           'grid does not have periodic boundary conditions!')
+       end if
+    end if ! T-mask supplied
 
     ! Use the T mask to determine the dimensions of the
     ! internal, simulated region of the grid.

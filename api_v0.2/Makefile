@@ -2,6 +2,7 @@
 MODULES = argument_mod.o \
           kind_params_mod.o \
           global_parameters_mod.o \
+          gocean_mod.o \
           grid_mod.o \
           kernel_mod.o \
           halo_mod.o \
@@ -23,7 +24,7 @@ argument_mod.o: global_parameters_mod.o
 
 field_mod.o: kind_params_mod.o grid_mod.o halo_mod.o region_mod.o
 
-grid_mod.o: kind_params_mod.o region_mod.o
+grid_mod.o: kind_params_mod.o region_mod.o gocean_mod.o
 
 halo_mod.o: region_mod.o
 

@@ -1,6 +1,5 @@
 MODULE model_mod
   use kind_params_mod
-  use grid_mod
   use field_mod
   use shallow_io_mod
   use timing_mod, ONLY: timer_init, timer_report
@@ -66,7 +65,8 @@ CONTAINS
   subroutine model_init(grid)
     use physical_params_mod, only: physical_params_init
     use time_smooth_mod, only: time_smooth_init
-    IMPLICIT none
+    use grid_mod, only: grid_type, grid_init
+    implicit none
     type(grid_type), intent(inout) :: grid
 
     !> Grid spacings currently hard-wired, as in original
@@ -78,12 +78,14 @@ CONTAINS
     REAL(KIND=wp), PARAMETER :: dt_loc = 90.0d0
     !> Problem size, read from namelist
     integer :: m, n
+    !> The T-point mask that defines the domain
+    integer, allocatable, dimension(:,:) :: tmask
 
     call timer_init()
 
     call physical_params_init()
 
-    CALL read_namelist(m,n,itmax)
+    call read_namelist(m,n,itmax)
 
     ! Assume the namelist specifies the extent of the
     ! internal domain so allow for boundaries/halos used
@@ -123,10 +125,6 @@ CONTAINS
 
   SUBROUTINE model_dealloc()
     IMPLICIT none
-
-    !> Free memory \todo Move to model_finalise()
-    !DEALLOCATE( u, v, p, unew, vnew, pnew, uold, vold, pold )
-    !DEALLOCATE( cu, cv, z, h, psi ) 
 
   END SUBROUTINE model_dealloc
 

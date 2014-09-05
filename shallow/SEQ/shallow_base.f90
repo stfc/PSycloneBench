@@ -76,61 +76,34 @@ program shallow
   INTEGER :: idxt0, idxt1
 
   ! Create the model grid
-  model_grid = grid_type(ARAKAWA_C, STAGGER_SW)
+  model_grid = grid_type(ARAKAWA_C, STAGGER_SW, &
+                         (/BC_PERIODIC,BC_PERIODIC,BC_NONE/))
 
   !  ** Initialisations of model parameters (dt etc) ** 
   CALL model_init(model_grid)
  
   ! Create fields on this grid
-  p_fld    = r2d_field_type(model_grid, &
-                            T_POINTS,   &
-                            (/BC_PERIODIC,BC_PERIODIC/))
-  pold_fld = r2d_field_type(model_grid, &
-                            T_POINTS,   &
-                            (/BC_PERIODIC,BC_PERIODIC/))
-  pnew_fld = r2d_field_type(model_grid, &
-                            T_POINTS,   &
-                            (/BC_PERIODIC,BC_PERIODIC/))
+  p_fld    = r2d_field_type(model_grid, T_POINTS)
+  pold_fld = r2d_field_type(model_grid, T_POINTS)
+  pnew_fld = r2d_field_type(model_grid, T_POINTS)
 
-  u_fld    = r2d_field_type(model_grid, &
-                            U_POINTS,   &
-                            (/BC_PERIODIC,BC_PERIODIC/))
-  uold_fld = r2d_field_type(model_grid, &
-                            U_POINTS,   &
-                            (/BC_PERIODIC,BC_PERIODIC/))
-  unew_fld = r2d_field_type(model_grid, &
-                            U_POINTS,   &
-                            (/BC_PERIODIC,BC_PERIODIC/))
+  u_fld    = r2d_field_type(model_grid, U_POINTS)
+  uold_fld = r2d_field_type(model_grid, U_POINTS)
+  unew_fld = r2d_field_type(model_grid, U_POINTS)
 
-  v_fld    = r2d_field_type(model_grid, &
-                            V_POINTS,   &
-                            (/BC_PERIODIC,BC_PERIODIC/))
-  vold_fld = r2d_field_type(model_grid, &
-                            V_POINTS,   &
-                            (/BC_PERIODIC,BC_PERIODIC/))
-  vnew_fld = r2d_field_type(model_grid, &
-                            V_POINTS,   &
-                            (/BC_PERIODIC,BC_PERIODIC/))
+  v_fld    = r2d_field_type(model_grid, V_POINTS)
+  vold_fld = r2d_field_type(model_grid, V_POINTS)
+  vnew_fld = r2d_field_type(model_grid, V_POINTS)
 
-  cu_fld = r2d_field_type(model_grid, &
-                          U_POINTS,   &
-                          (/BC_PERIODIC,BC_PERIODIC/))
+  cu_fld = r2d_field_type(model_grid, U_POINTS)
 
-  cv_fld = r2d_field_type(model_grid, &
-                          V_POINTS,   &
-                          (/BC_PERIODIC,BC_PERIODIC/))
+  cv_fld = r2d_field_type(model_grid, V_POINTS)
 
-  z_fld = r2d_field_type(model_grid, &
-                         F_POINTS,   &
-                         (/BC_PERIODIC,BC_PERIODIC/))
+  z_fld = r2d_field_type(model_grid, F_POINTS)
 
-  h_fld = r2d_field_type(model_grid, &
-                         T_POINTS,   &
-                         (/BC_PERIODIC,BC_PERIODIC/))
+  h_fld = r2d_field_type(model_grid, T_POINTS)
 
-  psi_fld = r2d_field_type(model_grid,   &
-                           F_POINTS,   &
-                           (/BC_PERIODIC,BC_PERIODIC/))
+  psi_fld = r2d_field_type(model_grid, F_POINTS)
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.

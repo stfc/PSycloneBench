@@ -16,25 +16,11 @@ module field_mod
   !> A field that lives on all grid-points of the grid
   integer, public, parameter :: ALL_POINTS = 4
 
-  ! Enumeration of boundary-condition types
-  !> Field has periodic boundary conditions (in both x and y)
-  integer, public, parameter :: BC_PERIODIC = 0
-  !> Field has external boundary conditions. This is a placeholder
-  !! really as this is a complex area.
-  integer, public, parameter :: BC_EXTERNAL = 1
-  !> Field has no boundary conditions
-  integer, public, parameter :: BC_NONE = 2
-
   type, public :: field_type
      !> Which mesh points the field is defined upon
      integer :: defined_on
      !> The grid on which this field is defined
      type(grid_type), pointer :: grid
-     !> The type of boundary conditions applied to this field
-     !! in the x, y and z dimensions. Note that at this stage
-     !! this is really only required for Periodic Boundary
-     !! conditions.
-     integer, dimension(3) :: boundary_conditions
      !> The internal region of this field
      type(region_type) :: internal
      !> The whole region covered by this field - includes 
@@ -122,16 +108,13 @@ contains
   !===================================================
 
   function field_constructor(grid_ptr,    &
-                             grid_points, &
-                             boundary_conditions) result(self)
+                             grid_points) result(self)
     implicit none
     ! Arguments
     !> Pointer to the grid on which this field lives
     type(grid_type),       intent(in), pointer :: grid_ptr
     !> Which grid-point type the field is defined on
     integer,               intent(in)          :: grid_points
-    !> The boundary conditions that this field is subject to
-    integer, dimension(3), intent(in)          :: boundary_conditions
     ! Local declarations
     type(field_type) :: self
 
@@ -142,25 +125,16 @@ contains
   !===================================================
 
   function r2d_field_constructor(grid,    &
-                                 grid_points, &
-                                 boundary_conditions) result(self)
+                                 grid_points) result(self)
     implicit none
     ! Arguments
     !> Pointer to the grid on which this field lives
     type(grid_type), intent(in), target  :: grid
     !> Which grid-point type the field is defined on
     integer,         intent(in)          :: grid_points
-    !> The boundary conditions that this field is subject to in the
-    !! x and y dimensions
-    integer, dimension(2), intent(in)    :: boundary_conditions
     ! Local declarations
     type(r2d_field_type) :: self
     integer :: ierr
-
-    self%boundary_conditions(1:2) = boundary_conditions(1:2)
-    ! This is the constructor for a 2D field so we obviously
-    ! don't have any BC's for the 3rd dimension.
-    self%boundary_conditions(3) = BC_NONE
 
     ! Set this field's grid pointer to point to the grid pointed to
     ! by the supplied grid_ptr argument
@@ -187,7 +161,7 @@ contains
     self%internal%nx = self%internal%xstop - self%internal%xstart + 1
     self%internal%ny = self%internal%ystop - self%internal%ystart + 1
 
-    if(self%boundary_conditions(1) /= BC_PERIODIC)then
+    if(self%grid%boundary_conditions(1) /= BC_PERIODIC)then
        self%whole%xstart = self%internal%xstart - NBOUNDARY
        self%whole%xstop  = self%internal%xstop  + NBOUNDARY
     else
@@ -198,7 +172,7 @@ contains
        WRITE (*,*) 'WARNING: r2d_field_constructor: setting whole '// &
                    'field extent for PBCs not yet properly implemented!'
     end if
-    if(self%boundary_conditions(2) /= BC_PERIODIC)then
+    if(self%grid%boundary_conditions(2) /= BC_PERIODIC)then
        self%whole%ystart = self%internal%ystart - NBOUNDARY
        self%whole%ystop  = self%internal%ystop  + NBOUNDARY
     else
@@ -219,6 +193,9 @@ contains
     ! Allocating with a lower bound != 1 causes problems whenever
     ! array passed as assumed-shape dummy argument because lower
     ! bounds default to 1 in called unit.
+    ! However, all loops will be in the generated, middle layer and
+    ! the generator knows the array bounds. This may give us the
+    ! ability to solve this problem.
     allocate(self%data(1:self%internal%xstop+1, &
                        1:self%internal%ystop+1),&
                        Stat=ierr)
@@ -301,7 +278,7 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
 
     !
-    if(fld%boundary_conditions(1) == BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(1) == BC_PERIODIC)then
        ! When implementing periodic boundary conditions, all
        ! mesh point types have the same extents as the grid of
        ! T points. We then have a halo of width 1 on either side
@@ -344,21 +321,6 @@ contains
     !
     ! (2    , 1:N-1) = (M  , 1:N-1)
     ! (2:M, N) = (2:M, 1)
-
-!!$    fld%num_halos = 2
-!!$    allocate(fld%halo(fld%num_halos))
-!!$
-!!$    fld%halo(1)%dest%xstart   = 1   ; fld%halo(1)%dest%xstop = 1
-!!$    fld%halo(1)%dest%ystart   = 1   ; fld%halo(1)%dest%ystop = N-1
-!!$    fld%halo(1)%source%xstart = fld%internal%xstop 
-!!$    fld%halo(1)%source%xstop  = fld%internal%xstop
-!!$    fld%halo(1)%source%ystart = 1   ; fld%halo(1)%source%ystop = N-1
-!!$
-!!$    fld%halo(2)%dest%xstart   = 1 ; fld%halo(2)%dest%xstop = M
-!!$    fld%halo(2)%dest%ystart   = N ; fld%halo(2)%dest%ystop = N
-!!$    fld%halo(2)%source%xstart = 1 ; fld%halo(2)%source%xstop = M
-!!$    fld%halo(2)%source%ystart = fld%internal%ystart
-!!$    fld%halo(2)%source%ystop  = fld%internal%ystart
 
     call init_periodic_bc_halos(fld)
 
@@ -413,7 +375,7 @@ contains
 
     ! i.e. fld(2:M,2:N+1) = ...
 
-    if(fld%boundary_conditions(1) /= BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(1) /= BC_PERIODIC)then
       ! If we do not have periodic boundary conditions then we do
       ! not need to allow for boundary points here - they are
       ! already contained within the region defined by T mask.
@@ -423,7 +385,7 @@ contains
       write(*,*) 'ERROR: cu_ne_init: implement periodic boundary conditions!'
       stop
     end if
-    if(fld%boundary_conditions(2) /= BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(2) /= BC_PERIODIC)then
       fld%internal%ystart = fld%grid%simulation_domain%ystart
       fld%internal%ystop  = fld%grid%simulation_domain%ystop
     else
@@ -433,17 +395,6 @@ contains
 
 !> \todo Is this concept of halo definitions useful?
     fld%num_halos = 0
-!    allocate(fld%halo(fld%num_halos))
-
-!    fld%halo(1)%dest%xstart   = 1   ; fld%halo(1)%dest%xstop = 1
-!    fld%halo(1)%dest%ystart   = 1   ; fld%halo(1)%dest%ystop = N
-!    fld%halo(1)%source%xstart = M+1 ; fld%halo(1)%source%xstop = M+1
-!    fld%halo(1)%source%ystart = 1   ; fld%halo(1)%source%ystop = N
-
-!    fld%halo(2)%dest%xstart   = 1   ; fld%halo(2)%dest%xstop = M+1
-!    fld%halo(2)%dest%ystart   = N+1 ; fld%halo(2)%dest%ystop = N+1
-!    fld%halo(2)%source%xstart = 1 ; fld%halo(2)%source%xstop = M+1
-!    fld%halo(2)%source%ystart = 1 ; fld%halo(2)%source%ystop = 1
 
   end subroutine cu_ne_init
 
@@ -492,7 +443,7 @@ contains
     !  o  o  o  o   j=1
     fld%internal%xstart = 2
     fld%internal%xstop  = M+2-1
-    if(fld%boundary_conditions(2) == BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(2) == BC_PERIODIC)then
        ! When implementing periodic boundary conditions, all
        ! mesh point types have the same extents as the grid of
        ! T points. We then have a halo of width 1 on either side
@@ -522,19 +473,6 @@ contains
     ! field(1:M    ,1:1  ) = field(1:M,N-1:N-1)
     ! Last col = first internal col
     ! field(M:M,1:N) = field(2:2,  1:N)
-
-!!$    fld%num_halos = 2
-!!$    ALLOCATE(fld%halo(fld%num_halos))
-!!$
-!!$    fld%halo(1)%dest%xstart = 1   ; fld%halo(1)%dest%xstop = M-1
-!!$    fld%halo(1)%dest%ystart = 1   ; fld%halo(1)%dest%ystop = 1
-!!$    fld%halo(1)%source%xstart  = 1   ; fld%halo(1)%source%xstop  = M-1
-!!$    fld%halo(1)%source%ystart  = N-1 ; fld%halo(1)%source%ystop  = N-1
-!!$
-!!$    fld%halo(2)%dest%xstart = M ; fld%halo(2)%dest%xstop = M
-!!$    fld%halo(2)%dest%ystart = 1   ; fld%halo(2)%dest%ystop = N
-!!$    fld%halo(2)%source%xstart  = 2   ; fld%halo(2)%source%xstop  = 2
-!!$    fld%halo(2)%source%ystart  = 1   ; fld%halo(2)%source%ystop  = N
 
     call init_periodic_bc_halos(fld)
 
@@ -571,7 +509,7 @@ contains
     !  b  b  b  b   j=1
     !
 
-    if(fld%boundary_conditions(1) /= BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(1) /= BC_PERIODIC)then
       ! If we do not have periodic boundary conditions then we do
       ! not need to allow for boundary points here - they are
       ! already contained within the region.
@@ -582,7 +520,7 @@ contains
       stop
     end if
 
-    if(fld%boundary_conditions(2) /= BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(2) /= BC_PERIODIC)then
       fld%internal%ystart = fld%grid%simulation_domain%ystart
       fld%internal%ystop  = fld%grid%simulation_domain%ystop - 1
     else
@@ -686,7 +624,7 @@ contains
     !  b  x  x  x  b
     !  b  b  b  b  b j=1
 
-    if(fld%boundary_conditions(1) /= BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(1) /= BC_PERIODIC)then
       ! If we do not have periodic boundary conditions then we do
       ! not need to allow for boundary points here - they are
       ! already contained within the region.
@@ -699,7 +637,7 @@ contains
       stop
     end if
 
-    if(fld%boundary_conditions(2) /= BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(2) /= BC_PERIODIC)then
       ! Start and stop are just the same as those calculated from the T mask
       ! earlier because this is a field on T points.
       fld%internal%ystart = fld%grid%simulation_domain%ystart
@@ -754,14 +692,14 @@ contains
     !  o  b  x  x  b
     !  o  b  b  b  b
     !  o  o  o  o  o   j=1
-    if(fld%boundary_conditions(1) == BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(1) == BC_PERIODIC)then
        fld%internal%xstart = 3
     else
        fld%internal%xstart = 3
     end if
     fld%internal%xstop  = fld%internal%xstart + M - 1
 
-    if(fld%boundary_conditions(2) == BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(2) == BC_PERIODIC)then
        fld%internal%ystart = 3
     else
        fld%internal%ystart = 3
@@ -789,21 +727,6 @@ contains
 
     call init_periodic_bc_halos(fld)
 
-!!$    fld%num_halos = 2
-!!$    ALLOCATE( fld%halo(fld%num_halos) )
-!!$
-!!$    ! W-most column set to E-most internal column
-!!$    fld%halo(1)%dest%xstart = 1   ; fld%halo(1)%dest%xstop = 1
-!!$    fld%halo(1)%dest%ystart = 2   ; fld%halo(1)%dest%ystop = N
-!!$    fld%halo(1)%source%xstart  = M-1 ; fld%halo(1)%source%xstop  = M-1
-!!$    fld%halo(1)%source%ystart  = 2   ; fld%halo(1)%source%ystop  = N
-!!$
-!!$    ! S-most row set to N-most internal row
-!!$    fld%halo(2)%dest%xstart = 1   ; fld%halo(2)%dest%xstop = M
-!!$    fld%halo(2)%dest%ystart = 1   ; fld%halo(2)%dest%ystop = 1
-!!$    fld%halo(2)%source%xstart  = 1  ; fld%halo(2)%source%xstop  = M
-!!$    fld%halo(2)%source%ystart  = N-1 ; fld%halo(2)%source%ystop  = N-1
-
   end subroutine cf_sw_init
 
   !===================================================
@@ -824,7 +747,7 @@ contains
     !  b  x  b  o
     !  b  b  b  o   j=1
 
-    if(fld%boundary_conditions(1) /= BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(1) /= BC_PERIODIC)then
       ! If we do not have periodic boundary conditions then we do
       ! not need to allow for boundary points here - they are
       ! already contained within the region.
@@ -835,7 +758,7 @@ contains
       stop
     end if
 
-    if(fld%boundary_conditions(2) /= BC_PERIODIC)then
+    if(fld%grid%boundary_conditions(2) /= BC_PERIODIC)then
       fld%internal%ystart = fld%grid%simulation_domain%ystart
       fld%internal%ystop  = fld%grid%simulation_domain%ystop - 1
     else
@@ -953,61 +876,70 @@ contains
     type(r2d_field_type), intent(inout) :: fld
     ! Locals
     integer :: ihalo
-    !integer :: M, N
 
-    !M = fld%grid%nx
-    !N = fld%grid%ny
+    ! Check whether we have PBCs in x AND y dimensions
+    fld%num_halos = 0
+    if( fld%grid%boundary_conditions(1) == BC_PERIODIC )then
+       fld%num_halos = fld%num_halos + 2
+    end if
+    if( fld%grid%boundary_conditions(2) == BC_PERIODIC )then
+       fld%num_halos = fld%num_halos + 2
+    end if
 
-    fld%num_halos = 4
-    ALLOCATE( fld%halo(fld%num_halos) )
+    allocate( fld%halo(fld%num_halos) )
 
-    ! E-most column set to W-most internal column
-    ihalo = 1
-    fld%halo(ihalo)%dest%xstart = fld%internal%xstop + 1
-    fld%halo(ihalo)%dest%xstop  = fld%internal%xstop + 1
-    fld%halo(ihalo)%dest%ystart = fld%internal%ystart   
-    fld%halo(ihalo)%dest%ystop  = fld%internal%ystop
+    ihalo = 0
+    if( fld%grid%boundary_conditions(1) == BC_PERIODIC )then
+       ! E-most column set to W-most internal column
+       ihalo = ihalo + 1
+       fld%halo(ihalo)%dest%xstart = fld%internal%xstop + 1
+       fld%halo(ihalo)%dest%xstop  = fld%internal%xstop + 1
+       fld%halo(ihalo)%dest%ystart = fld%internal%ystart   
+       fld%halo(ihalo)%dest%ystop  = fld%internal%ystop
 
-    fld%halo(ihalo)%source%xstart = fld%internal%xstart   
-    fld%halo(ihalo)%source%xstop  = fld%internal%xstart
-    fld%halo(ihalo)%source%ystart = fld%internal%ystart  
-    fld%halo(ihalo)%source%ystop  = fld%internal%ystop
+       fld%halo(ihalo)%source%xstart = fld%internal%xstart   
+       fld%halo(ihalo)%source%xstop  = fld%internal%xstart
+       fld%halo(ihalo)%source%ystart = fld%internal%ystart  
+       fld%halo(ihalo)%source%ystop  = fld%internal%ystop
 
-    ! W-most column set to E-most internal column
-    ihalo = ihalo + 1
-    fld%halo(ihalo)%dest%xstart = fld%internal%xstart-1   
-    fld%halo(ihalo)%dest%xstop  = fld%internal%xstart-1
-    fld%halo(ihalo)%dest%ystart = fld%internal%ystart   
-    fld%halo(ihalo)%dest%ystop  = fld%internal%ystop
+       ! W-most column set to E-most internal column
+       ihalo = ihalo + 1
+       fld%halo(ihalo)%dest%xstart = fld%internal%xstart-1   
+       fld%halo(ihalo)%dest%xstop  = fld%internal%xstart-1
+       fld%halo(ihalo)%dest%ystart = fld%internal%ystart   
+       fld%halo(ihalo)%dest%ystop  = fld%internal%ystop
 
-    fld%halo(ihalo)%source%xstart = fld%internal%xstop 
-    fld%halo(ihalo)%source%xstop  = fld%internal%xstop
-    fld%halo(ihalo)%source%ystart = fld%internal%ystart
-    fld%halo(ihalo)%source%ystop  = fld%internal%ystop
+       fld%halo(ihalo)%source%xstart = fld%internal%xstop 
+       fld%halo(ihalo)%source%xstop  = fld%internal%xstop
+       fld%halo(ihalo)%source%ystart = fld%internal%ystart
+       fld%halo(ihalo)%source%ystop  = fld%internal%ystop
+    end if
 
-    ! N-most row set to S-most internal row
-    ihalo = ihalo + 1
-    fld%halo(ihalo)%dest%xstart = fld%internal%xstart - 1   
-    fld%halo(ihalo)%dest%xstop  = fld%internal%xstop  + 1
-    fld%halo(ihalo)%dest%ystart = fld%internal%ystop+1   
-    fld%halo(ihalo)%dest%ystop  = fld%internal%ystop+1
+    if( fld%grid%boundary_conditions(2) == BC_PERIODIC )then
+       ! N-most row set to S-most internal row
+       ihalo = ihalo + 1
+       fld%halo(ihalo)%dest%xstart = fld%internal%xstart - 1   
+       fld%halo(ihalo)%dest%xstop  = fld%internal%xstop  + 1
+       fld%halo(ihalo)%dest%ystart = fld%internal%ystop+1   
+       fld%halo(ihalo)%dest%ystop  = fld%internal%ystop+1
 
-    fld%halo(ihalo)%source%xstart = fld%internal%xstart - 1
-    fld%halo(ihalo)%source%xstop  = fld%internal%xstop  + 1
-    fld%halo(ihalo)%source%ystart = fld%internal%ystart 
-    fld%halo(ihalo)%source%ystop  = fld%internal%ystart
+       fld%halo(ihalo)%source%xstart = fld%internal%xstart - 1
+       fld%halo(ihalo)%source%xstop  = fld%internal%xstop  + 1
+       fld%halo(ihalo)%source%ystart = fld%internal%ystart 
+       fld%halo(ihalo)%source%ystop  = fld%internal%ystart
 
-    ! S-most row set to N-most internal row
-    ihalo = ihalo + 1
-    fld%halo(ihalo)%dest%xstart = fld%internal%xstart - 1   
-    fld%halo(ihalo)%dest%xstop  = fld%internal%xstop  + 1
-    fld%halo(ihalo)%dest%ystart = fld%internal%ystart - 1   
-    fld%halo(ihalo)%dest%ystop  = fld%internal%ystart - 1
+       ! S-most row set to N-most internal row
+       ihalo = ihalo + 1
+       fld%halo(ihalo)%dest%xstart = fld%internal%xstart - 1   
+       fld%halo(ihalo)%dest%xstop  = fld%internal%xstop  + 1
+       fld%halo(ihalo)%dest%ystart = fld%internal%ystart - 1   
+       fld%halo(ihalo)%dest%ystop  = fld%internal%ystart - 1
 
-    fld%halo(ihalo)%source%xstart = fld%internal%xstart - 1 
-    fld%halo(ihalo)%source%xstop  = fld%internal%xstop  + 1
-    fld%halo(ihalo)%source%ystart = fld%internal%ystop 
-    fld%halo(ihalo)%source%ystop  = fld%internal%ystop
+       fld%halo(ihalo)%source%xstart = fld%internal%xstart - 1 
+       fld%halo(ihalo)%source%xstop  = fld%internal%xstop  + 1
+       fld%halo(ihalo)%source%ystart = fld%internal%ystop 
+       fld%halo(ihalo)%source%ystop  = fld%internal%ystop
+    end if
 
   end subroutine init_periodic_bc_halos
 
