@@ -13,7 +13,7 @@
    height="1052.3622047"
    id="svg2"
    version="1.1"
-   inkscape:version="0.48.4 r9939"
+   inkscape:version="0.48.5 r10040"
    sodipodi:docname="grids_SW_stagger_PBCs.svg"
    inkscape:export-filename="/home/kbc59144/Projects/GOcean/GOcean_trunk/docs/grids_and_indexing/grids_SW_stagger_PBCs.png"
    inkscape:export-xdpi="90"
@@ -27,15 +27,15 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.2875855"
      inkscape:cx="453.58125"
-     inkscape:cy="268.61427"
+     inkscape:cy="672.47095"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:snap-global="true"
      inkscape:snap-grids="true"
      inkscape:window-width="1614"
-     inkscape:window-height="1004"
-     inkscape:window-x="303"
+     inkscape:window-height="1087"
+     inkscape:window-x="300"
      inkscape:window-y="46"
      inkscape:window-maximized="0"
      inkscape:snap-object-midpoints="true"
@@ -180,7 +180,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -2338,5 +2338,12 @@
          id="tspan3609"
          x="110.05041"
          y="939.65186">Copy for PBC update</tspan></text>
+    <rect
+       style="opacity:0.6625;fill:none;stroke:#2d3129;stroke-width:4.22341156;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:16.89364591, 4.22341148;stroke-dashoffset:0"
+       id="rect3469"
+       width="99.410873"
+       height="89.792664"
+       x="358.03448"
+       y="144.42981" />
   </g>
 </svg>
