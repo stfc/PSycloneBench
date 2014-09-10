@@ -78,8 +78,6 @@ CONTAINS
     REAL(KIND=wp), PARAMETER :: dt_loc = 90.0d0
     !> Problem size, read from namelist
     integer :: m, n
-    !> The T-point mask that defines the domain
-    integer, allocatable, dimension(:,:) :: tmask
 
     call timer_init()
 

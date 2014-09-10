@@ -137,13 +137,13 @@ contains
 
     IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
 
-       call ascii_write(ncycle, ufld%grid%nx, ufld%grid%ny, &
+       call ascii_write(ncycle, ufld%internal%nx, ufld%internal%ny, &
                         ufld%internal%xstart, ufld%internal%ystart, &
                         ufld%data, 'ufld.dat')
-       call ascii_write(ncycle, vfld%grid%nx, vfld%grid%ny, &
+       call ascii_write(ncycle, vfld%internal%nx, vfld%internal%ny, &
                         vfld%internal%xstart, vfld%internal%ystart, &
                         vfld%data, 'vfld.dat')
-       call ascii_write(ncycle, pfld%grid%nx, pfld%grid%ny, &
+       call ascii_write(ncycle, pfld%internal%nx, pfld%internal%ny, &
                         pfld%internal%xstart, pfld%internal%ystart, &
                         pfld%data, 'pfld.dat')
 
@@ -321,6 +321,15 @@ contains
 
     !===================================================
 
+    !> Dump the supplied 2D field in ASCII form suitable for
+    !! gnuplot splot.
+    !! @param[in] tag Tag to incorporate in filename - usually time-step
+    !! @param[in] m Extent in x dimension of INTERNAL region of field
+    !! @param[in] n Extent in y dimension of INTERNAL region of field
+    !! @param[in] xstart Grid loc of start of INTERNAL region
+    !! @param[in] ystart Grid loc of start of INTERNAL region
+    !! @param[in] var 2D double-precision array of data to write out
+    !! @param[in] fname Base of filename that will have tag appended
     subroutine ascii_write(tag, m, n, xstart, ystart, var, fname)
       implicit none
       integer, intent(in) :: tag, m, n

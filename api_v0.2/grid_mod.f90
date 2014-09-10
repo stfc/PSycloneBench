@@ -31,27 +31,9 @@ module grid_mod
   !> Grid (model domain) has no boundary conditions
   integer, public, parameter :: BC_NONE = 2
 
-! If our model grid has total extent (i.e. including pts
-! necessary to define the boundaries of the domain) of nx x ny.
-! The type of the the points around the edges of the grid
-! are determined according to the way in which the fields are
-! staggered:
-!
-! e.g. for a NE stagger:
-!
-!     1       2       3.....          nx
-!     V   F                           V    F
-! ny  T   U   T       T       T   U   T    U
-!     V   F   V   F   V   F   V   F   V    F
-!     T       T   U   T   U   T   U   T    U
-!             V   F   V   F   V
-! 3   T       T   U   T   U   T       T
-!             V   F   V   F   V
-! 2   T   U   T   U   T   U   T       T
-!     V   F
-! 1   T   U   T       T       T       T
-!
-! That way, we have nx x ny grids of every grid-point type.
+  !> The width of the halos we set up for implementing PBCs
+  integer, parameter :: HALO_WIDTH_X = 1
+  integer, parameter :: HALO_WIDTH_Y = 1
 
   type, public :: grid_type
      !> The type of grid this is (e.g. Arakawa C Grid)
@@ -215,32 +197,32 @@ contains
        grid%ny = n
     else
        ! No T-mask has been supplied so we assume we're implementing
-       ! periodic boundary conditions and allow for halos here.
-       ! Currently we put a halo on all four sides of our rectangular
-       ! domain. This is actually unnecessary - depending on the
-       ! variable staggering used only one of the E/W halos and one
-       ! of the N/S halos are required. However, this is an optimisation
-       ! and this framework must be developed in such a way that
-       ! that optimisation is supported.
-       grid%nx = m + 2
-       grid%ny = n + 2
+       ! periodic boundary conditions and allow for halos of width
+       ! HALO_WIDTH_{X,Y} here.  Currently we put a halo on all four
+       ! sides of our rectangular domain. This is actually unnecessary
+       ! - depending on the variable staggering used only one of the
+       ! E/W halos and one of the N/S halos are required. However,
+       ! this is an optimisation and this framework must be developed
+       ! in such a way that that optimisation is supported.
+       grid%nx = m + 2*HALO_WIDTH_X
+       grid%ny = n + 2*HALO_WIDTH_Y
     end if
 
     ! For a regular, orthogonal mesh the spatial resolution is constant
     grid%dx = dxarg
     grid%dy = dyarg
 
-    allocate(grid%e1t(m,n), grid%e2t(m,n), &
-             grid%e1u(m,n), grid%e2u(m,n), &
+    allocate(grid%e1t(grid%nx,grid%ny), grid%e2t(grid%nx,grid%ny), &
+             grid%e1u(grid%nx,grid%ny), grid%e2u(grid%nx,grid%ny), &
              stat=ierr(1))
-    allocate(grid%e1f(m,n), grid%e2f(m,n), &
-             grid%e1v(m,n), grid%e2v(m,n),   &
+    allocate(grid%e1f(grid%nx,grid%ny), grid%e2f(grid%nx,grid%ny), &
+             grid%e1v(grid%nx,grid%ny), grid%e2v(grid%nx,grid%ny), &
              stat=ierr(2)) 
-    allocate(grid%e12t(m,n), grid%e12u(m,n), grid%e12v(m,n), &
-             stat=ierr(3))
-    allocate(grid%gphiu(m,n), grid%gphiv(m,n), grid%gphif(m,n), &
-             stat=ierr(4))
-    allocate(grid%xt(m,n), grid%yt(m,n), stat=ierr(5))
+    allocate(grid%e12t(grid%nx,grid%ny), grid%e12u(grid%nx,grid%ny), &
+             grid%e12v(grid%nx,grid%ny), stat=ierr(3))
+    allocate(grid%gphiu(grid%nx,grid%ny), grid%gphiv(grid%nx,grid%ny), &
+             grid%gphif(grid%nx,grid%ny), stat=ierr(4))
+    allocate(grid%xt(grid%nx,grid%ny), grid%yt(grid%nx,grid%ny), stat=ierr(5))
 
     if( any(ierr /= 0, 1) )then
        call gocean_stop('grid_init: failed to allocate arrays')
@@ -248,7 +230,7 @@ contains
 
     ! Copy-in the externally-supplied T-mask, if any
     if( present(tmask) )then
-       allocate(grid%tmask(m,n), stat=ierr(1))
+       allocate(grid%tmask(grid%nx,grid%ny), stat=ierr(1))
        if( ierr(1) /= 0 )then
           call gocean_stop('grid_init: failed to allocate array for T mask')
        end if
@@ -265,6 +247,7 @@ contains
 
     ! Use the T mask to determine the dimensions of the
     ! internal, simulated region of the grid.
+    ! This call sets grid%simulation_domain.
     call compute_internal_region(grid)
 
     ! Initialise the horizontal scale factors for a regular,
@@ -282,20 +265,20 @@ contains
     grid%e2f(:, :)   = grid%dy
 
     ! calculate t,u,v cell area
-    do jj = 1, n
-       do ji = 1, m
+    do jj = 1, grid%ny
+       do ji = 1, grid%nx
           grid%e12t(ji,jj) = grid%e1t(ji,jj) * grid%e2t(ji,jj)
        end do
     end do
   
-    DO jj = 1, n
-       DO ji = 1, m
+    DO jj = 1, grid%ny
+       DO ji = 1, grid%nx
           grid%e12u(ji,jj) = grid%e1u(ji,jj) * grid%e2u(ji,jj)
        END DO
     END DO
 
-    DO jj = 1, n
-       DO ji = 1, m
+    DO jj = 1, grid%ny
+       DO ji = 1, grid%nx
           grid%e12v(ji,jj) = grid%e1v(ji,jj) * grid%e2v(ji,jj)
        END DO
     END DO
@@ -360,8 +343,6 @@ contains
        grid%simulation_domain%xstop  = grid%nx - 1
        grid%simulation_domain%ystart = 2
        grid%simulation_domain%ystop  = grid%ny - 1
-       grid%simulation_domain%nx = grid%nx - 2
-       grid%simulation_domain%ny = grid%ny - 2
 
     else
 
@@ -373,10 +354,13 @@ contains
        grid%simulation_domain%xstop  = grid%nx - 1
        grid%simulation_domain%ystart = 2
        grid%simulation_domain%ystop  = grid%ny - 1
-       grid%simulation_domain%nx = grid%nx - 2
-       grid%simulation_domain%ny = grid%ny - 2
 
     end if
+
+    grid%simulation_domain%nx =  grid%simulation_domain%xstop -  &
+                                 grid%simulation_domain%xstart + 1
+    grid%simulation_domain%ny =  grid%simulation_domain%ystop -  &
+                                 grid%simulation_domain%ystart + 1
 
   end subroutine compute_internal_region
 

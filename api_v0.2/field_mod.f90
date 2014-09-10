@@ -3,6 +3,7 @@ module field_mod
   use region_mod
   use halo_mod
   use grid_mod
+  use gocean_mod, only: gocean_stop
   implicit none
 
   private
@@ -198,7 +199,7 @@ contains
                        1:self%internal%ystop+1),&
                        Stat=ierr)
     if(ierr /= 0)then
-       stop 'r2d_field_constructor: ERROR: failed to allocate field'
+       call gocean_stop('r2d_field_constructor: ERROR: failed to allocate field')
     end if
 
   end function r2d_field_constructor
@@ -244,7 +245,7 @@ contains
        call cu_ne_init(fld)
 
     case default
-       stop 'cu_field_init: ERROR - unsupported stagger!'
+       call gocean_stop('cu_field_init: ERROR - unsupported stagger!')
 
     end select
 
@@ -277,14 +278,23 @@ contains
 
     !
     if(fld%grid%boundary_conditions(1) == BC_PERIODIC)then
-       ! When implementing periodic boundary conditions, all
-       ! mesh point types have the same extents as the grid of
-       ! T points. We then have a halo of width 1 on either side
-       ! of the domain.
-       fld%internal%xstart = 2
-       fld%internal%xstop  = fld%internal%xstart + M - 1
-       !fld%internal%xstart = fld%grid%simulation_domain%xstart
-       !fld%internal%xstop  = fld%grid%simulation_domain%xstop
+       ! When implementing periodic boundary conditions, all mesh
+       ! point types have the same extents as the grid of T points. We
+       ! then have a halo of width grid_mod::HALO_WIDTH_X on either
+       ! side of the domain.
+       ! When updating a quantity on U points we write to:
+       ! (using 'x' to indicate a location that is written and 'a' an
+       ! additional point that shallow dispenses with):
+       !
+       ! i=istart i=istop
+       !  o  o  o  o  a
+       !  o  x  x  x  a  j=ystop
+       !  o  x  x  x  a
+       !  o  x  x  x  a  j=ystart
+       !  a  a  a  a  a
+
+       fld%internal%xstart = fld%grid%simulation_domain%xstart
+       fld%internal%xstop  = fld%grid%simulation_domain%xstop
     else
        ! When updating a quantity on U points with this staggering
        ! we write to (using 'x' to indicate a location that is written,
@@ -299,10 +309,11 @@ contains
        !  o  b  b  b  b   j=1
        fld%internal%xstart = 3
        fld%internal%xstop  = fld%internal%xstart + M - 1
+       call gocean_stop('cu_sw_init: IMPLEMENT non-periodic BCs!')
     end if
 
-    fld%internal%ystart = 2
-    fld%internal%ystop  = fld%internal%ystart + N - 1
+    fld%internal%ystart = fld%grid%simulation_domain%ystart
+    fld%internal%ystop  = fld%grid%simulation_domain%ystop
 
     ! When applying periodic (wrap-around) boundary conditions (PBCs)
     ! we must fill the regions marked with 'b' above.
@@ -435,27 +446,29 @@ contains
     M = fld%grid%nx
     N = fld%grid%ny
 
-    ! When updating a quantity on V points we write to:
-    ! (using x to indicate a location that is written):
-    !
-    ! i=1      i=M
-    !  b  b  b  b   j=N 
-    !  b  x  x  b
-    !  b  x  x  b
-    !  b  b  b  b
-    !  o  o  o  o   j=1
-    fld%internal%xstart = 2
-    fld%internal%xstop  = M+2-1
+    fld%internal%xstart = fld%grid%simulation_domain%xstart
+    fld%internal%xstop  = fld%grid%simulation_domain%xstop
+
     if(fld%grid%boundary_conditions(2) == BC_PERIODIC)then
        ! When implementing periodic boundary conditions, all
        ! mesh point types have the same extents as the grid of
        ! T points. We then have a halo of width 1 on either side
        ! of the domain.
-       fld%internal%ystart = 2
-       fld%internal%ystop  = N+2-1
+       fld%internal%ystart = fld%grid%simulation_domain%ystart
+       fld%internal%ystop  = fld%grid%simulation_domain%ystop
     else
+       ! When updating a quantity on V points we write to:
+       ! (using x to indicate a location that is written):
+       !
+       ! i=1      i=M
+       !  b  b  b  b   j=N 
+       !  b  x  x  b
+       !  b  x  x  b
+       !  b  b  b  b
+       !  o  o  o  o   j=1
        fld%internal%ystart = 3
        fld%internal%ystop  = N+3-1
+       call gocean_stop('cv_sw_init: IMPLEMENT non-periodic BCs!')
     endif
 
     ! When applying periodic (wrap-around) boundary conditions (PBCs)
@@ -561,11 +574,6 @@ contains
   subroutine ct_sw_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
-
-    M = fld%grid%nx
-    N = fld%grid%ny
 
     ! When updating a quantity on T points we write to:
     ! (using x to indicate a location that is written):
@@ -576,10 +584,10 @@ contains
     !  b  x  x  b
     !  b  b  b  b   j=1
 
-    fld%internal%xstart = 2
-    fld%internal%xstop  = M+2-1
-    fld%internal%ystart = 2
-    fld%internal%ystop  = N+2-1
+    fld%internal%xstart = fld%grid%simulation_domain%xstart
+    fld%internal%xstop  = fld%grid%simulation_domain%xstop
+    fld%internal%ystart = fld%grid%simulation_domain%ystart
+    fld%internal%ystop  = fld%grid%simulation_domain%ystop
 
     ! When applying periodic (wrap-around) boundary conditions
     ! (PBCs) we must fill the regions marked with 'b' above.
@@ -680,11 +688,6 @@ contains
   subroutine cf_sw_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
-
-    M = fld%grid%nx
-    N = fld%grid%ny
 
     ! When updating a quantity on F points we write to:
     ! (using x to indicate a location that is written):
@@ -696,18 +699,21 @@ contains
     !  o  b  b  b  b
     !  o  o  o  o  o   j=1
     if(fld%grid%boundary_conditions(1) == BC_PERIODIC)then
-       fld%internal%xstart = 3
+       fld%internal%xstart = fld%grid%simulation_domain%xstart + 1
     else
        fld%internal%xstart = 3
+       call gocean_stop('cf_sw_init: IMPLEMENT non-periodic BCs!')
     end if
-    fld%internal%xstop  = fld%internal%xstart + M - 1
 
     if(fld%grid%boundary_conditions(2) == BC_PERIODIC)then
-       fld%internal%ystart = 3
+       fld%internal%ystart = fld%grid%simulation_domain%ystart + 1
     else
        fld%internal%ystart = 3
+       call gocean_stop('cf_sw_init: IMPLEMENT non-periodic BCs!')
     end if
-    fld%internal%ystop  = fld%internal%ystart + N - 1
+
+    fld%internal%xstop  = fld%internal%xstart + fld%grid%simulation_domain%nx - 1
+    fld%internal%ystop  = fld%internal%ystart + fld%grid%simulation_domain%ny - 1
 
     ! When applying periodic (wrap-around) boundary conditions
     ! (PBCs) we must fill the regions marked with 'b' above.

@@ -145,7 +145,7 @@ program shallow
   CALL copy_field(p_fld, pold_fld)
      
   ! Write intial values of p, u, and v into a netCDF file   
-  call ascii_write(0, psi_fld%grid%nx, psi_fld%grid%ny, &
+  call ascii_write(0, psi_fld%internal%nx, psi_fld%internal%ny, &
                    psi_fld%internal%xstart, psi_fld%internal%ystart, &
                    psi_fld%data, 'psifld.dat')
   CALL model_write(0, p_fld, u_fld, v_fld)
