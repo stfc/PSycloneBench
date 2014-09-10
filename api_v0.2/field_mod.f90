@@ -256,11 +256,6 @@ contains
   subroutine cu_sw_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
-
-    M = fld%grid%nx
-    N = fld%grid%ny
 
     ! Set up a field defined on U points when the grid has
     ! a South-West staggering:
@@ -307,9 +302,8 @@ contains
        !  o  b  x  x  b
        !  o  b  x  x  b
        !  o  b  b  b  b   j=1
-       fld%internal%xstart = 3
-       fld%internal%xstop  = fld%internal%xstart + M - 1
-       call gocean_stop('cu_sw_init: IMPLEMENT non-periodic BCs!')
+       fld%internal%xstart = fld%grid%simulation_domain%xstart + 1
+       fld%internal%xstop  = fld%grid%simulation_domain%xstop
     end if
 
     fld%internal%ystart = fld%grid%simulation_domain%ystart
@@ -342,11 +336,6 @@ contains
   subroutine cu_ne_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
-
-    M = fld%grid%nx
-    N = fld%grid%ny
 
     ! Set up a field defined on U points when the grid has
     ! a North-East staggering:
@@ -440,20 +429,15 @@ contains
   subroutine cv_sw_init(fld)
     implicit none
     type(r2d_field_type), intent(inout) :: fld
-    ! Locals
-    integer :: M, N
-
-    M = fld%grid%nx
-    N = fld%grid%ny
-
-    fld%internal%xstart = fld%grid%simulation_domain%xstart
-    fld%internal%xstop  = fld%grid%simulation_domain%xstop
 
     if(fld%grid%boundary_conditions(2) == BC_PERIODIC)then
        ! When implementing periodic boundary conditions, all
        ! mesh point types have the same extents as the grid of
        ! T points. We then have a halo of width 1 on either side
        ! of the domain.
+       fld%internal%xstart = fld%grid%simulation_domain%xstart
+       fld%internal%xstop  = fld%grid%simulation_domain%xstop
+
        fld%internal%ystart = fld%grid%simulation_domain%ystart
        fld%internal%ystop  = fld%grid%simulation_domain%ystop
     else
@@ -466,8 +450,13 @@ contains
        !  b  x  x  b
        !  b  b  b  b
        !  o  o  o  o   j=1
-       fld%internal%ystart = 3
-       fld%internal%ystop  = N+3-1
+       ! We're not offset from the T points in the x dimension so
+       ! we have the same x bounds.
+       fld%internal%xstart = fld%grid%simulation_domain%xstart
+       fld%internal%xstop  = fld%grid%simulation_domain%xstop
+
+       fld%internal%ystart = fld%grid%simulation_domain%ystart + 1
+       fld%internal%ystop  = fld%grid%simulation_domain%ystop
        call gocean_stop('cv_sw_init: IMPLEMENT non-periodic BCs!')
     endif
 
@@ -532,16 +521,14 @@ contains
       fld%internal%xstart = fld%grid%simulation_domain%xstart
       fld%internal%xstop  = fld%grid%simulation_domain%xstop
     else
-      write(*,*) 'ERROR: cv_ne_init: implement periodic boundary conditions!'
-      stop
+      call gocean_stop('ERROR: cv_ne_init: implement periodic BCs!')
     end if
 
     if(fld%grid%boundary_conditions(2) /= BC_PERIODIC)then
       fld%internal%ystart = fld%grid%simulation_domain%ystart
       fld%internal%ystop  = fld%grid%simulation_domain%ystop - 1
     else
-      write(*,*) 'ERROR: cv_ne_init: implement periodic boundary conditions!'
-      stop
+      call gocean_stop('ERROR: cv_ne_init: implement periodic BCs!')
     end if
 
   end subroutine cv_ne_init
@@ -618,13 +605,6 @@ contains
     implicit none
     type(r2d_field_type), intent(inout) :: fld
 
-    ! The mesh of T points defines the simulation domain. 
-    ! Currently we assume a shell of thickness one around the actual
-    ! simulation domain - this is the minimum required to specify
-    ! boundary conditions.
-    !> \todo We can compute the dimensions of the simulated domain
-    !! once the T mask has been set.
-
     ! When updating a quantity on T points with a NE staggering
     ! we write to (using x to indicate a location that is written):
     !
@@ -644,8 +624,7 @@ contains
       fld%internal%xstart = fld%grid%simulation_domain%xstart
       fld%internal%xstop  = fld%grid%simulation_domain%xstop
     else
-      write(*,*) 'ERROR: ct_ne_init: implement periodic boundary conditions!'
-      stop
+      call gocean_stop('ERROR: ct_ne_init: implement periodic BCs!')
     end if
 
     if(fld%grid%boundary_conditions(2) /= BC_PERIODIC)then
@@ -654,8 +633,7 @@ contains
       fld%internal%ystart = fld%grid%simulation_domain%ystart
       fld%internal%ystop  = fld%grid%simulation_domain%ystop
     else
-      write(*,*) 'ERROR: ct_ne_init: implement periodic boundary conditions!'
-      stop
+      call gocean_stop('ERROR: ct_ne_init: implement periodic BCs!')
     end if
 
   end subroutine ct_ne_init
@@ -677,7 +655,7 @@ contains
        call cf_ne_init(fld)
 
     case default
-       stop 'cf_field_init: ERROR - unsupported stagger!'
+       call gocean_stop('cf_field_init: ERROR - unsupported stagger!')
 
     end select
 
@@ -700,20 +678,26 @@ contains
     !  o  o  o  o  o   j=1
     if(fld%grid%boundary_conditions(1) == BC_PERIODIC)then
        fld%internal%xstart = fld%grid%simulation_domain%xstart + 1
+       fld%internal%xstop  = fld%internal%xstart + fld%grid%simulation_domain%nx - 1
     else
-       fld%internal%xstart = 3
-       call gocean_stop('cf_sw_init: IMPLEMENT non-periodic BCs!')
+       fld%internal%xstart = fld%grid%simulation_domain%xstart + 1
+       fld%internal%xstop  = fld%grid%simulation_domain%xstop
+       ! I think these are correct but we stop because I've not properly
+       ! gone through the coding.
+       call gocean_stop('cf_sw_init: CHECK non-periodic BCs!')
     end if
 
     if(fld%grid%boundary_conditions(2) == BC_PERIODIC)then
        fld%internal%ystart = fld%grid%simulation_domain%ystart + 1
+       fld%internal%ystop  = fld%internal%ystart + fld%grid%simulation_domain%ny - 1
     else
-       fld%internal%ystart = 3
-       call gocean_stop('cf_sw_init: IMPLEMENT non-periodic BCs!')
+       fld%internal%ystart = fld%grid%simulation_domain%ystart + 1
+       fld%internal%ystop  = fld%grid%simulation_domain%ystop
+       ! I think these are correct but we stop because I've not properly
+       ! gone through the coding.
+       call gocean_stop('cf_sw_init: CHECK non-periodic BCs!')
     end if
 
-    fld%internal%xstop  = fld%internal%xstart + fld%grid%simulation_domain%nx - 1
-    fld%internal%ystop  = fld%internal%ystart + fld%grid%simulation_domain%ny - 1
 
     ! When applying periodic (wrap-around) boundary conditions
     ! (PBCs) we must fill the regions marked with 'b' above.
@@ -763,7 +747,7 @@ contains
       fld%internal%xstart = fld%grid%simulation_domain%xstart
       fld%internal%xstop  = fld%grid%simulation_domain%xstop - 1
     else
-      write(*,*) 'ERROR: cf_ne_init: implement periodic boundary conditions!'
+      call gocean_stop('ERROR: cf_ne_init: implement periodic BCs!')
       stop
     end if
 
@@ -771,8 +755,7 @@ contains
       fld%internal%ystart = fld%grid%simulation_domain%ystart
       fld%internal%ystop  = fld%grid%simulation_domain%ystop - 1
     else
-      write(*,*) 'ERROR: cf_ne_init: implement periodic boundary conditions!'
-      stop
+      call gocean_stop('ERROR: cf_ne_init: implement periodic BCs!')
     end if
 
   end subroutine cf_ne_init
