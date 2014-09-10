@@ -60,9 +60,9 @@ module field_mod
      module procedure increment_scalar_field
   end interface increment
 
-  interface field_type
-     module procedure field_constructor
-  end interface field_type
+!  interface field_type
+!     module procedure field_constructor
+!  end interface field_type
 
   ! User-defined constructor for r2d_field_type objects
   interface r2d_field_type
@@ -76,28 +76,28 @@ module field_mod
 
 ! Grid points on an Arakawa C grid with NE staggering are arranged like so:
 !
-! v(1,ny)-----f(1,ny)-- -v(i-1,ny)--f(i-1,ny)--v(i,ny)----f(i,ny)-  -v(nx,ny)---f(nx,ny)  
-! |           |          |          |          |          |          |          |        
-! |           |          |          |          |          |          |          |        
-! T[1,ny]-----u(1,ny)-- -T(i-1,ny)--u(i-1,ny)--T(i,ny)----u(i,ny)-  -T(nx,ny)---u(nx,ny)  
-! |           |          |          |          |          |          |          |        
-! |           |          |          |          |          |          |          |        
-! v(1,j)------f(1,j)--- -v(i-1,j)---f(i-1,j)---v(i,j)-----f(i,j)--  -v(nx,j)----f(nx,j)   
-! |           |          |          |          |          |          |          |        
-! |           |          |          |          |          |          |          |        
-! T[1,j]------u(1,j)--- -T(i-1,j)---u(i-1,j)---T(i,j)-----u(i,j)--  -T(nx,j)----u(nx,j)   
-! |           |          |          |          |          |          |          |        
-! |           |          |          |          |          |          |          |        
-! v(1,j-1)----f(1,j-1)- -v(i-1,j-1)-f(i-1,j-1)-v(i,j-1)---f(i,j-1)- -v(nx,j-1)--f(nx,j-1) 
-! |           |          |          |          |          |          |          |        
-! |           |          |          |          |          |          |          |        
-! T[1,j-1]----u(1,j-1)- -T(i-1,j-1)-u(i-1,j-1)-T(i,j-1)---u(i,j-1)- -T(nx,j-1)--u(nx,j-1) 
-! |           |          |          |          |          |          |          |        
-! |           |          |          |          |          |          |          |        
-! v(1,1)------f(1,1)--- -v(i-1,1)---f(i-1,1)---v(i,1)-----f(i,1)--  -v(nx,1)----f(nx,1)   
-! |           |          |          |          |          |          |          |        
-! |           |          |          |          |          |          |          |        
-! T[1,1]      u(1,1)     T(i-1,1)---u(i-1,1)---T(i,1)-----u(i,1)--  -T(nx,1)----u(nx,1)   
+!v(1,ny)----f(1,ny)---v(i-1,ny)--f(i-1,ny)--v(i,ny)----f(i,ny)--v(nx,ny)---f(nx,ny)  
+!|          |         |          |          |          |        |          |        
+!|          |         |          |          |          |        |          |        
+!T[1,ny]----u(1,ny)---T(i-1,ny)--u(i-1,ny)--T(i,ny)----u(i,ny)--T(nx,ny)---u(nx,ny)  
+!|          |         |          |          |          |        |          |        
+!|          |         |          |          |          |        |          |        
+!v(1,j)-----f(1,j)----v(i-1,j)---f(i-1,j)---v(i,j)-----f(i,j)---v(nx,j)----f(nx,j)   
+!|          |         |          |          |          |        |          |        
+!|          |         |          |          |          |        |          |        
+!T[1,j]-----u(1,j)----T(i-1,j)---u(i-1,j)---T(i,j)-----u(i,j)---T(nx,j)----u(nx,j)   
+!|          |         |          |          |          |        |          |        
+!|          |         |          |          |          |        |          |        
+!v(1,j-1)---f(1,j-1)--v(i-1,j-1)-f(i-1,j-1)-v(i,j-1)---f(i,j-1)-v(nx,j-1)--f(nx,j-1) 
+!|          |         |          |          |          |        |          |        
+!|          |         |          |          |          |        |          |        
+!T[1,j-1]---u(1,j-1)--T(i-1,j-1)-u(i-1,j-1)-T(i,j-1)---u(i,j-1)-T(nx,j-1)--u(nx,j-1) 
+!|          |         |          |          |          |        |          |        
+!|          |         |          |          |          |        |          |        
+!v(1,1)-----f(1,1)----v(i-1,1)---f(i-1,1)---v(i,1)-----f(i,1)---v(nx,1)----f(nx,1)   
+!|          |         |          |          |          |        |          |        
+!|          |         |          |          |          |        |          |        
+!T[1,1]     u(1,1)    T(i-1,1)---u(i-1,1)---T(i,1)-----u(i,1)---T(nx,1)----u(nx,1)   
 
   !> The no. of cols/rows used to define boundary data in the absence
   !! of periodic BCs.
@@ -107,20 +107,20 @@ contains
 
   !===================================================
 
-  function field_constructor(grid_ptr,    &
-                             grid_points) result(self)
-    implicit none
-    ! Arguments
-    !> Pointer to the grid on which this field lives
-    type(grid_type),       intent(in), pointer :: grid_ptr
-    !> Which grid-point type the field is defined on
-    integer,               intent(in)          :: grid_points
-    ! Local declarations
-    type(field_type) :: self
-
-    stop 'field_constructor: ERROR: I should not have been called!'
-
-  end function field_constructor
+!  function field_constructor(grid_ptr,    &
+!                             grid_points) result(self)
+!    implicit none
+!    ! Arguments
+!    !> Pointer to the grid on which this field lives
+!    type(grid_type),       intent(in), pointer :: grid_ptr
+!    !> Which grid-point type the field is defined on
+!    integer,               intent(in)          :: grid_points
+!    ! Local declarations
+!    type(field_type) :: self
+!
+!    stop 'field_constructor: ERROR: I should not have been called!'
+!
+!  end function field_constructor
 
   !===================================================
 
@@ -283,6 +283,8 @@ contains
        ! of the domain.
        fld%internal%xstart = 2
        fld%internal%xstop  = fld%internal%xstart + M - 1
+       !fld%internal%xstart = fld%grid%simulation_domain%xstart
+       !fld%internal%xstop  = fld%grid%simulation_domain%xstop
     else
        ! When updating a quantity on U points with this staggering
        ! we write to (using 'x' to indicate a location that is written,
@@ -377,6 +379,9 @@ contains
       ! If we do not have periodic boundary conditions then we do
       ! not need to allow for boundary points here - they are
       ! already contained within the region defined by T mask.
+      ! The T mask has been used to determine the grid%simulation_domain
+      ! which describes the area on the grid that is actually being
+      ! modelled (as opposed to having values supplied from B.C.'s etc.)
       fld%internal%xstart = fld%grid%simulation_domain%xstart
       fld%internal%xstop  = fld%grid%simulation_domain%xstop - 1
     else

@@ -13,6 +13,7 @@ module halo_mod
      type(region_type) :: source
      type(region_type) :: dest
 
+! Commented-out for now because it upset the Intel compiler...
 !   contains
 
      !> Flag that this halo is out of date
@@ -24,17 +25,17 @@ module halo_mod
 
 contains
 
-  subroutine set_dirty(self)
-    implicit none
-    class(halo_type), target, intent(inout) :: self
-    self%needs_update = 1
-  end subroutine set_dirty
+!  subroutine set_dirty(self)
+!    implicit none
+!    class(halo_type), target, intent(inout) :: self
+!    self%needs_update = 1
+!  end subroutine set_dirty
 
-  function is_dirty(self) result (status)
-    implicit none
-    class(halo_type), target, intent(inout) :: self
-    logical :: status
-    status =  (self%needs_update == 1)
-  end function is_dirty
+!  function is_dirty(self) result (status)
+!    implicit none
+!    class(halo_type), target, intent(inout) :: self
+!    logical :: status
+!    status =  (self%needs_update == 1)
+!  end function is_dirty
 
 end module halo_mod
