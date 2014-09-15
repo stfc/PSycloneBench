@@ -23,13 +23,16 @@ module compute_cu_mod
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
 
-     !> This kernel is written assuming that the internal
-     !! regions for each grid-point type begin at the
-     !! following locations on the grid:
-     integer :: tstart(2) = (/ 1, 1 /)
-     integer :: ustart(2) = (/ 2, 1 /)
-     integer :: vstart(2) = (/ 1, 2 /)
-     integer :: fstart(2) = (/ 2, 2 /)
+     !> This kernel is written assuming that the *arrays*
+     !! containing the fields that it uses are indexed relative to the
+     !! T point in the following way: If there is a T point at index
+     !! (i,j) then the U point with the same grid index is at
+     !! (i+ushift(1),j+ushift(2)).
+     integer :: ushift(2) = (/ -1,  0 /)
+     integer :: vshift(2) = (/  0, -1 /)
+     integer :: fshift(2) = (/ -1, -1 /)
+
+!     integer :: index_offset = SW_OFFSET
 
   contains
     procedure, nopass :: code => compute_cu_code
@@ -92,19 +95,19 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
     !
     ! The shifts from U to xx pts assumed by this kernel
-    kern_tshift(1) = this_kernel%tstart(1) - this_kernel%ustart(1)
-    kern_tshift(2) = this_kernel%tstart(2) - this_kernel%ustart(2)
+!    kern_tshift(1) = this_kernel%tstart(1) - this_kernel%ustart(1)
+!    kern_tshift(2) = this_kernel%tstart(2) - this_kernel%ustart(2)
 
     ! The shifts we must apply to account for the fact that our
     ! fields may not have the same relative positioning as
     ! assumed by the kernel
-    tshift(1) = cufld%internal%xstart - pfld%internal%xstart - kern_tshift(1)
-    tshift(2) = cufld%internal%ystart - pfld%internal%ystart - kern_tshift(2)
+!    tshift(1) = cufld%internal%xstart - pfld%internal%xstart - kern_tshift(1)
+!    tshift(2) = cufld%internal%ystart - pfld%internal%ystart - kern_tshift(2)
 
     do J=cufld%internal%ystart, cufld%internal%ystop
        do I=cufld%internal%xstart, cufld%internal%xstop
 
-          call compute_cu_code(i, j, tshift, cufld%data, pfld%data, ufld%data)
+          call compute_cu_code(i, j, cufld%data, pfld%data, ufld%data)
        end do
     end do
 
@@ -113,19 +116,13 @@ contains
   !===================================================
 
   !> Compute the mass flux in the x direction at point (i,j)
-  subroutine compute_cu_code(i, j, tshift, cu, p, u)
+  subroutine compute_cu_code(i, j, cu, p, u)
     implicit none
     integer,  intent(in) :: I, J
-    integer,  intent(in),  dimension(2) :: tshift
     real(wp), intent(out), dimension(:,:) :: cu
     real(wp), intent(in),  dimension(:,:) :: p, u
-    ! Locals
-    integer :: ti, tj
 
-    ti = i + tshift(1)
-    tj = j + tshift(2)
-
-    CU(I,J) = 0.5d0*(P(ti,tJ)+P(tI-1,tJ))*U(I,J)
+    CU(I,J) = 0.5d0*(P(i+1,J)+P(I,J))*U(I,J)
 
   end subroutine compute_cu_code
 

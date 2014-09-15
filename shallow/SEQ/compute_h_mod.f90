@@ -108,7 +108,7 @@ contains
     DO J=hfld%internal%ystart, hfld%internal%ystop, 1
        DO I=hfld%internal%xstart, hfld%internal%xstop, 1
 
-          CALL compute_h_code(i, j, ushift, vshift, hfld%data, &
+          CALL compute_h_code(i, j, hfld%data, &
                               pfld%data, ufld%data, vfld%data)
        END DO
     END DO
@@ -117,22 +117,14 @@ contains
 
   !===================================================
 
-  SUBROUTINE compute_h_code(i, j, ushift, vshift, h, p, u, v)
+  SUBROUTINE compute_h_code(i, j, h, p, u, v)
     IMPLICIT none
     integer,  intent(in) :: I, J
-    integer,  intent(in), dimension(2) :: ushift, vshift
     REAL(wp), INTENT(out), DIMENSION(:,:) :: h
     REAL(wp), INTENT(in),  DIMENSION(:,:) :: p, u, v
-    ! Locals
-    integer :: ui, uj, vi, vj
 
-    ui = i + ushift(1)
-    uj = j + ushift(2)
-    vi = i + vshift(1)
-    vj = j + vshift(2)
-
-    H(I,J) = P(I,J)+.25d0*(U(uI+1,uJ)*U(uI+1,uJ)+U(uI,uJ)*U(uI,uJ)     & 
-                        +V(vI,vJ+1)*V(vI,vJ+1)+V(vI,vJ)*V(vI,vJ))
+    H(I,J) = P(I,J)+.25d0*(U(I,J)*U(I,J)+U(I-1,J)*U(I-1,J) + & 
+                           V(I,J)*V(I,J)+V(I,J-1)*V(I,J-1))
 
   END SUBROUTINE compute_h_code
 

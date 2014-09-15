@@ -113,7 +113,7 @@ contains
     DO J=pnew%internal%ystart, pnew%internal%ystop, 1
        DO I=pnew%internal%xstart, pnew%internal%xstop, 1
 
-          CALL compute_pnew_code(i, j, ushift, vshift, dx, dy, &
+          CALL compute_pnew_code(i, j, dx, dy, &
                                  pnew%data, pold%data, &
                                  cu%data, cv%data, tdt)
        END DO
@@ -123,18 +123,16 @@ contains
 
   !===================================================
 
-  subroutine compute_pnew_code(i, j, ushift, vshift, dx, dy, &
+  subroutine compute_pnew_code(i, j, dx, dy, &
                                pnew, pold, cu, cv, tdt)
     implicit none
     integer,  intent(in) :: I, J
-    integer,  intent(in), dimension(2) :: ushift, vshift
     real(wp), intent(in) :: dx, dy
     real(wp), intent(out), dimension(:,:) :: pnew
     real(wp), intent(in),  dimension(:,:) :: pold, cu, cv
     real(wp), intent(in) :: tdt
     ! Locals
     real(wp) :: tdtsdx, tdtsdy
-    integer :: ui, uj, vi, vj
 
     !> These quantities are computed here because tdt is not
     !! constant. (It is == dt for first time step, 2xdt for
@@ -142,13 +140,8 @@ contains
     tdtsdx = tdt/dx
     tdtsdy = tdt/dy
 
-    ui = i + ushift(1)
-    uj = j + ushift(2)
-    vi = i + vshift(1)
-    vj = j + vshift(2)
-
-    PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(uI+1,uJ)-CU(uI,uJ))   & 
-                         -TDTSDY*(CV(vI,vJ+1)-CV(vI,vJ))
+    PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I,J)-CU(I-1,J))   & 
+                         -TDTSDY*(CV(I,J)-CV(I,J-1))
 
   END SUBROUTINE compute_pnew_code
 

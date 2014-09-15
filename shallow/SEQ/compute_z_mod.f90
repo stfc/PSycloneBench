@@ -87,7 +87,7 @@ contains
     do J=zfld%internal%ystart, zfld%internal%ystop, 1
        do I=zfld%internal%xstart, zfld%internal%xstop, 1
 
-          call compute_z_code(i, j, ushift, vshift, tshift, dx, dy, &
+          call compute_z_code(i, j, dx, dy, &
                               zfld%data, &
                               pfld%data, &
                               ufld%data, &
@@ -101,26 +101,16 @@ contains
   !===================================================
 
   !> Compute the potential vorticity on the grid point (i,j)
-  subroutine compute_z_code(i, j, ushift, vshift, tshift, dx, dy, z, p, u, v)
+  subroutine compute_z_code(i, j, dx, dy, z, p, u, v)
     implicit none
     integer,  intent(in) :: I, J
-    integer,  intent(in),  dimension(2) :: ushift, vshift, tshift
     real(wp), intent(in) :: dx, dy
     real(wp), intent(inout), dimension(:,:) :: z
     real(wp), intent(in),  dimension(:,:) :: p, u, v
-    ! Locals
-    integer :: ui, uj, vi, vj, ti, tj
 
-    ui = i + ushift(1)
-    uj = j + ushift(2)
-    vi = i + vshift(1)
-    vj = j + vshift(2)
-    ti = i + tshift(1)
-    tj = j + tshift(2)
-
-    Z(I,J) =( (4.0d0/dx)*( V(vI,vJ)-V(vI-1,vJ))-    &
-              (4.0d0/dy)*( U(uI,uJ)-U(uI,uJ-1)) ) / &
-            (P(tI-1,tJ-1)+P(tI,tJ-1)+ P(tI,tJ)+P(tI-1,tJ))
+    Z(I,J) =( (4.0d0/dx)*( V(I,J-1)-V(I-1,J-1))-    &
+              (4.0d0/dy)*( U(I-1,J)-U(I-1,J-1)) ) / &
+            (P(I-1,J-1)+P(I,J-1)+ P(I,J)+P(I-1,J))
 
   end subroutine compute_z_code
 

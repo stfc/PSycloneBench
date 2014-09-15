@@ -110,7 +110,7 @@ contains
     DO J=unew%internal%ystart, unew%internal%ystop, 1
        DO I=unew%internal%xstart, unew%internal%xstop, 1
 
-          CALL compute_unew_code(i, j, vshift, tshift, fshift, dx, dy, &
+          CALL compute_unew_code(i, j, dx, dy, &
                                  unew%data, uold%data, &
                                  z%data, cv%data, h%data, tdt)
        END DO
@@ -120,18 +120,16 @@ contains
 
   !===================================================
 
-  subroutine compute_unew_code(i, j, vshift, tshift, fshift, dx, dy, &
+  subroutine compute_unew_code(i, j, dx, dy, &
                                unew, uold, z, cv, h, tdt)
     implicit none
     integer,  intent(in) :: I, J
-    integer, intent(in), dimension(2) :: vshift, tshift, fshift
     real(wp), intent(in) :: dx, dy
     real(wp), intent(out), dimension(:,:) :: unew
     real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
     real(wp), intent(in) :: tdt
     ! Locals
     real(wp) :: tdts8, tdtsdx
-    integer :: vi, vj, ti, tj, fi, fj
 
     !> These quantities are computed here because tdt is not
     !! constant. (It is == dt for first time step, 2xdt for
@@ -139,14 +137,10 @@ contains
     tdts8 = tdt/8.0d0
     tdtsdx = tdt/dx
 
-    vi = i + vshift(1) ; vj = j + vshift(2)
-    ti = i + tshift(1) ; tj = j + tshift(2)
-    fi = i + fshift(1) ; fj = j + fshift(2)
-
     UNEW(I,J) = UOLD(I,J) +                     &
-                TDTS8*(Z(fI,fJ+1) + Z(fI,fJ)) * &
-                (CV(vI,vJ+1)+CV(vI-1,vJ+1)+CV(vI-1,vJ)+CV(vI,vJ)) -   &
-                TDTSDX*(H(tI,tJ)-H(tI-1,tJ))
+                TDTS8*(Z(I+1,J+1) + Z(I+1,J)) * &
+                (CV(I+1,J)+CV(I,J)+CV(I,J-1)+CV(I+1,J-1)) -   &
+                TDTSDX*(H(I+1,J)-H(I,J))
 
   end subroutine compute_unew_code
 

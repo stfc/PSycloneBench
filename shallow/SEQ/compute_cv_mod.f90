@@ -104,7 +104,7 @@ contains
     do J=cvfld%internal%ystart, cvfld%internal%ystop
        do I=cvfld%internal%xstart, cvfld%internal%xstop
 
-          call compute_cv_code(i, j, tshift, cvfld%data, pfld%data, vfld%data)
+          call compute_cv_code(i, j, cvfld%data, pfld%data, vfld%data)
        end do
     end do
 
@@ -113,19 +113,13 @@ contains
   !===================================================
 
   !> Compute the mass flux in the y direction at point (i,j)
-  subroutine compute_cv_code(i, j, tshift, cv, p, v)
+  subroutine compute_cv_code(i, j, cv, p, v)
     implicit none
     integer,  intent(in) :: I, J
-    integer,  intent(in), dimension(2) :: tshift
     real(wp), intent(out), dimension(:,:) :: cv
     real(wp), intent(in),  dimension(:,:) :: p, v
-    ! Locals
-    integer :: ti, tj
 
-    ti = i + tshift(1)
-    tj = j + tshift(2)
-
-    CV(I,J) = .5d0*(P(tI,tJ)+P(tI,tJ-1))*V(I,J)
+    CV(I,J) = .5d0*(P(I,J+1)+P(I,J))*V(I,J)
 
   end subroutine compute_cv_code
 
