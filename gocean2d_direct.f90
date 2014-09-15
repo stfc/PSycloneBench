@@ -102,8 +102,7 @@ subroutine step(grid, istp, &
   use model_mod, only: rdt
   use momentum_mod, only: invoke_momentum_u, invoke_momentum_v
   use continuity_mod, only: invoke_continuity
-  use time_update_mod, only: invoke_next_ssht, invoke_next_sshu, &
-                             invoke_next_sshv
+  use time_update_mod, only: invoke_next_sshu, invoke_next_sshv
   use boundary_conditions_mod
   use gocean2d_io_mod, only: model_write
   implicit none
@@ -138,7 +137,7 @@ subroutine step(grid, istp, &
   ! Time update of fields
   call copy_field(ua, un)
   call copy_field(va, vn)
-  call invoke_next_ssht(sshn, ssha)
+  call copy_field(ssha, sshn)
   call invoke_next_sshu(sshn_u, sshn)
   call invoke_next_sshv(sshn_v, sshn)
 

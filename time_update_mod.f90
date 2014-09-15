@@ -1,38 +1,45 @@
 module time_update_mod
   use kind_params_mod
+  use kernel_mod
+  use argument_mod
+  use grid_mod
   use field_mod
   implicit none
 
-contains
+  type, extends(kernel_type) :: next_sshu
+     type(arg), dimension(2) :: meta_args =  &
+          (/ arg(READWRITE, CU, POINTWISE),  &
+             arg(READ,      CU, POINTWISE)   &
+           /)
 
-  !================================================
+     !> We only have one value per grid point and that means
+     !! we have a single DOF per grid point.
+     integer :: ITERATES_OVER = DOFS
 
-  subroutine invoke_next_ssht(sshn, ssha)
-    implicit none
-    type(r2d_field_type), intent(inout) :: sshn
-    type(r2d_field_type), intent(in)    :: ssha
-    ! Locals
-    integer :: ji, jj
+     !> This kernel is written assuming that the arrays for
+     !! each field type are set-up such that the internal
+     !! region of each field starts at the same array index (for
+     !! both dimensions). If this weren't the case then
+     !! these shifts (which are relative to the indexing used
+     !! for fields on T points) would be non-zero.
+     integer :: u_index_shift(2) = (/ 0, 0 /)
+     integer :: v_index_shift(2) = (/ 0, 0 /)
+     integer :: f_index_shift(2) = (/ 0, 0 /)
 
-    do jj = sshn%internal%ystart, sshn%internal%ystop, 1
-      do ji = sshn%internal%xstart, sshn%internal%xstop, 1
-        call next_ssht_code(ji,jj,sshn%data, ssha%data)
-      end do
-    end do
+     !> Although the staggering of variables used in an Arakawa
+     !! C grid is well defined, the way in which they are indexed is
+     !! an implementation choice. This can be thought of as choosing
+     !! which grid-point types have the same (i,j) index as a T
+     !! point. This kernel assumes that the U,V and F points that
+     !! share the same index as a given T point are those immediately
+     !! to the North and East of it.
+     integer :: index_offset = OFFSET_NE
 
   contains
+    procedure, nopass :: code => next_sshu_code
+  end type next_sshu
 
-    subroutine next_ssht_code(ji, jj, sshn, ssha)
-      implicit none
-      integer, intent(in) :: ji, jj
-      real(wp), dimension(:,:), intent(inout) :: sshn
-      real(wp), dimension(:,:), intent(in)    :: ssha
-
-      sshn(ji,jj) = ssha(ji,jj)
-
-    end subroutine next_ssht_code
-
-  end subroutine invoke_next_ssht
+contains
 
   !================================================
 
@@ -52,33 +59,34 @@ contains
       end do
     end do
 
-  contains
-
-    subroutine next_sshu_code(ji,jj,tmask,e12t,e12u, &
-                              sshn_u, sshn)
-      implicit none
-      integer,                  intent(in)    :: ji, jj
-      integer,  dimension(:,:), intent(in)    :: tmask
-      real(wp), dimension(:,:), intent(in)    :: e12t, e12u
-      real(wp), dimension(:,:), intent(inout) :: sshn_u
-      real(wp), dimension(:,:), intent(in)    :: sshn
-      ! Locals
-      real(wp) :: rtmp1
-
-      if(tmask(ji,jj) + tmask(ji+1,jj) <= 0)  return   !jump over non-computational domain
-
-      IF(tmask(ji,jj) * tmask(ji+1,jj) > 0) THEN
-        rtmp1 = e12t(ji,jj) * sshn(ji,jj) + e12t(ji+1,jj) * sshn(ji+1,jj)
-        sshn_u(ji,jj) = 0.5_wp * rtmp1 / e12u(ji,jj) 
-      ELSE IF(tmask(ji,jj) <= 0) THEN
-         sshn_u(ji,jj) = sshn(ji+1,jj)
-      ELSE IF(tmask(ji+1,jj) <= 0) THEN
-         sshn_u(ji,jj) = sshn(ji,jj)
-      END IF
-    end subroutine next_sshu_code
-
   end subroutine invoke_next_sshu
 
+  !================================================
+
+  subroutine next_sshu_code(ji,jj,tmask,e12t,e12u, &
+                              sshn_u, sshn)
+    implicit none
+    integer,                  intent(in)    :: ji, jj
+    integer,  dimension(:,:), intent(in)    :: tmask
+    real(wp), dimension(:,:), intent(in)    :: e12t, e12u
+    real(wp), dimension(:,:), intent(inout) :: sshn_u
+    real(wp), dimension(:,:), intent(in)    :: sshn
+    ! Locals
+    real(wp) :: rtmp1
+
+    if(tmask(ji,jj) + tmask(ji+1,jj) <= 0)  return   !jump over non-computational domain
+
+    IF(tmask(ji,jj) * tmask(ji+1,jj) > 0) THEN
+      rtmp1 = e12t(ji,jj) * sshn(ji,jj) + e12t(ji+1,jj) * sshn(ji+1,jj)
+      sshn_u(ji,jj) = 0.5_wp * rtmp1 / e12u(ji,jj) 
+    ELSE IF(tmask(ji,jj) <= 0) THEN
+      sshn_u(ji,jj) = sshn(ji+1,jj)
+    ELSE IF(tmask(ji+1,jj) <= 0) THEN
+      sshn_u(ji,jj) = sshn(ji,jj)
+    END IF
+
+  end subroutine next_sshu_code
+    
   !================================================
 
   subroutine invoke_next_sshv(sshn_v, sshn)
