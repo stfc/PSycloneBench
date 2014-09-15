@@ -128,8 +128,8 @@ subroutine step(grid, istp, &
                          ssha_v, sshn, sshn_u, sshn_v)
 
   ! Apply open and solid boundary conditions
-  CALL bc_ssh(rtime, ssha)
-  CALL bc_u_solid(ua)
+  CALL invoke_bc_ssh(rtime, ssha)
+  CALL invoke_bc_solid_u(ua)
   CALL bc_v_solid(va)
   CALL bc_u_flather(ua, hu, sshn_u)
   CALL bc_v_flather(va, hv, sshn_v)
