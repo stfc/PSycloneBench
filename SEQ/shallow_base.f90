@@ -41,11 +41,8 @@ program shallow
   use model_mod
   use initial_conditions_mod
   use time_smooth_mod,        only: invoke_time_smooth
-  use apply_bcs_mod,          only: invoke_apply_bcs_uvtf, &
-                                    invoke_apply_bcs_uvt,  &
-                                    invoke_apply_bcs_uv
-  use compute_fluxes_mod,     only: invoke_compute_fluxes
-  use compute_new_fields_mod, only: invoke_compute_new_fields
+  use apply_bcs_mod,          only: invoke_apply_bcs_uv
+  use time_step_mod,          only: invoke_time_step
   use topology_mod,           only: M, N
   implicit none
 
@@ -56,7 +53,7 @@ program shallow
   INTEGER :: ncycle
    
   !> Integer tags for timers
-  INTEGER :: idxt0, idxt1
+  INTEGER :: idxt0
 
   !  ** Initialisations of model parameters (dt etc) ** 
   CALL model_init()
@@ -95,51 +92,23 @@ program shallow
   !  ** Start of time-stepping loop ** 
   DO ncycle=1,itmax
     
-    ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
-
-    CALL timer_start('Compute c{u,v},z,h', idxt1)
-
-    call invoke_compute_fluxes(CU, CV, z, h, P, U, V)
-
-    CALL timer_stop(idxt1)
-
-    ! PERIODIC CONTINUATION
-
-    CALL timer_start('PBCs-1',idxt1)
-
-    CALL invoke_apply_bcs_uvtf(CU, CV, H, Z)
-    !call invoke(periodic_bc(cu), periodic_bc(cv), ....)
-
-    CALL timer_stop(idxt1)
-
-    ! COMPUTE NEW VALUES U,V AND P
-
-    CALL timer_start('Compute new fields', idxt1)
-    CALL invoke_compute_new_fields(unew, uold, vnew, vold, &
-                                   pnew, pold, &
-                                   z, cu, cv, h, tdt%data)
-    CALL timer_stop(idxt1)
-
-    ! PERIODIC CONTINUATION
-    CALL timer_start('PBCs-2',idxt1)
-    CALL invoke_apply_bcs_uvt(UNEW, VNEW, PNEW)
-    CALL timer_stop(idxt1)
-
-    ! Time is in seconds but we never actually need it
-    !CALL increment(time, dt)
+    call invoke_time_step(cu, cv, u, unew, uold, v, vnew, vold, &
+                          p, pnew, pold, h, z, tdt%data)
+    !call invoke( compute_fluxes(...),              &
+    !             periodic_bc(cu),                  &
+    !             periodic_bc(cv),                  &
+    !             periodic_bc(h), periodic_bc(z),   &
+    !             compute_new_fields(...),          &
+    !             periodic_bc(unew), periodic_bc(vnew) periodic_bc(pnew) )
 
     CALL model_write(ncycle, p, u, v)
 
     ! TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
     IF(NCYCLE .GT. 1) then
 
-      CALL timer_start('Time smoothing',idxt1)
-
       CALL invoke_time_smooth(U, UNEW, UOLD, &
                               V, VNEW, VOLD, &
                               P, PNEW, POLD)
-
-      CALL timer_stop(idxt1)
 
     ELSE ! ncycle == 1
 
@@ -148,13 +117,9 @@ program shallow
 
     ENDIF ! ncycle > 1
 
-    CALL timer_start('Field copy',idxt1)
-
     CALL copy_field(UNEW, U)
     CALL copy_field(VNEW, V)
     CALL copy_field(PNEW, P)
-
-    CALL timer_stop(idxt1)
 
   END DO
 
