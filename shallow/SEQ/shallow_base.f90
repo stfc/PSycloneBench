@@ -162,15 +162,15 @@ program shallow
 
   CALL timer_stop(idxt0)
 
-  CALL compute_checksum(pnew, csum)
+  CALL compute_checksum(pnew(1:M,1:N), csum)
   CALL model_write_log("('P CHECKSUM after ',I6,' steps = ',E15.7)", &
                        itmax, csum)
 
-  CALL compute_checksum(unew, csum)
+  CALL compute_checksum(unew(2:M+1,1:N), csum)
   CALL model_write_log("('U CHECKSUM after ',I6,' steps = ',E15.7)", &
                        itmax, csum)
 
-  CALL compute_checksum(vnew, csum)
+  CALL compute_checksum(vnew(1:M,2:N+1), csum)
   CALL model_write_log("('V CHECKSUM after ',I6,' steps = ',E15.7)", &
                        itmax, csum)
 
@@ -185,7 +185,7 @@ CONTAINS
     REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: field
     REAL(KIND=8), INTENT(out) :: val
 
-    val = SUM(field)
+    val = SUM(ABS(field))
 
   END SUBROUTINE compute_checksum
 
