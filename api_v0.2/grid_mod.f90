@@ -22,6 +22,17 @@ module grid_mod
   !! i,j index (e.g. 'shallow' code)
   integer, public, parameter :: STAGGER_SW = 3
 
+  ! Enumeration of the four possible choices for 
+  ! offsetting the grid-point types relative to the T point.
+  !> Points to South and West of T point have same 
+  !! i,j index (e.g. 'shallow' code)
+  integer, public, parameter :: OFFSET_SW = 0
+  integer, public, parameter :: OFFSET_SE = 1
+  integer, public, parameter :: OFFSET_NW = 2
+  !> Points to North and East of T point have same
+  !! i,j index (e.g. NEMO code).
+  integer, public, parameter :: OFFSET_NE = 3
+
   ! Enumeration of boundary-condition types
   !> Grid (model domain) has periodic boundary condition
   integer, public, parameter :: BC_PERIODIC = 0

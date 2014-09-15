@@ -2,6 +2,7 @@ module compute_pnew_mod
   use kind_params_mod
   use kernel_mod
   use argument_mod
+  use grid_mod
   use field_mod
   implicit none
 
@@ -26,13 +27,25 @@ module compute_pnew_mod
      !! we have a single DOF per grid point.
      INTEGER :: ITERATES_OVER = DOFS
 
-     !> This kernel is written assuming that the internal
-     !! regions for each grid-point type begin at the
-     !! following locations on the grid:
-     integer :: tstart(2) = (/ 1, 1 /)
-     integer :: ustart(2) = (/ 2, 1 /)
-     integer :: vstart(2) = (/ 1, 2 /)
-     integer :: fstart(2) = (/ 2, 2 /)
+     !> This kernel is written assuming that the arrays for
+     !! each field type are set-up such that the internal
+     !! region of each field starts at the same array index (for
+     !! both dimensions). If this weren't the case then
+     !! these shifts (which are relative to the indexing used
+     !! for fields on T points) would be non-zero.
+     integer :: u_index_shift(2) = (/ 0, 0 /)
+     integer :: v_index_shift(2) = (/ 0, 0 /)
+     integer :: f_index_shift(2) = (/ 0, 0 /)
+
+     !> Although the staggering of variables used in an Arakawa
+     !! C grid is well defined, the way in which they are indexed is
+     !! an implementation choice. This can be thought of as choosing
+     !! which grid-point types have the same (i,j) index as a T
+     !! point. This kernel assumes that the U,V and F points that
+     !! share the same index as a given T point are those immediately
+     !! to the South and West of it.
+     integer :: index_offset = OFFSET_SW
+
   CONTAINS
     procedure, nopass :: code => compute_pnew_code
   END TYPE compute_pnew_type
@@ -49,9 +62,6 @@ contains
     ! Locals
     integer :: I, J
     real(wp) :: dx, dy
-    integer, dimension(2) :: kern_ushift, kern_vshift
-    integer, dimension(2) :: ushift, vshift
-    type(compute_pnew_type) :: this_kernel
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -95,20 +105,6 @@ contains
     !
     dx = pnew%grid%dx
     dy = pnew%grid%dy
-
-    ! The shifts from T to xx pts assumed by this kernel
-    kern_ushift(1) = this_kernel%ustart(1) - this_kernel%tstart(1)
-    kern_ushift(2) = this_kernel%ustart(2) - this_kernel%tstart(2)
-    kern_vshift(1) = this_kernel%vstart(1) - this_kernel%tstart(1)
-    kern_vshift(2) = this_kernel%vstart(2) - this_kernel%tstart(2)
-
-    ! The shifts we must apply to account for the fact that our
-    ! fields may not have the same relative positioning as
-    ! assumed by the kernel
-    ushift(1) = cu%internal%xstart - pnew%internal%xstart - kern_ushift(1)
-    ushift(2) = cu%internal%ystart - pnew%internal%ystart - kern_ushift(2)
-    vshift(1) = cv%internal%xstart - pnew%internal%xstart - kern_vshift(1)
-    vshift(2) = cv%internal%ystart - pnew%internal%ystart - kern_vshift(2)
 
     DO J=pnew%internal%ystart, pnew%internal%ystop, 1
        DO I=pnew%internal%xstart, pnew%internal%xstop, 1

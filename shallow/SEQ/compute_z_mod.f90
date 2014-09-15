@@ -5,6 +5,7 @@ module compute_z_mod
   use kind_params_mod
   use kernel_mod
   use argument_mod
+  use grid_mod
   use field_mod
   implicit none
 
@@ -28,17 +29,29 @@ module compute_z_mod
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
 
-     !> This kernel is written assuming that the internal
-     !! regions for each grid-point type begin at the
-     !! following locations on the grid:
-     integer :: tstart(2) = (/ 1, 1 /)
-     integer :: ustart(2) = (/ 2, 1 /)
-     integer :: vstart(2) = (/ 1, 2 /)
-     integer :: fstart(2) = (/ 2, 2 /)
 
   contains
     procedure, nopass :: code => compute_z_code
   end type compute_z_type
+
+  !> This kernel is written assuming that the arrays for
+  !! each field type are set-up such that the internal
+  !! region of each field starts at the same array index (for
+  !! both dimensions). If this weren't the case then
+  !! these shifts (which are relative to the indexing used
+  !! for fields on T points) would be non-zero.
+  integer :: u_index_shift(2) = (/ 0, 0 /)
+  integer :: v_index_shift(2) = (/ 0, 0 /)
+  integer :: f_index_shift(2) = (/ 0, 0 /)
+  
+  !> Although the staggering of variables used in an Arakawa
+  !! C grid is well defined, the way in which they are indexed is
+  !! an implementation choice. This can be thought of as choosing
+  !! which grid-point types have the same (i,j) index as a T
+  !! point. This kernel assumes that the U,V and F points that
+  !! share the same index as a given T point are those immediately
+  !! to the South and West of it.
+  integer :: index_offset = OFFSET_SW
 
 contains
 
@@ -53,36 +66,9 @@ contains
     ! Locals
     integer :: I, J
     real(wp) :: dx, dy
-    integer, dimension(2) :: kern_ushift, kern_vshift, kern_tshift
-    integer, dimension(2) :: ushift, vshift, tshift
-    type(compute_z_type) :: this_kernel
 
     dx = zfld%grid%dx
     dy = zfld%grid%dy
-
-    ! In original shallow, F field internal points began at (2,2), U internal
-    ! points at (2,1), V internal points at (1,2) and T internal pts at 1,1.
-    !                    F      U      V       T
-    !                  (2,2)  (2, 1) (1, 2)  (1,1)
-    ! Original shift          (0,-1) (-1,0)  (-1,-1)
-
-    ! The shifts from F to xx pts assumed by this kernel
-    kern_ushift(1) = this_kernel%ustart(1) - this_kernel%fstart(1)
-    kern_ushift(2) = this_kernel%ustart(2) - this_kernel%fstart(2)
-    kern_vshift(1) = this_kernel%vstart(1) - this_kernel%fstart(1)
-    kern_vshift(2) = this_kernel%vstart(2) - this_kernel%fstart(2)
-    kern_tshift(1) = this_kernel%tstart(1) - this_kernel%fstart(1)
-    kern_tshift(2) = this_kernel%tstart(2) - this_kernel%fstart(2)
-
-    ! The shifts we must apply to account for the fact that our
-    ! fields may not have the same relative positioning as
-    ! assumed by the kernel
-    ushift(1) = ufld%internal%xstart - zfld%internal%xstart - kern_ushift(1)
-    ushift(2) = ufld%internal%ystart - zfld%internal%ystart - kern_ushift(2)
-    vshift(1) = vfld%internal%xstart - zfld%internal%xstart - kern_vshift(1)
-    vshift(2) = vfld%internal%ystart - zfld%internal%ystart - kern_vshift(2)
-    tshift(1) = pfld%internal%xstart - zfld%internal%xstart - kern_tshift(1)
-    tshift(2) = pfld%internal%ystart - zfld%internal%ystart - kern_tshift(2)
 
     do J=zfld%internal%ystart, zfld%internal%ystop, 1
        do I=zfld%internal%xstart, zfld%internal%xstop, 1
