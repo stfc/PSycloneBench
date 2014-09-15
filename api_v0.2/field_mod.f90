@@ -856,8 +856,8 @@ contains
     type(r2d_field_type), intent(in) :: field
     real(wp) :: val
 
-    val = SUM(field%data(field%internal%xstart:field%internal%xstop, &
-                         field%internal%ystart:field%internal%ystop))
+    val = SUM( ABS(field%data(field%internal%xstart:field%internal%xstop, &
+                              field%internal%ystart:field%internal%ystop)) )
 
   end function field_checksum
 
