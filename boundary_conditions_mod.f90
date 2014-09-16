@@ -192,10 +192,10 @@ contains
   
   !================================================
 
-  subroutine invoke_bc_ssh(rtime, ssha)
+  subroutine invoke_bc_ssh(istep, ssha)
     implicit none
-    real(wp),             intent(in)    :: rtime
-    type(r2d_field_type), intent(inout) :: ssha
+    integer,            intent(in)    :: istep
+    type(r2d_field),    intent(inout) :: ssha
     ! Locals
     real(wp) :: amp_tide, omega_tide
     integer  :: ji, jj
@@ -209,7 +209,7 @@ contains
     DO jj = ssha%internal%ystart, ssha%internal%ystop
        DO ji = ssha%internal%xstart, ssha%internal%xstop
           call bc_ssh_code(ji, jj, ssha%grid%tmask, &
-                           rtime, ssha%data)
+                           istep, ssha%data)
        END DO
     END DO
 
@@ -217,17 +217,19 @@ contains
   
   !================================================
 
-  subroutine bc_ssh_code(ji, jj, tmask, rtime, ssha)
+  subroutine bc_ssh_code(ji, jj, tmask, istep, ssha)
+    use model_mod, only: rdt
     implicit none
     integer, intent(in)  :: ji, jj
     integer, dimension(:,:),  intent(in)    :: tmask
-    real(wp),                 intent(in)    :: rtime
+    integer,                  intent(in)    :: istep
     real(wp), dimension(:,:), intent(inout) :: ssha
     ! Locals
-    real(wp) :: amp_tide, omega_tide
+    real(wp) :: amp_tide, omega_tide, rtime
 
     amp_tide   = 0.2_wp
     omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
+    rtime = real(istep, wp) * rdt
 
     if(tmask(ji,jj) <= 0) return
     IF     (tmask(ji,jj-1) < 0) THEN
@@ -248,7 +250,7 @@ contains
   !! boundary conditions for u-velocity
   subroutine invoke_bc_solid_u(ua)
     implicit none
-    type(r2d_field_type), intent(inout) :: ua
+    type(r2d_field), intent(inout) :: ua
     ! Locals
     integer  :: ji, jj
 
@@ -288,7 +290,7 @@ contains
   !! that applies the solid-bc to a field on V pts.
   subroutine invoke_bc_solid_v(va)
     implicit none
-    type(r2d_field_type), intent(inout) :: va
+    type(r2d_field), intent(inout) :: va
     ! Locals
     integer  :: ji, jj
 
@@ -323,8 +325,8 @@ contains
   !! ua and va in du/dn should be the specified tidal forcing
   subroutine invoke_bc_flather_u(ua, hu, sshn_u)
     implicit none
-    type(r2d_field_type), intent(inout) :: ua
-    type(r2d_field_type), intent(in) :: hu, sshn_u
+    type(r2d_field), intent(inout) :: ua
+    type(r2d_field), intent(in) :: hu, sshn_u
     ! Locals
     integer  :: ji, jj
 
@@ -378,8 +380,8 @@ contains
   !! Flather boundary condition to the v component of velocity.
   subroutine invoke_bc_flather_v(va, hv, sshn_v)
     implicit none
-    type(r2d_field_type), intent(inout) :: va
-    type(r2d_field_type), intent(in)    :: hv, sshn_v
+    type(r2d_field), intent(inout) :: va
+    type(r2d_field), intent(in)    :: hv, sshn_v
     ! Locals
     integer  :: ji, jj
 

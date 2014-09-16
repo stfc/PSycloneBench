@@ -16,16 +16,16 @@ program gocean2d
   !> The grid on which our fields are defined
   type(grid_type), target :: model_grid
   !> Current ('now') sea-surface height at different grid points
-  type(r2d_field_type) :: sshn_u_fld, sshn_v_fld, sshn_t_fld
+  type(r2d_field) :: sshn_u_fld, sshn_v_fld, sshn_t_fld
   !> 'After' sea-surface height at different grid points
-  type(r2d_field_type) :: ssha_u_fld, ssha_v_fld, ssha_t_fld
+  type(r2d_field) :: ssha_u_fld, ssha_v_fld, ssha_t_fld
   !> Distance from sea-bed to mean sea level at the different grid points.
   !! This is not time varying.
-  type(r2d_field_type) :: ht_fld, hu_fld, hv_fld
+  type(r2d_field) :: ht_fld, hu_fld, hv_fld
   !> Current ('now') velocity components
-  type(r2d_field_type) :: un_fld, vn_fld
+  type(r2d_field) :: un_fld, vn_fld
   !> 'After' velocity components
-  type(r2d_field_type) :: ua_fld, va_fld
+  type(r2d_field) :: ua_fld, va_fld
 
   ! time stepping index
   integer  :: istp   
@@ -42,27 +42,27 @@ program gocean2d
   ! Create fields on this grid
 
   ! Sea-surface height now (current time step)
-  sshn_u_fld = r2d_field_type(model_grid, U_POINTS)
-  sshn_v_fld = r2d_field_type(model_grid, V_POINTS)
-  sshn_t_fld = r2d_field_type(model_grid, T_POINTS)
+  sshn_u_fld = r2d_field(model_grid, U_POINTS)
+  sshn_v_fld = r2d_field(model_grid, V_POINTS)
+  sshn_t_fld = r2d_field(model_grid, T_POINTS)
 
   ! Sea-surface height 'after' (next time step)
-  ssha_u_fld = r2d_field_type(model_grid, U_POINTS)
-  ssha_v_fld = r2d_field_type(model_grid, V_POINTS)
-  ssha_t_fld = r2d_field_type(model_grid, T_POINTS)
+  ssha_u_fld = r2d_field(model_grid, U_POINTS)
+  ssha_v_fld = r2d_field(model_grid, V_POINTS)
+  ssha_t_fld = r2d_field(model_grid, T_POINTS)
 
   ! Distance from sea-bed to mean sea level
-  hu_fld = r2d_field_type(model_grid, U_POINTS)
-  hv_fld = r2d_field_type(model_grid, V_POINTS)
-  ht_fld = r2d_field_type(model_grid, T_POINTS)
+  hu_fld = r2d_field(model_grid, U_POINTS)
+  hv_fld = r2d_field(model_grid, V_POINTS)
+  ht_fld = r2d_field(model_grid, T_POINTS)
 
   ! Velocity components now (current time step)
-  un_fld = r2d_field_type(model_grid, U_POINTS)
-  vn_fld = r2d_field_type(model_grid, V_POINTS)
+  un_fld = r2d_field(model_grid, U_POINTS)
+  vn_fld = r2d_field(model_grid, V_POINTS)
 
   ! Velocity components 'after' (next time step)
-  ua_fld = r2d_field_type(model_grid, U_POINTS)
-  va_fld = r2d_field_type(model_grid, V_POINTS)
+  ua_fld = r2d_field(model_grid, U_POINTS)
+  va_fld = r2d_field(model_grid, V_POINTS)
 
   !! setup model initial conditions
   call initialisation(ht_fld, hu_fld, hv_fld, &
@@ -99,7 +99,6 @@ subroutine step(grid, istp, &
   use kind_params_mod
   use grid_mod
   use field_mod
-  use model_mod, only: rdt
   use momentum_mod, only: invoke_momentum_u, invoke_momentum_v
   use continuity_mod, only: invoke_continuity
   use time_update_mod, only: invoke_next_sshu, invoke_next_sshv
@@ -108,13 +107,9 @@ subroutine step(grid, istp, &
   implicit none
   type(grid_type), intent(in) :: grid
   integer,         intent(in) :: istp
-  type(r2d_field_type), intent(inout) :: un, vn, sshn, sshn_u, sshn_v
-  type(r2d_field_type), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
-  type(r2d_field_type), intent(in) :: hu, hv, ht
-  ! Locals
-  real(wp) :: rtime
-
-  rtime = REAL(istp, wp) * rdt
+  type(r2d_field), intent(inout) :: un, vn, sshn, sshn_u, sshn_v
+  type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
+  type(r2d_field), intent(in) :: hu, hv, ht
 
   CALL invoke_continuity(ssha, sshn, sshn_u, sshn_v, &
                          hu, hv, un, vn)
@@ -128,7 +123,7 @@ subroutine step(grid, istp, &
                          ssha_v, sshn, sshn_u, sshn_v)
 
   ! Apply open and solid boundary conditions
-  CALL invoke_bc_ssh(rtime, ssha)
+  CALL invoke_bc_ssh(istp, ssha)
   CALL invoke_bc_solid_u(ua)
   CALL invoke_bc_solid_v(va)
   CALL invoke_bc_flather_u(ua, hu, sshn_u)
