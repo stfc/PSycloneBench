@@ -77,8 +77,9 @@ program shallow
   INTEGER :: idxt0, idxt1
 
   ! Create the model grid
-  model_grid = grid_type(ARAKAWA_C, STAGGER_SW, &
-                         (/BC_PERIODIC,BC_PERIODIC,BC_NONE/))
+  model_grid = grid_type(ARAKAWA_C,                           &
+                         (/BC_PERIODIC,BC_PERIODIC,BC_NONE/), &
+                         OFFSET_SW)
 
   !  ** Initialisations of model parameters (dt etc) ** 
   CALL model_init(model_grid)

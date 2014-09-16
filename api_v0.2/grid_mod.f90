@@ -11,17 +11,6 @@ module grid_mod
   integer, public, parameter :: ARAKAWA_C = 0
   integer, public, parameter :: ARAKAWA_B = 1
 
-  ! Enumeration of the four possible ways of staggering
-  ! the fields.
-  !> Points to North and East of T point have same
-  !! i,j index (e.g. NEMO code).
-  integer, public, parameter :: STAGGER_NE = 0
-  integer, public, parameter :: STAGGER_NW = 1
-  integer, public, parameter :: STAGGER_SE = 2
-  !> Points to South and West of T point have same 
-  !! i,j index (e.g. 'shallow' code)
-  integer, public, parameter :: STAGGER_SW = 3
-
   ! Enumeration of the four possible choices for 
   ! offsetting the grid-point types relative to the T point.
   !> Points to South and West of T point have same 
@@ -50,8 +39,8 @@ module grid_mod
      !> The type of grid this is (e.g. Arakawa C Grid)
      integer :: name
      !> Specifies the convention by which grid-point
-     !! types are indexed.
-     integer :: stagger
+     !! types are indexed relative to a T point.
+     integer :: offset
      !> Total number of grid points
      integer :: npts
      !> Extent of T-point grid in x. Note that this is the whole grid,
@@ -120,14 +109,28 @@ contains
 
   !> Basic constructor for the grid type. Full details
   !! are fleshed-out by the grid_init() routine.
-  function grid_constructor(grid_name, grid_stagger, &
-                            boundary_conditions) result(self)
+  function grid_constructor(grid_name, &
+                            boundary_conditions, grid_offsets) result(self)
     implicit none
     integer, intent(in) :: grid_name
-    integer, intent(in) :: grid_stagger
-    !> The boundary conditions that this field is subject to
+    !> The boundary conditions that will be applied to all fields that
+    !! are defined on this grid.
     integer, dimension(3), intent(in) :: boundary_conditions
+    !> The choice of the way the indices of the various grid-point types
+    !! are offset from the T point. This is an optional argument as it
+    !! will be supplied by PSyclone-modified call of this constructor.
+    !! PSyclone will obtain the value of this offset from the kernel
+    !! metadata.
+    integer, optional, intent(in) :: grid_offsets
     type(grid_type), target :: self
+    ! Locals
+    integer :: grid_stagger
+
+    if(present(grid_offsets))then
+       grid_stagger = grid_offsets
+    else
+       grid_stagger = OFFSET_NE
+    end if
 
     ! This case statement is mainly to check that the caller
     ! has specified a valid value for grid_name.
@@ -140,24 +143,25 @@ contains
     case default
        write(*,*) 'grid_constructor: ERROR: unsupported grid type: ', &
                   grid_name
-       stop
+       call gocean_stop('')
     end select
 
-    ! Ditto for the choice of grid staggering
+    ! Ditto for the choice of how the grid-point types are indexed
+    ! relative to the T point
     select case(grid_stagger)
 
-    case(STAGGER_NE)
-       self%stagger = STAGGER_NE
-    case(STAGGER_NW)
-       self%stagger = STAGGER_NW
-    case(STAGGER_SE)
-       self%stagger = STAGGER_SE
-    case(STAGGER_SW)
-       self%stagger = STAGGER_SW
+    case(OFFSET_NE)
+       self%offset = OFFSET_NE
+    case(OFFSET_NW)
+       self%offset = OFFSET_NW
+    case(OFFSET_SE)
+       self%offset = OFFSET_SE
+    case(OFFSET_SW)
+       self%offset = OFFSET_SW
     case default
-       write(*,*) 'grid_constructor: ERROR: unsupported grid stagger: ', &
+       write(*,*) 'grid_constructor: ERROR: unsupported relative offsets of grid types: ', &
                   grid_stagger
-       stop
+       call gocean_stop('')
     end select
 
     ! Store the boundary conditions that the model domain is

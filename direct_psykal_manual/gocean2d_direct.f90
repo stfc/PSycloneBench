@@ -30,11 +30,12 @@ program gocean2d
   ! time stepping index
   integer  :: istp   
 
-  ! Create the model grid. We use a NE staggering (i.e. the U, V and F 
-  ! points to the North and East of a T point all have the same i,j index). 
-  ! This is the same staggering as used by NEMO.
-  model_grid = grid_type(ARAKAWA_C, STAGGER_NE, &
-                         (/BC_EXTERNAL,BC_EXTERNAL,BC_NONE/))
+  ! Create the model grid. We use a NE offset (i.e. the U, V and F
+  ! points immediately to the North and East of a T point all have the
+  ! same i,j index).  This is the same offset scheme as used by NEMO.
+  model_grid = grid_type(ARAKAWA_C,                           &
+                         (/BC_EXTERNAL,BC_EXTERNAL,BC_NONE/), &
+                         OFFSET_NE)
 
   !! read in model parameters and configure the model grid 
   CALL model_init(model_grid)

@@ -75,7 +75,9 @@ module field_mod
   public set_field
   public field_checksum
 
-! Grid points on an Arakawa C grid with NE staggering are arranged like so:
+! Grid points on an Arakawa C grid with NE offset (i.e. the U,V and F pts
+! immediately to the North and East of a T point share its grid indices) 
+! are arranged like so:
 !
 !v(1,ny)----f(1,ny)---v(i-1,ny)--f(i-1,ny)--v(i,ny)----f(i,ny)--v(nx,ny)---f(nx,ny)  
 !|          |         |          |          |          |        |          |        
@@ -154,8 +156,8 @@ contains
     case(ALL_POINTS)
        call field_init(self)
     case default
-       stop 'r2d_field_constructor: ERROR: invalid specifier for '//&
-            'type of mesh points'
+       call gocean_stop('r2d_field_constructor: ERROR: invalid '//&
+                        'specifier for type of mesh points')
     end select
 
     ! Compute and store dimensions of internal region of field
@@ -194,7 +196,8 @@ contains
     ! bounds default to 1 in called unit.
     ! However, all loops will be in the generated, middle layer and
     ! the generator knows the array bounds. This may give us the
-    ! ability to solve this problem.
+    ! ability to solve this problem (by passing array bounds to the
+    ! kernels).
     allocate(self%data(1:self%internal%xstop+1, &
                        1:self%internal%ystop+1),&
                        Stat=ierr)
@@ -236,16 +239,16 @@ contains
 
     fld%defined_on = U_POINTS
 
-    select case(fld%grid%stagger)
+    select case(fld%grid%offset)
 
-    case(STAGGER_SW)
+    case(OFFSET_SW)
        call cu_sw_init(fld)
 
-    case(STAGGER_NE)
+    case(OFFSET_NE)
        call cu_ne_init(fld)
 
     case default
-       call gocean_stop('cu_field_init: ERROR - unsupported stagger!')
+       call gocean_stop('cu_field_init: ERROR - unsupported grid offset!')
 
     end select
 
@@ -258,7 +261,7 @@ contains
     type(r2d_field), intent(inout) :: fld
 
     ! Set up a field defined on U points when the grid has
-    ! a South-West staggering:
+    ! a South-West offset:
 
     !   vi-1j+1--fij+1---vij+1---fi+1j+1
     !   |        |       |       |
@@ -291,7 +294,7 @@ contains
        fld%internal%xstart = fld%grid%simulation_domain%xstart
        fld%internal%xstop  = fld%grid%simulation_domain%xstop
     else
-       ! When updating a quantity on U points with this staggering
+       ! When updating a quantity on U points with this offset convention
        ! we write to (using 'x' to indicate a location that is written,
        !                    'b' a boundary point and
        !                    'o' a point that is external to the domain):
@@ -337,8 +340,8 @@ contains
     implicit none
     type(r2d_field), intent(inout) :: fld
 
-    ! Set up a field defined on U points when the grid has
-    ! a North-East staggering:
+    ! Set up a field defined on U points when the grid types have 
+    ! a North-East offset relative to the T point.
 
     ! It is the T points that define the whole domain and we are
     ! simulating a region within this domain. As a minimum, we will
@@ -346,7 +349,7 @@ contains
     ! simulated domain in order to specify boundary conditions. The U
     ! pts on the boundary will then lie between the last external and
     ! first internal T points. 
-    ! With a (N)E stagger this means:
+    ! With a (N)E offset this means:
 
     ! ji indexing: 
     ! Lowermost i index of the u points will be the same as the T's.
@@ -361,7 +364,7 @@ contains
     ! unused. U points with jj one greater than lowest ext. T pts will
     ! be *boundary* points. U pts with jj==ny will be boundary points.
 
-    ! When updating a quantity on U points with this staggering
+    ! When updating a quantity on U points with this offset
     ! we write to (using 'x' to indicate a location that is written and 
     ! 'b' a boundary point):
     !
@@ -385,15 +388,13 @@ contains
       fld%internal%xstart = fld%grid%simulation_domain%xstart
       fld%internal%xstop  = fld%grid%simulation_domain%xstop - 1
     else
-      write(*,*) 'ERROR: cu_ne_init: implement periodic boundary conditions!'
-      stop
+      call gocean_stop('ERROR: cu_ne_init: implement periodic boundary conditions!')
     end if
     if(fld%grid%boundary_conditions(2) /= BC_PERIODIC)then
       fld%internal%ystart = fld%grid%simulation_domain%ystart
       fld%internal%ystop  = fld%grid%simulation_domain%ystop
     else
-      write(*,*) 'ERROR: cu_ne_init: implement periodic boundary conditions!'
-      stop
+      call gocean_stop('ERROR: cu_ne_init: implement periodic BCs!')
     end if
 
 !> \todo Is this concept of halo definitions useful?
@@ -409,16 +410,16 @@ contains
 
     fld%defined_on = V_POINTS
 
-    select case(fld%grid%stagger)
+    select case(fld%grid%offset)
 
-    case(STAGGER_SW)
+    case(OFFSET_SW)
        call cv_sw_init(fld)
 
-    case(STAGGER_NE)
+    case(OFFSET_NE)
        call cv_ne_init(fld)
 
     case default
-       stop 'cv_field_init: ERROR - unsupported stagger!'
+       call gocean_stop('cv_field_init: ERROR - unsupported grid offset!')
 
     end select
 
@@ -503,7 +504,7 @@ contains
     ! (see diagram at start of module). It is V(ny-1,:) that are the 
     ! boundary points.
 
-    ! When updating a quantity on V points with this staggering
+    ! When updating a quantity on V points with this offset
     ! we write to (using 'x' to indicate a location that is written):
     !
     ! i=1       Nx
@@ -541,16 +542,16 @@ contains
 
     fld%defined_on = T_POINTS
 
-    select case(fld%grid%stagger)
+    select case(fld%grid%offset)
 
-    case(STAGGER_SW)
+    case(OFFSET_SW)
        call ct_sw_init(fld)
 
-    case(STAGGER_NE)
+    case(OFFSET_NE)
        call ct_ne_init(fld)
 
     case default
-       stop 'ct_field_init: ERROR - unsupported stagger!'
+       call gocean_stop('ct_field_init: ERROR - unsupported grid offset!')
 
     end select
 
@@ -605,7 +606,7 @@ contains
     implicit none
     type(r2d_field), intent(inout) :: fld
 
-    ! When updating a quantity on T points with a NE staggering
+    ! When updating a quantity on T points with a NE offset
     ! we write to (using x to indicate a location that is written):
     !
     ! i=1          Nx
@@ -646,16 +647,16 @@ contains
 
     fld%defined_on = F_POINTS
 
-    select case(fld%grid%stagger)
+    select case(fld%grid%offset)
 
-    case(STAGGER_SW)
+    case(OFFSET_SW)
        call cf_sw_init(fld)
 
-    case(STAGGER_NE)
+    case(OFFSET_NE)
        call cf_ne_init(fld)
 
     case default
-       call gocean_stop('cf_field_init: ERROR - unsupported stagger!')
+       call gocean_stop('cf_field_init: ERROR - unsupported grid offset!')
 
     end select
 
