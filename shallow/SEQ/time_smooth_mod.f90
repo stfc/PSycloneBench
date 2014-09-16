@@ -51,9 +51,9 @@ CONTAINS
   !! kernel
   SUBROUTINE manual_invoke_time_smooth(field, field_new, field_old)
     IMPLICIT none
-    type(r2d_field_type), intent(in)    :: field
-    type(r2d_field_type), intent(in)    :: field_new
-    type(r2d_field_type), intent(inout) :: field_old
+    type(r2d_field), intent(in)    :: field
+    type(r2d_field), intent(in)    :: field_new
+    type(r2d_field), intent(inout) :: field_old
     ! Locals
     integer :: i, j
     integer :: idim1, idim2

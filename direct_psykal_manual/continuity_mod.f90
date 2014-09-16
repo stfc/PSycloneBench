@@ -20,6 +20,26 @@ module continuity_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
+
+     !> This kernel is written assuming that the arrays for
+     !! each field type are set-up such that the internal
+     !! region of each field starts at the same array index (for
+     !! both dimensions). If this weren't the case then
+     !! these shifts (which are relative to the indexing used
+     !! for fields on T points) would be non-zero.
+     integer :: u_index_shift(2) = (/ 0, 0 /)
+     integer :: v_index_shift(2) = (/ 0, 0 /)
+     integer :: f_index_shift(2) = (/ 0, 0 /)
+
+     !> Although the staggering of variables used in an Arakawa
+     !! C grid is well defined, the way in which they are indexed is
+     !! an implementation choice. This can be thought of as choosing
+     !! which grid-point types have the same (i,j) index as a T
+     !! point. This kernel assumes that the U,V and F points that
+     !! share the same index as a given T point are those immediately
+     !! to the North and East of it.
+     integer :: index_offset = OFFSET_NE
+
   contains
     procedure, nopass :: code => continuity_code
   end type continuity
@@ -31,18 +51,18 @@ contains
   subroutine invoke_continuity(ssha, sshn, sshn_u, sshn_v, hu, hv, un, vn)
     use model_mod, only: rdt
     implicit none
-    type(r2d_field_type),     intent(inout) :: ssha
-    type(r2d_field_type),     intent(in) :: sshn, sshn_u, sshn_v
-    type(r2d_field_type),     intent(in) :: hu, hv, un, vn
+    type(r2d_field),     intent(inout) :: ssha
+    type(r2d_field),     intent(in) :: sshn, sshn_u, sshn_v
+    type(r2d_field),     intent(in) :: hu, hv, un, vn
     ! Locals
     integer :: ji, jj
 
     do jj = ssha%internal%ystart, ssha%internal%ystop, 1
        do ji = ssha%internal%xstart, ssha%internal%xstop, 1
 
-          call continuity_code(ji, jj, rdt, ssha%grid%e12t,   &
-                               ssha%data, sshn%data,     &
-                               sshn_u%data, sshn_v%data, &
+          call continuity_code(ji, jj, rdt, ssha%grid%e12t, &
+                               ssha%data, sshn%data,        &
+                               sshn_u%data, sshn_v%data,    &
                                hu%data, hv%data, un%data, vn%data)
        end do
     end do
@@ -59,7 +79,8 @@ contains
     real(wp),                 intent(in)  :: rdt
     real(wp), dimension(:,:), intent(in)  :: e12t
     real(wp), dimension(:,:), intent(out) :: ssha
-    real(wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, hu, hv, un, vn
+    real(wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, &
+                                             hu, hv, un, vn
     ! Locals
     real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
 
@@ -68,7 +89,8 @@ contains
     rtmp3 = (sshn_v(ji  ,jj  ) + hv(ji  ,jj  )) * vn(ji  ,jj  )
     rtmp4 = (sshn_v(ji  ,jj-1) + hv(ji  ,jj-1)) * vn(ji  ,jj-1)
 
-    ssha(ji,jj) = sshn(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * rdt / e12t(ji,jj)
+    ssha(ji,jj) = sshn(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+                    rdt / e12t(ji,jj)
 
   end subroutine continuity_code
 

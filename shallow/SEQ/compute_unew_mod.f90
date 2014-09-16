@@ -57,8 +57,8 @@ contains
 
   subroutine manual_invoke_compute_unew(unew, uold, z, cv, h, tdt)
     implicit none
-    type(r2d_field_type), intent(inout) :: unew
-    type(r2d_field_type), intent(in)    :: uold, z, cv, h
+    type(r2d_field), intent(inout) :: unew
+    type(r2d_field), intent(in)    :: uold, z, cv, h
     real(wp), intent(in) :: tdt
     ! Locals
     integer  :: I, J

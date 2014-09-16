@@ -32,7 +32,7 @@ contains
   subroutine manual_invoke_apply_bcs_ct(fld)
     use field_mod
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
     ! Locals
     integer :: ihalo
 

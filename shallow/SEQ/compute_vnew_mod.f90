@@ -57,8 +57,8 @@ CONTAINS
 
   subroutine manual_invoke_compute_vnew(vnew, vold, z, cu, h, tdt)
     implicit none
-    type(r2d_field_type), intent(inout) :: vnew
-    type(r2d_field_type), intent(in)    :: vold, z, cu, h
+    type(r2d_field), intent(inout) :: vnew
+    type(r2d_field), intent(in)    :: vold, z, cu, h
     real(wp), intent(in) :: tdt
     ! Locals
     integer :: I, J

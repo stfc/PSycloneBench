@@ -120,7 +120,7 @@ contains
   SUBROUTINE model_write(ncycle, pfld, ufld, vfld)
     IMPLICIT none
     integer,                      intent(in) :: ncycle
-    type(r2d_field_type), intent(in), target :: pfld, ufld, vfld
+    type(r2d_field), intent(in), target :: pfld, ufld, vfld
     ! Locals
     real(kind=wp), dimension(:,:), pointer :: p, u, v
     INTEGER :: m, n

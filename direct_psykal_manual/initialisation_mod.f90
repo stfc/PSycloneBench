@@ -12,9 +12,9 @@ contains
     use grid_mod
     !use boundary_conditions_mod, only: bc
     implicit none
-    type(r2d_field_type), intent(inout) :: ht_fld, hu_fld, hv_fld
-    type(r2d_field_type), intent(inout) :: sshn_t_fld, sshn_u_fld, sshn_v_fld
-    type(r2d_field_type), intent(inout) :: un_fld, vn_fld
+    type(r2d_field), intent(inout) :: ht_fld, hu_fld, hv_fld
+    type(r2d_field), intent(inout) :: sshn_t_fld, sshn_u_fld, sshn_v_fld
+    type(r2d_field), intent(inout) :: un_fld, vn_fld
 
     ! define (or read in) initial ssh and velocity fields
     !         ! split this part into ssh, sshu, sshv, u, v kernels 

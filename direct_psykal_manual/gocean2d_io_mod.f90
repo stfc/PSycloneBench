@@ -104,7 +104,7 @@ contains
     implicit none
     type(grid_type), intent(in) :: grid
     integer, intent(in) :: istp
-    type(r2d_field_type), intent(in) :: ht, sshn, un, vn
+    type(r2d_field), intent(in) :: ht, sshn, un, vn
     ! Locals
     integer :: ji, jj
     real(wp) :: rtmp1, rtmp2

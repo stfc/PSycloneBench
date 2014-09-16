@@ -5,10 +5,10 @@ MODULE model_mod
   use timing_mod, ONLY: timer_init, timer_report
   implicit none
 
-  INTEGER :: itmax   !< number of timesteps
+  integer :: itmax   !< number of timesteps
 
-  TYPE(scalar_field_type) :: dt  !< model timestep (seconds)
-  TYPE(scalar_field_type) :: tdt !< 2xdt apart from first step when is just dt
+  type(scalar_field) :: dt  !< model timestep (seconds)
+  type(scalar_field) :: tdt !< 2xdt apart from first step when is just dt
 
   ! solution arrays
   ! Fields are allocated with extents (M+1,N+1).
@@ -93,7 +93,7 @@ CONTAINS
     CALL grid_init(grid, m, n, dxloc, dyloc)
 
     ! Set model time-step
-    CALL set(dt, dt_loc)
+    CALL set_field(dt, dt_loc)
 
     ! Initialise time-smoothing module
     CALL time_smooth_init(alpha_loc)

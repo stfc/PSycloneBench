@@ -13,7 +13,7 @@ contains
 
   subroutine manual_invoke_apply_bcs(field)
     implicit none
-    type(r2d_field_type), intent(inout) :: field
+    type(r2d_field), intent(inout) :: field
     ! Locals
     integer :: ihalo
 

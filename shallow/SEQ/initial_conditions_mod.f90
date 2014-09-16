@@ -27,7 +27,7 @@ CONTAINS
   !! recomputed for every grid point.
   SUBROUTINE init_initial_condition_params(pfld)
     IMPLICIT none
-    type(r2d_field_type), intent(in) :: pfld
+    type(r2d_field), intent(in) :: pfld
 
     di = TPI/pfld%internal%nx
     dj = TPI/pfld%internal%ny
@@ -39,7 +39,7 @@ CONTAINS
 
   subroutine invoke_init_stream_fn_kernel(psifld)
     implicit none
-    type(r2d_field_type), intent(inout) :: psifld
+    type(r2d_field), intent(inout) :: psifld
     ! Locals
     integer :: idim1, idim2
     integer :: i, j
@@ -88,7 +88,7 @@ CONTAINS
 
   SUBROUTINE init_pressure(pfld)
     IMPLICIT none
-    type(r2d_field_type), target, intent(inout) :: pfld
+    type(r2d_field), target, intent(inout) :: pfld
     REAL(KIND=wp), DIMENSION(:,:), pointer :: p
     ! Locals
     INTEGER :: i, j, idim1, idim2
@@ -124,9 +124,9 @@ CONTAINS
   subroutine init_velocity_u(ufld, psifld)
     implicit none
     ! The horizontal velocity field to initialise
-    type(r2d_field_type), intent(inout), target :: ufld
+    type(r2d_field), intent(inout), target :: ufld
     ! The stream function used in the initialisation
-    type(r2d_field_type), intent(in),    target :: psifld
+    type(r2d_field), intent(in),    target :: psifld
     ! Locals
     real(kind=wp), pointer, dimension(:,:) :: u, psi
     integer  :: i, j, ipsi
@@ -158,9 +158,9 @@ CONTAINS
   SUBROUTINE init_velocity_v(vfld, psifld)
     implicit none
     ! The vertical velocity field to initialise
-    type(r2d_field_type), intent(inout), target :: vfld
+    type(r2d_field), intent(inout), target :: vfld
     ! The stream function used in the initialisation
-    type(r2d_field_type), intent(in),    target :: psifld
+    type(r2d_field), intent(in),    target :: psifld
     ! Locals
     real(kind=wp), pointer, dimension(:,:) :: v, psi
     integer  :: I, J

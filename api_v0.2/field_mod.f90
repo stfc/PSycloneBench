@@ -35,21 +35,21 @@ module field_mod
      type(halo_type), dimension(:), allocatable :: halo
   end type field_type
 
-  type, public, extends(field_type) :: scalar_field_type
+  type, public, extends(field_type) :: scalar_field
      real(wp) :: data
-  end TYPE scalar_field_type
+  end TYPE scalar_field
 
-  type, public, extends(field_type) :: r2d_field_type
+  type, public, extends(field_type) :: r2d_field
      !> Array holding the actual field values
      real(wp), dimension(:,:), allocatable :: data
-  end type r2d_field_type
+  end type r2d_field
 
-  interface set
-     module procedure set_scalar_field
-  end interface set
+  !interface set_field
+  !   module procedure set_scalar_field
+  !end interface set_field
 
   !> Interface for the copy_field operation. Overloaded to take
-  !! a scalar, an array or an r2d_field_type.
+  !! a scalar, an array or an r2d_field type.
   !! \todo Remove support for raw arrays from this interface.
   interface copy_field
      module procedure copy_scalar_field,                            &
@@ -57,22 +57,22 @@ module field_mod
                       copy_2dfield, copy_2dfield_patch
   end interface copy_field
 
-  interface increment
-     module procedure increment_scalar_field
-  end interface increment
+  interface increment_field
+     module procedure increment_scalar_field, increment_scalar_field_r8
+  end interface increment_field
 
 !  interface field_type
 !     module procedure field_constructor
 !  end interface field_type
 
-  ! User-defined constructor for r2d_field_type objects
-  interface r2d_field_type
+  ! User-defined constructor for r2d_field type objects
+  interface r2d_field
      module procedure r2d_field_constructor
-  end interface r2d_field_type
+  end interface r2d_field
 
-  public increment
+  public increment_field
   public copy_field
-  public set
+  public set_field
   public field_checksum
 
 ! Grid points on an Arakawa C grid with NE staggering are arranged like so:
@@ -134,7 +134,7 @@ contains
     !> Which grid-point type the field is defined on
     integer,         intent(in)          :: grid_points
     ! Local declarations
-    type(r2d_field_type) :: self
+    type(r2d_field) :: self
     integer :: ierr
 
     ! Set this field's grid pointer to point to the grid pointed to
@@ -208,7 +208,7 @@ contains
 
   subroutine field_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
     ! Locals
     integer :: M, N
 
@@ -232,7 +232,7 @@ contains
 
   subroutine cu_field_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     fld%defined_on = U_POINTS
 
@@ -255,7 +255,7 @@ contains
 
   subroutine cu_sw_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     ! Set up a field defined on U points when the grid has
     ! a South-West staggering:
@@ -335,7 +335,7 @@ contains
 
   subroutine cu_ne_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     ! Set up a field defined on U points when the grid has
     ! a North-East staggering:
@@ -405,7 +405,7 @@ contains
 
   subroutine cv_field_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     fld%defined_on = V_POINTS
 
@@ -428,7 +428,7 @@ contains
 
   subroutine cv_sw_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     if(fld%grid%boundary_conditions(2) == BC_PERIODIC)then
        ! When implementing periodic boundary conditions, all
@@ -487,7 +487,7 @@ contains
 
   subroutine cv_ne_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     ! ji indexing:
     ! Lowermost ji index of the V points will be the same as the T's.
@@ -537,7 +537,7 @@ contains
 
   subroutine ct_field_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     fld%defined_on = T_POINTS
 
@@ -560,7 +560,7 @@ contains
 
   subroutine ct_sw_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     ! When updating a quantity on T points we write to:
     ! (using x to indicate a location that is written):
@@ -603,7 +603,7 @@ contains
 
   subroutine ct_ne_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     ! When updating a quantity on T points with a NE staggering
     ! we write to (using x to indicate a location that is written):
@@ -642,7 +642,7 @@ contains
 
   subroutine cf_field_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     fld%defined_on = F_POINTS
 
@@ -665,7 +665,7 @@ contains
 
   subroutine cf_sw_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     ! When updating a quantity on F points we write to:
     ! (using x to indicate a location that is written):
@@ -726,7 +726,7 @@ contains
 
   subroutine cf_ne_init(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
 
     ! When updating a quantity on F points we write to:
     ! (using x to indicate a location that is written
@@ -764,8 +764,8 @@ contains
 
   SUBROUTINE copy_scalar_field(field_in, field_out)
     IMPLICIT none
-    type(scalar_field_type), INTENT(in) :: field_in
-    type(scalar_field_type), INTENT(out) :: field_out
+    type(scalar_field), INTENT(in) :: field_in
+    type(scalar_field), INTENT(out) :: field_out
 
     field_out = field_in
 
@@ -801,8 +801,8 @@ contains
 
   SUBROUTINE copy_2dfield(field_in, field_out)
     IMPLICIT none
-    type(r2d_field_type), intent(in)    :: field_in
-    type(r2d_field_type), intent(inout) :: field_out
+    type(r2d_field), intent(in)    :: field_in
+    type(r2d_field), intent(inout) :: field_out
         
     field_out%data(:,:) = field_in%data(:,:)
         
@@ -813,7 +813,7 @@ contains
   !> Copy from one patch to another in a field
   subroutine copy_2dfield_patch(field, src, dest)
     implicit none
-    type(r2d_field_type), intent(inout) :: field
+    type(r2d_field), intent(inout) :: field
     type(region_type),    intent(in)    :: src, dest
 
     field%data(dest%xstart:dest%xstop,dest%ystart:dest%ystop) = &
@@ -825,8 +825,8 @@ contains
 
   subroutine increment_scalar_field(field, incr)
     implicit none
-    type(scalar_field_type), INTENT(inout) :: field
-    type(scalar_field_type), INTENT(in)    :: incr
+    type(scalar_field), intent(inout) :: field
+    type(scalar_field), intent(in)    :: incr
 
     field%data = field%data + incr%data
 
@@ -834,26 +834,37 @@ contains
 
   !===================================================
 
-  SUBROUTINE set_scalar_field(fld, val)
-    IMPLICIT none
+  subroutine increment_scalar_field_r8(field, incr)
+    implicit none
+    type(scalar_field), intent(inout) :: field
+    real(wp), intent(in)    :: incr
+
+    field%data = field%data + incr
+
+  END SUBROUTINE increment_scalar_field_r8
+
+  !===================================================
+
+  SUBROUTINE set_field(fld, val)
+    implicit none
     class(field_type), INTENT(out) :: fld
-    REAL(wp), INTENT(in) :: val
+    real(wp), INTENT(in) :: val
 
     select type(fld)
-    type is (scalar_field_type)
+    type is (scalar_field)
        fld%data = val
-    type is (r2d_field_type)
+    type is (r2d_field)
        fld%data = val
     class default
     end select
 
-  END SUBROUTINE set_scalar_field
+  END SUBROUTINE set_field
 
   !===================================================
 
   function field_checksum(field) result(val)
     implicit none
-    type(r2d_field_type), intent(in) :: field
+    type(r2d_field), intent(in) :: field
     real(wp) :: val
 
     val = SUM( ABS(field%data(field%internal%xstart:field%internal%xstop, &
@@ -865,7 +876,7 @@ contains
 
   subroutine init_periodic_bc_halos(fld)
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    type(r2d_field), intent(inout) :: fld
     ! Locals
     integer :: ihalo
 

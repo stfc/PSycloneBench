@@ -56,19 +56,19 @@ program shallow
 
   type(grid_type), target :: model_grid
   !> Pressure at {current,previous,next} time step
-  type(r2d_field_type) :: p_fld, pold_fld, pnew_fld
+  type(r2d_field) :: p_fld, pold_fld, pnew_fld
   !> Velocity in x direction at {current,previous,next} time step
-  type(r2d_field_type) :: u_fld, uold_fld, unew_fld
+  type(r2d_field) :: u_fld, uold_fld, unew_fld
   !> Velocity in x direction at {current,previous,next} time step
-  type(r2d_field_type) :: v_fld, vold_fld, vnew_fld
+  type(r2d_field) :: v_fld, vold_fld, vnew_fld
   !> Mass flux in x and y directions
-  type(r2d_field_type) :: cu_fld, cv_fld
+  type(r2d_field) :: cu_fld, cv_fld
   !> Potential vorticity
-  type(r2d_field_type) :: z_fld
+  type(r2d_field) :: z_fld
   !> Surface height
-  type(r2d_field_type) :: h_fld
+  type(r2d_field) :: h_fld
   !> Stream function
-  type(r2d_field_type) :: psi_fld
+  type(r2d_field) :: psi_fld
 
   !> Loop counter for time-stepping loop
   INTEGER :: ncycle
@@ -84,27 +84,27 @@ program shallow
   CALL model_init(model_grid)
  
   ! Create fields on this grid
-  p_fld    = r2d_field_type(model_grid, T_POINTS)
-  pold_fld = r2d_field_type(model_grid, T_POINTS)
-  pnew_fld = r2d_field_type(model_grid, T_POINTS)
+  p_fld    = r2d_field(model_grid, T_POINTS)
+  pold_fld = r2d_field(model_grid, T_POINTS)
+  pnew_fld = r2d_field(model_grid, T_POINTS)
 
-  u_fld    = r2d_field_type(model_grid, U_POINTS)
-  uold_fld = r2d_field_type(model_grid, U_POINTS)
-  unew_fld = r2d_field_type(model_grid, U_POINTS)
+  u_fld    = r2d_field(model_grid, U_POINTS)
+  uold_fld = r2d_field(model_grid, U_POINTS)
+  unew_fld = r2d_field(model_grid, U_POINTS)
 
-  v_fld    = r2d_field_type(model_grid, V_POINTS)
-  vold_fld = r2d_field_type(model_grid, V_POINTS)
-  vnew_fld = r2d_field_type(model_grid, V_POINTS)
+  v_fld    = r2d_field(model_grid, V_POINTS)
+  vold_fld = r2d_field(model_grid, V_POINTS)
+  vnew_fld = r2d_field(model_grid, V_POINTS)
 
-  cu_fld = r2d_field_type(model_grid, U_POINTS)
+  cu_fld = r2d_field(model_grid, U_POINTS)
 
-  cv_fld = r2d_field_type(model_grid, V_POINTS)
+  cv_fld = r2d_field(model_grid, V_POINTS)
 
-  z_fld = r2d_field_type(model_grid, F_POINTS)
+  z_fld = r2d_field(model_grid, F_POINTS)
 
-  h_fld = r2d_field_type(model_grid, T_POINTS)
+  h_fld = r2d_field(model_grid, T_POINTS)
 
-  psi_fld = r2d_field_type(model_grid, F_POINTS)
+  psi_fld = r2d_field(model_grid, F_POINTS)
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
@@ -215,7 +215,7 @@ program shallow
     ELSE ! ncycle == 1
 
       ! Make TDT actually = 2*DT
-      CALL increment(tdt, tdt)
+      CALL increment_field(tdt, tdt)
 
     ENDIF ! ncycle > 1
 

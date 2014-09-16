@@ -80,8 +80,8 @@ contains
 
   subroutine invoke_next_sshu(sshn_u, sshn)
     implicit none
-    type(r2d_field_type), intent(inout) :: sshn_u
-    type(r2d_field_type), intent(in)    :: sshn
+    type(r2d_field), intent(inout) :: sshn_u
+    type(r2d_field), intent(in)    :: sshn
     ! Locals
     integer :: ji, jj
 
@@ -126,8 +126,8 @@ contains
 
   subroutine invoke_next_sshv(sshn_v, sshn)
     implicit none
-    type(r2d_field_type), intent(inout) :: sshn_v
-    type(r2d_field_type), intent(in)    :: sshn
+    type(r2d_field), intent(inout) :: sshn_v
+    type(r2d_field), intent(in)    :: sshn
     ! Locals
     integer :: ji, jj
 
