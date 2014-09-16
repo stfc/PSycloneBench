@@ -130,9 +130,9 @@ subroutine step(grid, istp, &
   ! Apply open and solid boundary conditions
   CALL invoke_bc_ssh(rtime, ssha)
   CALL invoke_bc_solid_u(ua)
-  CALL bc_v_solid(va)
-  CALL bc_u_flather(ua, hu, sshn_u)
-  CALL bc_v_flather(va, hv, sshn_v)
+  CALL invoke_bc_solid_v(va)
+  CALL invoke_bc_flather_u(ua, hu, sshn_u)
+  CALL invoke_bc_flather_v(va, hv, sshn_v)
 
   ! Time update of fields
   call copy_field(ua, un)
