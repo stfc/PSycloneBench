@@ -1,14 +1,14 @@
-PROGRAM shallow
+program shallow
 
-!     BENCHMARK WEATHER PREDICTION PROGRAM FOR COMPARING THE
-!     PREFORMANCE OF CURRENT SUPERCOMPUTERS. THE MODEL IS
-!     BASED OF THE PAPER - THE DYNAMICS OF FINITE-DIFFERENCE
-!     MODELS OF THE SHALLOW-WATER EQUATIONS, BY ROBERT SADOURNY
-!     J. ATM. SCIENCES, VOL 32, NO 4, APRIL 1975.
-!     
-!     CODE BY PAUL N. SWARZTRAUBER, NATIONAL CENTER FOR
-!     ATMOSPHERIC RESEARCH, BOULDER, CO,  OCTOBER 1984.
-!     Modified by Juliana Rew, NCAR, January 2006
+!> @mainpage BENCHMARK WEATHER PREDICTION PROGRAM FOR COMPARING THE
+!! PREFORMANCE OF CURRENT SUPERCOMPUTERS. THE MODEL IS
+!! BASED OF THE PAPER - THE DYNAMICS OF FINITE-DIFFERENCE
+!! MODELS OF THE SHALLOW-WATER EQUATIONS, BY ROBERT SADOURNY
+!! J. ATM. SCIENCES, VOL 32, NO 4, APRIL 1975.
+!!     
+!! CODE BY PAUL N. SWARZTRAUBER, NATIONAL CENTER FOR
+!! ATMOSPHERIC RESEARCH, BOULDER, CO,  OCTOBER 1984.
+!! Modified by Juliana Rew, NCAR, January 2006
 !
 !     In this version, shallow4.f, initial and calculated values
 !     of U, V, and P are written to a netCDF file
@@ -35,27 +35,40 @@ PROGRAM shallow
 !     This version heavily modified as part of the GOcean-2D project
 !     with the mantra "all computation must occur in a kernel."
 !     Andrew Porter, April 2014
+
   use shallow_io_mod
   use timing_mod
+  use gocean_mod, only: model_write_log
   use model_mod
+  use grid_mod
+  use field_mod
   use initial_conditions_mod
-  use time_smooth_mod,  only: time_smooth_type
-  use apply_bcs_cf_mod, only: invoke_apply_bcs_cf
-  use apply_bcs_ct_mod, only: invoke_apply_bcs_ct
-  use apply_bcs_cu_mod, only: invoke_apply_bcs_cu
-  use apply_bcs_cv_mod, only: invoke_apply_bcs_cv
-  use manual_invoke_apply_bcs_mod, only: invoke_apply_bcs_uvtf
-  use compute_cu_mod, only: compute_cu_type
-  use compute_cv_mod, only: compute_cv_type
-  use compute_z_mod, only: compute_z_type
-  use compute_h_mod, only: compute_h_type
-  use compute_unew_mod, only: compute_unew_type
-  use compute_vnew_mod, only: compute_vnew_type
-  use compute_pnew_mod, only: compute_pnew_type
+  use time_smooth_mod,  only: time_smooth
+  use apply_bcs_mod,    only: invoke_apply_bcs
+  use compute_cu_mod,   only: compute_cu
+  use compute_cv_mod,   only: compute_cv
+  use compute_z_mod,    only: compute_z
+  use compute_h_mod,    only: compute_h
+  use compute_unew_mod, only: compute_unew
+  use compute_vnew_mod, only: compute_vnew
+  use compute_pnew_mod, only: compute_pnew
   implicit none
 
-  !> Checksum used for each array
-  REAL(KIND=8) :: csum
+  type(grid_type), target :: model_grid
+  !> Pressure at {current,previous,next} time step
+  type(r2d_field) :: p_fld, pold_fld, pnew_fld
+  !> Velocity in x direction at {current,previous,next} time step
+  type(r2d_field) :: u_fld, uold_fld, unew_fld
+  !> Velocity in x direction at {current,previous,next} time step
+  type(r2d_field) :: v_fld, vold_fld, vnew_fld
+  !> Mass flux in x and y directions
+  type(r2d_field) :: cu_fld, cv_fld
+  !> Potential vorticity
+  type(r2d_field) :: z_fld
+  !> Surface height
+  type(r2d_field) :: h_fld
+  !> Stream function
+  type(r2d_field) :: psi_fld
 
   !> Loop counter for time-stepping loop
   INTEGER :: ncycle
@@ -63,37 +76,79 @@ PROGRAM shallow
   !> Integer tags for timers
   INTEGER :: idxt0, idxt1
 
+  ! Create the model grid
+  model_grid = grid_type(ARAKAWA_C,                        &
+                         (/BC_PERIODIC,BC_PERIODIC,BC_NONE/) )
+
   !  ** Initialisations of model parameters (dt etc) ** 
-  CALL model_init()
+  CALL model_init(model_grid)
+ 
+  ! Create fields on this grid
+  p_fld    = r2d_field(model_grid, T_POINTS)
+  pold_fld = r2d_field(model_grid, T_POINTS)
+  pnew_fld = r2d_field(model_grid, T_POINTS)
+
+  u_fld    = r2d_field(model_grid, U_POINTS)
+  uold_fld = r2d_field(model_grid, U_POINTS)
+  unew_fld = r2d_field(model_grid, U_POINTS)
+
+  v_fld    = r2d_field(model_grid, V_POINTS)
+  vold_fld = r2d_field(model_grid, V_POINTS)
+  vnew_fld = r2d_field(model_grid, V_POINTS)
+
+  cu_fld = r2d_field(model_grid, U_POINTS)
+
+  cv_fld = r2d_field(model_grid, V_POINTS)
+
+  z_fld = r2d_field(model_grid, F_POINTS)
+
+  h_fld = r2d_field(model_grid, T_POINTS)
+
+  psi_fld = r2d_field(model_grid, F_POINTS)
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
-  ! dt and tdt are prototypical fields that are actually a 
+  ! dt and tdt are examples of fields that are actually a 
   ! single parameter.
   CALL copy_field(dt, tdt)
- 
+
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
-  CALL init_initial_condition_params()
-  CALL invoke_init_stream_fn_kernel(PSI)
-  CALL init_pressure(P)
+  call init_initial_condition_params(p_fld)
+  call invoke_init_stream_fn_kernel(psi_fld)
+  call init_pressure(p_fld)
+  !CALL invoke_apply_bcs(psi_fld)
+  !CALL invoke_apply_bcs(p_fld)
 
   !     INITIALIZE VELOCITIES
  
-  CALL init_velocity_u(u, psi, m, n)
-  CALL init_velocity_v(v, psi, m, n)
+  call init_velocity_u(u_fld, psi_fld)
+  call init_velocity_v(v_fld, psi_fld)
 
   !     PERIODIC CONTINUATION
-  CALL invoke_apply_bcs_cu(U)
-  CALL invoke_apply_bcs_cv(V)
+  call invoke_apply_bcs(u_fld)
+  call invoke_apply_bcs(v_fld)
+
+  ! Generate and output checksums of initial fields
+  CALL model_write_log("('psi initial CHECKSUM = ',E24.16)", &
+                       field_checksum(psi_fld))
+  CALL model_write_log("('P initial CHECKSUM = ',E24.16)", &
+                         field_checksum(p_fld))
+  CALL model_write_log("('U initial CHECKSUM = ',E24.16)",  &
+                       field_checksum(u_fld))
+  CALL model_write_log("('V initial CHECKSUM = ',E24.16)", &
+                       field_checksum(v_fld))
 
   ! Initialise fields that will hold data at previous time step
-  CALL copy_field(U, UOLD)
-  CALL copy_field(V, VOLD)
-  CALL copy_field(P, POLD)
+  CALL copy_field(u_fld, uold_fld)
+  CALL copy_field(v_fld, vold_fld)
+  CALL copy_field(p_fld, pold_fld)
      
   ! Write intial values of p, u, and v into a netCDF file   
-  CALL model_write(0, p, u, v)
+  call ascii_write(0, psi_fld%internal%nx, psi_fld%internal%ny, &
+                   psi_fld%internal%xstart, psi_fld%internal%ystart, &
+                   psi_fld%data, 'psifld.dat')
+  CALL model_write(0, p_fld, u_fld, v_fld)
 
   !     Start timer
   CALL timer_start('Time-stepping',idxt0)
@@ -105,99 +160,87 @@ PROGRAM shallow
 
     CALL timer_start('Compute c{u,v},z,h', idxt1)
 
-    call invoke( compute_cu_type(CU, P, U), &
-                 compute_cv_type(CV, P, V), &
-                 compute_z_type(z, P, U, V), &
-                 compute_h_type(h, P, U, V) )
+    call invoke( compute_cu(CU_fld, p_fld, u_fld),      &
+                 compute_cv(CV_fld, p_fld, v_fld),      &
+                 compute_z(z_fld, p_fld, u_fld, v_fld), &
+                 compute_h(h_fld, p_fld, u_fld, v_fld) )
 
-    CALL timer_stop(idxt1)
+    call timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
 
-    CALL timer_start('PBCs',idxt1)
-    CALL invoke_apply_bcs_uvtf(CU, CV, H, Z)
-    CALL timer_stop(idxt1)
+    call timer_start('PBCs-1',idxt1)
+    ! This call could be generated automatically by PSyclone
+    call invoke_apply_bcs(CU_fld)
+    call invoke_apply_bcs(CV_fld)
+    call invoke_apply_bcs(H_fld)
+    call invoke_apply_bcs(Z_fld)
+    call timer_stop(idxt1)
 
     ! COMPUTE NEW VALUES U,V AND P
 
-    CALL timer_start('Compute new fields', idxt1)
-    CALL invoke( compute_unew_type(unew, uold, z, cv, h, tdt), &
-                 compute_vnew_type(vnew, vold, z, cu, h, tdt), &
-                 compute_pnew_type(pnew, pold, cu, cv, tdt) )
-
-    CALL timer_stop(idxt1)
+    call timer_start('Compute new fields', idxt1)
+    call invoke( compute_unew(unew_fld, uold_fld, z_fld, &
+                              cv_fld, h_fld, tdt%data),  &
+                 compute_vnew(vnew_fld, vold_fld, z_fld, &
+                              cu_fld, h_fld, tdt%data),  &
+                 compute_pnew(pnew_fld, pold_fld,        &
+                              cu_fld, cv_fld, tdt%data) )
+    call timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
-    CALL timer_start('PBCs',idxt1)
-    CALL invoke_apply_bcs_cu(UNEW)
-    CALL invoke_apply_bcs_cv(VNEW)
-    CALL invoke_apply_bcs_ct(PNEW)
-    CALL timer_stop(idxt1)
+    call timer_start('PBCs-2',idxt1)
+    ! This call could be generated by PSyclone
+    call invoke_apply_bcs(UNEW_fld)
+    call invoke_apply_bcs(VNEW_fld)
+    call invoke_apply_bcs(PNEW_fld)
+    call timer_stop(idxt1)
 
     ! Time is in seconds but we never actually need it
     !CALL increment(time, dt)
 
-    CALL model_write(ncycle, p, u, v)
+    call model_write(ncycle, p_fld, u_fld, v_fld)
 
     ! TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
-    IF(NCYCLE .GT. 1) then
+    if(NCYCLE .GT. 1) then
 
-      CALL timer_start('Time smoothing',idxt1)
+      call timer_start('Time smoothing',idxt1)
 
-      call invoke(time_smooth_type(u,unew,uold),&
-                  time_smooth_type(v,vnew,vold),&
-                  time_smooth_type(p,pnew,pold))
+      call invoke( time_smooth(u_fld, UNEW_fld, UOLD_fld), &
+                   time_smooth(v_fld, VNEW_fld, VOLD_fld), &
+                   time_smooth(p_fld, PNEW_fld, POLD_fld) )
 
-      CALL timer_stop(idxt1)
+      call timer_stop(idxt1)
 
-    ELSE ! ncycle == 1
+    else ! ncycle == 1
 
       ! Make TDT actually = 2*DT
-      CALL increment(tdt, tdt)
+      call increment_field(tdt, tdt)
 
-    ENDIF ! ncycle > 1
+    endif ! ncycle > 1
 
-    CALL timer_start('Field copy',idxt1)
+    call timer_start('Field copy',idxt1)
 
-    CALL copy_field(UNEW, U)
-    CALL copy_field(VNEW, V)
-    CALL copy_field(PNEW, P)
+    call copy_field(UNEW_fld, U_fld)
+    call copy_field(VNEW_fld, V_fld)
+    call copy_field(PNEW_fld, p_fld)
 
-    CALL timer_stop(idxt1)
+    call timer_stop(idxt1)
 
-  END DO
+  end do
 
   !  ** End of time loop ** 
 
-  CALL timer_stop(idxt0)
+  call timer_stop(idxt0)
 
-  CALL compute_checksum(pnew, csum)
-  CALL model_write_log("('P CHECKSUM after ',I6,' steps = ',E15.7)", &
-                       itmax, csum)
+  ! Output field checksums at end of run for correctness check
+  call model_write_log("('P CHECKSUM after ',I6,' steps = ',E24.16)", &
+                       itmax, field_checksum(pnew_fld))
+  call model_write_log("('U CHECKSUM after ',I6,' steps = ',E24.16)", &
+                       itmax, field_checksum(unew_fld))
+  call model_write_log("('V CHECKSUM after ',I6,' steps = ',E24.16)", &
+                       itmax, field_checksum(vnew_fld))
 
-  CALL compute_checksum(unew, csum)
-  CALL model_write_log("('U CHECKSUM after ',I6,' steps = ',E15.7)", &
-                       itmax, csum)
+  call model_finalise()
 
-  CALL compute_checksum(vnew, csum)
-  CALL model_write_log("('V CHECKSUM after ',I6,' steps = ',E15.7)", &
-                       itmax, csum)
-
-  CALL model_finalise()
-
-CONTAINS
-
-  !===================================================
-
-  subroutine compute_checksum(field, val)
-    IMPLICIT none
-    REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: field
-    REAL(KIND=8), INTENT(out) :: val
-
-    val = SUM(ABS(field(:,:)))
-
-  end subroutine compute_checksum
-
-  !===================================================
-
-END PROGRAM shallow
+end program shallow

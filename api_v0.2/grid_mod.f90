@@ -21,6 +21,9 @@ module grid_mod
   !> Points to North and East of T point have same
   !! i,j index (e.g. NEMO code).
   integer, public, parameter :: OFFSET_NE = 3
+  !> Value to signify no dependence on the relative offset of
+  !! the different grid-point types.
+  integer, public, parameter :: OFFSET_ANY = 4
 
   ! Enumeration of boundary-condition types
   !> Grid (model domain) has periodic boundary condition

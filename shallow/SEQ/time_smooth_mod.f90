@@ -1,5 +1,6 @@
-MODULE time_smooth_mod
+module time_smooth_mod
   use kind_params_mod
+  use grid_mod
   use field_mod
   use kernel_mod
   use argument_mod
@@ -8,7 +9,7 @@ MODULE time_smooth_mod
   PRIVATE
 
   PUBLIC time_smooth_init, invoke_time_smooth
-  PUBLIC time_smooth_type, time_smooth_code
+  PUBLIC time_smooth, time_smooth_code
 
   !> Parameter for time smoothing
   REAL(wp), save :: alpha
@@ -18,7 +19,7 @@ MODULE time_smooth_mod
   !! of the four grid point types (T, U, V or Q).
   !! Presumably FE should be FD for us and maybe CELLS 
   !! should be COLUMNS?
-  TYPE, EXTENDS(kernel_type) :: time_smooth_type
+  TYPE, EXTENDS(kernel_type) :: time_smooth
      TYPE(arg), DIMENSION(3) :: meta_args = &
           (/ arg(READ, EVERY, POINTWISE),     &
              arg(READ, EVERY, POINTWISE),     &
@@ -27,9 +28,27 @@ MODULE time_smooth_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      INTEGER :: ITERATES_OVER = DOFS
+
+     !> This kernel is written assuming that the arrays for
+     !! each field type are set-up such that the internal
+     !! region of each field starts at the same array index (for
+     !! both dimensions). If this weren't the case then
+     !! these shifts (which are relative to the indexing used
+     !! for fields on T points) would be non-zero.
+     integer :: u_index_shift(2) = (/ 0, 0 /)
+     integer :: v_index_shift(2) = (/ 0, 0 /)
+     integer :: f_index_shift(2) = (/ 0, 0 /)
+  
+     !> Although the staggering of variables used in an Arakawa
+     !! C grid is well defined, the way in which they are indexed is
+     !! an implementation choice. This can be thought of as choosing
+     !! which grid-point types have the same (i,j) index as a T
+     !! point. This kernel is independent of this choice.
+     integer :: index_offset = OFFSET_ANY
+
   CONTAINS
     procedure, nopass :: code => time_smooth_code
-  END type time_smooth_type
+  END type time_smooth
 
 CONTAINS
 

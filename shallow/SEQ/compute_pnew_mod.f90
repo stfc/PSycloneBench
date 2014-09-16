@@ -9,9 +9,9 @@ module compute_pnew_mod
   private
 
   public invoke_compute_pnew
-  public compute_pnew_type, compute_pnew_code
+  public compute_pnew, compute_pnew_code
 
-  TYPE, EXTENDS(kernel_type) :: compute_pnew_type
+  type, extends(kernel_type) :: compute_pnew
      TYPE(arg), DIMENSION(5) :: meta_args =    &
           (/ arg(WRITE, CT, POINTWISE),        & ! pnew
              arg(READ,  CT, POINTWISE),        & ! pold
@@ -46,9 +46,9 @@ module compute_pnew_mod
      !! to the South and West of it.
      integer :: index_offset = OFFSET_SW
 
-  CONTAINS
+  contains
     procedure, nopass :: code => compute_pnew_code
-  END TYPE compute_pnew_type
+  end type compute_pnew
 
 contains
 

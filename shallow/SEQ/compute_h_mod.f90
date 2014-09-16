@@ -9,9 +9,9 @@ module compute_h_mod
   private
 
   public invoke_compute_h
-  public compute_h_type, compute_h_code
+  public compute_h, compute_h_code
 
-  type, extends(kernel_type) :: compute_h_type
+  type, extends(kernel_type) :: compute_h
      type(arg), dimension(4) :: meta_args =    &
           (/ arg(WRITE, CT, POINTWISE),        & ! h
              arg(READ,  CT, POINTWISE),        & ! p
@@ -43,7 +43,7 @@ module compute_h_mod
 
   contains
     procedure, nopass :: code => compute_h_code
-  end type compute_h_type
+  end type compute_h
 
 contains
 

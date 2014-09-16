@@ -12,9 +12,9 @@ module compute_z_mod
   private
 
   public invoke_compute_z
-  public compute_z_type, compute_z_code
+  public compute_z, compute_z_code
 
-  type, extends(kernel_type) :: compute_z_type
+  type, extends(kernel_type) :: compute_z
      type(arg), dimension(4) :: meta_args =    &
           (/ arg(WRITE, CF, POINTWISE),        & ! z
              arg(READ,  CT, POINTWISE),        & ! p
@@ -29,29 +29,28 @@ module compute_z_mod
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
 
-
-  contains
-    procedure, nopass :: code => compute_z_code
-  end type compute_z_type
-
-  !> This kernel is written assuming that the arrays for
-  !! each field type are set-up such that the internal
-  !! region of each field starts at the same array index (for
-  !! both dimensions). If this weren't the case then
-  !! these shifts (which are relative to the indexing used
-  !! for fields on T points) would be non-zero.
-  integer :: u_index_shift(2) = (/ 0, 0 /)
-  integer :: v_index_shift(2) = (/ 0, 0 /)
-  integer :: f_index_shift(2) = (/ 0, 0 /)
+     !> This kernel is written assuming that the arrays for
+     !! each field type are set-up such that the internal
+     !! region of each field starts at the same array index (for
+     !! both dimensions). If this weren't the case then
+     !! these shifts (which are relative to the indexing used
+     !! for fields on T points) would be non-zero.
+     integer :: u_index_shift(2) = (/ 0, 0 /)
+     integer :: v_index_shift(2) = (/ 0, 0 /)
+     integer :: f_index_shift(2) = (/ 0, 0 /)
   
-  !> Although the staggering of variables used in an Arakawa
-  !! C grid is well defined, the way in which they are indexed is
-  !! an implementation choice. This can be thought of as choosing
-  !! which grid-point types have the same (i,j) index as a T
-  !! point. This kernel assumes that the U,V and F points that
-  !! share the same index as a given T point are those immediately
-  !! to the South and West of it.
-  integer :: index_offset = OFFSET_SW
+     !> Although the staggering of variables used in an Arakawa
+     !! C grid is well defined, the way in which they are indexed is
+     !! an implementation choice. This can be thought of as choosing
+     !! which grid-point types have the same (i,j) index as a T
+     !! point. This kernel assumes that the U,V and F points that
+     !! share the same index as a given T point are those immediately
+     !! to the South and West of it.
+     integer :: index_offset = OFFSET_SW
+
+   contains
+     procedure, nopass :: code => compute_z_code
+  end type compute_z
 
 contains
 

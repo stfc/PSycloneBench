@@ -42,7 +42,7 @@ psy.f90: shallow_gen.f90
 # The generated code depends on the generated Psy middle-layer
 shallow_gen:
 	@echo "Code generation not yet working for version 0.2 of the GOcean API!"
-	#${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
+	${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
 
 # Normal targets
 shallow_base: ${API_LIB}

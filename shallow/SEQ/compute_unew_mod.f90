@@ -1,4 +1,4 @@
-MODULE compute_unew_mod
+module compute_unew_mod
   USE kind_params_mod
   USE kernel_mod
   use argument_mod
@@ -9,9 +9,9 @@ MODULE compute_unew_mod
   private
 
   public invoke_compute_unew
-  public compute_unew_type, compute_unew_code
+  public compute_unew, compute_unew_code
 
-  type, extends(kernel_type) :: compute_unew_type
+  type, extends(kernel_type) :: compute_unew
      type(arg), dimension(6) :: meta_args =    &
           (/ arg(WRITE, CU, POINTWISE),        & ! unew
              arg(READ,  CU, POINTWISE),        & ! uold
@@ -49,7 +49,7 @@ MODULE compute_unew_mod
 
   contains
     procedure, nopass :: code => compute_unew_code
-  end type compute_unew_type
+  end type compute_unew
 
 contains
 

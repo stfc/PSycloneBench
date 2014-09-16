@@ -1,17 +1,17 @@
-MODULE compute_vnew_mod
+module compute_vnew_mod
   use kind_params_mod
   use kernel_mod
   use argument_mod
   use grid_mod
   use field_mod
-  IMPLICIT none
+  implicit none
 
-  PRIVATE
+  private
 
-  PUBLIC invoke_compute_vnew
-  PUBLIC compute_vnew_type, compute_vnew_code
+  public invoke_compute_vnew
+  public compute_vnew, compute_vnew_code
 
-  TYPE, EXTENDS(kernel_type) :: compute_vnew_type
+  TYPE, EXTENDS(kernel_type) :: compute_vnew
      TYPE(arg), DIMENSION(6) :: meta_args =    &
           (/ arg(WRITE, CV, POINTWISE),        & ! vnew
              arg(READ,  CV, POINTWISE),        & ! vold
@@ -49,7 +49,7 @@ MODULE compute_vnew_mod
 
   CONTAINS
     procedure, nopass :: code => compute_vnew_code
-  END TYPE compute_vnew_type
+  END TYPE compute_vnew
 
 CONTAINS
 

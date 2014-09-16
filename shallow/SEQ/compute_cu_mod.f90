@@ -12,9 +12,9 @@ module compute_cu_mod
   private
 
   public invoke_compute_cu
-  public compute_cu_type, compute_cu_code
+  public compute_cu, compute_cu_code
 
-  type, extends(kernel_type) :: compute_cu_type
+  type, extends(kernel_type) :: compute_cu
      type(arg), dimension(3) :: meta_args =    &
           (/ arg(WRITE, CU, POINTWISE),        & ! cu
              arg(READ,  CT, POINTWISE),        & ! p
@@ -45,7 +45,7 @@ module compute_cu_mod
 
   contains
     procedure, nopass :: code => compute_cu_code
-  end type compute_cu_type
+  end type compute_cu
 
 contains
 

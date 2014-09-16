@@ -12,9 +12,9 @@ module compute_cv_mod
   private
 
   public invoke_compute_cv
-  public compute_cv_type, compute_cv_code
+  public compute_cv, compute_cv_code
 
-  type, extends(kernel_type) :: compute_cv_type
+  type, extends(kernel_type) :: compute_cv
      type(arg), dimension(3) :: meta_args =    &
           (/ arg(WRITE, CV, POINTWISE),        & ! cv
              arg(READ,  CT, POINTWISE),        & ! p
@@ -45,7 +45,7 @@ module compute_cv_mod
 
   contains
     procedure, nopass :: code => compute_cv_code
-  end type compute_cv_type
+  end type compute_cv
 
 contains
 
