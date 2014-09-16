@@ -11,7 +11,7 @@ module compute_cu_mod
 
   private
 
-  public manual_invoke_compute_cu
+  public invoke_compute_cu
   public compute_cu_type, compute_cu_code
 
   type, extends(kernel_type) :: compute_cu_type
@@ -53,7 +53,7 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! compute_cu_code().
-  subroutine manual_invoke_compute_cu(cufld, pfld, ufld)
+  subroutine invoke_compute_cu(cufld, pfld, ufld)
     implicit none
     type(r2d_field), intent(inout) :: cufld
     type(r2d_field), intent(in)    :: pfld, ufld
@@ -108,7 +108,7 @@ contains
        end do
     end do
 
-  end subroutine manual_invoke_compute_cu
+  end subroutine invoke_compute_cu
 
   !===================================================
 

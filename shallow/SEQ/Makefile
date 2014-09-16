@@ -22,9 +22,9 @@ MODULES = physical_params_mod.o \
           initial_conditions_mod.o compute_cu_mod.o compute_cv_mod.o \
           compute_z_mod.o compute_h_mod.o \
           compute_unew_mod.o compute_vnew_mod.o compute_pnew_mod.o \
-          manual_invoke_apply_bcs_mod.o time_smooth_mod.o
+          apply_bcs_mod.o time_smooth_mod.o
 
-#          manual_invoke_compute_new_fields_mod.o \
+#         _compute_new_fields_mod.o \
 
 GENERATED_MODULES = psy.o shallow_gen.o
 
@@ -67,11 +67,11 @@ model_mod.o: ${API_LIB} \
              shallow_io_mod.o \
              time_smooth_mod.o
 
-manual_invoke_compute_new_fields_mod.o: compute_unew_mod.o \
-                                        compute_vnew_mod.o \
-                                        compute_pnew_mod.o
+compute_new_fields_mod.o: compute_unew_mod.o \
+                          compute_vnew_mod.o \
+                          compute_pnew_mod.o
 
-manual_invoke_apply_bcs_mod.o: ${API_LIB}
+apply_bcs_mod.o: ${API_LIB}
 
 %.exe: $(MODULE_LIST)
 	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)

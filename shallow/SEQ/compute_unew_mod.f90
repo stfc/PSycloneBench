@@ -8,7 +8,7 @@ MODULE compute_unew_mod
 
   private
 
-  public manual_invoke_compute_unew
+  public invoke_compute_unew
   public compute_unew_type, compute_unew_code
 
   type, extends(kernel_type) :: compute_unew_type
@@ -55,7 +55,7 @@ contains
 
   !===================================================
 
-  subroutine manual_invoke_compute_unew(unew, uold, z, cv, h, tdt)
+  subroutine invoke_compute_unew(unew, uold, z, cv, h, tdt)
     implicit none
     type(r2d_field), intent(inout) :: unew
     type(r2d_field), intent(in)    :: uold, z, cv, h
@@ -108,7 +108,7 @@ contains
        END DO
     END DO
 
-  END SUBROUTINE manual_invoke_compute_unew
+  END SUBROUTINE invoke_compute_unew
 
   !===================================================
 

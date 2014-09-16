@@ -11,7 +11,7 @@ module compute_z_mod
 
   private
 
-  public manual_invoke_compute_z
+  public invoke_compute_z
   public compute_z_type, compute_z_code
 
   type, extends(kernel_type) :: compute_z_type
@@ -59,7 +59,7 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! compute_z_code().
-  subroutine manual_invoke_compute_z(zfld, pfld, ufld, vfld)
+  subroutine invoke_compute_z(zfld, pfld, ufld, vfld)
     implicit none
     type(r2d_field), intent(inout) :: zfld
     type(r2d_field), intent(in)    :: pfld, ufld, vfld
@@ -82,7 +82,7 @@ contains
        end do
     end do
 
-  end subroutine manual_invoke_compute_z
+  end subroutine invoke_compute_z
 
   !===================================================
 

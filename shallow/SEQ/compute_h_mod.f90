@@ -8,7 +8,7 @@ module compute_h_mod
 
   private
 
-  public manual_invoke_compute_h
+  public invoke_compute_h
   public compute_h_type, compute_h_code
 
   type, extends(kernel_type) :: compute_h_type
@@ -49,7 +49,7 @@ contains
 
   !===================================================
 
-  subroutine manual_invoke_compute_h(hfld, pfld, ufld, vfld)
+  subroutine invoke_compute_h(hfld, pfld, ufld, vfld)
     implicit none
     type(r2d_field), intent(inout) :: hfld
     type(r2d_field), intent(in)    :: pfld, ufld,vfld
@@ -109,7 +109,7 @@ contains
        END DO
     END DO
 
-  END SUBROUTINE manual_invoke_compute_h
+  end subroutine invoke_compute_h
 
   !===================================================
 

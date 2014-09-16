@@ -8,7 +8,7 @@ MODULE compute_vnew_mod
 
   PRIVATE
 
-  PUBLIC manual_invoke_compute_vnew
+  PUBLIC invoke_compute_vnew
   PUBLIC compute_vnew_type, compute_vnew_code
 
   TYPE, EXTENDS(kernel_type) :: compute_vnew_type
@@ -55,7 +55,7 @@ CONTAINS
 
   !===================================================
 
-  subroutine manual_invoke_compute_vnew(vnew, vold, z, cu, h, tdt)
+  subroutine invoke_compute_vnew(vnew, vold, z, cu, h, tdt)
     implicit none
     type(r2d_field), intent(inout) :: vnew
     type(r2d_field), intent(in)    :: vold, z, cu, h
@@ -120,7 +120,7 @@ CONTAINS
        END DO
     END DO
 
-  END SUBROUTINE manual_invoke_compute_vnew
+  END SUBROUTINE invoke_compute_vnew
 
   !===================================================
 

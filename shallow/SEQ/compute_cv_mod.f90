@@ -11,7 +11,7 @@ module compute_cv_mod
 
   private
 
-  public manual_invoke_compute_cv
+  public invoke_compute_cv
   public compute_cv_type, compute_cv_code
 
   type, extends(kernel_type) :: compute_cv_type
@@ -53,7 +53,7 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! compute_cv_code().
-  subroutine manual_invoke_compute_cv(cvfld, pfld, vfld)
+  subroutine invoke_compute_cv(cvfld, pfld, vfld)
     implicit none
     type(r2d_field), intent(inout) :: cvfld
     type(r2d_field), intent(in)    :: pfld, vfld
@@ -108,7 +108,7 @@ contains
        end do
     end do
 
-  end subroutine manual_invoke_compute_cv
+  end subroutine invoke_compute_cv
 
   !===================================================
 

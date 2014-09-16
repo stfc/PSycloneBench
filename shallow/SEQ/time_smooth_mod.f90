@@ -7,7 +7,7 @@ MODULE time_smooth_mod
 
   PRIVATE
 
-  PUBLIC time_smooth_init, manual_invoke_time_smooth
+  PUBLIC time_smooth_init, invoke_time_smooth
   PUBLIC time_smooth_type, time_smooth_code
 
   !> Parameter for time smoothing
@@ -49,8 +49,8 @@ CONTAINS
 
   !> Manual implementation of code to invoke the time-smoothing
   !! kernel
-  SUBROUTINE manual_invoke_time_smooth(field, field_new, field_old)
-    IMPLICIT none
+  subroutine invoke_time_smooth(field, field_new, field_old)
+    implicit none
     type(r2d_field), intent(in)    :: field
     type(r2d_field), intent(in)    :: field_new
     type(r2d_field), intent(inout) :: field_old
@@ -71,7 +71,7 @@ CONTAINS
       END DO
     END DO
 
-  END SUBROUTINE manual_invoke_time_smooth
+  end subroutine invoke_time_smooth
 
   !===================================================
 

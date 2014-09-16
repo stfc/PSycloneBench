@@ -1,17 +1,17 @@
-module manual_invoke_apply_bcs_mod
+module apply_bcs_mod
   use kind_params_mod
   use field_mod
   implicit none
 
   private
 
-  public manual_invoke_apply_bcs
+  public invoke_apply_bcs
 
 contains
 
   !===================================================
 
-  subroutine manual_invoke_apply_bcs(field)
+  subroutine invoke_apply_bcs(field)
     implicit none
     type(r2d_field), intent(inout) :: field
     ! Locals
@@ -26,8 +26,8 @@ contains
                       field%halo(ihalo)%dest)
     end do
 
-  end subroutine manual_invoke_apply_bcs
+  end subroutine invoke_apply_bcs
 
   !===================================================
 
-end module manual_invoke_apply_bcs_mod
+end module apply_bcs_mod

@@ -8,7 +8,7 @@ module compute_pnew_mod
 
   private
 
-  public manual_invoke_compute_pnew
+  public invoke_compute_pnew
   public compute_pnew_type, compute_pnew_code
 
   TYPE, EXTENDS(kernel_type) :: compute_pnew_type
@@ -54,7 +54,7 @@ contains
 
   !===================================================
 
-  subroutine manual_invoke_compute_pnew(pnew, pold, cu, cv, tdt)
+  subroutine invoke_compute_pnew(pnew, pold, cu, cv, tdt)
     implicit none
     type(r2d_field), intent(inout) :: pnew
     type(r2d_field), intent(in)    :: pold, cu, cv
@@ -115,7 +115,7 @@ contains
        END DO
     END DO
 
-  END SUBROUTINE manual_invoke_compute_pnew
+  end subroutine invoke_compute_pnew
 
   !===================================================
 

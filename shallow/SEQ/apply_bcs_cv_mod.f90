@@ -9,7 +9,7 @@ module apply_bcs_cv_mod
 
   private
 
-  public manual_invoke_apply_bcs_cv
+  public invoke_apply_bcs_cv
   public apply_bcs_cv_type, apply_bcs_cv_code
 
   type, extends(kernel_type) :: apply_bcs_cv_type
@@ -29,7 +29,7 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! apply_bcs_cv_code().
-  subroutine manual_invoke_apply_bcs_cv(fld)
+  subroutine invoke_apply_bcs_cv(fld)
     use field_mod,    only: copy_field
     use topology_mod, only: cv_grid
     implicit none
@@ -72,7 +72,7 @@ contains
 
     end do
 
-  end subroutine manual_invoke_apply_bcs_cv
+  end subroutine invoke_apply_bcs_cv
 
   !===================================================
 

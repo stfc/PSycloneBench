@@ -40,11 +40,11 @@ PROGRAM shallow
   use model_mod
   use initial_conditions_mod
   use time_smooth_mod,  only: time_smooth_type
-  use apply_bcs_cf_mod, only: manual_invoke_apply_bcs_cf
-  use apply_bcs_ct_mod, only: manual_invoke_apply_bcs_ct
-  use apply_bcs_cu_mod, only: manual_invoke_apply_bcs_cu
-  use apply_bcs_cv_mod, only: manual_invoke_apply_bcs_cv
-  use manual_invoke_apply_bcs_mod, only: manual_invoke_apply_bcs_uvtf
+  use apply_bcs_cf_mod, only: invoke_apply_bcs_cf
+  use apply_bcs_ct_mod, only: invoke_apply_bcs_ct
+  use apply_bcs_cu_mod, only: invoke_apply_bcs_cu
+  use apply_bcs_cv_mod, only: invoke_apply_bcs_cv
+  use manual_invoke_apply_bcs_mod, only: invoke_apply_bcs_uvtf
   use compute_cu_mod, only: compute_cu_type
   use compute_cv_mod, only: compute_cv_type
   use compute_z_mod, only: compute_z_type
@@ -52,7 +52,7 @@ PROGRAM shallow
   use compute_unew_mod, only: compute_unew_type
   use compute_vnew_mod, only: compute_vnew_type
   use compute_pnew_mod, only: compute_pnew_type
-  IMPLICIT NONE
+  implicit none
 
   !> Checksum used for each array
   REAL(KIND=8) :: csum
@@ -84,8 +84,8 @@ PROGRAM shallow
   CALL init_velocity_v(v, psi, m, n)
 
   !     PERIODIC CONTINUATION
-  CALL manual_invoke_apply_bcs_cu(U)
-  CALL manual_invoke_apply_bcs_cv(V)
+  CALL invoke_apply_bcs_cu(U)
+  CALL invoke_apply_bcs_cv(V)
 
   ! Initialise fields that will hold data at previous time step
   CALL copy_field(U, UOLD)
@@ -115,7 +115,7 @@ PROGRAM shallow
     ! PERIODIC CONTINUATION
 
     CALL timer_start('PBCs',idxt1)
-    CALL manual_invoke_apply_bcs_uvtf(CU, CV, H, Z)
+    CALL invoke_apply_bcs_uvtf(CU, CV, H, Z)
     CALL timer_stop(idxt1)
 
     ! COMPUTE NEW VALUES U,V AND P
@@ -129,9 +129,9 @@ PROGRAM shallow
 
     ! PERIODIC CONTINUATION
     CALL timer_start('PBCs',idxt1)
-    CALL manual_invoke_apply_bcs_cu(UNEW)
-    CALL manual_invoke_apply_bcs_cv(VNEW)
-    CALL manual_invoke_apply_bcs_ct(PNEW)
+    CALL invoke_apply_bcs_cu(UNEW)
+    CALL invoke_apply_bcs_cv(VNEW)
+    CALL invoke_apply_bcs_ct(PNEW)
     CALL timer_stop(idxt1)
 
     ! Time is in seconds but we never actually need it
@@ -189,14 +189,14 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE compute_checksum(field, val)
+  subroutine compute_checksum(field, val)
     IMPLICIT none
     REAL(KIND=8), INTENT(in), DIMENSION(:,:) :: field
     REAL(KIND=8), INTENT(out) :: val
 
-    val = SUM(field)
+    val = SUM(ABS(field(:,:)))
 
-  END SUBROUTINE compute_checksum
+  end subroutine compute_checksum
 
   !===================================================
 

@@ -9,7 +9,7 @@ module apply_bcs_ct_mod
 
   private
 
-  public manual_invoke_apply_bcs_ct
+  public invoke_apply_bcs_ct
   public apply_bcs_ct_type, apply_bcs_ct_code
 
   type, extends(kernel_type) :: apply_bcs_ct_type
@@ -29,7 +29,7 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! apply_bcs_ct_code().
-  subroutine manual_invoke_apply_bcs_ct(fld)
+  subroutine invoke_apply_bcs_ct(fld)
     use field_mod
     implicit none
     type(r2d_field), intent(inout) :: fld
@@ -71,7 +71,7 @@ contains
   
     end do
 
-  end subroutine manual_invoke_apply_bcs_ct
+  end subroutine invoke_apply_bcs_ct
 
   !===================================================
 
