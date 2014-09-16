@@ -1,4 +1,5 @@
 program gocean2d
+  use timing_mod
   use grid_mod
   use field_mod
   use initialisation_mod, only: initialisation
@@ -28,7 +29,8 @@ program gocean2d
   type(r2d_field) :: ua_fld, va_fld
 
   ! time stepping index
-  integer  :: istp   
+  integer :: istp   
+  integer :: itimer0
 
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
   ! points immediately to the North and East of a T point all have the
@@ -72,10 +74,13 @@ program gocean2d
 
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
 
+  ! Start timer for time-stepping section
+  CALL timer_start('Time-stepping',itimer0)
+
   !! time stepping 
   do istp = nit000, nitend, 1
 
-     call model_write_log("('istp == ',I6)",istp)
+     !call model_write_log("('istp == ',I6)",istp)
 
      call step(model_grid, istp, &
                ua_fld, va_fld, un_fld, vn_fld, &
@@ -83,6 +88,9 @@ program gocean2d
                ssha_t_fld, ssha_u_fld, ssha_v_fld, &
                hu_fld, hv_fld, ht_fld)
   end do
+
+  ! Stop the timer for the time-stepping section
+  call timer_stop(itimer0)
 
   !! finalise the model run
   call model_finalise()
