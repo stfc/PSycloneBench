@@ -41,8 +41,18 @@ program shallow
   use model_mod
   use initial_conditions_mod
   use time_smooth_mod,        only: invoke_time_smooth
-  use apply_bcs_mod,          only: invoke_apply_bcs_uv
+  use apply_bcs_mod,          only: invoke_apply_bcs_uv,  &
+                                    invoke_apply_bcs_uvt, &
+                                    invoke_apply_bcs_uvtf
   use time_step_mod,          only: invoke_time_step
+  use compute_cu_mod,         only: invoke_compute_cu
+  use compute_cv_mod,         only: invoke_compute_cv
+  use compute_z_mod,          only: invoke_compute_z 
+  use compute_h_mod,          only: invoke_compute_h 
+  USE compute_unew_mod,       ONLY: invoke_compute_unew
+  USE compute_vnew_mod,       ONLY: invoke_compute_vnew
+  USE compute_pnew_mod,       ONLY: invoke_compute_pnew
+
   use topology_mod,           only: M, N
   implicit none
 
@@ -86,11 +96,32 @@ program shallow
   ! Write intial values of p, u, and v into a netCDF file   
   CALL model_write(0, p, u, v)
 
+  ! Perform the first time step
+  CALL invoke_compute_cu(CU, P, U)
+  CALL invoke_compute_cv(CV, P, V)
+  CALL invoke_compute_z(z, P, U, V)
+  CALL invoke_compute_h(h, P, U, V)
+
+  CALL invoke_apply_bcs_uvtf(cu, cv, h, Z)
+
+  CALL invoke_compute_unew(unew, uold,  z, cv, h, tdt)
+  CALL invoke_compute_vnew(vnew, vold,  z, cu, h, tdt)
+  CALL invoke_compute_pnew(pnew, pold, cu, cv,    tdt)
+
+  CALL invoke_apply_bcs_uvt(UNEW, VNEW, PNEW)
+
+  ! Set tdt to = 2*dt
+  CALL increment(tdt, tdt)
+
+  CALL copy_field(UNEW, U)
+  CALL copy_field(VNEW, V)
+  CALL copy_field(PNEW, P)
+
   !     Start timer
   CALL timer_start('Time-stepping',idxt0)
 
-  !  ** Start of time-stepping loop ** 
-  DO ncycle=1,itmax
+  !  ** Start of time-stepping loop proper ** 
+  DO ncycle=2,itmax
     
     call invoke_time_step(cu, cv, u, unew, uold, v, vnew, vold, &
                           p, pnew, pold, h, z, tdt%data)
@@ -99,27 +130,17 @@ program shallow
     !             periodic_bc(cv),                  &
     !             periodic_bc(h), periodic_bc(z),   &
     !             compute_new_fields(...),          &
-    !             periodic_bc(unew), periodic_bc(vnew) periodic_bc(pnew) )
+    !             periodic_bc(unew),                &
+    !             periodic_bc(vnew),                &
+    !             periodic_bc(pnew),                &
+    !             time_smooth(u,unew,uold),         &
+    !             time_smooth(v,vnew,vold),         &
+    !             time_smooth(p,pnew,pold),         &
+    !             copy_field(unew, u),              &
+    !             copy_field(vnew, v),              &
+    !             copy_field(pnew, p)        )
 
     CALL model_write(ncycle, p, u, v)
-
-    ! TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
-    IF(NCYCLE .GT. 1) then
-
-      CALL invoke_time_smooth(U, UNEW, UOLD, &
-                              V, VNEW, VOLD, &
-                              P, PNEW, POLD)
-
-    ELSE ! ncycle == 1
-
-      ! Make TDT actually = 2*DT
-      CALL increment(tdt, tdt)
-
-    ENDIF ! ncycle > 1
-
-    CALL copy_field(UNEW, U)
-    CALL copy_field(VNEW, V)
-    CALL copy_field(PNEW, P)
 
   END DO
 

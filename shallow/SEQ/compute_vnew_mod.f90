@@ -2,11 +2,12 @@ MODULE compute_vnew_mod
   USE kind_params_mod
   USE kernel_mod
   use argument_mod
+  use field_mod
   IMPLICIT none
 
   PRIVATE
 
-  PUBLIC manual_invoke_compute_vnew
+  PUBLIC invoke_compute_vnew
   PUBLIC compute_vnew_type, compute_vnew_code
 
   TYPE, EXTENDS(kernel_type) :: compute_vnew_type
@@ -29,12 +30,12 @@ CONTAINS
 
   !===================================================
 
-  subroutine manual_invoke_compute_vnew(vnew, vold, z, cu, h, tdt)
+  subroutine invoke_compute_vnew(vnew, vold, z, cu, h, tdt)
     use topology_mod, only: M, N
     implicit none
     real(wp), intent(out), dimension(:,:) :: vnew
     real(wp), intent(in),  dimension(:,:) :: vold, z, cu, h
-    real(wp), intent(in) :: tdt
+    type(scalar_field_type), intent(in) :: tdt
     ! Locals
     integer :: I, J
 
@@ -86,11 +87,11 @@ CONTAINS
        DO I= 1, M, 1
 
           CALL compute_vnew_code(i, j, vnew, vold, &
-                                 z, cu, h, tdt)
+                                 z, cu, h, tdt%data)
        END DO
     END DO
 
-  END SUBROUTINE manual_invoke_compute_vnew
+  END SUBROUTINE invoke_compute_vnew
 
   !===================================================
 
