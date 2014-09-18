@@ -37,9 +37,9 @@ contains
        DO jj =1, sshn_u_fld%internal%ystop
           itmp1 = min(ji+1,sshn_u_fld%internal%nx)
           itmp2 = max(ji  ,1)
-          rtmp1 = sshn_u_fld%grid%e12t(itmp1,jj) * sshn_t_fld%data(itmp1,jj) + &
-                  sshn_u_fld%grid%e12t(itmp2,jj) * sshn_t_fld%data(itmp2,jj)
-          sshn_u_fld%data(ji,jj) = 0.5_wp * rtmp1 / sshn_u_fld%grid%e12u(ji,jj)
+          rtmp1 = sshn_u_fld%grid%area_t(itmp1,jj) * sshn_t_fld%data(itmp1,jj) + &
+                  sshn_u_fld%grid%area_t(itmp2,jj) * sshn_t_fld%data(itmp2,jj)
+          sshn_u_fld%data(ji,jj) = 0.5_wp * rtmp1 / sshn_u_fld%grid%area_u(ji,jj)
        END DO
     END DO
 
@@ -49,9 +49,9 @@ contains
       DO ji=1, sshn_v_fld%internal%xstop
         itmp1 = min(jj+1,sshn_v_fld%internal%ny)
         itmp2 = max(jj  ,1)
-        rtmp1 = sshn_v_fld%grid%e12t(ji,itmp1) * sshn_t_fld%data(ji,itmp1) + &
-                sshn_v_fld%grid%e12t(ji,itmp2) * sshn_t_fld%data(ji,itmp2)
-        sshn_v_fld%data(ji,jj) = 0.5_wp * rtmp1 / sshn_v_fld%grid%e12v(ji,jj)
+        rtmp1 = sshn_v_fld%grid%area_t(ji,itmp1) * sshn_t_fld%data(ji,itmp1) + &
+                sshn_v_fld%grid%area_t(ji,itmp2) * sshn_t_fld%data(ji,itmp2)
+        sshn_v_fld%data(ji,jj) = 0.5_wp * rtmp1 / sshn_v_fld%grid%area_v(ji,jj)
       END DO
     END DO
 

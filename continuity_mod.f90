@@ -7,7 +7,7 @@ module continuity_mod
   implicit none
 
   type, extends(kernel_type) :: continuity
-     type(arg), dimension(8) :: meta_args =    &
+     type(arg), dimension(10) :: meta_args =    &
           (/ arg(WRITE, CT, POINTWISE),        & ! ssha
              arg(READ,  CT, POINTWISE),        & ! sshn
              arg(READ,  CU, POINTWISE),        & ! sshn_u
@@ -15,21 +15,13 @@ module continuity_mod
              arg(READ,  CU, POINTWISE),        & ! hu
              arg(READ,  CV, POINTWISE),        & ! hv
              arg(READ,  CU, POINTWISE),        & ! un
-             arg(READ,  CV, POINTWISE)         & ! vn
+             arg(READ,  CV, POINTWISE),        & ! vn
+             arg(READ,  TIME_STEP),            &
+             arg(READ,  GRID_AREA_T)           &
            /)
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -60,10 +52,11 @@ contains
     do jj = ssha%internal%ystart, ssha%internal%ystop, 1
        do ji = ssha%internal%xstart, ssha%internal%xstop, 1
 
-          call continuity_code(ji, jj, rdt, ssha%grid%e12t, &
+          call continuity_code(ji, jj,                      &
                                ssha%data, sshn%data,        &
                                sshn_u%data, sshn_v%data,    &
-                               hu%data, hv%data, un%data, vn%data)
+                               hu%data, hv%data, un%data, vn%data, &
+                               rdt, ssha%grid%area_t)
        end do
     end do
 
@@ -71,9 +64,9 @@ contains
 
   !===================================================
 
-  subroutine continuity_code(ji, jj, rdt, e12t,          &
+  subroutine continuity_code(ji, jj,                     &
                              ssha, sshn, sshn_u, sshn_v, &
-                             hu, hv, un, vn)
+                             hu, hv, un, vn, rdt, e12t)
     implicit none
     integer,                  intent(in)  :: ji, jj
     real(wp),                 intent(in)  :: rdt
