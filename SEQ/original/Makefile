@@ -3,7 +3,7 @@ include ../Makefile.include
 # For timing module in new version of code
 F90FLAGS += -I../
 
-LDFLAGS += ../timing_mod.o ../intel_timer_mod.o -lnetcdf -lnetcdff
+LDFLAGS += ../timing_mod.o ../intel_timer_mod.o
 
 #EXECS = join_files shallow_base shallow_parallel
 EXECS = shallow_base

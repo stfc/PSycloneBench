@@ -1,12 +1,12 @@
-# Build settings for ibm compiler
-F90 = xlf2003_r
+# Build settings for ibm compiler on BG/Q
+F90 = bgxlf2003_r
 
 NETCDF_INC = /gpfs/packages/ibm/netcdf/3.6.2/include
 NETCDF_LIB = /gpfs/packages/ibm/netcdf/3.6.2/lib
 
-# Ideally would specify -qlanglvl=2003std but GungHo/src/utils/utils.F90
-# won't build with that option :-(
+#F90FLAGS =  -qcheck -g -O0 -qlanglvl=2003std
+F90FLAGS = -O5 -qinline=auto:level=10
+LDFLAGS = -qreport -O5 -qinline=auto:level=10 
 
-F90FLAGS =  -qcheck -g -O0 
-#F90FLAGS = -O3
-
+F90FLAGS +=  -I${NETCDF_INC}
+LDFLAGS += -L${NETCDF_LIB} -lnetcdf
