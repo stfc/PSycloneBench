@@ -14,7 +14,7 @@ module momentum_mod
   !=======================================
 
   type, extends(kernel_type) :: momentum_u
-     type(arg), dimension(10) :: meta_args =  &
+     type(arg), dimension(18) :: meta_args =  &
           (/ arg(READWRITE, CU, POINTWISE),  & ! ua
              arg(READ,      CU, POINTWISE),  & ! un
              arg(READ,      CV, POINTWISE),  & ! vn
@@ -24,22 +24,20 @@ module momentum_mod
              arg(READ,      CU, POINTWISE),  & ! ssha_u
              arg(READ,      CT, POINTWISE),  & ! sshn_t
              arg(READ,      CU, POINTWISE),  & ! sshn_u
-             arg(READ,      CV, POINTWISE)   & ! sshn_v
+             arg(READ,      CV, POINTWISE),  & ! sshn_v
+             arg(READ,      GRID_MASK_T),    &
+             arg(READ,      GRID_DX_U),      &
+             arg(READ,      GRID_DX_V),      &
+             arg(READ,      GRID_DX_T),      &
+             arg(READ,      GRID_DY_U),      &
+             arg(READ,      GRID_DY_T),      &
+             arg(READ,      GRID_AREA_U),    &
+             arg(READ,      GRID_LAT_U)      &
            /)
 
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -57,7 +55,7 @@ module momentum_mod
   !=======================================
 
   type, extends(kernel_type) :: momentum_v
-     type(arg), dimension(10) :: meta_args =  &
+     type(arg), dimension(18) :: meta_args =  &
           (/ arg(READWRITE, CV, POINTWISE),  & ! va
              arg(READ,      CU, POINTWISE),  & ! un
              arg(READ,      CV, POINTWISE),  & ! vn
@@ -67,22 +65,20 @@ module momentum_mod
              arg(READ,      CV, POINTWISE),  & ! ssha_v
              arg(READ,      CT, POINTWISE),  & ! sshn_t
              arg(READ,      CU, POINTWISE),  & ! sshn_u
-             arg(READ,      CV, POINTWISE)   & ! sshn_v
+             arg(READ,      CV, POINTWISE),  & ! sshn_v
+             arg(READ,      GRID_MASK_T),    &
+             arg(READ,      GRID_DX_V),      &
+             arg(READ,      GRID_DX_T),      &
+             arg(READ,      GRID_DY_U),      &
+             arg(READ,      GRID_DY_V),      &
+             arg(READ,      GRID_DY_T),      &
+             arg(READ,      GRID_AREA_V),    &
+             arg(READ,      GRID_LAT_V)      &
            /)
 
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that, for each dimension, the
-     !! internal region of each field starts at the same array index.
-     !! If this weren't the case then these shifts (which are relative
-     !! to the indexing used for fields on T points) would be
-     !! non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -119,14 +115,18 @@ contains
       do ji = ua_fld%internal%xstart, ua_fld%internal%xstop, 1
 
         call momentum_u_code(ji, jj, &
-                             ua_fld%grid%tmask, ua_fld%grid%e1u, ua_fld%grid%e1v, &
-                             ua_fld%grid%e1t, ua_fld%grid%e12u, &
-                             ua_fld%grid%e2u,  &
-                             ua_fld%grid%e2t,  ua_fld%grid%gphiu, &
                              ua_fld%data, un_fld%data, vn_fld%data, &
-                             hu_fld%data, hv_fld%data, ht_fld%data, ssha_u_fld%data, &
-                             sshn_t_fld%data, sshn_u_fld%data, sshn_v_fld%data)
-
+                             hu_fld%data, hv_fld%data, ht_fld%data, &
+                             ssha_u_fld%data, sshn_t_fld%data,      &
+                             sshn_u_fld%data, sshn_v_fld%data, &
+                             ua_fld%grid%tmask,  &
+                             ua_fld%grid%dx_u,   &
+                             ua_fld%grid%dx_v,   &
+                             ua_fld%grid%dx_t,   &
+                             ua_fld%grid%dy_u,   &
+                             ua_fld%grid%dy_t,   &
+                             ua_fld%grid%area_u, &
+                             ua_fld%grid%gphiu)
       end do
    end do
 
@@ -135,10 +135,10 @@ contains
   !====================================================
 
   subroutine momentum_u_code(ji, jj, &
-                             tmask, e1u, e1v, e1t, e12u, e2u, e2t, &
-                             gphiu, ua, un, vn, &
+                             ua, un, vn, &
                              hu, hv, ht, ssha_u, &
-                             sshn, sshn_u, sshn_v)
+                             sshn, sshn_u, sshn_v, &
+                             tmask, e1u, e1v, e1t, e2u, e2t, e12u, gphiu)
     use model_mod, only: rdt, cbfr, visc
     implicit none
     integer, intent(in) :: ji, jj
@@ -264,14 +264,15 @@ contains
       do ji = va_fld%internal%xstart, va_fld%internal%xstop, 1
 
         call momentum_v_code(ji, jj, &
-                             va_fld%grid%tmask, va_fld%grid%e1v, &
-                             va_fld%grid%e1t, &
-                             va_fld%grid%e12v, va_fld%grid%e2u,  &
-                             va_fld%grid%e2v, va_fld%grid%e2t,  va_fld%grid%gphiv, &
                              va_fld%data, un_fld%data, vn_fld%data, &
                              hu_fld%data, hv_fld%data, ht_fld%data, &
-                             ssha_v_fld%data, &
-                             sshn_t_fld%data, sshn_u_fld%data, sshn_v_fld%data)
+                             ssha_v_fld%data, sshn_t_fld%data,      &
+                             sshn_u_fld%data, sshn_v_fld%data,      &
+                             va_fld%grid%tmask, va_fld%grid%dx_v,   &
+                             va_fld%grid%dx_t, &
+                             va_fld%grid%dy_u, va_fld%grid%dy_v,    &
+                             va_fld%grid%dy_t,     &
+                             va_fld%grid%area_v, va_fld%grid%gphiv)
 
       end do
    end do
@@ -281,10 +282,11 @@ contains
   !====================================================
 
   subroutine momentum_v_code(ji, jj, &
-                             tmask, e1v, e1t, e12v, e2u, e2v, e2t, &
-                             gphiv, va, un, vn, &
+                             va, un, vn, &
                              hu, hv, ht, ssha_v, &
-                             sshn, sshn_u, sshn_v)
+                             sshn, sshn_u, sshn_v, &
+                             tmask, e1v, e1t, e2u, e2v, e2t, e12v, gphiv)
+
     use model_mod, only: rdt, cbfr, visc
     implicit none
     integer, intent(in) :: ji, jj

@@ -6,25 +6,20 @@ module time_update_mod
   use field_mod
   implicit none
 
+  !=======================================
+
   type, extends(kernel_type) :: next_sshu
-     type(arg), dimension(2) :: meta_args =  &
+     type(arg), dimension(5) :: meta_args =  &
           (/ arg(READWRITE, CU, POINTWISE),  &
-             arg(READ,      CU, POINTWISE)   &
+             arg(READ,      CU, POINTWISE),  &
+             arg(READ,      GRID_MASK_T),    &
+             arg(READ,      GRID_AREA_T),    &
+             arg(READ,      GRID_AREA_U)     &
            /)
 
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -42,24 +37,17 @@ module time_update_mod
   !=======================================
 
   type, extends(kernel_type) :: next_sshv
-     type(arg), dimension(2) :: meta_args =  &
+     type(arg), dimension(5) :: meta_args =  &
           (/ arg(READWRITE, CV, POINTWISE),  &
-             arg(READ,      CV, POINTWISE)   &
+             arg(READ,      CV, POINTWISE),  &
+             arg(READ,      GRID_MASK_T),    &
+             arg(READ,      GRID_AREA_T),    &
+             arg(READ,      GRID_AREA_V)     &
            /)
 
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -88,9 +76,9 @@ contains
     do jj = sshn_u%internal%ystart, sshn_u%internal%ystop, 1
       do ji = sshn_u%internal%xstart, sshn_u%internal%xstop, 1
 
-        call next_sshu_code(ji, jj, sshn_u%grid%tmask, &
-                            sshn_u%grid%e12t, sshn_u%grid%e12u, &
-                            sshn_u%data, sshn%data)
+        call next_sshu_code(ji, jj, sshn_u%data, sshn%data, &
+                            sshn_u%grid%tmask, &
+                            sshn_u%grid%area_t, sshn_u%grid%area_u)
       end do
     end do
 
@@ -98,8 +86,8 @@ contains
 
   !================================================
 
-  subroutine next_sshu_code(ji,jj,tmask,e12t,e12u, &
-                              sshn_u, sshn)
+  subroutine next_sshu_code(ji,jj, sshn_u, sshn, &
+                            tmask,e12t,e12u)
     implicit none
     integer,                  intent(in)    :: ji, jj
     integer,  dimension(:,:), intent(in)    :: tmask
@@ -134,9 +122,10 @@ contains
     do jj = sshn_v%internal%ystart, sshn_v%internal%ystop, 1
       do ji = sshn_v%internal%xstart, sshn_v%internal%xstop, 1
 
-        call next_sshv_code(ji, jj, sshn_v%grid%tmask, &
-                            sshn_v%grid%e12t, sshn_v%grid%e12v, &
-                            sshn_v%data, sshn%data )
+        call next_sshv_code(ji, jj,  &
+                            sshn_v%data, sshn%data, &
+                            sshn_v%grid%tmask,      &
+                            sshn_v%grid%area_t, sshn_v%grid%area_v)
       end do
     end do
 
@@ -144,8 +133,8 @@ contains
 
   !================================================
 
-  subroutine next_sshv_code(ji, jj, tmask, e12t, e12v, &
-                            sshn_v, sshn)
+  subroutine next_sshv_code(ji, jj, &
+                            sshn_v, sshn, tmask, e12t, e12v)
     implicit none
     integer,                  intent(in)    :: ji, jj
     integer,  dimension(:,:), intent(in)    :: tmask

@@ -79,15 +79,15 @@ module grid_mod
      type(region_type) :: simulation_domain
 
      !> Horizontal scale factors at t point (m)
-     real(wp), allocatable :: e1t(:,:), e2t(:,:)
+     real(wp), allocatable :: dx_t(:,:), dy_t(:,:)
      !> Horizontal scale factors at u point (m)
-     real(wp), allocatable :: e1u(:,:), e2u(:,:)
+     real(wp), allocatable :: dx_u(:,:), dy_u(:,:)
      !> Horizontal scale factors at v point (m)
-     real(wp), allocatable :: e1v(:,:), e2v(:,:)  
+     real(wp), allocatable :: dx_v(:,:), dy_v(:,:)  
      !> Horizontal scale factors at f point (m)
-     real(wp), allocatable :: e1f(:,:), e2f(:,:)
+     real(wp), allocatable :: dx_f(:,:), dy_f(:,:)
      !> Unknown \todo Name these fields!
-     real(wp), allocatable :: e12t(:,:), e12u(:,:), e12v(:,:)
+     real(wp), allocatable :: area_t(:,:), area_u(:,:), area_v(:,:)
      !> Latitude of u points
      real(wp), allocatable :: gphiu(:,:)
      !> Latitude of v points
@@ -123,16 +123,24 @@ contains
     !! are offset from the T point. This is an optional argument as it
     !! will be supplied by PSyclone-modified call of this constructor.
     !! PSyclone will obtain the value of this offset from the kernel
-    !! metadata.
+    !! metadata. Despite being optional, it is actually required
+    !! and we have a run-time check for this below.
     integer, optional, intent(in) :: grid_offsets
     type(grid_type), target :: self
     ! Locals
     integer :: grid_stagger
 
+    ! We must be told the offset expected by the kernels. In a manual
+    ! implementation it is up to the algorithm writer to inspect the
+    ! kernels and provide us with the correct value. PSyclone will
+    ! automate this process. This argument is only optional in order
+    ! to ensure that the code to be processed by PSyclone will
+    ! compile.
     if(present(grid_offsets))then
        grid_stagger = grid_offsets
     else
-       grid_stagger = OFFSET_NE
+       call gocean_stop('ERROR: grid offset not specified in call to '//&
+                        'grid_constructor.')
     end if
 
     ! This case statement is mainly to check that the caller
@@ -230,14 +238,14 @@ contains
     grid%dx = dxarg
     grid%dy = dyarg
 
-    allocate(grid%e1t(grid%nx,grid%ny), grid%e2t(grid%nx,grid%ny), &
-             grid%e1u(grid%nx,grid%ny), grid%e2u(grid%nx,grid%ny), &
+    allocate(grid%dx_t(grid%nx,grid%ny), grid%dy_t(grid%nx,grid%ny), &
+             grid%dx_u(grid%nx,grid%ny), grid%dy_u(grid%nx,grid%ny), &
              stat=ierr(1))
-    allocate(grid%e1f(grid%nx,grid%ny), grid%e2f(grid%nx,grid%ny), &
-             grid%e1v(grid%nx,grid%ny), grid%e2v(grid%nx,grid%ny), &
+    allocate(grid%dx_f(grid%nx,grid%ny), grid%dy_f(grid%nx,grid%ny), &
+             grid%dx_v(grid%nx,grid%ny), grid%dy_v(grid%nx,grid%ny), &
              stat=ierr(2)) 
-    allocate(grid%e12t(grid%nx,grid%ny), grid%e12u(grid%nx,grid%ny), &
-             grid%e12v(grid%nx,grid%ny), stat=ierr(3))
+    allocate(grid%area_t(grid%nx,grid%ny), grid%area_u(grid%nx,grid%ny), &
+             grid%area_v(grid%nx,grid%ny), stat=ierr(3))
     allocate(grid%gphiu(grid%nx,grid%ny), grid%gphiv(grid%nx,grid%ny), &
              grid%gphif(grid%nx,grid%ny), stat=ierr(4))
     allocate(grid%xt(grid%nx,grid%ny), grid%yt(grid%nx,grid%ny), stat=ierr(5))
@@ -270,34 +278,34 @@ contains
 
     ! Initialise the horizontal scale factors for a regular,
     ! orthogonal mesh. (Constant spatial resolution.)
-    grid%e1t(:, :)   = grid%dx
-    grid%e2t(:, :)   = grid%dy
+    grid%dx_t(:, :)   = grid%dx
+    grid%dy_t(:, :)   = grid%dy
 
-    grid%e1u(:, :)   = grid%dx
-    grid%e2u(:, :)   = grid%dy
+    grid%dx_u(:, :)   = grid%dx
+    grid%dy_u(:, :)   = grid%dy
 
-    grid%e1v(:, :)   = grid%dx
-    grid%e2v(:, :)   = grid%dy
+    grid%dx_v(:, :)   = grid%dx
+    grid%dy_v(:, :)   = grid%dy
 
-    grid%e1f(:, :)   = grid%dx
-    grid%e2f(:, :)   = grid%dy
+    grid%dx_f(:, :)   = grid%dx
+    grid%dy_f(:, :)   = grid%dy
 
     ! calculate t,u,v cell area
     do jj = 1, grid%ny
        do ji = 1, grid%nx
-          grid%e12t(ji,jj) = grid%e1t(ji,jj) * grid%e2t(ji,jj)
+          grid%area_t(ji,jj) = grid%dx_t(ji,jj) * grid%dy_t(ji,jj)
        end do
     end do
   
     DO jj = 1, grid%ny
        DO ji = 1, grid%nx
-          grid%e12u(ji,jj) = grid%e1u(ji,jj) * grid%e2u(ji,jj)
+          grid%area_u(ji,jj) = grid%dx_u(ji,jj) * grid%dy_u(ji,jj)
        END DO
     END DO
 
     DO jj = 1, grid%ny
        DO ji = 1, grid%nx
-          grid%e12v(ji,jj) = grid%e1v(ji,jj) * grid%e2v(ji,jj)
+          grid%area_v(ji,jj) = grid%dx_v(ji,jj) * grid%dy_v(ji,jj)
        END DO
     END DO
 
@@ -312,8 +320,8 @@ contains
     xstop  = grid%simulation_domain%xstop
     ystart = grid%simulation_domain%ystart
     ystop  = grid%simulation_domain%ystop
-    grid%xt(xstart, :) = 0.0_wp + 0.5_wp * grid%e1t(xstart,:)
-    grid%yt(:,ystart) = 0.0_wp + 0.5_wp * grid%e2t(:,ystart)
+    grid%xt(xstart, :) = 0.0_wp + 0.5_wp * grid%dx_t(xstart,:)
+    grid%yt(:,ystart)  = 0.0_wp + 0.5_wp * grid%dy_t(:,ystart)
 
     DO ji = xstart+1, xstop
       grid%xt(ji,ystart:ystop) = grid%xt(ji-1, ystart:ystop) + grid%dx
