@@ -51,11 +51,6 @@ compute_fluxes_mod.o: compute_cu_mod.o \
                       compute_h_mod.o \
                       topology_mod.o
 
-compute_new_fields_mod.o: compute_unew_mod.o \
-                          compute_vnew_mod.o \
-                          compute_pnew_mod.o \
-                          topology_mod.o
-
 field_mod.o: kind_params_mod.o topology_mod.o
 
 initial_conditions_mod.o: physical_params_mod.o topology_mod.o model_mod.o

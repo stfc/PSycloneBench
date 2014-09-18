@@ -102,10 +102,6 @@ contains
     !============================================
     ! COMPUTE NEW VALUES U,V AND P
 
-    !CALL invoke_compute_new_fields(unew, uold, vnew, vold, &
-    !                               pnew, pold, &
-    !                               zfld, cufld, cvfld, hfld, dt)
-
     !CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt)
     DO J=1, N, 1
        DO I= 2, M+1, 1
