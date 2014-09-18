@@ -4,9 +4,11 @@ F90 = gfortran
 NETCDF_INC = /usr/include
 NETCDF_LIB = /usr/lib64
 
-F90FLAGS = -Wall -Wsurprising -fcheck=all -g -O0
-#F90FLAGS = -O3
+#F90FLAGS = -Wall -Wsurprising -fcheck=all -g -O0
+F90FLAGS = -Ofast -mtune=native
+# -finline-limit=5000
 #F90FLAGS = -O3 -fopenmp
+#LDFLAGS = -flto -fwhole-program
 
 F90FLAGS += -I${NETCDF_INC}
-LDFLAGS += -L${NETCDF_LIB} 
+LDFLAGS += -L${NETCDF_LIB} -lnetcdf -lnetcdff
