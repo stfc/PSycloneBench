@@ -288,52 +288,6 @@
 
          TIME = TIME + DT
 
-         IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
-            
-            PTIME = TIME/3600.
-            WRITE(6,350) NCYCLE,PTIME
- 350        FORMAT(//' CYCLE NUMBER',I5,' MODEL TIME IN  HOURS', F6.2)
-            WRITE(6,355) (PNEW(I,I),I=1,MNMIN)
- 355        FORMAT(/' DIAGONAL ELEMENTS OF P ' //(8E15.6))
-            WRITE(6,360) (UNEW(I,I),I=1,MNMIN)
- 360        FORMAT(/' DIAGONAL ELEMENTS OF U ' //(8E15.6))
-            WRITE(6,365) (VNEW(I,I),I=1,MNMIN)
- 365        FORMAT(/' DIAGONAL ELEMENTS OF V ' //(8E15.6))
-
-!           jr added MFS310--don't know what actual mult factor should be
-!           jr changed divide by 1 million to divide by 100K since system_clock
-!           jr resolution is millisec rather than cpu_time's 10 millisec
-            !MFS310 = 0.0
-            !MFS100 = 0.0
-            !MFS200 = 0.0
-            !MFS300 = 0.0
-            !IF (T310 .GT. 0) MFS310 = 24.*M*N/T310/1.D5
-            !IF (T100 .GT. 0) MFS100 = 24.*M*N/T100/1.D5
-            !IF (T200 .GT. 0) MFS200 = 26.*M*N/T200/1.D5
-            !IF (T300 .GT. 0) MFS300 = 15.*M*N/T300/1.D5
-
-            !call system_clock(count=c2, count_rate=r,count_max=max)
-            !CTIME = dble(c2 - TSTART)/dble(r)
-            !TCYC = CTIME/FLOAT(NCYCLE)
-
-            !WRITE(6,375) NCYCLE,CTIME,TCYC,T310,MFS310,T200,MFS200,T300,MFS300
-! 375        FORMAT(' CYCLE NUMBER',I5,' TOTAL COMPUTER TIME', D15.6,   & 
-!                   ' TIME PER CYCLE', D15.6, /                           & 
-!                   ' TIME AND MEGAFLOPS FOR LOOP 310 ', D15.6,2x,D6.1/   & 
-!                   ' TIME AND MEGAFLOPS FOR LOOP 200 ', D15.6,2x,D6.1/   & 
-!                   ' TIME AND MEGAFLOPS FOR LOOP 300 ', D15.6,2x,D6.1/ )
-
-!           Append calculated values of p, u, and v to netCDF file
-            istart(3) = ncycle/mprint + 1
-            t_val = ncycle
-
-!           Shape of record to be written (one ncycle at a time)
-            call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
-            call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
-            call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
-
-         endif
-
 !        Write out time if last timestep
 !         IF (ncycle .EQ. itmax) THEN 
 !            call system_clock(count=c2, count_rate=r,count_max=max)
@@ -408,6 +362,52 @@
 
             !call system_clock(count=c2, count_rate=r, count_max=max)
             !T310 = dble(c2 - T310)/dble(r)
+
+         endif
+
+         IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
+            
+            PTIME = TIME/3600.
+            WRITE(6,350) NCYCLE,PTIME
+ 350        FORMAT(//' CYCLE NUMBER',I5,' MODEL TIME IN  HOURS', F6.2)
+            WRITE(6,355) (PNEW(I,I),I=1,MNMIN)
+ 355        FORMAT(/' DIAGONAL ELEMENTS OF P ' //(8E15.6))
+            WRITE(6,360) (UNEW(I,I),I=1,MNMIN)
+ 360        FORMAT(/' DIAGONAL ELEMENTS OF U ' //(8E15.6))
+            WRITE(6,365) (VNEW(I,I),I=1,MNMIN)
+ 365        FORMAT(/' DIAGONAL ELEMENTS OF V ' //(8E15.6))
+
+!           jr added MFS310--don't know what actual mult factor should be
+!           jr changed divide by 1 million to divide by 100K since system_clock
+!           jr resolution is millisec rather than cpu_time's 10 millisec
+            !MFS310 = 0.0
+            !MFS100 = 0.0
+            !MFS200 = 0.0
+            !MFS300 = 0.0
+            !IF (T310 .GT. 0) MFS310 = 24.*M*N/T310/1.D5
+            !IF (T100 .GT. 0) MFS100 = 24.*M*N/T100/1.D5
+            !IF (T200 .GT. 0) MFS200 = 26.*M*N/T200/1.D5
+            !IF (T300 .GT. 0) MFS300 = 15.*M*N/T300/1.D5
+
+            !call system_clock(count=c2, count_rate=r,count_max=max)
+            !CTIME = dble(c2 - TSTART)/dble(r)
+            !TCYC = CTIME/FLOAT(NCYCLE)
+
+            !WRITE(6,375) NCYCLE,CTIME,TCYC,T310,MFS310,T200,MFS200,T300,MFS300
+! 375        FORMAT(' CYCLE NUMBER',I5,' TOTAL COMPUTER TIME', D15.6,   & 
+!                   ' TIME PER CYCLE', D15.6, /                           & 
+!                   ' TIME AND MEGAFLOPS FOR LOOP 310 ', D15.6,2x,D6.1/   & 
+!                   ' TIME AND MEGAFLOPS FOR LOOP 200 ', D15.6,2x,D6.1/   & 
+!                   ' TIME AND MEGAFLOPS FOR LOOP 300 ', D15.6,2x,D6.1/ )
+
+!           Append calculated values of p, u, and v to netCDF file
+            istart(3) = ncycle/mprint + 1
+            t_val = ncycle
+
+!           Shape of record to be written (one ncycle at a time)
+            call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
+            call my_ncwrite(ncid,u_id,istart,icount,u(1:m,1:n),m,n,t_id,t_val)
+            call my_ncwrite(ncid,v_id,istart,icount,v(1:m,1:n),m,n,t_id,t_val)
 
          endif
 
