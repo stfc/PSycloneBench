@@ -2,11 +2,12 @@ MODULE compute_unew_mod
   USE kind_params_mod
   USE kernel_mod
   use argument_mod
+  use field_mod
   IMPLICIT none
 
   PRIVATE
 
-  PUBLIC manual_invoke_compute_unew
+  PUBLIC invoke_compute_unew
   PUBLIC compute_unew_type, compute_unew_code
 
   TYPE, EXTENDS(kernel_type) :: compute_unew_type
@@ -29,12 +30,12 @@ CONTAINS
 
   !===================================================
 
-  subroutine manual_invoke_compute_unew(unew, uold, z, cv, h, tdt)
+  subroutine invoke_compute_unew(unew, uold, z, cv, h, tdt)
     use topology_mod, only: M, N
     implicit none
     real(wp), intent(out), dimension(:,:) :: unew
     real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
-    real(wp), intent(in) :: tdt
+    type(scalar_field_type), intent(in) :: tdt
     ! Locals
     integer :: I, J
 
@@ -75,11 +76,11 @@ CONTAINS
        DO I= 2, M+1, 1
 
           CALL compute_unew_code(i, j, unew, uold, &
-                                 z, cv, h, tdt)
+                                 z, cv, h, tdt%data)
        END DO
     END DO
 
-  END SUBROUTINE manual_invoke_compute_unew
+  END SUBROUTINE invoke_compute_unew
 
   !===================================================
 

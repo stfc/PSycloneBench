@@ -1,5 +1,6 @@
 module time_step_mod
   use kind_params_mod
+  use field_mod, only: copy_field
   use topology_mod, only: M, N
   implicit none
 
@@ -16,12 +17,15 @@ contains
     use compute_unew_mod, only: compute_unew_code
     use compute_vnew_mod, only: compute_vnew_code
     use compute_pnew_mod, only: compute_pnew_code
+    use time_smooth_mod,  only: time_smooth_code
     implicit none
     real(wp), dimension(:,:), intent(inout) :: cufld, cvfld
     real(wp), dimension(:,:), intent(inout) :: unew, vnew, pnew
     real(wp), dimension(:,:), intent(inout) :: hfld, zfld, pfld, &
                                                ufld, vfld
-    real(wp), dimension(:,:), intent(in) :: uold, vold, pold
+    !> \todo Do we need these 'old' arrays as args or are they
+    !! local workspace really?
+    real(wp), dimension(:,:), intent(inout) :: uold, vold, pold
     real(wp),                 intent(in) :: tdt
     ! Locals
     integer :: I, J
@@ -151,6 +155,36 @@ contains
     pnew(M+1,1:N) = pnew(1,  1:N)
     ! Last row = first row
     pnew(1:M+1,N+1) = pnew(1:M+1,1)
+
+    !============================================
+    ! The time-smoothing is applied to a field at *every* grid point
+    
+    ! Loop over 'columns'
+    DO J=1,N+1 !idim2
+      DO I=1,M+1 !idim1
+        CALL time_smooth_code(i,j,ufld,unew,uold)
+      END DO
+    END DO
+
+    ! Loop over 'columns'
+    DO J=1,N+1 ! idim2
+      DO I=1,M+1 ! idim1
+         CALL time_smooth_code(i,j,vfld,vnew,vold)
+      END DO
+    END DO
+
+    ! Loop over 'columns'
+    DO J=1,N+1 ! idim2
+      DO I=1,M+1 ! idim1
+         CALL time_smooth_code(i,j,pfld,pnew,pold)
+      END DO
+    END DO
+
+    !============================================
+    ! Update for next step
+    CALL copy_field(UNEW, Ufld)
+    CALL copy_field(VNEW, Vfld)
+    CALL copy_field(PNEW, Pfld)
 
   end subroutine invoke_time_step
 

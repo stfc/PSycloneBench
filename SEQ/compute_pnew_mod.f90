@@ -2,11 +2,12 @@ MODULE compute_pnew_mod
   USE kind_params_mod
   USE kernel_mod
   use argument_mod
+  use field_mod
   IMPLICIT none
 
   PRIVATE
 
-  PUBLIC manual_invoke_compute_pnew
+  PUBLIC invoke_compute_pnew
   PUBLIC compute_pnew_type, compute_pnew_code
 
   TYPE, EXTENDS(kernel_type) :: compute_pnew_type
@@ -28,12 +29,12 @@ CONTAINS
 
   !===================================================
 
-  subroutine manual_invoke_compute_pnew(pnew, pold, cu, cv, tdt)
+  subroutine invoke_compute_pnew(pnew, pold, cu, cv, tdt)
     use topology_mod, only: M, N
     implicit none
     real(wp), intent(out), dimension(:,:) :: pnew
     real(wp), intent(in),  dimension(:,:) :: pold, cu, cv
-    real(wp), intent(in) :: tdt
+    type(scalar_field_type), intent(in) :: tdt
     ! Locals
     integer :: I, J
 
@@ -82,11 +83,11 @@ CONTAINS
        DO I= 1, M, 1
 
           CALL compute_pnew_code(i, j, pnew, pold, &
-                                 cu, cv, tdt)
+                                 cu, cv, tdt%data)
        END DO
     END DO
 
-  END SUBROUTINE manual_invoke_compute_pnew
+  END SUBROUTINE invoke_compute_pnew
 
   !===================================================
 
