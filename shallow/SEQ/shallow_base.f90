@@ -49,10 +49,9 @@ program shallow
   use compute_cv_mod,         only: invoke_compute_cv
   use compute_z_mod,          only: invoke_compute_z 
   use compute_h_mod,          only: invoke_compute_h 
-  USE compute_unew_mod,       ONLY: invoke_compute_unew
-  USE compute_vnew_mod,       ONLY: invoke_compute_vnew
-  USE compute_pnew_mod,       ONLY: invoke_compute_pnew
-
+  use compute_unew_mod,       only: invoke_compute_unew
+  use compute_vnew_mod,       only: invoke_compute_vnew
+  use compute_pnew_mod,       only: invoke_compute_pnew
   use topology_mod,           only: M, N
   implicit none
 
@@ -96,6 +95,7 @@ program shallow
   ! Write intial values of p, u, and v into a netCDF file   
   CALL model_write(0, p, u, v)
 
+  !====================================
   ! Perform the first time step
   CALL invoke_compute_cu(CU, P, U)
   CALL invoke_compute_cv(CV, P, V)
@@ -117,14 +117,18 @@ program shallow
   CALL copy_field(VNEW, V)
   CALL copy_field(PNEW, P)
 
+  !====================================
   !     Start timer
   CALL timer_start('Time-stepping',idxt0)
 
   !  ** Start of time-stepping loop proper ** 
   DO ncycle=2,itmax
     
-    call invoke_time_step(cu, cv, u, unew, uold, v, vnew, vold, &
-                          p, pnew, pold, h, z, tdt%data)
+    call invoke_time_step(cu, cv, &
+                          u, unew, uold, &
+                          v, vnew, vold, &
+                          p, pnew, pold, &
+                          h, z, tdt%data)
     !call invoke( compute_fluxes(...),              &
     !             periodic_bc(cu),                  &
     !             periodic_bc(cv),                  &
@@ -144,9 +148,10 @@ program shallow
 
   END DO
 
-  !  ** End of time loop ** 
-
   CALL timer_stop(idxt0)
+
+  !  ** End of time loop ** 
+  !====================================
 
   CALL compute_checksum(pnew(1:M,1:N), csum)
   CALL model_write_log("('P CHECKSUM after ',I6,' steps = ',E15.7)", &
