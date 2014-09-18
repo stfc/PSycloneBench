@@ -2,9 +2,6 @@
 # Makefile.include.<compiler> file.
 include Makefile.include
 
-# For linking with netcdf libraries
-LDFLAGS += -lnetcdff -lnetcdf
-
 # The two targets that this Makefile supports
 #  - shallow_base is the version of the code with manual invokes
 EXECS = shallow_base
