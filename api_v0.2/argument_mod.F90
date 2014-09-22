@@ -48,19 +48,38 @@ integer, public, parameter :: EVERY=1
 integer, public, parameter :: CU=1, CV=2, CT=3, CF=4
 ! Arguments that a kernel can request that are supported/provided by
 ! the infrastructure
+!> Kernel requires the model time-step
 integer, public, parameter :: TIME_STEP   = 1
+!> Kernel requires the cell areas of the T-point grid
 integer, public, parameter :: GRID_AREA_T = 2
+!> Kernel requires the cell areas of the U-point grid
 integer, public, parameter :: GRID_AREA_U = 3
+!> Kernel requires the cell areas of the V-point grid
 integer, public, parameter :: GRID_AREA_V = 4
+!> Kernel requires the land/sea mask at T points
 integer, public, parameter :: GRID_MASK_T = 5
+!> Kernel requires the horizontal grid spacings of the T-point grid
 integer, public, parameter :: GRID_DX_T   = 6
+!> Kernel requires the horizontal grid spacings of the U-point grid
 integer, public, parameter :: GRID_DX_U   = 7
+!> Kernel requires the horizontal grid spacings of the V-point grid
 integer, public, parameter :: GRID_DX_V   = 8
+!> Kernel requires the vertical grid spacings of the T-point grid
 integer, public, parameter :: GRID_DY_T   = 9
+!> Kernel requires the vertical grid spacings of the U-point grid
 integer, public, parameter :: GRID_DY_U   = 10
+!> Kernel requires the vertical grid spacings of the V-point grid
 integer, public, parameter :: GRID_DY_V   = 11
+!> Kernel requires the geographical latitude of U points
 integer, public, parameter :: GRID_LAT_U  = 12
+!> Kernel requires the geographical latitude of V points
 integer, public, parameter :: GRID_LAT_V  = 13
+!> Kernel requires the horizontal grid spacing of the grid.
+!! Requires/assumes that this quantity is constant.
+integer, public, parameter :: GRID_DX_CONST = 14
+!> Kernel requires the vertical grid spacing of the grid.
+!! Requires/assumes that this quantity is constant.
+integer, public, parameter :: GRID_DY_CONST = 14
 
 public :: arg
 public :: READ, WRITE, READWRITE, INC

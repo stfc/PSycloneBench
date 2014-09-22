@@ -24,8 +24,6 @@ MODULES = physical_params_mod.o \
           compute_unew_mod.o compute_vnew_mod.o compute_pnew_mod.o \
           apply_bcs_mod.o time_smooth_mod.o
 
-#         _compute_new_fields_mod.o \
-
 GENERATED_MODULES = psy.o shallow_gen.o
 
 COMMON_MODULES = ${API_LIB} $(MODULES)
@@ -66,10 +64,6 @@ time_smooth_mod.o: ${API_LIB}
 model_mod.o: ${API_LIB} \
              shallow_io_mod.o \
              time_smooth_mod.o
-
-compute_new_fields_mod.o: compute_unew_mod.o \
-                          compute_vnew_mod.o \
-                          compute_pnew_mod.o
 
 apply_bcs_mod.o: ${API_LIB}
 

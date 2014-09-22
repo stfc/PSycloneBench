@@ -12,13 +12,14 @@ module compute_unew_mod
   public compute_unew, compute_unew_code
 
   type, extends(kernel_type) :: compute_unew
-     type(arg), dimension(6) :: meta_args =    &
+     type(arg), dimension(7) :: meta_args =    &
           (/ arg(WRITE, CU, POINTWISE),        & ! unew
              arg(READ,  CU, POINTWISE),        & ! uold
              arg(READ,  CF, POINTWISE),        & ! z
              arg(READ,  CV, POINTWISE),        & ! cv
              arg(READ,  CT, POINTWISE),        & ! h
-             arg(READ,  R,  POINTWISE)         & ! tdt
+             arg(READ,  R,  POINTWISE),        & ! tdt
+             arg(READ,  GRID_DY_CONST)         & ! dy
            /)
      !> This kernel operates on fields that live on an
      !! orthogonal, regular grid.
@@ -27,16 +28,6 @@ module compute_unew_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index in
-     !! both dimensions. If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -62,7 +53,7 @@ contains
     real(wp), intent(in) :: tdt
     ! Locals
     integer  :: I, J
-    real(wp) :: dx, dy
+    real(wp) :: dx
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -97,14 +88,13 @@ contains
     !   END DO
     ! END DO
     dx = unew%grid%dx
-    dy = unew%grid%dy
 
     DO J=unew%internal%ystart, unew%internal%ystop, 1
        DO I=unew%internal%xstart, unew%internal%xstop, 1
 
-          CALL compute_unew_code(i, j, dx, dy, &
+          CALL compute_unew_code(i, j,                 &
                                  unew%data, uold%data, &
-                                 z%data, cv%data, h%data, tdt)
+                                 z%data, cv%data, h%data, tdt, dx)
        END DO
     END DO
 
@@ -112,11 +102,11 @@ contains
 
   !===================================================
 
-  subroutine compute_unew_code(i, j, dx, dy, &
-                               unew, uold, z, cv, h, tdt)
+  subroutine compute_unew_code(i, j,  &
+                               unew, uold, z, cv, h, tdt, dx)
     implicit none
     integer,  intent(in) :: I, J
-    real(wp), intent(in) :: dx, dy
+    real(wp), intent(in) :: dx
     real(wp), intent(out), dimension(:,:) :: unew
     real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
     real(wp), intent(in) :: tdt

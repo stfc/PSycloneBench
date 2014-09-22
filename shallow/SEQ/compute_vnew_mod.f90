@@ -12,13 +12,14 @@ module compute_vnew_mod
   public compute_vnew, compute_vnew_code
 
   TYPE, EXTENDS(kernel_type) :: compute_vnew
-     TYPE(arg), DIMENSION(6) :: meta_args =    &
+     TYPE(arg), DIMENSION(7) :: meta_args =    &
           (/ arg(WRITE, CV, POINTWISE),        & ! vnew
              arg(READ,  CV, POINTWISE),        & ! vold
              arg(READ,  CF, POINTWISE),        & ! z
              arg(READ,  CU, POINTWISE),        & ! cu
              arg(READ,  CT, POINTWISE),        & ! h
-             arg(READ,  R,  POINTWISE)         & ! tdt
+             arg(READ,  R,  POINTWISE),        & ! tdt
+             arg(READ,  GRID_DY_CONST)         & ! dy
            /)
      !> This kernel operates on fields that live on an
      !! orthogonal, regular grid.
@@ -27,16 +28,6 @@ module compute_vnew_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      INTEGER :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index in
-     !! both dimensions. If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -62,7 +53,7 @@ CONTAINS
     real(wp), intent(in) :: tdt
     ! Locals
     integer :: I, J
-    real(wp) :: dx, dy
+    real(wp) :: dy
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -108,15 +99,14 @@ CONTAINS
     !   uij-1- -Tij-1---ui+1j-1
     !
 
-    dx = vnew%grid%dx
     dy = vnew%grid%dy
 
     DO J=vnew%internal%ystart, vnew%internal%ystop, 1
        DO I=vnew%internal%xstart, vnew%internal%xstop, 1
 
-          CALL compute_vnew_code(i, j, dx, dy, &
+          CALL compute_vnew_code(i, j, &
                                  vnew%data, vold%data, &
-                                 z%data, cu%data, h%data, tdt)
+                                 z%data, cu%data, h%data, tdt, dy)
        END DO
     END DO
 
@@ -125,10 +115,10 @@ CONTAINS
   !===================================================
 
   subroutine compute_vnew_code(i, j, &
-                               dx, dy, vnew, vold, z, cu, h, tdt)
+                               vnew, vold, z, cu, h, tdt, dy)
     implicit none
     integer,  intent(in) :: I, J
-    real(wp), intent(in) :: dx, dy
+    real(wp), intent(in) :: dy
     REAL(wp), intent(out), DIMENSION(:,:) :: vnew
     REAL(wp), intent(in),  DIMENSION(:,:) :: vold, z, cu, h
     REAL(wp), intent(in) :: tdt

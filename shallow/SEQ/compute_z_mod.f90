@@ -15,11 +15,13 @@ module compute_z_mod
   public compute_z, compute_z_code
 
   type, extends(kernel_type) :: compute_z
-     type(arg), dimension(4) :: meta_args =    &
+     type(arg), dimension(6) :: meta_args =    &
           (/ arg(WRITE, CF, POINTWISE),        & ! z
              arg(READ,  CT, POINTWISE),        & ! p
              arg(READ,  CU, POINTWISE),        & ! u
-             arg(READ,  CV, POINTWISE)         & ! v
+             arg(READ,  CV, POINTWISE),        & ! v
+             arg(READ,  GRID_DX_CONST),        & ! dx
+             arg(READ,  GRID_DY_CONST)         & ! dy
            /)
      !> This kernel operates on fields that live on an
      !! orthogonal, regular grid.
@@ -28,16 +30,6 @@ module compute_z_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
   
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -72,11 +64,12 @@ contains
     do J=zfld%internal%ystart, zfld%internal%ystop, 1
        do I=zfld%internal%xstart, zfld%internal%xstop, 1
 
-          call compute_z_code(i, j, dx, dy, &
+          call compute_z_code(i, j,      &
                               zfld%data, &
                               pfld%data, &
                               ufld%data, &
-                              vfld%data)
+                              vfld%data, &
+                              dx, dy)
 
        end do
     end do
@@ -86,7 +79,7 @@ contains
   !===================================================
 
   !> Compute the potential vorticity on the grid point (i,j)
-  subroutine compute_z_code(i, j, dx, dy, z, p, u, v)
+  subroutine compute_z_code(i, j, z, p, u, v, dx, dy)
     implicit none
     integer,  intent(in) :: I, J
     real(wp), intent(in) :: dx, dy

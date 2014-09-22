@@ -24,16 +24,6 @@ module compute_cu_mod
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
 
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
-
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
      !! an implementation choice. This can be thought of as choosing

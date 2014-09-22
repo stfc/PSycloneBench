@@ -12,12 +12,14 @@ module compute_pnew_mod
   public compute_pnew, compute_pnew_code
 
   type, extends(kernel_type) :: compute_pnew
-     TYPE(arg), DIMENSION(5) :: meta_args =    &
+     type(arg), dimension(7) :: meta_args =    &
           (/ arg(WRITE, CT, POINTWISE),        & ! pnew
              arg(READ,  CT, POINTWISE),        & ! pold
              arg(READ,  CU, POINTWISE),        & ! cu
              arg(READ,  CV, POINTWISE),        & ! cv
-             arg(READ,  R,  POINTWISE)         & ! tdt
+             arg(READ,  R,  POINTWISE),        & ! tdt
+             arg(READ,  GRID_DX_CONST),        & ! dx
+             arg(READ,  GRID_DY_CONST)         & ! dy
            /)
      !> This kernel operates on fields that live on an
      !! orthogonal, regular grid.
@@ -26,16 +28,6 @@ module compute_pnew_mod
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      INTEGER :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -109,9 +101,9 @@ contains
     DO J=pnew%internal%ystart, pnew%internal%ystop, 1
        DO I=pnew%internal%xstart, pnew%internal%xstop, 1
 
-          CALL compute_pnew_code(i, j, dx, dy, &
+          CALL compute_pnew_code(i, j,                 &
                                  pnew%data, pold%data, &
-                                 cu%data, cv%data, tdt)
+                                 cu%data, cv%data, tdt, dx, dy)
        END DO
     END DO
 
@@ -119,8 +111,9 @@ contains
 
   !===================================================
 
-  subroutine compute_pnew_code(i, j, dx, dy, &
-                               pnew, pold, cu, cv, tdt)
+  subroutine compute_pnew_code(i, j, &
+                               pnew, pold, cu, cv, &
+                               tdt, dx, dy)
     implicit none
     integer,  intent(in) :: I, J
     real(wp), intent(in) :: dx, dy
