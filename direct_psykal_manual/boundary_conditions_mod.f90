@@ -16,24 +16,15 @@ module boundary_conditions_mod
   !=======================================
 
   type, extends(kernel_type) :: bc_ssh
-     type(arg), dimension(2) :: meta_args =  &
+     type(arg), dimension(3) :: meta_args =  &
           (/ arg(READ,       R, POINTWISE),  &
-             arg(READWRITE, CT, POINTWISE)   &
+             arg(READWRITE, CT, POINTWISE),  &
+             arg(READ,      GRID_MASK_T)     &
            /)
 
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -51,23 +42,14 @@ module boundary_conditions_mod
   !=======================================
 
   type, extends(kernel_type) :: bc_solid_u
-     type(arg), dimension(1) :: meta_args =  &
-          (/ arg(WRITE, CU, POINTWISE)   &
+     type(arg), dimension(2) :: meta_args =  &
+          (/ arg(WRITE, CU, POINTWISE),      &
+             arg(READ,      GRID_MASK_T)     &
            /)
 
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -85,23 +67,14 @@ module boundary_conditions_mod
   !=======================================
 
   type, extends(kernel_type) :: bc_solid_v
-     type(arg), dimension(1) :: meta_args =  &
-          (/ arg(WRITE, CV, POINTWISE)   &
+     type(arg), dimension(2) :: meta_args =  &
+          (/ arg(WRITE, CV, POINTWISE),      &
+             arg(READ,      GRID_MASK_T)     &
            /)
 
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -119,25 +92,16 @@ module boundary_conditions_mod
   !=======================================
 
   type, extends(kernel_type) :: bc_flather_u
-     type(arg), dimension(3) :: meta_args =  &
+     type(arg), dimension(4) :: meta_args =  &
           (/ arg(READWRITE, CU, POINTWISE),  & ! ua
              arg(READ,      CU, POINTWISE),  & ! hu
-             arg(READ,      CU, POINTWISE)   & ! sshn_u
+             arg(READ,      CU, POINTWISE),  & ! sshn_u
+             arg(READ,      GRID_MASK_T)     &
            /)
 
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -155,25 +119,16 @@ module boundary_conditions_mod
   !=======================================
 
   type, extends(kernel_type) :: bc_flather_v
-     type(arg), dimension(3) :: meta_args =  &
+     type(arg), dimension(4) :: meta_args =  &
           (/ arg(READWRITE, CV, POINTWISE),  & ! va
              arg(READ,      CV, POINTWISE),  & ! hv
-             arg(READ,      CV, POINTWISE)   & ! sshn_v
+             arg(READ,      CV, POINTWISE),  & ! sshn_v
+             arg(READ,      GRID_MASK_T)     &
            /)
 
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
-
-     !> This kernel is written assuming that the arrays for
-     !! each field type are set-up such that the internal
-     !! region of each field starts at the same array index (for
-     !! both dimensions). If this weren't the case then
-     !! these shifts (which are relative to the indexing used
-     !! for fields on T points) would be non-zero.
-     integer :: u_index_shift(2) = (/ 0, 0 /)
-     integer :: v_index_shift(2) = (/ 0, 0 /)
-     integer :: f_index_shift(2) = (/ 0, 0 /)
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -208,8 +163,8 @@ contains
 
     DO jj = ssha%internal%ystart, ssha%internal%ystop
        DO ji = ssha%internal%xstart, ssha%internal%xstop
-          call bc_ssh_code(ji, jj, ssha%grid%tmask, &
-                           istep, ssha%data)
+          call bc_ssh_code(ji, jj, &
+                           istep, ssha%data, ssha%grid%tmask)
        END DO
     END DO
 
@@ -217,7 +172,7 @@ contains
   
   !================================================
 
-  subroutine bc_ssh_code(ji, jj, tmask, istep, ssha)
+  subroutine bc_ssh_code(ji, jj, istep, ssha, tmask)
     use model_mod, only: rdt
     implicit none
     integer, intent(in)  :: ji, jj
@@ -263,7 +218,7 @@ contains
 ! 2/ If I do that, is tmask(ji+1,jj) going to stay within bounds?
     do jj = ua%whole%ystart, ua%whole%ystop, 1
        do ji = ua%whole%xstart, ua%whole%xstop, 1
-          call bc_solid_u_code(ji, jj, ua%grid%tmask, ua%data)
+          call bc_solid_u_code(ji, jj, ua%data, ua%grid%tmask)
        end do
     end do
 
@@ -272,7 +227,7 @@ contains
   !================================================
   
   !> Kernel to apply solid boundary conditions for u-velocity
-  subroutine bc_solid_u_code(ji, jj, tmask, ua)
+  subroutine bc_solid_u_code(ji, jj, ua, tmask)
     implicit none
     integer,                  intent(in)    :: ji, jj
     integer,  dimension(:,:), intent(in)    :: tmask
@@ -296,7 +251,7 @@ contains
 
     do jj = va%whole%ystart, va%whole%ystop, 1
        do ji = va%whole%xstart, va%whole%xstop, 1
-          call bc_solid_v_code(ji,jj,va%grid%tmask,va%data)
+          call bc_solid_v_code(ji,jj,va%data,va%grid%tmask)
       end do
     end do
 
@@ -305,7 +260,7 @@ contains
   !================================================
 
   !> Kernel to apply solid boundary conditions for v-velocity
-  subroutine bc_solid_v_code(ji, jj, tmask, va)
+  subroutine bc_solid_v_code(ji, jj, va, tmask)
     implicit none
     integer,                 intent(in)    :: ji, jj
     integer, dimension(:,:), intent(in)    :: tmask
@@ -335,8 +290,9 @@ contains
     !              DO ji = 0, jpi  
     DO jj = ua%whole%ystart, ua%whole%ystop, 1
        DO ji = ua%whole%xstart, ua%whole%xstop, 1
-          call bc_flather_u_code(ji,jj,ua%grid%tmask, &
-                                 ua%data, hu%data, sshn_u%data)
+          call bc_flather_u_code(ji,jj, &
+                                 ua%data, hu%data, sshn_u%data, &
+                                 ua%grid%tmask)
        END DO
     END DO
   
@@ -345,7 +301,7 @@ contains
   !================================================
 
   !> Kernel to apply Flather condition to U
-  subroutine bc_flather_u_code(ji, jj, tmask, ua, hu, sshn_u)
+  subroutine bc_flather_u_code(ji, jj, ua, hu, sshn_u, tmask)
     implicit none
     integer,                  intent(in)    :: ji, jj
     integer,  dimension(:,:), intent(in)    :: tmask
@@ -389,8 +345,9 @@ contains
 
     DO jj = va%whole%ystart, va%whole%ystop, 1
        DO ji = va%whole%xstart, va%whole%xstop, 1
-          call bc_flather_v_code(ji,jj,va%grid%tmask, &
-                                 va%data, hv%data, sshn_v%data)
+          call bc_flather_v_code(ji,jj, &
+                                 va%data, hv%data, sshn_v%data, &
+                                 va%grid%tmask)
        END DO
     END DO
 
@@ -400,7 +357,7 @@ contains
 
   !> Kernel to apply Flather boundary condition to v component
   !! of velocity
-  subroutine bc_flather_v_code(ji, jj, tmask, va, hv, sshn_v)
+  subroutine bc_flather_v_code(ji, jj, va, hv, sshn_v, tmask)
     implicit none
     integer,                  intent(in) :: ji, jj
     integer,  dimension(:,:), intent(in) :: tmask
