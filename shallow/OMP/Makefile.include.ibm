@@ -1,0 +1,12 @@
+# Build settings for ibm compiler on BG/Q
+F90 = bgxlf2003_r
+
+NETCDF_INC = /gpfs/packages/ibm/netcdf/3.6.2/include
+NETCDF_LIB = /gpfs/packages/ibm/netcdf/3.6.2/lib
+
+#F90FLAGS =  -qcheck -g -O0 -qlanglvl=2003std
+F90FLAGS = -O5 -qinline=auto:level=10
+LDFLAGS = -qreport -O5 -qinline=auto:level=10 
+
+F90FLAGS +=  -I${NETCDF_INC}
+LDFLAGS += -L${NETCDF_LIB} -lnetcdf

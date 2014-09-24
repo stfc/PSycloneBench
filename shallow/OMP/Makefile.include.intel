@@ -1,0 +1,22 @@
+# Build settings for Intel compiler
+F90 = ifort
+#F90 = ftn
+
+#NETCDF_INC = /usr/include
+#NETCDF_LIB = /usr/lib64
+NETCDF_INC = ${HOME}/MyInstalls/include
+NETCDF_LIB = ${HOME}/MyInstalls/lib
+
+#F90FLAGS =  -g -O0 -check all
+F90FLAGS = -O4 -axCORE-AVX2 -fast -opt-report
+#F90FLAGS += -vec-report6
+# -guide=4
+# Turn-off all compiler limits regarding in-lining of code
+F90FLAGS += -no-inline-factor 
+# For output of source-code-annotated assembler
+#F90FLAGS += -S -fsource-asm -fverbose-asm
+
+F90FLAGS += -I${NETCDF_INC}
+#LDFLAGS = 
+LDFLAGS = -fast
+LDFLAGS += -L${NETCDF_LIB} -lnetcdf -lnetcdff
