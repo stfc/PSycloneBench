@@ -2,6 +2,7 @@ module time_step_mod
   use kind_params_mod
   use field_mod, only: copy_field
   use topology_mod, only: M, N, mp1, np1
+  use shallow_omp_mod, only: tile, ntiles
   implicit none
 
 contains
@@ -27,7 +28,7 @@ contains
     real(wp), dimension(mp1,np1), intent(inout) :: uold, vold, pold
     real(wp),                     intent(in) :: tdt
     ! Locals
-    integer :: I, J
+    integer :: I, J, it
 
     !============================================
     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
@@ -36,16 +37,18 @@ contains
 
     !CALL invoke_compute_cu(CU, P, U)
     ! M/N obtained from topology look-up
-    do J= 1, N, 1
-       do I = 1, M, 1
+    do it = 1, ntiles, 1
+       do J= tile(it)%jbeg, tile(it)%jend, 1
+          do I = tile(it)%ibeg, tile(it)%iend, 1
+             
+             call compute_cu_code(i+1, j, cufld, pfld, ufld)
+             
+             call compute_cv_code(i, j+1, cvfld, pfld, vfld)
 
-          call compute_cu_code(i+1, j, cufld, pfld, ufld)
+             call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
 
-          call compute_cv_code(i, j+1, cvfld, pfld, vfld)
-
-          call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
-
-          CALL compute_h_code(i, j, hfld, pfld, ufld, vfld)
+             CALL compute_h_code(i, j, hfld, pfld, ufld, vfld)
+          end do
        end do
     end do
 
@@ -109,17 +112,19 @@ contains
     ! COMPUTE NEW VALUES U,V AND P
 
     !CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt)
-    DO J=1, N, 1
-       DO I= 1, M, 1
+    do it = 1, ntiles, 1
+       do J= tile(it)%jbeg, tile(it)%jend, 1
+          do I = tile(it)%ibeg, tile(it)%iend, 1
 
-          CALL compute_unew_code(i+1, j, unew, uold, &
+             CALL compute_unew_code(i+1, j, unew, uold, &
                                  zfld, cvfld, hfld, tdt)
 
-          CALL compute_vnew_code(i, j+1, vnew, vold, &
+             CALL compute_vnew_code(i, j+1, vnew, vold, &
                                  zfld, cufld, hfld, tdt)
 
-          CALL compute_pnew_code(i, j, pnew, pold, &
+             CALL compute_pnew_code(i, j, pnew, pold, &
                                  cufld, cvfld, tdt)
+          end do
        END DO
     END DO
 

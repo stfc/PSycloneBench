@@ -27,6 +27,7 @@ module shallow_omp_mod
   INTEGER, SAVE                                    :: max_tile_height
 
   public openmp_grid_init
+  public ntiles, tile
 
 contains
 
