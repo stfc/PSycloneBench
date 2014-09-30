@@ -32,11 +32,11 @@ module topology_mod
   type(topology_type) :: cu, cv, ct, cf
 
   !> Extent in x and y of the model fields
-  integer :: M, N
+  integer :: M, N, MP1, NP1
 
   public region
   !public cu, cv, ct, cf
-  public M, N
+  public M, N, MP1, NP1
   public topology_init
 
 contains
@@ -52,6 +52,8 @@ contains
 
     M = nx - 1
     N = ny - 1
+    MP1 = nx
+    NP1 = ny
 
     ! When updating a quantity on U points we write to:
     ! (using 'x' to indicate a location that is written):
