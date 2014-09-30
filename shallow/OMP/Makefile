@@ -80,6 +80,8 @@ clean:
 
 allclean: clean
 	rm -f *.exe fparser.log
+	rm -f *.cg *.lst *.opt
+	rm -rf shallow_prog_lib
 
 docs:
 	doxygen shallow.doxy.config
