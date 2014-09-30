@@ -15,7 +15,7 @@ MODULES = kind_params_mod.o physical_params_mod.o field_mod.o model_mod.o \
           compute_unew_mod.o compute_vnew_mod.o compute_pnew_mod.o \
           apply_bcs_mod.o time_step_mod.o \
           timing_mod.o time_smooth_mod.o intel_timer_mod.o \
-          mesh_mod.o topology_mod.o
+          mesh_mod.o topology_mod.o shallow_omp_mod.o
 
 GENERATED_MODULES = psy.o shallow_gen.o
 
@@ -64,7 +64,7 @@ timing_mod.o: intel_timer_mod.o
 mesh_mod.o: kind_params_mod.o
 
 model_mod.o: field_mod.o timing_mod.o shallow_io_mod.o mesh_mod.o \
-             time_smooth_mod.o topology_mod.o
+             time_smooth_mod.o topology_mod.o shallow_omp_mod.o
 
 %.exe: $(MODULE_LIST)
 	$(F90) -o $@ $? $(LDFLAGS)

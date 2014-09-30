@@ -98,6 +98,7 @@ CONTAINS
     use mesh_mod,        only: mesh_init
     use time_smooth_mod, only: time_smooth_init
     use topology_mod,    only: topology_init
+    use shallow_omp_mod, only: openmp_grid_init
     IMPLICIT none
     !> Grid spacings currently hard-wired, as in original
     !! version of code.
@@ -131,6 +132,9 @@ CONTAINS
 
     ! Initialise model IO 'system'
     CALL model_write_init(m,n)
+
+    ! Set-up tiling
+    call openmp_grid_init(2,2)
 
     ! Log model parameters
     CALL print_initial_values(m,n,dxloc,dyloc, dt%data, alpha_loc)
