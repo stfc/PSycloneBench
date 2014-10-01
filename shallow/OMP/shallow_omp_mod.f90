@@ -33,6 +33,7 @@ contains
   !================================================
 
   SUBROUTINE openmp_grid_init(nx, ny)
+    use omp_lib, only: omp_get_max_threads
     use topology_mod, only: MP1, NP1
     integer, intent(in), optional :: nx, ny
     INTEGER :: idx, idy, ival, jval ! For tile extent calculation
@@ -254,19 +255,6 @@ contains
      WRITE(*,"('Tile load imbalance (%) =',F5.1)") &
                               100.0*(nvects_max-nvects_min)/REAL(nvects_min)
      WRITE (*,"('Max tile dims are ',I4,'x',I4)") max_tile_width, max_tile_height
-
-     ! Check to see whether nested parallelism is supported
-     nested_par = .FALSE.
-!$   CALL omp_set_nested(.TRUE.)
-!$   nested_par = omp_get_nested()
-
-     IF( nested_par )THEN
-        WRITE (*,"(/'OpenMP implementation SUPPORTS nested parallelism.'/)")
-     ELSE
-!$      WRITE (*,"(/'OpenMP implementation DOES NOT support nested parallelism.'/)")        
-     END IF
-
-!$   CALL omp_set_max_active_levels(2)
 
   END SUBROUTINE openmp_grid_init
 
