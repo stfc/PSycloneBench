@@ -134,7 +134,7 @@ CONTAINS
     CALL model_write_init(m,n)
 
     ! Set-up tiling
-    call openmp_grid_init(1,1)
+    call openmp_grid_init()
 
     ! Log model parameters
     CALL print_initial_values(m,n,dxloc,dyloc, dt%data, alpha_loc)
