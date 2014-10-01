@@ -124,7 +124,7 @@ CONTAINS
 
     IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
 
-       CALL print_diagonals(p, u, v)
+       !CALL print_diagonals(p, u, v)
     
        m = SIZE(p, 1) - 1
        n = SIZE(p, 2) - 1

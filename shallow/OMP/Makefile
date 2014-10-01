@@ -7,15 +7,15 @@ include Makefile.include
 EXECS = shallow_base
 
 # The modules that are common to both targets
-MODULES = kind_params_mod.o physical_params_mod.o field_mod.o model_mod.o \
-          shallow_io_mod.o \
+MODULES = kind_params_mod.o physical_params_mod.o topology_mod.o \
+          mesh_mod.o field_mod.o model_mod.o \
+          shallow_omp_mod.o shallow_io_mod.o \
           initial_conditions_mod.o \
           compute_cu_mod.o compute_cv_mod.o \
           compute_z_mod.o compute_h_mod.o \
           compute_unew_mod.o compute_vnew_mod.o compute_pnew_mod.o \
           apply_bcs_mod.o time_step_mod.o \
-          timing_mod.o time_smooth_mod.o intel_timer_mod.o \
-          mesh_mod.o topology_mod.o shallow_omp_mod.o
+          timing_mod.o time_smooth_mod.o intel_timer_mod.o
 
 GENERATED_MODULES = psy.o shallow_gen.o
 
@@ -51,6 +51,8 @@ compute_fluxes_mod.o: compute_cu_mod.o \
 field_mod.o: kind_params_mod.o topology_mod.o
 
 initial_conditions_mod.o: physical_params_mod.o topology_mod.o model_mod.o
+
+shallow_omp_mod.o: topology_mod.o
 
 time_smooth_mod.o: kind_params_mod.o topology_mod.o $(GUNGHO_MODULES)
 

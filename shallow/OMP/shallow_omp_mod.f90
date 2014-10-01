@@ -2,18 +2,17 @@ module shallow_omp_mod
 
   private
 
+  type :: region_type
+     integer :: istart
+     integer :: istop
+     integer :: jstart
+     integer :: jstop
+  end type region_type
+
   ! For coarse-grained OpenMP tiling
   TYPE :: tile_type
-     INTEGER :: ibeg
-     INTEGER :: iend
-     INTEGER :: jbeg
-     INTEGER :: jend
-     ! For loop limits that are 2 instead of 1 and jp{i,j}-1 instead
-     ! of jp{i,j}
-     INTEGER :: ibegp1
-     INTEGER :: iendm1
-     INTEGER :: jbegp1
-     INTEGER :: jendm1
+     type(region_type) :: internal
+     type(region_type) :: whole
   END TYPE tile_type
 
   INTEGER, SAVE                                    :: ntiles
@@ -34,7 +33,7 @@ contains
   !================================================
 
   SUBROUTINE openmp_grid_init(nx, ny)
-    use topology_mod, only: M, N
+    use topology_mod, only: MP1, NP1
     integer, intent(in), optional :: nx, ny
     INTEGER :: idx, idy, ival, jval ! For tile extent calculation
     INTEGER :: ierr, nwidth
@@ -89,7 +88,7 @@ contains
 
         ! Match longest dimension of MPI domain to longest dimension of 
         ! thread grid
-        IF(M > N)THEN
+        IF(MP1 > NP1)THEN
            IF( ntilex < ntiley )THEN
               ierr   = ntiley
               ntiley = ntilex
@@ -112,39 +111,39 @@ contains
      ! overlap. Every other tile has two overlaps. So: 
      ! M = (ntilex-2)*(idx-2) + 2*(idx-1)
      ! Rearranging this gives the following expressions for idx and idy:
-     idx = (M + 6)/ntilex + 2
-     idy = (N + 6)/ntiley + 2
+     idx = (MP1 + 6)/ntilex + 2
+     idy = (NP1 + 6)/ntiley + 2
 
      ! Integer arithmetic means that ntiley tiles of height idy might
      ! actually span a height greater or less than N. If so, we try and
      ! reduce the height of each row by just one until we've accounted
      ! for the <jover> extra rows.
      nwidth = (ntiley-2)*(idy-2) + 2*(idy-1)
-     IF(nwidth > N)THEN
-        jover  = nwidth - N
+     IF(nwidth > NP1)THEN
+        jover  = nwidth - NP1
         junder = 0
-     ELSE IF(nwidth < N)THEN
+     ELSE IF(nwidth < NP1)THEN
         jover  = 0
-        junder = N - nwidth
+        junder = NP1 - nwidth
      ELSE
         jover  = 0
         junder = 0
      END IF
      ! Ditto for x dimension
      nwidth = (ntilex-2)*(idx-2) + 2*(idx-1)
-     IF(nwidth > M)THEN
-        iover  = nwidth - M
+     IF(nwidth > MP1)THEN
+        iover  = nwidth - MP1
         iunder = 0
-     ELSE IF(nwidth < M)THEN
+     ELSE IF(nwidth < MP1)THEN
         iover  = 0
-        iunder = M - nwidth
+        iunder = MP1 - nwidth
      ELSE
         iover  = 0
         iunder = 0
      END IF
 
-     ! For AVX instructions, I think we want MOD(idx,4) == 0
-     !idx = idx + (4 - MOD(idx,4))
+     ! For AVX (256-bit vector) instructions, I think we want
+     ! MOD(idx,4) == 0 idx = idx + (4 - MOD(idx,4))
 
      WRITE(*,"('Tile width = ',I4,', tile height = ',I4)") idx, idy
      WRITE(*,"('iover = ',I3,', iunder = ',I3)") iover, iunder
@@ -189,47 +188,57 @@ contains
               idxtmp = idx
            END IF
 
-           tile(ith)%ibeg = ival
-           tile(ith)%ibegp1 = tile(ith)%ibeg + 1
+           if(ji == 1)then
+              tile(ith)%whole%istart    = ival
+              tile(ith)%internal%istart = ival
+           else
+              tile(ith)%whole%istart    = ival
+              tile(ith)%internal%istart = ival + 1
+           end if
 
            IF(ji == ntilex)THEN
-              tile(ith)%iend = M
-              tile(ith)%iendm1 = M-1
+              tile(ith)%internal%istop = MP1 - 1
+              tile(ith)%whole%istop = tile(ith)%internal%istop
            ELSE
-              tile(ith)%iend = MIN(ival + idxtmp - 1, M)
-              tile(ith)%iendm1 = tile(ith)%iend - 1
+              tile(ith)%whole%istop = MIN(ival + idxtmp - 1, MP1-1)
+              tile(ith)%internal%istop =  tile(ith)%whole%istop - 1
            END IF
 
-           tile(ith)%jbeg = jval
-           tile(ith)%jbegp1 = tile(ith)%jbeg + 1
+           if(jj == 1)then
+              tile(ith)%whole%jstart    = jval
+              tile(ith)%internal%jstart = jval
+           else
+              tile(ith)%whole%jstart    = jval
+              tile(ith)%internal%jstart = jval + 1
+           end if
 
            IF(jj == ntiley)THEN
-              tile(ith)%jend = N
-              tile(ith)%jendm1 = N-1
+              tile(ith)%internal%jstop = NP1 - 1
+              tile(ith)%whole%jstop = tile(ith)%internal%jstop
            ELSE
-              tile(ith)%jend = MIN(jval + idytmp - 1, N)
-              tile(ith)%jendm1 = tile(ith)%jend - 1
+              tile(ith)%whole%jstop = MIN(jval + idytmp - 1, NP1-1)
+              tile(ith)%internal%jstop = tile(ith)%whole%jstop - 1
            END IF
 
            IF(print_tiles)THEN
-              WRITE(*,"('tile[',I4,'](',I4,':',I4,')(',I4,':',I4,'), interior:(',I4,':',I4,')(',I4,':',I4,') ')") &
+              WRITE(*,"('tile[',I4,'](',I4,':',I4,')(',I4,':',I4,'), interior:(',I4,':',I4,')(',I4,':',I4,') ')")                    &
                  ith,                                &
-                 tile(ith)%ibeg, tile(ith)%iend,     &
-                 tile(ith)%jbeg, tile(ith)%jend,     &
-                 tile(ith)%ibegp1, tile(ith)%iendm1, &
-                 tile(ith)%jbegp1, tile(ith)%jendm1
+                 tile(ith)%whole%istart, tile(ith)%whole%istop,     &
+                 tile(ith)%whole%jstart, tile(ith)%whole%jstop,     &
+                 tile(ith)%internal%istart, tile(ith)%internal%istop,     &
+                 tile(ith)%internal%jstart, tile(ith)%internal%jstop
            END IF
 
            ! Collect some data on the distribution of tile sizes for loadbalance info
-           nvects = (tile(ith)%iendm1 - tile(ith)%ibegp1 + 1) * &
-                    (tile(ith)%jendm1 - tile(ith)%jbegp1 + 1)
+           nvects = (tile(ith)%internal%istop - tile(ith)%internal%istart + 1) * &
+                    (tile(ith)%internal%jstop - tile(ith)%internal%jstart + 1)
            nvects_sum = nvects_sum + nvects
            nvects_min = MIN(nvects_min, nvects)
            nvects_max = MAX(nvects_max, nvects)
 
            ! For use when allocating tile-'private' work arrays
-           max_tile_width  = MAX(max_tile_width, (tile(ith)%iend - tile(ith)%ibeg + 1) )
-           max_tile_height = MAX(max_tile_height, (tile(ith)%jend - tile(ith)%jbeg + 1) )
+           max_tile_width  = MAX(max_tile_width, (tile(ith)%whole%istop - tile(ith)%whole%istart + 1) )
+           max_tile_height = MAX(max_tile_height, (tile(ith)%whole%jstop - tile(ith)%whole%jstart + 1) )
 
            ival = ival + idxtmp - 2
            ith = ith + 1
