@@ -133,7 +133,8 @@ CONTAINS
     ! Initialise model IO 'system'
     CALL model_write_init(m,n)
 
-    ! Set-up tiling
+    ! Set-up tiling - this should be done in the middle layer
+    ! as it's a parallel thing
     call openmp_grid_init()
 
     ! Log model parameters

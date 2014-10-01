@@ -32,10 +32,11 @@ contains
 
   !================================================
 
-  SUBROUTINE openmp_grid_init(nx, ny)
+  SUBROUTINE openmp_grid_init(nx_arg, ny_arg)
     use omp_lib, only: omp_get_max_threads
     use topology_mod, only: MP1, NP1
-    integer, intent(in), optional :: nx, ny
+    integer, intent(in), optional :: nx_arg, ny_arg
+    integer :: nx, ny
     INTEGER :: idx, idy, ival, jval ! For tile extent calculation
     INTEGER :: ierr, nwidth
     INTEGER :: ji,jj, ith
@@ -51,19 +52,20 @@ contains
     auto_tile = .TRUE.
 
     ! Dimensions of the grid of tiles. 
-    if(present(nx))then
+    if(get_grid_dims(nx,ny) )then
        ntilex = nx
+       ntiley = ny
+       auto_tile = .FALSE.
+    else if( present(nx_arg) .and. present(ny_arg) )then
+       ntilex = nx_arg
+       ntiley = ny_arg
        auto_tile = .FALSE.
     else
        ntilex = 1
-    endif
-    if(present(ny))then
-       ntiley = ny
-       auto_tile = .FALSE.
-    else
        ntiley = 1
     end if
 
+    
     ntiles = ntilex * ntiley
 
      nthreads = 1
@@ -257,5 +259,41 @@ contains
      WRITE (*,"('Max tile dims are ',I4,'x',I4)") max_tile_width, max_tile_height
 
   END SUBROUTINE openmp_grid_init
+
+  !==============================================
+
+  function get_grid_dims(nx, ny) result(success)
+    implicit none
+    integer, intent(inout) :: nx, ny
+    logical :: success
+    character(len=20) :: lstr
+    integer :: idx, ierr
+
+    success = .FALSE.
+
+    call get_environment_variable(NAME='GOCEAN_OMP_GRID', VALUE=lstr, &
+                                  STATUS=ierr)
+
+    if(ierr /= 0)return
+
+    ! We expect the string to have the format 'AxB' where A and B are
+    ! integers.
+    idx = index(lstr, 'x')
+    if(idx == 0)then
+       write (*,"(/'shallow_omp_mod::get_grid_dims: failed to parse ' &
+                 &  'GOCEAN_OMP_GRID string: ',(A))") TRIM(lstr)
+       write (*,"('   -  will use defaults for dimensions of tiling grid')")
+       return
+    endif
+
+    read(lstr(1:idx-1),*,iostat=ierr) nx
+    if(ierr /= 0)return
+
+    read(lstr(idx+1:),*,iostat=ierr) ny
+    if(ierr == 0)success = .TRUE.
+
+  end function get_grid_dims
+
+  !==============================================
 
 end module shallow_omp_mod
