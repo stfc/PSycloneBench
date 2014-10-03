@@ -44,7 +44,6 @@ contains
     INTEGER :: nthreads       ! No. of OpenMP threads being used
     INTEGER :: jover, junder, idytmp
     INTEGER :: iover, iunder, idxtmp
-    LOGICAL :: nested_par     ! Whether OpenMP supports nested parallelism
     ! For doing stats on tile sizes
     INTEGER :: nvects, nvects_sum, nvects_min, nvects_max 
     LOGICAL, PARAMETER :: print_tiles = .TRUE.
@@ -225,11 +224,11 @@ contains
            END IF
 
            IF(print_tiles)THEN
-              WRITE(*,"('tile[',I4,'](',I4,':',I4,')(',I4,':',I4,'), interior:(',I4,':',I4,')(',I4,':',I4,') ')")                    &
+              WRITE(*,"('tile[',I4,'](',I4,':',I4,')(',I4,':',I4,'), interior:(',I4,':',I4,')(',I4,':',I4,') ')") &
                  ith,                                &
                  tile(ith)%whole%istart, tile(ith)%whole%istop,     &
                  tile(ith)%whole%jstart, tile(ith)%whole%jstop,     &
-                 tile(ith)%internal%istart, tile(ith)%internal%istop,     &
+                 tile(ith)%internal%istart, tile(ith)%internal%istop, &
                  tile(ith)%internal%jstart, tile(ith)%internal%jstop
            END IF
 
