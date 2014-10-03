@@ -322,9 +322,9 @@ MODULE timing_mod
 
             IF(use_rdtsc_timer)THEN
                ! Units are MILLIONS of cycles (counts)
-               wtime = 1.0e-6_wp * timer(ji,jt)%total
+               wtime = REAL(1.0e-6_wp * timer(ji,jt)%total)
             ELSE
-               wtime = time_in_s(0._wp,timer(ji,jt)%total)
+               wtime = REAL(time_in_s(0._wp,timer(ji,jt)%total))
             END IF
 
             ! Sum the trip-counts of all threads for this region
