@@ -144,11 +144,11 @@ program shallow
     !             copy_field(vnew, v),              &
     !             copy_field(pnew, p)        )
 
-    CALL model_write(ncycle, p, u, v)
+    call model_write(ncycle, p, u, v)
 
-  END DO
+  end do
 
-  CALL timer_stop(idxt0)
+  call timer_stop(idxt0)
 
   !  ** End of time loop ** 
   !====================================
