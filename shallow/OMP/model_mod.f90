@@ -153,11 +153,11 @@ CONTAINS
   !================================================
 
   subroutine model_alloc(idimx, idimy)
-    use shallow_omp_mod, only: ntiles, tile
+    use topology_mod, only: M, N
     implicit none
     integer, intent(in) :: idimx, idimy
     ! Locals
-    integer :: ierr, ji, jj, it
+    integer :: ierr, ji, jj
 
     allocate( u(idimx,idimy),    v(idimx,idimy),    p(idimx,idimy),    & 
               unew(idimx,idimy), vnew(idimx,idimy), pnew(idimx,idimy), & 
@@ -174,18 +174,16 @@ CONTAINS
     ! structure of a typical part of the computation in the hope that the 
     ! thread that first touches a given part of the array will be the one 
     ! updating that part of the array as the program executes.
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none), shared(tile, ntiles, u, &
-!$OMP             v, p, unew, vnew, pnew, uold, vold, pold, cu, cv, z, h, psi), &
-!$OMP             private(it,jj,ji)
-    do it = 1, ntiles, 1
-       do jj= tile(it)%internal%jstart, tile(it)%internal%jstop, 1
-          do ji = tile(it)%internal%istart, tile(it)%internal%istop, 1
-             u(ji+1,jj)    = 0.0d0 ; v(ji,jj+1)    = 0.0d0 ; p(ji,jj)    = 0.0d0
-             unew(ji+1,jj) = 0.0d0 ; vnew(ji,jj+1) = 0.0d0 ; pnew(ji,jj) = 0.0d0
-             uold(ji+1,jj) = 0.0d0 ; vold(ji,jj+1) = 0.0d0 ; pold(ji,jj) = 0.0d0
-             cu(ji+1,jj)   = 0.0d0 ; cv(ji+1,jj)   = 0.0d0
-             z(ji+1,jj+1)  = 0.0d0 ; h(ji,jj)      = 0.0d0 ; psi(ji,jj)  = 0.0d0
-          end do
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none), shared(m, n, u, v, p, &
+!$OMP             unew, vnew, pnew, uold, vold, pold, cu, cv, z, h, psi), &
+!$OMP             private(jj,ji)
+    do jj = 1, N
+       do ji = 1, M
+          u(ji+1,jj)    = 0.0d0 ; v(ji,jj+1)    = 0.0d0 ; p(ji,jj)    = 0.0d0
+          unew(ji+1,jj) = 0.0d0 ; vnew(ji,jj+1) = 0.0d0 ; pnew(ji,jj) = 0.0d0
+          uold(ji+1,jj) = 0.0d0 ; vold(ji,jj+1) = 0.0d0 ; pold(ji,jj) = 0.0d0
+          cu(ji+1,jj)   = 0.0d0 ; cv(ji+1,jj)   = 0.0d0
+          z(ji+1,jj+1)  = 0.0d0 ; h(ji,jj)      = 0.0d0 ; psi(ji,jj)  = 0.0d0
        end do
     end do
 !$OMP END PARALLEL DO

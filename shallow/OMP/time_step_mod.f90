@@ -2,7 +2,6 @@ module time_step_mod
   use kind_params_mod
   use field_mod, only: copy_field
   use topology_mod, only: M, N, mp1, np1
-  use shallow_omp_mod, only: tile, ntiles
   implicit none
 
 contains
@@ -29,30 +28,27 @@ contains
     real(wp),                     intent(in) :: tdt
     ! Locals
     integer :: idxt
-    integer :: I, J, it
+    integer :: I, J
 
-!$OMP PARALLEL default(none), shared(ntiles, cufld, cvfld, &
+!$OMP PARALLEL default(none), shared(cufld, cvfld, &
 !$OMP          unew,vnew,pnew,hfld,zfld,pfld,ufld,vfld,    &
-!$OMP          uold,vold,pold,M,N,tile,tdt),               &
-!$OMP          private(it,j,i,idxt)
+!$OMP          uold,vold,pold,M,N,tdt), private(j,i,idxt)
 
     !============================================
     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
     call timer_start('Capital {U,V,Z,H}',idxt)
 
 !$OMP DO SCHEDULE(RUNTIME)
-    do it = 1, ntiles, 1
-       do J= tile(it)%internal%jstart, tile(it)%internal%jstop, 1
-          do I = tile(it)%internal%istart, tile(it)%internal%istop, 1
+    DO J= 1, N, 1
+       DO I= 1, M, 1
              
-             call compute_cu_code(i+1, j, cufld, pfld, ufld)
+          call compute_cu_code(i+1, j, cufld, pfld, ufld)
              
-             call compute_cv_code(i, j+1, cvfld, pfld, vfld)
+          call compute_cv_code(i, j+1, cvfld, pfld, vfld)
 
-             call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
+          call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
 
-             CALL compute_h_code(i, j, hfld, pfld, ufld, vfld)
-          end do
+          call compute_h_code(i, j, hfld, pfld, ufld, vfld)
        end do
     end do
 !$OMP END DO NOWAIT
@@ -122,21 +118,19 @@ contains
 
     !CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt)
 !$OMP DO SCHEDULE(RUNTIME)
-    do it = 1, ntiles, 1
-       do J= tile(it)%internal%jstart, tile(it)%internal%jstop, 1
-          do I = tile(it)%internal%istart, tile(it)%internal%istop, 1
+    do J= 1, N, 1
+       do I= 1, M, 1
 
-             CALL compute_unew_code(i+1, j, unew, uold, &
+          CALL compute_unew_code(i+1, j, unew, uold, &
                                  zfld, cvfld, hfld, tdt)
 
-             CALL compute_vnew_code(i, j+1, vnew, vold, &
+          CALL compute_vnew_code(i, j+1, vnew, vold, &
                                  zfld, cufld, hfld, tdt)
 
-             CALL compute_pnew_code(i, j, pnew, pold, &
+          CALL compute_pnew_code(i, j, pnew, pold, &
                                  cufld, cvfld, tdt)
-          end do
-       END DO
-    END DO
+       end do
+    end do
 !$OMP END DO NOWAIT
 
     call timer_stop(idxt)
@@ -201,17 +195,15 @@ contains
     call timer_start('Time smooth',idxt)
 
 !$OMP DO SCHEDULE(RUNTIME)
-    do it = 1, ntiles, 1
-       do J= tile(it)%internal%jstart, tile(it)%internal%jstop, 1
-          do I = tile(it)%internal%istart, tile(it)%internal%istop, 1
-             CALL time_smooth_code(i+1,j,ufld,unew,uold)
-             CALL time_smooth_code(i,j+1,vfld,vnew,vold)
-             CALL time_smooth_code(i,j,pfld,pnew,pold)
-             ! Update for next step
-             Ufld(i+1,j) = UNEW(i+1,j)
-             Vfld(i,j+1) = VNEW(i,j+1)
-             Pfld(i,j)   = PNEW(i,j)
-          end do
+    do J= 1, N, 1
+       do I= 1, M, 1
+          CALL time_smooth_code(i+1,j,ufld,unew,uold)
+          CALL time_smooth_code(i,j+1,vfld,vnew,vold)
+          CALL time_smooth_code(i,j,pfld,pnew,pold)
+          ! Update for next step
+          Ufld(i+1,j) = UNEW(i+1,j)
+          Vfld(i,j+1) = VNEW(i,j+1)
+          Pfld(i,j)   = PNEW(i,j)
        end do
     end do
 !$OMP END DO NOWAIT
