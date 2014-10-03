@@ -52,8 +52,6 @@ field_mod.o: kind_params_mod.o topology_mod.o
 
 initial_conditions_mod.o: physical_params_mod.o topology_mod.o model_mod.o
 
-shallow_omp_mod.o: topology_mod.o
-
 time_smooth_mod.o: kind_params_mod.o topology_mod.o $(GUNGHO_MODULES)
 
 time_step_mod.o: kind_params_mod.o \
@@ -63,6 +61,8 @@ time_step_mod.o: kind_params_mod.o \
                  shallow_omp_mod.o
 
 timing_mod.o: intel_timer_mod.o
+
+topology_mod.o: shallow_omp_mod.o
 
 mesh_mod.o: kind_params_mod.o
 

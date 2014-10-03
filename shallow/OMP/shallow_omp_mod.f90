@@ -32,9 +32,10 @@ contains
 
   !================================================
 
-  SUBROUTINE openmp_grid_init(nx_arg, ny_arg)
+  SUBROUTINE openmp_grid_init(xlen, ylen, nx_arg, ny_arg)
     use omp_lib, only: omp_get_max_threads
-    use topology_mod, only: MP1, NP1
+    !> Dimensions of the model mesh
+    integer, intent(in) :: xlen, ylen
     integer, intent(in), optional :: nx_arg, ny_arg
     integer :: nx, ny
     INTEGER :: idx, idy, ival, jval ! For tile extent calculation
@@ -91,7 +92,7 @@ contains
 
         ! Match longest dimension of MPI domain to longest dimension of 
         ! thread grid
-        IF(MP1 > NP1)THEN
+        IF(xlen > ylen)THEN
            IF( ntilex < ntiley )THEN
               ierr   = ntiley
               ntiley = ntilex
@@ -114,32 +115,32 @@ contains
      ! overlap. Every other tile has two overlaps. So: 
      ! M = (ntilex-2)*(idx-2) + 2*(idx-1)
      ! Rearranging this gives the following expressions for idx and idy:
-     idx = (MP1 + 6)/ntilex + 2
-     idy = (NP1 + 6)/ntiley + 2
+     idx = (xlen + 6)/ntilex + 2
+     idy = (ylen + 6)/ntiley + 2
 
      ! Integer arithmetic means that ntiley tiles of height idy might
      ! actually span a height greater or less than N. If so, we try and
      ! reduce the height of each row by just one until we've accounted
      ! for the <jover> extra rows.
      nwidth = (ntiley-2)*(idy-2) + 2*(idy-1)
-     IF(nwidth > NP1)THEN
-        jover  = nwidth - NP1
+     IF(nwidth > ylen)THEN
+        jover  = nwidth - ylen
         junder = 0
-     ELSE IF(nwidth < NP1)THEN
+     ELSE IF(nwidth < ylen)THEN
         jover  = 0
-        junder = NP1 - nwidth
+        junder = ylen - nwidth
      ELSE
         jover  = 0
         junder = 0
      END IF
      ! Ditto for x dimension
      nwidth = (ntilex-2)*(idx-2) + 2*(idx-1)
-     IF(nwidth > MP1)THEN
-        iover  = nwidth - MP1
+     IF(nwidth > xlen)THEN
+        iover  = nwidth - xlen
         iunder = 0
-     ELSE IF(nwidth < MP1)THEN
+     ELSE IF(nwidth < xlen)THEN
         iover  = 0
-        iunder = MP1 - nwidth
+        iunder = xlen - nwidth
      ELSE
         iover  = 0
         iunder = 0
@@ -200,10 +201,10 @@ contains
            end if
 
            IF(ji == ntilex)THEN
-              tile(ith)%internal%istop = MP1 - 1
+              tile(ith)%internal%istop = xlen - 1
               tile(ith)%whole%istop = tile(ith)%internal%istop
            ELSE
-              tile(ith)%whole%istop = MIN(ival + idxtmp - 1, MP1-1)
+              tile(ith)%whole%istop = MIN(ival + idxtmp - 1, xlen-1)
               tile(ith)%internal%istop =  tile(ith)%whole%istop - 1
            END IF
 
@@ -216,10 +217,10 @@ contains
            end if
 
            IF(jj == ntiley)THEN
-              tile(ith)%internal%jstop = NP1 - 1
+              tile(ith)%internal%jstop = ylen - 1
               tile(ith)%whole%jstop = tile(ith)%internal%jstop
            ELSE
-              tile(ith)%whole%jstop = MIN(jval + idytmp - 1, NP1-1)
+              tile(ith)%whole%jstop = MIN(jval + idytmp - 1, ylen-1)
               tile(ith)%internal%jstop = tile(ith)%whole%jstop - 1
            END IF
 

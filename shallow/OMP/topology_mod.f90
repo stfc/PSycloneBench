@@ -44,6 +44,7 @@ contains
   !> Routine to set-up information on where the different
   !! mesh point types (U,V,T,F) sit on the computational mesh.
   subroutine topology_init(nx, ny)
+    use shallow_omp_mod, only: openmp_grid_init
     implicit none
     !> Extent in x and y of the computational mesh (arrays).
     !! Fields sit on a sub-array within these extents.
@@ -234,6 +235,9 @@ contains
     cf%halo(2)%dest%jstart = 1   ; cf%halo(2)%dest%jstop = 1
     cf%halo(2)%src%istart  = 1   ; cf%halo(2)%src%istop  = M+1
     cf%halo(2)%src%jstart  = N+1 ; cf%halo(2)%src%jstop  = N+1
+
+    ! Set-up tiling now that we have our grid dimensions
+    call openmp_grid_init(MP1, NP1)
 
   end subroutine topology_init
 

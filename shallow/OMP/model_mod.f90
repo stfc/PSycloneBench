@@ -98,7 +98,6 @@ CONTAINS
     use mesh_mod,        only: mesh_init
     use time_smooth_mod, only: time_smooth_init
     use topology_mod,    only: topology_init
-    use shallow_omp_mod, only: openmp_grid_init
     IMPLICIT none
     !> Grid spacings currently hard-wired, as in original
     !! version of code.
@@ -133,10 +132,6 @@ CONTAINS
     ! Initialise model IO 'system'
     CALL model_write_init(m,n)
 
-    ! Set-up tiling - this should be done in the middle layer
-    ! as it's a parallel thing
-    call openmp_grid_init()
-
     ! Log model parameters
     CALL print_initial_values(m,n,dxloc,dyloc, dt%data, alpha_loc)
 
@@ -157,17 +152,45 @@ CONTAINS
 
   !================================================
 
-  SUBROUTINE model_alloc(idimx, idimy)
-    IMPLICIT none
-    INTEGER, INTENT(in) :: idimx, idimy
+  subroutine model_alloc(idimx, idimy)
+    use shallow_omp_mod, only: ntiles, tile
+    implicit none
+    integer, intent(in) :: idimx, idimy
+    ! Locals
+    integer :: ierr, ji, jj, it
 
-    ALLOCATE( u(idimx,idimy),    v(idimx,idimy),    p(idimx,idimy) ) 
-    ALLOCATE( unew(idimx,idimy), vnew(idimx,idimy), pnew(idimx,idimy) ) 
-    ALLOCATE( uold(idimx,idimy), vold(idimx,idimy), pold(idimx,idimy) )
-    ALLOCATE( cu(idimx,idimy),   cv(idimx,idimy) ) 
-    ALLOCATE( z(idimx,idimy),    h(idimx,idimy),    psi(idimx,idimy) ) 
+    allocate( u(idimx,idimy),    v(idimx,idimy),    p(idimx,idimy),    & 
+              unew(idimx,idimy), vnew(idimx,idimy), pnew(idimx,idimy), & 
+              uold(idimx,idimy), vold(idimx,idimy), pold(idimx,idimy), &
+              cu(idimx,idimy),   cv(idimx,idimy),                      &
+              z(idimx,idimy),    h(idimx,idimy),    psi(idimx,idimy),  &
+              stat=ierr) 
 
-  END SUBROUTINE model_alloc
+    if(ierr /= 0)then
+       stop 'model_alloc: failed to allocate arrays!'
+    end if
+
+    ! Initialise arrays with 'first-touch' policy. We replicate the loop 
+    ! structure of a typical part of the computation in the hope that the 
+    ! thread that first touches a given part of the array will be the one 
+    ! updating that part of the array as the program executes.
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none), shared(tile, ntiles, u, &
+!$OMP             v, p, unew, vnew, pnew, uold, vold, pold, cu, cv, z, h, psi), &
+!$OMP             private(it,jj,ji)
+    do it = 1, ntiles, 1
+       do jj= tile(it)%internal%jstart, tile(it)%internal%jstop, 1
+          do ji = tile(it)%internal%istart, tile(it)%internal%istop, 1
+             u(ji+1,jj)    = 0.0d0 ; v(ji,jj+1)    = 0.0d0 ; p(ji,jj)    = 0.0d0
+             unew(ji+1,jj) = 0.0d0 ; vnew(ji,jj+1) = 0.0d0 ; pnew(ji,jj) = 0.0d0
+             uold(ji+1,jj) = 0.0d0 ; vold(ji,jj+1) = 0.0d0 ; pold(ji,jj) = 0.0d0
+             cu(ji+1,jj)   = 0.0d0 ; cv(ji+1,jj)   = 0.0d0
+             z(ji+1,jj+1)  = 0.0d0 ; h(ji,jj)      = 0.0d0 ; psi(ji,jj)  = 0.0d0
+          end do
+       end do
+    end do
+!$OMP END PARALLEL DO
+
+  end subroutine model_alloc
 
   !================================================
 
