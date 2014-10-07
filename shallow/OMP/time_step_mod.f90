@@ -27,16 +27,31 @@ contains
     real(wp), dimension(mp1,np1), intent(inout) :: uold, vold, pold
     real(wp),                     intent(in) :: tdt
     ! Locals
-    integer :: idxt
+!    integer :: idxt
     integer :: I, J
 
 !$OMP PARALLEL default(none), shared(cufld, cvfld, &
 !$OMP          unew,vnew,pnew,hfld,zfld,pfld,ufld,vfld,    &
-!$OMP          uold,vold,pold,M,N,tdt), private(j,i,idxt)
+!$OMP          uold,vold,pold,M,N,tdt), private(j,i)
 
     !============================================
     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
-    call timer_start('Capital {U,V,Z,H}',idxt)
+    !call timer_start('Capital {U,V,Z,H}',idxt)
+
+!xx$OMP DO SCHEDULE(RUNTIME)
+!!$    DO J= 1, N, 1
+!!$       DO I= 1, M, 1
+!!$             
+!!$          call compute_cu_code(i+1, j, cufld, pfld, ufld)
+!!$             
+!!$          call compute_cv_code(i, j+1, cvfld, pfld, vfld)
+!!$
+!!$          call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
+!!$
+!!$          call compute_h_code(i, j, hfld, pfld, ufld, vfld)
+!!$       end do
+!!$    end do
+!xx$OMP END DO
 
 !$OMP DO SCHEDULE(RUNTIME)
     DO J= 1, N, 1
@@ -44,22 +59,43 @@ contains
              
           call compute_cu_code(i+1, j, cufld, pfld, ufld)
              
-          call compute_cv_code(i, j+1, cvfld, pfld, vfld)
-
-          call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
-
-          call compute_h_code(i, j, hfld, pfld, ufld, vfld)
        end do
     end do
 !$OMP END DO NOWAIT
+!$OMP DO SCHEDULE(RUNTIME)
+    DO J= 1, N, 1
+       DO I= 1, M, 1
+             
+          call compute_cv_code(i, j+1, cvfld, pfld, vfld)
 
-    call timer_stop(idxt)
-!$OMP BARRIER
+       end do
+    end do
+!$OMP END DO NOWAIT
+!$OMP DO SCHEDULE(RUNTIME)
+    DO J= 1, N, 1
+       DO I= 1, M, 1
+             
+          call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
+       end do
+    end do
+!$OMP END DO NOWAIT
+!$OMP DO SCHEDULE(RUNTIME)
+    DO J= 1, N, 1
+       DO I= 1, M, 1
+             
+          call compute_h_code(i, j, hfld, pfld, ufld, vfld)
+       end do
+    end do
+!$OMP END DO
+! NOWAIT
+
+    !call timer_stop(idxt)
+!-$OMP BARRIER
 
     !============================================
     ! PERIODIC CONTINUATION
 
-    call timer_start('PBC 1',idxt)
+    !call timer_start('PBC 1',idxt)
 
     !call invoke(periodic_bc(cu), periodic_bc(cv), ....)
 
@@ -106,15 +142,16 @@ contains
        Hfld(I,N+1) = Hfld(I,1)
     END DO
     Hfld(M+1,N+1) = Hfld(1,1)
-!$OMP END SINGLE NOWAIT
+!$OMP END SINGLE
+! NOWAIT
 
-    call timer_stop(idxt)
-!$OMP BARRIER
+    !call timer_stop(idxt)
+!-$OMP BARRIER
 
     !============================================
     ! COMPUTE NEW VALUES U,V AND P
 
-    call timer_start('Compute {u,v,p}new',idxt)
+    !call timer_start('Compute {u,v,p}new',idxt)
 
     !CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt)
 !$OMP DO SCHEDULE(RUNTIME)
@@ -131,16 +168,17 @@ contains
                                  cufld, cvfld, tdt)
        end do
     end do
-!$OMP END DO NOWAIT
+!$OMP END DO
+! NOWAIT
 
-    call timer_stop(idxt)
-!$OMP BARRIER
+    !call timer_stop(idxt)
+!-$OMP BARRIER
 
     !============================================
     ! PERIODIC CONTINUATION
     !CALL invoke_apply_bcs_uvt(UNEW, VNEW, PNEW)
 
-    call timer_start('PBC 2',idxt)
+    !call timer_start('PBC 2',idxt)
 
 !$OMP SINGLE
     !call invoke_apply_bcs_cu(unew)
@@ -181,7 +219,7 @@ contains
     PNEW(M+1,N+1) = PNEW(1,1)
 !$OMP END SINGLE NOWAIT
 
-    call timer_stop(idxt)
+    !call timer_stop(idxt)
 !$OMP BARRIER
 
     !============================================
@@ -192,7 +230,7 @@ contains
     ! apply boundary conditions afterwards.
     ! This updates the 'old' fields...
 
-    call timer_start('Time smooth',idxt)
+    !call timer_start('Time smooth',idxt)
 
 !$OMP DO SCHEDULE(RUNTIME)
     do J= 1, N, 1
@@ -208,14 +246,14 @@ contains
     end do
 !$OMP END DO NOWAIT
 
-    call timer_stop(idxt)
+    !call timer_stop(idxt)
 !$OMP BARRIER
 
     !============================================
     ! Apply BCs to the fields updated in the time-smoothing
     ! and update stages above
 
-    call timer_start('PBC 3',idxt)
+    !call timer_start('PBC 3',idxt)
 
 !$OMP SINGLE
     DO J=1,N
@@ -277,7 +315,7 @@ contains
     Pfld(M+1,N+1) = Pfld(1,1)
 !$OMP END SINGLE NOWAIT
 
-    call timer_stop(idxt)
+    !call timer_stop(idxt)
 
 !$OMP END PARALLEL
 
