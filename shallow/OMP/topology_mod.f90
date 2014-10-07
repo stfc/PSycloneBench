@@ -237,7 +237,7 @@ contains
     cf%halo(2)%src%jstart  = N+1 ; cf%halo(2)%src%jstop  = N+1
 
     ! Set-up tiling now that we have our grid dimensions
-    call openmp_grid_init(MP1, NP1)
+    !call openmp_grid_init(MP1, NP1)
 
   end subroutine topology_init
 
