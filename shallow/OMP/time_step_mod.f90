@@ -27,16 +27,16 @@ contains
     real(wp), dimension(mp1,np1), intent(inout) :: uold, vold, pold
     real(wp),                     intent(in) :: tdt
     ! Locals
-!    integer :: idxt
+    integer :: idxt
     integer :: I, J
 
 !$OMP PARALLEL default(none), shared(cufld, cvfld, &
 !$OMP          unew,vnew,pnew,hfld,zfld,pfld,ufld,vfld,    &
-!$OMP          uold,vold,pold,M,N,tdt), private(j,i)
+!$OMP          uold,vold,pold,M,N,tdt), private(j,i,idxt)
 
     !============================================
     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
-    !call timer_start('Capital {U,V,Z,H}',idxt)
+    call timer_start('Capital {U,V,Z,H}',idxt)
 
 !xx$OMP DO SCHEDULE(RUNTIME)
 !!$    DO J= 1, N, 1
@@ -86,16 +86,15 @@ contains
           call compute_h_code(i, j, hfld, pfld, ufld, vfld)
        end do
     end do
-!$OMP END DO
-! NOWAIT
+!$OMP END DO NOWAIT
 
-    !call timer_stop(idxt)
-!-$OMP BARRIER
+    call timer_stop(idxt)
+!$OMP BARRIER
 
     !============================================
     ! PERIODIC CONTINUATION
 
-    !call timer_start('PBC 1',idxt)
+    call timer_start('PBC 1',idxt)
 
     !call invoke(periodic_bc(cu), periodic_bc(cv), ....)
 
@@ -142,18 +141,33 @@ contains
        Hfld(I,N+1) = Hfld(I,1)
     END DO
     Hfld(M+1,N+1) = Hfld(1,1)
-!$OMP END SINGLE
-! NOWAIT
+!$OMP END SINGLE NOWAIT
 
-    !call timer_stop(idxt)
-!-$OMP BARRIER
+    call timer_stop(idxt)
+!$OMP BARRIER
 
     !============================================
     ! COMPUTE NEW VALUES U,V AND P
 
-    !call timer_start('Compute {u,v,p}new',idxt)
+    call timer_start('Compute {u,v,p}new',idxt)
 
     !CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt)
+!xx$OMP DO SCHEDULE(RUNTIME)
+!!$    do J= 1, N, 1
+!!$       do I= 1, M, 1
+!!$
+!!$          CALL compute_unew_code(i+1, j, unew, uold, &
+!!$                                 zfld, cvfld, hfld, tdt)
+!!$
+!!$          CALL compute_vnew_code(i, j+1, vnew, vold, &
+!!$                                 zfld, cufld, hfld, tdt)
+!!$
+!!$          CALL compute_pnew_code(i, j, pnew, pold, &
+!!$                                 cufld, cvfld, tdt)
+!!$       end do
+!!$    end do
+!xx$OMP END DO
+
 !$OMP DO SCHEDULE(RUNTIME)
     do J= 1, N, 1
        do I= 1, M, 1
@@ -161,24 +175,36 @@ contains
           CALL compute_unew_code(i+1, j, unew, uold, &
                                  zfld, cvfld, hfld, tdt)
 
+       end do
+    end do
+!$OMP END DO NOWAIT
+
+!$OMP DO SCHEDULE(RUNTIME)
+    do J= 1, N, 1
+       do I= 1, M, 1
           CALL compute_vnew_code(i, j+1, vnew, vold, &
                                  zfld, cufld, hfld, tdt)
 
+       end do
+    end do
+!$OMP END DO NOWAIT
+!$OMP DO SCHEDULE(RUNTIME)
+    do J= 1, N, 1
+       do I= 1, M, 1
           CALL compute_pnew_code(i, j, pnew, pold, &
                                  cufld, cvfld, tdt)
        end do
     end do
-!$OMP END DO
-! NOWAIT
+!$OMP END DO NOWAIT
 
-    !call timer_stop(idxt)
-!-$OMP BARRIER
+    call timer_stop(idxt)
+!$OMP BARRIER
 
     !============================================
     ! PERIODIC CONTINUATION
     !CALL invoke_apply_bcs_uvt(UNEW, VNEW, PNEW)
 
-    !call timer_start('PBC 2',idxt)
+    call timer_start('PBC 2',idxt)
 
 !$OMP SINGLE
     !call invoke_apply_bcs_cu(unew)
@@ -219,7 +245,7 @@ contains
     PNEW(M+1,N+1) = PNEW(1,1)
 !$OMP END SINGLE NOWAIT
 
-    !call timer_stop(idxt)
+    call timer_stop(idxt)
 !$OMP BARRIER
 
     !============================================
@@ -230,30 +256,32 @@ contains
     ! apply boundary conditions afterwards.
     ! This updates the 'old' fields...
 
-    !call timer_start('Time smooth',idxt)
+    call timer_start('Time smooth',idxt)
 
 !$OMP DO SCHEDULE(RUNTIME)
     do J= 1, N, 1
        do I= 1, M, 1
           CALL time_smooth_code(i+1,j,ufld,unew,uold)
-          CALL time_smooth_code(i,j+1,vfld,vnew,vold)
-          CALL time_smooth_code(i,j,pfld,pnew,pold)
           ! Update for next step
           Ufld(i+1,j) = UNEW(i+1,j)
+          CALL time_smooth_code(i,j+1,vfld,vnew,vold)
+          ! Update for next step
           Vfld(i,j+1) = VNEW(i,j+1)
+          CALL time_smooth_code(i,j,pfld,pnew,pold)
+          ! Update for next step
           Pfld(i,j)   = PNEW(i,j)
        end do
     end do
 !$OMP END DO NOWAIT
 
-    !call timer_stop(idxt)
+    call timer_stop(idxt)
 !$OMP BARRIER
 
     !============================================
     ! Apply BCs to the fields updated in the time-smoothing
     ! and update stages above
 
-    !call timer_start('PBC 3',idxt)
+    call timer_start('PBC 3',idxt)
 
 !$OMP SINGLE
     DO J=1,N
@@ -315,7 +343,7 @@ contains
     Pfld(M+1,N+1) = Pfld(1,1)
 !$OMP END SINGLE NOWAIT
 
-    !call timer_stop(idxt)
+    call timer_stop(idxt)
 
 !$OMP END PARALLEL
 
