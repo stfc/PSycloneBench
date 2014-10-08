@@ -61,12 +61,12 @@ contains
        DO I= 1, M, 1
              
           call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
-       end do
-    end do
-!$OMP END DO NOWAIT
-!$OMP DO SCHEDULE(RUNTIME)
-    DO J= 1, N, 1
-       DO I= 1, M, 1
+!       end do
+!    end do
+!xx$OMP END DO NOWAIT
+!xx$OMP DO SCHEDULE(RUNTIME)
+!    DO J= 1, N, 1
+!       DO I= 1, M, 1
              
           call compute_h_code(i, j, hfld, pfld, ufld, vfld)
        end do
@@ -156,6 +156,7 @@ contains
        end do
     end do
 !$OMP END DO NOWAIT
+
 !$OMP DO SCHEDULE(RUNTIME)
     do J= 1, N, 1
        do I= 1, M, 1
