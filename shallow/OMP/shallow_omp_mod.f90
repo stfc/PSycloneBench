@@ -115,8 +115,8 @@ contains
      ! overlap. Every other tile has two overlaps. So: 
      ! M = (ntilex-2)*(idx-2) + 2*(idx-1)
      ! Rearranging this gives the following expressions for idx and idy:
-     idx = (xlen + 6)/ntilex + 2
-     idy = (ylen + 6)/ntiley + 2
+     idx = NINT(REAL(xlen + 6)/REAL(ntilex)) + 2
+     idy = NINT(REAL(ylen + 6)/REAL(ntiley)) + 2
 
      ! Integer arithmetic means that ntiley tiles of height idy might
      ! actually span a height greater or less than N. If so, we try and
