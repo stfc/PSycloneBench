@@ -113,10 +113,13 @@ contains
 
     ! Tiles at left and right of domain only have single
     ! overlap. Every other tile has two overlaps. So: 
-    ! M = (ntilex-2)*(idx-2) + 2*(idx-1)
-    ! Rearranging this gives the following expressions for idx and idy:
-    idx = NINT(REAL(xlen + 6)/REAL(ntilex)) + 2
-    idy = NINT(REAL(ylen + 6)/REAL(ntiley)) + 2
+    ! xlen = (ntilex-2)*(idx-2) + 2*(idx-1)
+    !      = ntilex.idx - 2.ntilex - 2.idx + 4 + 2.idx - 2
+    !      = ntilex.idx + 2 - 2.ntilex
+    !=> idx = (xlen - 2 + 2.ntilex)/ntilex
+    ! where idx is the whole width of a tile.
+    idx = NINT(REAL(xlen - 2 + 2*ntilex)/REAL(ntilex))
+    idy = NINT(REAL(ylen - 2 + 2*ntiley)/REAL(ntiley))
 
     ! Integer arithmetic means that ntiley tiles of height idy might
     ! actually span a height greater or less than N. If so, we try and
