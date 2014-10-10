@@ -34,11 +34,13 @@ contains
 
   SUBROUTINE openmp_grid_init(xlen, ylen, nx_arg, ny_arg)
     use omp_lib, only: omp_get_max_threads
+    implicit none
     !> Dimensions of the model mesh
     integer, intent(in) :: xlen, ylen
     integer, intent(in), optional :: nx_arg, ny_arg
     integer :: nx, ny
     INTEGER :: idx, idy, ival, jval ! For tile extent calculation
+    integer :: internal_width, internal_height
     INTEGER :: ierr, nwidth
     INTEGER :: ji,jj, ith
     INTEGER :: nthreads       ! No. of OpenMP threads being used
@@ -118,14 +120,19 @@ contains
     !      = ntilex.idx + 2 - 2.ntilex
     !=> idx = (xlen - 2 + 2.ntilex)/ntilex
     ! where idx is the whole width of a tile.
-    idx = NINT(REAL(xlen - 2 + 2*ntilex)/REAL(ntilex))
-    idy = NINT(REAL(ylen - 2 + 2*ntiley)/REAL(ntiley))
+    !idx = NINT(REAL(xlen - 2 + 2*ntilex)/REAL(ntilex))
+    !idy = NINT(REAL(ylen - 2 + 2*ntiley)/REAL(ntiley))
+    ! Alternatively, if we think about the internal regions of the tiles,
+    ! then they should share the domain between them:
+    internal_width = NINT(REAL(xlen) / REAL(ntilex))
+    internal_height = NINT(REAL(ylen) / REAL(ntiley))
 
     ! Integer arithmetic means that ntiley tiles of height idy might
     ! actually span a height greater or less than N. If so, we try and
     ! reduce the height of each row by just one until we've accounted
     ! for the <jover> extra rows.
-    nwidth = (ntiley-2)*(idy-2) + 2*(idy-1)
+    !nwidth = (ntiley-2)*(idy-2) + 2*(idy-1)
+    nwidth = ntiley * internal_height
     IF(nwidth > ylen)THEN
        jover  = nwidth - ylen
        junder = 0
@@ -137,7 +144,8 @@ contains
        junder = 0
     END IF
     ! Ditto for x dimension
-    nwidth = (ntilex-2)*(idx-2) + 2*(idx-1)
+    !nwidth = (ntilex-2)*(idx-2) + 2*(idx-1)
+    nwidth = ntilex * internal_width
     IF(nwidth > xlen)THEN
        iover  = nwidth - xlen
        iunder = 0
@@ -152,7 +160,7 @@ contains
     ! For AVX (256-bit vector) instructions, I think we want
     ! MOD(idx,4) == 0 idx = idx + (4 - MOD(idx,4))
 
-    WRITE(*,"('Tile width = ',I4,', tile height = ',I4)") idx, idy
+    WRITE(*,"('Tile width = ',I4,', tile height = ',I4)") internal_width, internal_height
     WRITE(*,"('iover = ',I3,', iunder = ',I3)") iover, iunder
     WRITE(*,"('jover = ',I3,', junder = ',I3)") jover, junder
 
@@ -171,15 +179,13 @@ contains
 
        ! If necessary, correct the height of this tile row
        IF(jover > 0)THEN
-          jover_per_row = MAX( (jover / ntiley), 1)
-          idytmp = idy - jover_per_row
-          jover = jover - jover_per_row
+          idytmp = internal_height - 1
+          jover = jover - 1
        ELSE IF(junder > 0)THEN
-          junder_per_row = MAX( (junder / ntiley), 1)
-          idytmp = idy + junder_per_row
-          junder = junder - junder_per_row
+          idytmp = internal_height + 1
+          junder = junder - 1
        ELSE
-          idytmp = idy
+          idytmp = internal_height
        END IF
 
        ival = 1
@@ -188,60 +194,60 @@ contains
          
           ! If necessary, correct the width of this tile column
           IF(iover > 0)THEN
-             idxtmp = idx - 1
+             idxtmp = internal_width - 1
              iover = iover - 1
           ELSE IF(iunder > 0)THEN
-             idxtmp = idx + 1
+             idxtmp = internal_width + 1
              iunder = iunder - 1
           ELSE
-             idxtmp = idx
+             idxtmp = internal_width
           END IF
 
           if(ji == 1)then
              tile(ith)%whole%istart    = ival
              tile(ith)%internal%istart = ival
           else
-             tile(ith)%whole%istart    = ival
-             tile(ith)%internal%istart = ival + 1
+             tile(ith)%whole%istart    = ival - 1
+             tile(ith)%internal%istart = ival
           end if
           
           IF(ji == ntilex)THEN
-             tile(ith)%internal%istop = xlen - 1
+             tile(ith)%internal%istop = xlen
              tile(ith)%whole%istop = tile(ith)%internal%istop
           ELSE
-             tile(ith)%whole%istop = MIN(ival + idxtmp - 1, xlen-1)
-             tile(ith)%internal%istop =  tile(ith)%whole%istop - 1
+             tile(ith)%internal%istop =  MIN(tile(ith)%internal%istart + idxtmp - 1, xlen-1)
+             tile(ith)%whole%istop = tile(ith)%internal%istop + 1
           END IF
           
           if(jj == 1)then
              tile(ith)%whole%jstart    = jval
              tile(ith)%internal%jstart = jval
           else
-             tile(ith)%whole%jstart    = jval
-             tile(ith)%internal%jstart = jval + 1
+             tile(ith)%whole%jstart    = jval - 1
+             tile(ith)%internal%jstart = jval
           end if
 
-          IF(jj == ntiley)THEN
-             tile(ith)%internal%jstop = ylen - 1
-             tile(ith)%whole%jstop = tile(ith)%internal%jstop
+          IF(jj /= ntiley)THEN
+             tile(ith)%internal%jstop =  MIN(tile(ith)%internal%jstart + idytmp - 1, ylen-1)
+             tile(ith)%whole%jstop = tile(ith)%internal%jstop + 1
           ELSE
-             tile(ith)%whole%jstop = MIN(jval + idytmp - 1, ylen-1)
-             tile(ith)%internal%jstop = tile(ith)%whole%jstop - 1
+             tile(ith)%internal%jstop = ylen
+             tile(ith)%whole%jstop = tile(ith)%internal%jstop
           END IF
 
           IF(print_tiles)THEN
-             WRITE(*,"('tile[',I4,'](',I4,':',I4,')(',I4,':',I4,'), interior:(',I4,':',I4,')(',I4,':',I4,') ')")                    &
-                  ith,                                &
-                  tile(ith)%whole%istart, tile(ith)%whole%istop,     &
-                  tile(ith)%whole%jstart, tile(ith)%whole%jstop,     &
-                  tile(ith)%internal%istart, tile(ith)%internal%istop,     &
+             WRITE(*,"('tile[',I4,'](',I4,':',I4,')(',I4,':',I4,'), interior:(',I4,':',I4,')(',I4,':',I4,') ')")                                       &
+                  ith,                                                 &
+                  tile(ith)%whole%istart, tile(ith)%whole%istop,       &
+                  tile(ith)%whole%jstart, tile(ith)%whole%jstop,       &
+                  tile(ith)%internal%istart, tile(ith)%internal%istop, &
                   tile(ith)%internal%jstart, tile(ith)%internal%jstop
           END IF
 
           ! Collect some data on the distribution of tile sizes for 
           ! loadbalance info
-          nvects = (tile(ith)%internal%istop - tile(ith)%internal%istart + 1) * &
-               (tile(ith)%internal%jstop - tile(ith)%internal%jstart + 1)
+          nvects = (tile(ith)%internal%istop - tile(ith)%internal%istart + 1) &
+                  * (tile(ith)%internal%jstop - tile(ith)%internal%jstart + 1)
           nvects_sum = nvects_sum + nvects
           nvects_min = MIN(nvects_min, nvects)
           nvects_max = MAX(nvects_max, nvects)
@@ -252,20 +258,21 @@ contains
           max_tile_height = MAX(max_tile_height, &
                           (tile(ith)%whole%jstop - tile(ith)%whole%jstart + 1) )
 
-          ival = ival + idxtmp - 2
+          ival = tile(ith)%whole%istop
           ith = ith + 1
        END DO
-       jval = jval + idytmp - 2
+       jval = tile(ith-1)%whole%jstop
     END DO
 
     ! Print tile-size statistics
-    WRITE(*,"(/'Mean tile size = ',F6.1,' cols = ',F7.1,' KB')") &
-         REAL(nvects_sum)/REAL(ntiles), &
-         REAL(8*nvects_sum)/REAL(ntiles*1024)
-    WRITE(*,"('Min,max tile size = ',I4,',',I4)") nvects_min,nvects_max
-    WRITE(*,"('Tile load imbalance (%) =',F5.1)") &
-         100.0*(nvects_max-nvects_min)/REAL(nvects_min)
-    WRITE (*,"('Max tile dims are ',I4,'x',I4)") max_tile_width, max_tile_height
+    WRITE(*,"(/'Mean tile size = ',F6.1,' pts = ',F7.1,' KB')") &
+                                 REAL(nvects_sum)/REAL(ntiles), &
+                                 REAL(8*nvects_sum)/REAL(ntiles*1024)
+    WRITE(*,"('Min,max tile size (pts) = ',I4,',',I4)") nvects_min,nvects_max
+    WRITE(*,"('Tile load imbalance (%) =',F6.2)") &
+                           100.0*(nvects_max-nvects_min)/REAL(nvects_min)
+    WRITE (*,"('Max tile dims are ',I4,'x',I4/)") max_tile_width, &
+                                                  max_tile_height
 
   END SUBROUTINE openmp_grid_init
 
