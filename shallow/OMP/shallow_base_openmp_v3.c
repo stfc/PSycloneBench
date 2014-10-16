@@ -117,7 +117,8 @@ int main(int argc, char **argv) {
 
   int mnmin,ncycle;
   int i,j;
- 
+  int nthreads, chunk_size;
+
   // timer variables 
   double t100,t200,t300;
   double tstart,ctime,tcyc,time;
@@ -125,6 +126,12 @@ int main(int argc, char **argv) {
   double c1,c2;
 
   // ** Initialisations ** 
+
+  nthreads = 1;
+#ifdef _OPENMP
+  nthreads = omp_get_max_threads();
+#endif
+  chunk_size = (int) ceil( (float)M / (float)nthreads);
 
   // Note below that two delta t (tdt) is set to dt on the first
   // cycle after which it is reset to dt+dt.
@@ -202,7 +209,7 @@ int main(int argc, char **argv) {
   t300 = 0.;
 
   // ** Start of time loop ** 
-  #pragma omp parallel default (shared) private(i,j,ncycle,tdts8,tdtsdx,tdtsdy) firstprivate(tdt)
+#pragma omp parallel default (shared) private(i,j,ncycle,tdts8,tdtsdx,tdtsdy) firstprivate(tdt)
 
   for (ncycle=1;ncycle<=ITMAX;ncycle++) {
     
@@ -210,28 +217,28 @@ int main(int argc, char **argv) {
     #pragma omp master
     c1 = wtime();
 
-#pragma omp for schedule (static,32) nowait
+#pragma omp for schedule (static,chunk_size) nowait
     for (i=0;i<M;i++) {
       for (j=0;j<N;j++) {
         cu[i + 1][j] = .5 * (p[i + 1][j] + p[i][j]) * u[i + 1][j];
       }
     }
 
-#pragma omp for schedule (static,32) nowait
+#pragma omp for schedule (static,chunk_size) nowait
     for (i=0;i<M;i++) {
       for (j=0;j<N;j++) {
         cv[i][j + 1] = .5 * (p[i][j + 1] + p[i][j]) * v[i][j + 1];
       }
     }
 
-#pragma omp for schedule (static,32) nowait
+#pragma omp for schedule (static,chunk_size) nowait
     for (i=0;i<M;i++) {
       for (j=0;j<N;j++) {
         z[i + 1][j + 1] = (fsdx * (v[i + 1][j + 1] - v[i][j + 1]) - fsdy * (u[i + 1][j + 1] - u[i + 1][j])) / (p[i][j] + p[i + 1][j] + p[i + 1][j + 1] + p[i][j + 1]);
       }
     }
 
-#pragma omp for schedule (static,32)
+#pragma omp for schedule (static,chunk_size)
     for (i=0;i<M;i++) {
       for (j=0;j<N;j++) {
         h[i][j] = p[i][j] + .25 * (u[i + 1][j] * u[i + 1][j] + u[i][j] * u[i][j] + v[i][j + 1] * v[i][j + 1] + v[i][j] * v[i][j]);
@@ -258,7 +265,7 @@ int main(int argc, char **argv) {
         z[0][0] = z[M][N];
         h[M][N] = h[0][0];
     }
-#pragma omp for schedule (static,32)
+#pragma omp for schedule (static,chunk_size)
     for (i=0;i<M;i++) {
       cu[i + 1][N] = cu[i + 1][0];
       cv[i][0] = cv[i][N];
@@ -274,21 +281,21 @@ int main(int argc, char **argv) {
     #pragma omp master
     c1 = wtime(); 
 
-#pragma omp for schedule (static,32) nowait
+#pragma omp for schedule (static,chunk_size) nowait
     for (i=0;i<M;i++) {
       for (j=0;j<N;j++) {
         unew[i + 1][j] = uold[i + 1][j] + tdts8 * (z[i + 1][j + 1] + z[i + 1][j]) * (cv[i + 1][j + 1] + cv[i][j + 1] + cv[i][j] + cv[i + 1][j]) - tdtsdx * (h[i + 1][j] - h[i][j]);
       }
     }
 
-#pragma omp for schedule (static,32) nowait
+#pragma omp for schedule (static,chunk_size) nowait
     for (i=0;i<M;i++) {
       for (j=0;j<N;j++) {
         vnew[i][j + 1] = vold[i][j + 1] - tdts8 * (z[i + 1][j + 1] + z[i][j + 1]) * (cu[i + 1][j + 1] + cu[i][j + 1] + cu[i][j] + cu[i + 1][j]) - tdtsdy * (h[i][j + 1] - h[i][j]);
       }
     }
 
-#pragma omp for schedule (static,32)
+#pragma omp for schedule (static,chunk_size)
     for (i=0;i<M;i++) {
       for (j=0;j<N;j++) {
         pnew[i][j] = pold[i][j] - tdtsdx * (cu[i + 1][j] - cu[i][j]) - tdtsdy * (cv[i][j + 1] - cv[i][j]); 
@@ -314,7 +321,7 @@ int main(int argc, char **argv) {
         vnew[M][0] = vnew[0][N];
         pnew[M][N] = pnew[0][0];
     }
-#pragma omp for schedule (static,32)
+#pragma omp for schedule (static,chunk_size)
     for (i=0;i<M;i++) {
       unew[i + 1][N] = unew[i + 1][0];
       vnew[i][0] = vnew[i][N];
@@ -329,42 +336,42 @@ int main(int argc, char **argv) {
       #pragma omp master
       c1 = wtime(); 
 
-#pragma omp for schedule (static,32) nowait
+#pragma omp for schedule (static,chunk_size) nowait
       for (i=0;i<M_LEN;i++) {
         for (j=0;j<N_LEN;j++) {
           uold[i][j] = u[i][j] + alpha * (unew[i][j] - 2. * u[i][j] + uold[i][j]);
         }
       }
 
-#pragma omp for schedule (static,32) nowait
+#pragma omp for schedule (static,chunk_size) nowait
       for (i=0;i<M_LEN;i++) {
         for (j=0;j<N_LEN;j++) {
           vold[i][j] = v[i][j] + alpha * (vnew[i][j] - 2. * v[i][j] + vold[i][j]);
         }
       }
 
-#pragma omp for schedule (static,32) nowait
+#pragma omp for schedule (static,chunk_size) nowait
       for (i=0;i<M_LEN;i++) {
         for (j=0;j<N_LEN;j++) {
           pold[i][j] = p[i][j] + alpha * (pnew[i][j] - 2. * p[i][j] + pold[i][j]);
         }
       }
 
-#pragma omp for schedule (static,32) nowait
+#pragma omp for schedule (static,chunk_size) nowait
       for (i=0;i<M_LEN;i++) {
         for (j=0;j<N_LEN;j++) {
           u[i][j] = unew[i][j];
         }
       }
 
-#pragma omp for schedule (static,32) nowait
+#pragma omp for schedule (static,chunk_size) nowait
       for (i=0;i<M_LEN;i++) {
         for (j=0;j<N_LEN;j++) {
           v[i][j] = vnew[i][j];
         }
       }
 
-#pragma omp for schedule (static,32) 
+#pragma omp for schedule (static,chunk_size) 
       for (i=0;i<M_LEN;i++) {
         for (j=0;j<N_LEN;j++) {
           p[i][j] = pnew[i][j];
@@ -380,7 +387,7 @@ int main(int argc, char **argv) {
 
       tdt = tdt + tdt;
 
-#pragma omp for schedule (static,32)
+#pragma omp for schedule (static,chunk_size)
       for (i=0;i<M_LEN;i++) {
         for (j=0;j<N_LEN;j++) {
           uold[i][j] = u[i][j];
@@ -410,7 +417,8 @@ int main(int argc, char **argv) {
     tcyc = ctime / ITMAX;
 
     fprintf(stdout,"\n");
-    fprintf(stdout," Job run on %d threads\n",omp_get_max_threads());
+    fprintf(stdout," Job run on %d threads with a chunk size of %d\n",
+	    nthreads, chunk_size);
     fprintf(stdout," No. of steps = %d, total time = %f, time per cycle = %f (s)\n", 
 	    ITMAX, ctime, tcyc);
     fprintf(stdout," time for c{u,v},z,h calc = %.6f s\n", t100);
