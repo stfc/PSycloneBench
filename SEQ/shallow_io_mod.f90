@@ -180,7 +180,7 @@ CONTAINS
     character(len=*) file
     integer m,n
     !     declarations for netCDF library
-    include 'netcdf.inc'
+    !include 'netcdf.inc'
     !     error status return
     integer iret
     !     netCDF id
