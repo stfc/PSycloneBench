@@ -19,14 +19,14 @@ contains
     use compute_pnew_mod, only: compute_pnew_code
     use time_smooth_mod,  only: time_smooth_code
     implicit none
-    real(wp), dimension(:,:), intent(inout) :: cufld, cvfld
-    real(wp), dimension(:,:), intent(inout) :: unew, vnew, pnew
-    real(wp), dimension(:,:), intent(inout) :: hfld, zfld, pfld, &
+    real(wp), dimension(M+1,N+1), intent(inout) :: cufld, cvfld
+    real(wp), dimension(M+1,N+1), intent(inout) :: unew, vnew, pnew
+    real(wp), dimension(M+1,N+1), intent(inout) :: hfld, zfld, pfld, &
                                                ufld, vfld
     !> \todo Do we need these 'old' arrays as args or are they
     !! local workspace really?
-    real(wp), dimension(:,:), intent(inout) :: uold, vold, pold
-    real(wp),                 intent(in) :: tdt
+    real(wp), dimension(M+1,N+1), intent(inout) :: uold, vold, pold
+    real(wp),                     intent(in) :: tdt
     ! Locals
     integer :: I, J
 
