@@ -10,14 +10,14 @@ contains
                               vfld, vnew, vold, &
                               pfld, pnew, pold, &
                               hfld, zfld, tdt)
-    use compute_cu_mod,   only: compute_cu_code
-    use compute_cv_mod,   only: compute_cv_code
-    use compute_z_mod,    only: compute_z_code
-    use compute_h_mod,    only: compute_h_code
-    use compute_unew_mod, only: compute_unew_code
-    use compute_vnew_mod, only: compute_vnew_code
-    use compute_pnew_mod, only: compute_pnew_code
-    use time_smooth_mod,  only: time_smooth_code
+    !use compute_cu_mod,   only: compute_cu_code
+    !use compute_cv_mod,   only: compute_cv_code
+    !use compute_z_mod,    only: compute_z_code
+    !use compute_h_mod,    only: compute_h_code
+    !use compute_unew_mod, only: compute_unew_code
+    !use compute_vnew_mod, only: compute_vnew_code
+    !use compute_pnew_mod, only: compute_pnew_code
+    !use time_smooth_mod,  only: time_smooth_code
     implicit none
     real(wp), dimension(M+1,N+1), intent(inout) :: cufld, cvfld
     real(wp), dimension(M+1,N+1), intent(inout) :: unew, vnew, pnew
@@ -183,5 +183,147 @@ contains
     CALL copy_field(PNEW, Pfld)
 
   end subroutine invoke_time_step
+
+  !===================================================
+
+  !> Compute the mass flux in the x direction at point (i,j)
+  subroutine compute_cu_code(i, j, cu, p, u)
+    implicit none
+    integer,  intent(in) :: I, J
+    real(wp), intent(out), dimension(:,:) :: cu
+    real(wp), intent(in),  dimension(:,:) :: p, u
+
+    CU(I,J) = .5*(P(I,J)+P(I-1,J))*U(I,J)
+
+  end subroutine compute_cu_code
+
+  !===================================================
+
+  !> Compute the mass flux in the y direction at point (i,j)
+  subroutine compute_cv_code(i, j, cv, p, v)
+    implicit none
+    integer,  intent(in) :: I, J
+    real(wp), intent(out), dimension(:,:) :: cv
+    real(wp), intent(in),  dimension(:,:) :: p, v
+
+    CV(I,J) = .5*(P(I,J)+P(I,J-1))*V(I,J)
+
+  end subroutine compute_cv_code
+
+  !===================================================
+
+  !> Compute the potential vorticity on the grid point (i,j)
+  subroutine compute_z_code(i, j, z, p, u, v)
+    use mesh_mod, only: fsdx, fsdy
+    implicit none
+    integer,  intent(in) :: I, J
+    real(wp), intent(out), dimension(:,:) :: z
+    real(wp), intent(in),  dimension(:,:) :: p, u, v
+
+    Z(I,J) =(FSDX*(V(I,J)-V(I-1,J))-FSDY*(U(I,J)-U(I,J-1)))/ &
+                 (P(I-1,J-1)+P(I,J-1)+P(I,J)+P(I-1,J))
+
+  end subroutine compute_z_code
+
+  !===================================================
+
+  SUBROUTINE compute_h_code(i, j, h, p, u, v)
+    IMPLICIT none
+    INTEGER, INTENT(in) :: I, J
+    REAL(wp), INTENT(out), DIMENSION(:,:) :: h
+    REAL(wp), INTENT(in),  DIMENSION(:,:) :: p, u, v
+
+    H(I,J) = P(I,J)+.25*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J)     & 
+                        +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
+
+  END SUBROUTINE compute_h_code
+
+  !===================================================
+
+  SUBROUTINE compute_unew_code(i, j, unew, uold, z, cv, h, tdt)
+    USE model_mod, ONLY: dx
+    IMPLICIT none
+    INTEGER, INTENT(in) :: I, J
+    REAL(wp), INTENT(out), DIMENSION(:,:) :: unew
+    REAL(wp), INTENT(in),  DIMENSION(:,:) :: uold, z, cv, h
+    REAL(wp), INTENT(in) :: tdt
+    ! Locals
+    REAL(wp) :: tdts8, tdtsdx
+   
+    !> These quantities are computed here because tdt is not
+    !! constant. (It is == dt for first time step, 2xdt for
+    !! all remaining time steps.)
+    tdts8 = tdt/8.0d0
+    tdtsdx = tdt/dx
+
+    UNEW(I,J) = UOLD(I,J) +                                 &
+                TDTS8*(Z(I,J+1)+Z(I,J)) *                   &
+                (CV(I,J+1)+CV(I-1,J+1)+CV(I-1,J)+CV(I,J)) - &
+                TDTSDX*(H(I,J)-H(I-1,J))
+
+  END SUBROUTINE compute_unew_code
+
+  !===================================================
+
+  SUBROUTINE compute_vnew_code(i, j, vnew, vold, z, cu, h, tdt)
+    USE model_mod, ONLY: dy
+    IMPLICIT none
+    INTEGER, INTENT(in) :: I, J
+    REAL(wp), INTENT(out), DIMENSION(:,:) :: vnew
+    REAL(wp), INTENT(in),  DIMENSION(:,:) :: vold, z, cu, h
+    REAL(wp), INTENT(in) :: tdt
+    ! Locals
+    REAL(wp) :: tdts8, tdtsdy
+   
+    !> These quantities are computed here because tdt is not
+    !! constant. (It is == dt for first time step, 2xdt for
+    !! all remaining time steps.)
+    tdts8 = tdt/8.0d0
+    tdtsdy = tdt/dy
+
+    VNEW(I,J) = VOLD(I,J)-TDTS8*(Z(I+1,J)+Z(I,J))                 & 
+                *(CU(I+1,J)+CU(I,J)+CU(I,J-1)+CU(I+1,J-1))        & 
+                 -TDTSDY*(H(I,J)-H(I,J-1))
+
+  END SUBROUTINE compute_vnew_code
+
+  !===================================================
+
+  SUBROUTINE compute_pnew_code(i, j, pnew, pold, cu, cv, tdt)
+    USE model_mod, ONLY: dx, dy
+    IMPLICIT none
+    INTEGER, INTENT(in) :: I, J
+    REAL(wp), INTENT(out), DIMENSION(:,:) :: pnew
+    REAL(wp), INTENT(in),  DIMENSION(:,:) :: pold, cu, cv
+    REAL(wp), INTENT(in) :: tdt
+    ! Locals
+    REAL(wp) :: tdtsdx, tdtsdy
+   
+    !> These quantities are computed here because tdt is not
+    !! constant. (It is == dt for first time step, 2xdt for
+    !! all remaining time steps.)
+    tdtsdx = tdt/dx
+    tdtsdy = tdt/dy
+
+    PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I+1,J)-CU(I,J))   & 
+                         -TDTSDY*(CV(I,J+1)-CV(I,J))
+
+  END SUBROUTINE compute_pnew_code
+
+  !===================================================
+
+  !> Kernel to smooth supplied field in time
+  SUBROUTINE time_smooth_code(i, j, field, field_new, field_old)
+    use time_smooth_mod, only: alpha
+    IMPLICIT none
+    INTEGER,  INTENT(in)                    :: i, j
+    REAL(wp), INTENT(in),    DIMENSION(:,:) :: field
+    REAL(wp), INTENT(in),    DIMENSION(:,:) :: field_new
+    REAL(wp), INTENT(inout), DIMENSION(:,:) :: field_old
+
+    field_old(i,j) = field(i,j) + &
+         alpha*(field_new(i,j) - 2.*field(i,j) + field_old(i,j))
+
+  END SUBROUTINE time_smooth_code
 
 end module time_step_mod

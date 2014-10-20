@@ -8,6 +8,7 @@ MODULE time_smooth_mod
 
   PUBLIC time_smooth_init, invoke_time_smooth
   PUBLIC time_smooth_type, time_smooth_code
+  public alpha
 
   !> Parameter for time smoothing
   REAL(wp) :: alpha
