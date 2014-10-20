@@ -1,6 +1,6 @@
 module time_step_mod
   use kind_params_mod
-  use field_mod, only: copy_field
+  !use field_mod, only: copy_field
   use topology_mod, only: M, N
   implicit none
 
@@ -325,5 +325,16 @@ contains
          alpha*(field_new(i,j) - 2.*field(i,j) + field_old(i,j))
 
   END SUBROUTINE time_smooth_code
+
+  !===================================================
+
+  SUBROUTINE copy_field(field_in, field_out)
+    IMPLICIT none
+    REAL(wp), INTENT(in),  DIMENSION(:,:) :: field_in
+    REAL(wp), INTENT(out), DIMENSION(:,:) :: field_out
+        
+    field_out(:,:) = field_in(:,:)
+        
+  END SUBROUTINE copy_field
 
 end module time_step_mod
