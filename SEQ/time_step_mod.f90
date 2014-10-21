@@ -29,11 +29,11 @@ contains
        do I = 1, M, 1
 
           call compute_cu_code(i+1, j, cufld, pfld, ufld)
-       end do
-    end do
+!       end do
+!    end do
 
-    do J= 1, N, 1
-       do I= 1, M, 1
+ !   do J= 1, N, 1
+ !      do I= 1, M, 1
 
           call compute_cv_code(i, j+1, cvfld, pfld, vfld)
        end do
@@ -43,11 +43,11 @@ contains
        do I= 1, M, 1
 
           call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
-       end do
-    end do
+!       end do
+!    end do
 
-    DO J= 1, N, 1
-       DO I= 1, M, 1
+!    DO J= 1, N, 1
+!       DO I= 1, M, 1
 
           CALL compute_h_code(i, j, hfld, pfld, ufld, vfld)
        END DO
@@ -87,26 +87,14 @@ contains
     !============================================
     ! COMPUTE NEW VALUES U,V AND P
 
-    !CALL manual_invoke_compute_unew(unew, uold,  z, cv, h, tdt)
     DO J=1, N, 1
-       DO I= 2, M+1, 1
+       DO I= 1, M, 1
 
-          CALL compute_unew_code(i, j, unew, uold, &
+          CALL compute_unew_code(i+1, j, unew, uold, &
                                  zfld, cvfld, hfld, tdt)
 
-       END DO
-    END DO
-    !CALL manual_invoke_compute_vnew(vnew, vold,  z, cu, h, tdt)
-    DO J= 2, N+1, 1
-       DO I= 1, M, 1
-
-          CALL compute_vnew_code(i, j, vnew, vold, &
+          CALL compute_vnew_code(i, j+1, vnew, vold, &
                                  zfld, cufld, hfld, tdt)
-       END DO
-    END DO
-    !CALL manual_invoke_compute_pnew(pnew, pold, cu, cv,    tdt)
-    DO J= 1, N, 1
-       DO I= 1, M, 1
 
           CALL compute_pnew_code(i, j, pnew, pold, &
                                  cufld, cvfld, tdt)
@@ -144,19 +132,19 @@ contains
     DO J=1,N+1 !idim2
       DO I=1,M+1 !idim1
         CALL time_smooth_code(i,j,ufld,unew,uold)
-      END DO
-    END DO
+!      END DO
+!    END DO
 
     ! Loop over 'columns'
-    DO J=1,N+1 ! idim2
-      DO I=1,M+1 ! idim1
+!    DO J=1,N+1 ! idim2
+!      DO I=1,M+1 ! idim1
          CALL time_smooth_code(i,j,vfld,vnew,vold)
-      END DO
-    END DO
+!      END DO
+!    END DO
 
     ! Loop over 'columns'
-    DO J=1,N+1 ! idim2
-      DO I=1,M+1 ! idim1
+!    DO J=1,N+1 ! idim2
+!      DO I=1,M+1 ! idim1
          CALL time_smooth_code(i,j,pfld,pnew,pold)
       END DO
     END DO
