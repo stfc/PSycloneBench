@@ -1,6 +1,5 @@
 module time_step_mod
   use kind_params_mod
-  !use field_mod, only: copy_field
   use topology_mod, only: M, N
   implicit none
 
@@ -10,14 +9,6 @@ contains
                               vfld, vnew, vold, &
                               pfld, pnew, pold, &
                               hfld, zfld, tdt)
-    !use compute_cu_mod,   only: compute_cu_code
-    !use compute_cv_mod,   only: compute_cv_code
-    !use compute_z_mod,    only: compute_z_code
-    !use compute_h_mod,    only: compute_h_code
-    !use compute_unew_mod, only: compute_unew_code
-    !use compute_vnew_mod, only: compute_vnew_code
-    !use compute_pnew_mod, only: compute_pnew_code
-    !use time_smooth_mod,  only: time_smooth_code
     implicit none
     real(wp), dimension(M+1,N+1), intent(inout) :: cufld, cvfld
     real(wp), dimension(M+1,N+1), intent(inout) :: unew, vnew, pnew
@@ -33,34 +24,28 @@ contains
     !============================================
     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
 
-    !call invoke_compute_fluxes(CU, CV, z, h, P, U, V)
-
-    !CALL invoke_compute_cu(CU, P, U)
     ! M/N obtained from topology look-up
     do J= 1, N, 1
-       do I = 2, M+1, 1
+       do I = 1, M, 1
 
-          call compute_cu_code(i, j, cufld, pfld, ufld)
+          call compute_cu_code(i+1, j, cufld, pfld, ufld)
        end do
     end do
 
-    !CALL invoke_compute_cv(CV, P, V)
-    do J= 2, N+1, 1
+    do J= 1, N, 1
        do I= 1, M, 1
 
-          call compute_cv_code(i, j, cvfld, pfld, vfld)
+          call compute_cv_code(i, j+1, cvfld, pfld, vfld)
        end do
     end do
 
-    !CALL invoke_compute_z(z, P, U, V)
-    do J= 2, N+1, 1
-       do I= 2, M+1, 1
+    do J= 1, N, 1
+       do I= 1, M, 1
 
-          call compute_z_code(i, j, zfld, pfld, ufld, vfld)
+          call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
        end do
     end do
 
-    !CALL invoke_compute_h(h, P, U, V)
     DO J= 1, N, 1
        DO I= 1, M, 1
 
