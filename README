@@ -5,7 +5,7 @@ Swartztrauber of NCAR.
 
 The directory named 'original' contains pretty much the original
 version of the code as received by this project. The directory named
-'PSyKAl' contains a 'PSyKAl' version of the code where PSyKAl stands
+psykal_vanilla contains a 'PSyKAl' version of the code where PSyKAl stands
 for Parallel System, Kernel and Algorithm layers. In this PSyKAl
 version all computation is performed in point-wise kernels (the bottom
 layer). The algorithm (top) layer specifies operations on the whole
@@ -51,8 +51,8 @@ or if this produces a performance improvement over compiler inlining.
 
 3: Problem sizes
 
-The default size provided is 256. We would like results from the
-following "base" problem sizes:
+The default size provided is 256. This is set in the 'namelist' file.
+We would like results from the following "base" problem sizes:
 256, 512, 1024
 
 The following (small) optional sizes are also of interest,
@@ -68,7 +68,10 @@ busy:
 Whilst we have provided suggested problem sizes that are powers of 2
 it may be the case that the relative performance differs when
 non-powers-of-two sizes are compared with powers-of-2 sizes and you
-might want to look into these if you have time.
+might want to look into these if you have time. (Note that the arrays
+used in the code actually have extents one greater than the supplied
+domain size. For instance, if you specify a domain of 128x128 then
+the arrays will be allocated as (129,129).)
 
 4: A note on timing calls
 
@@ -79,6 +82,18 @@ way of optimisations. As an example, if you fused two loops together,
 each with their own timer then the obvious thing to do would be to
 replace the two timers with a single timer (appropriately named)
 around the fused loop.
+
+5: Technical details (compilation etc.)
+
+The code in 'original' requires a configuration file and timing
+routines that are in 'psykal_vanilla' and therefore the PSyKAl version
+must be built first.  To build it, change to the psykal_vanilla
+directory and create a file named 'Makefile.include' by either copying
+or linking one of the supplied Makefile.include.<compiler_name>. You
+will almost certainly have to edit the settings in this file to match
+your local set-up.  'make' should then build the psykal version of the
+code. You can then change to the 'original' directory and again,
+'make' should then build this version of the code.
 
 If you have any questions about this benchmark then please feel free
 to contact either Andrew Porter or Rupert Ford who can be reached at
