@@ -1,21 +1,17 @@
-include ../Makefile.include
+include ../psykal_vanilla/Makefile.include
 
-# For timing module in new version of code
-F90FLAGS += -I../
+# For timing module in PSyKAl version of code
+TIMING_DIR = ../psykal_vanilla/
 
-LDFLAGS += ../timing_mod.o ../intel_timer_mod.o
+F90FLAGS += -I${TIMING_DIR}
 
-#EXECS = join_files shallow_base shallow_parallel
+LDFLAGS += ${TIMING_DIR}timing_mod.o ${TIMING_DIR}intel_timer_mod.o
+
 EXECS = shallow_base
 
 all: $(EXECS)
 
-shallow_base.o: ../timing_mod.o
-
-shallow_parallel.o: parallel_mod.o
-
-shallow_parallel: shallow_parallel.o
-	$(F90) $(F90FLAGS) -o $@ $^ parallel_mod.o $(LDFLAGS)
+shallow_base.o: ${TIMING_DIR}timing_mod.o
 
 %: %.o 
 	$(F90) $(F90FLAGS) -o $@ $^ $(LDFLAGS)
