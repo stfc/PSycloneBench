@@ -113,14 +113,12 @@ contains
         CALL time_smooth_code(i,j,vfld,vnew,vold)
 
         CALL time_smooth_code(i,j,pfld,pnew,pold)
+
+        Ufld(I,J) = UNEW(I,J)
+        Vfld(I,J) = VNEW(I,J)
+        Pfld(I,J) = PNEW(I,J)
       END DO
     END DO
-
-    !============================================
-    ! Update for next step
-    Ufld(:,:) = UNEW(:,:)
-    Vfld(:,:) = VNEW(:,:)
-    Pfld(:,:) = PNEW(:,:)
 
   end subroutine invoke_time_step
 
