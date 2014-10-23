@@ -2,8 +2,7 @@
 # Makefile.include.<compiler> file.
 include Makefile.include
 
-# The two targets that this Makefile supports
-#  - shallow_base is the version of the code with manual invokes
+# The target that this Makefile supports
 EXECS = shallow_base
 
 # The modules that are common to both targets
@@ -16,8 +15,6 @@ MODULES = kind_params_mod.o physical_params_mod.o field_mod.o model_mod.o \
           apply_bcs_mod.o time_step_mod.o \
           timing_mod.o time_smooth_mod.o intel_timer_mod.o \
           mesh_mod.o topology_mod.o
-
-GENERATED_MODULES = psy.o shallow_gen.o
 
 # My local copies of GungHo modules. Avoids attempting to build
 # the GungHo code which stretches some compilers...
@@ -33,14 +30,11 @@ shallow_base:
 
 shallow_base.o: $(COMMON_MODULES)
 
-shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
-
 # Interdependencies between modules, alphabetical order
 
 apply_bcs_mod.o: kind_params_mod.o topology_mod.o
 
 compute_cu_mod.o: topology_mod.o
-
 
 compute_fluxes_mod.o: compute_cu_mod.o \
                       compute_cv_mod.o \
