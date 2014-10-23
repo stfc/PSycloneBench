@@ -106,8 +106,8 @@ contains
     ! The time-smoothing is applied to a field at *every* grid point
     
     ! Loop over 'columns'
-    DO J=1,N+1 !idim2
-      DO I=1,M+1 !idim1
+    DO J=1,N+1
+      DO I=1,M+1
         CALL time_smooth_code(i,j,ufld,unew,uold)
 
         CALL time_smooth_code(i,j,vfld,vnew,vold)
@@ -118,9 +118,9 @@ contains
 
     !============================================
     ! Update for next step
-    CALL copy_field(UNEW, Ufld)
-    CALL copy_field(VNEW, Vfld)
-    CALL copy_field(PNEW, Pfld)
+    Ufld(:,:) = UNEW(:,:)
+    Vfld(:,:) = VNEW(:,:)
+    Pfld(:,:) = PNEW(:,:)
 
   end subroutine invoke_time_step
 
