@@ -268,13 +268,4 @@ contains
 
   !===================================================
 
-  SUBROUTINE copy_field(field_in, field_out)
-    IMPLICIT none
-    REAL(wp), INTENT(in),  DIMENSION(:,:) :: field_in
-    REAL(wp), INTENT(out), DIMENSION(:,:) :: field_out
-        
-    field_out(:,:) = field_in(:,:)
-        
-  END SUBROUTINE copy_field
-
 end module time_step_mod
