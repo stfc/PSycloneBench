@@ -3,6 +3,9 @@ This code is version 1.0 of the GOcean version of 'shallow' - a
 benchmark shallow-water code originally written by Paul
 Swartztrauber of NCAR.
 
+* BEFORE COMPILING AND RUNNING PLEASE READ THIS DOCUMENT, *
+* ESPECIALLY POINT 5 REGARDING COMPILATION.               *
+
 The directory named 'original' contains pretty much the original
 version of the code as received by this project. The directory named
 psykal_vanilla contains a 'PSyKAl' version of the code where PSyKAl stands
