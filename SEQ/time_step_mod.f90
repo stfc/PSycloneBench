@@ -1,6 +1,7 @@
 module time_step_mod
   use kind_params_mod
   use topology_mod, only: M, N
+  use timing_mod
   implicit none
 
 contains
@@ -9,6 +10,7 @@ contains
                               vfld, vnew, vold, &
                               pfld, pnew, pold, &
                               hfld, zfld, tdt)
+    use time_smooth_mod, only: alpha
     implicit none
     real(wp), dimension(M+1,N+1), intent(inout) :: cufld, cvfld
     real(wp), dimension(M+1,N+1), intent(inout) :: unew, vnew, pnew
@@ -19,11 +21,12 @@ contains
     real(wp), dimension(M+1,N+1), intent(inout) :: uold, vold, pold
     real(wp),                     intent(in) :: tdt
     ! Locals
-    integer :: I, J
+    integer :: I, J, idxt
 
     !============================================
     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
-
+    call timer_start('Compute CU,CV,CZ,H',idxt)
+         
     ! M/N obtained from topology look-up
     do J= 1, N, 1
        do I = 1, M, 1
@@ -42,6 +45,8 @@ contains
           call compute_h_code(i, j, hfld, pfld, ufld, vfld)
        END DO
     END DO
+
+    call timer_stop(idxt)
 
     !============================================
     ! PERIODIC CONTINUATION
@@ -69,6 +74,7 @@ contains
 
     !============================================
     ! COMPUTE NEW VALUES U,V AND P
+    call timer_start('Compute {U,V,P}NEW',idxt)
 
     DO J=1, N, 1
        DO I= 1, M, 1
@@ -83,6 +89,8 @@ contains
                                  cufld, cvfld, tdt)
        END DO
     END DO
+
+    call timer_stop(idxt)
 
     !============================================
     ! PERIODIC CONTINUATION
@@ -104,21 +112,34 @@ contains
 
     !============================================
     ! The time-smoothing is applied to a field at *every* grid point
-    
+    call timer_start('Time smooth',idxt)
+
     ! Loop over 'columns'
     DO J=1,N+1
       DO I=1,M+1
         CALL time_smooth_code(i,j,ufld,unew,uold)
+!         uold(i,j) = ufld(i,j) + &
+!              alpha*(unew(i,j) - 2.*ufld(i,j) + uold(i,j))
 
         CALL time_smooth_code(i,j,vfld,vnew,vold)
+!         vold(i,j) = vfld(i,j) + &
+!              alpha*(vnew(i,j) - 2.*vfld(i,j) + vold(i,j))
 
         CALL time_smooth_code(i,j,pfld,pnew,pold)
+!         pold(i,j) = pfld(i,j) + &
+!              alpha*(pnew(i,j) - 2.*pfld(i,j) + pold(i,j))
+      END DO
+    END DO
 
+    DO J=1,N+1
+      DO I=1,M+1
         Ufld(I,J) = UNEW(I,J)
         Vfld(I,J) = VNEW(I,J)
         Pfld(I,J) = PNEW(I,J)
       END DO
     END DO
+
+    call timer_stop(idxt)
 
   end subroutine invoke_time_step
 
