@@ -200,7 +200,6 @@ PROGRAM shallow
   FSDX = 4./DX
   FSDY = 4./DY
 
-  !     Start timer
   TIME = 0.
 
   !     Start timer
