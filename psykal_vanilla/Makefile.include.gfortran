@@ -2,8 +2,8 @@
 F90 = gfortran
 
 #F90FLAGS = -Wall -Wsurprising -fcheck=all -g -O0
-F90FLAGS = -Ofast -mtune=native
-# -finline-limit=5000
-#F90FLAGS = -O3 -fopenmp
+F90FLAGS = -Ofast -mtune=native -finline-limit=5000
+
 LDFLAGS = -flto -fwhole-program
 
+OMP_FLAGS = -fopenmp
