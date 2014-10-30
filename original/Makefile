@@ -1,7 +1,7 @@
-include ../psykal_vanilla/Makefile.include
+include ../common/Makefile.include
 
-# For timing module in PSyKAl version of code
-TIMING_DIR = ../psykal_vanilla/
+# For timing module 
+TIMING_DIR = ../common/
 
 F90FLAGS += -I${TIMING_DIR}
 
@@ -11,7 +11,10 @@ EXECS = shallow_base
 
 all: $(EXECS)
 
-shallow_base.o: ${TIMING_DIR}timing_mod.o
+shallow_base.o: timing
+
+timing:
+	${MAKE} -C ${TIMING_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}"
 
 %: %.o 
 	$(F90) $(F90FLAGS) -o $@ $^ $(LDFLAGS)
@@ -20,4 +23,5 @@ shallow_base.o: ${TIMING_DIR}timing_mod.o
 	$(F90) $(F90FLAGS) -c $<
 
 clean: 
+	${MAKE} -C ${TIMING_DIR} clean
 	rm -f *.o *.mod *.MOD $(EXECS)
