@@ -221,7 +221,7 @@ PROGRAM shallow
 
      !        COMPUTE CAPITAL U, CAPITAL V, Z AND H
 
-     CALL timer_start('Compute CU,CV,CZ,H',idxt1)
+     !CALL timer_start('Compute CU,CV,CZ,H',idxt1)
 
 !$OMP DO SCHEDULE(static,chunk_size)
      DO J=1,N
@@ -254,11 +254,11 @@ PROGRAM shallow
      END DO
 !$OMP END DO nowait
 
-     CALL timer_stop(idxt1)
+     !CALL timer_stop(idxt1)
 !$OMP BARRIER
 
      !        PERIODIC CONTINUATION
-     CALL timer_start('PBCs',idxt1)
+     !CALL timer_start('PBCs',idxt1)
 !$OMP SINGLE
      DO J=1,N
         CU(1,J) = CU(M+1,J)
@@ -281,7 +281,7 @@ PROGRAM shallow
      END DO
 !$OMP END DO nowait
 
-     CALL timer_stop(idxt1)
+     !CALL timer_stop(idxt1)
 !$OMP BARRIER
 
      !        COMPUTE NEW VALUES U,V AND P
@@ -289,7 +289,7 @@ PROGRAM shallow
      TDTSDX = TDT/DX
      TDTSDY = TDT/DY
 
-     CALL timer_start('Compute {U,V,P}NEW',idxt1)
+     !CALL timer_start('Compute {U,V,P}NEW',idxt1)
 
 !$OMP DO SCHEDULE(static,chunk_size)
      DO J=1,N
@@ -318,10 +318,10 @@ PROGRAM shallow
      END DO
 !$OMP END DO nowait
 
-     CALL timer_stop(idxt1)
+     !CALL timer_stop(idxt1)
 !$OMP BARRIER
 
-     CALL timer_start('PBCs',idxt1)
+     !CALL timer_start('PBCs',idxt1)
      !        PERIODIC CONTINUATION
 !$OMP SINGLE
      DO J=1,N
@@ -342,7 +342,7 @@ PROGRAM shallow
      END DO
 !$OMP END DO
 
-     CALL timer_stop(idxt1)
+     !CALL timer_stop(idxt1)
 
 !$OMP SINGLE
      TIME = TIME + DT
@@ -351,7 +351,7 @@ PROGRAM shallow
      !        TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
      IF(NCYCLE .GT. 1) then
 
-        CALL timer_start('Time smooth',idxt1)
+        !CALL timer_start('Time smooth',idxt1)
 
 !$OMP DO SCHEDULE(static,chunk_size)
         DO J=1,NP1
@@ -396,7 +396,7 @@ PROGRAM shallow
         END DO
 !$OMP END DO nowait
 
-        CALL timer_stop(idxt1)
+        !CALL timer_stop(idxt1)
 !$OMP BARRIER
 
      else
