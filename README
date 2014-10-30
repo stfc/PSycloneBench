@@ -100,15 +100,14 @@ the quickest run as being 'the answer.'
 
 5: Technical details (compilation etc.)
 
-The code in 'original' requires a configuration file and timing
-routines that are in 'psykal_vanilla' and therefore the PSyKAl version
-must be built first.  To build it, change to the psykal_vanilla
-directory and create a file named 'Makefile.include' by either copying
-or linking one of the supplied Makefile.include.<compiler_name>. You
-will almost certainly have to edit the settings in this file to match
-your local set-up.  'make' should then build the psykal version of the
-code. You can then change to the 'original' directory and again,
-'make' should then build this version of the code.
+All of the codes depend upon a configuration file and timing routines
+that are in the 'common' directory.  Before attempting to compile
+anything, change to the common directory and in it create a file named
+'Makefile.include' by either copying or linking one of the supplied
+Makefile.include.<compiler_name> files. You will almost certainly have
+to edit the settings in this file to match your local set-up.  With
+this done, typing 'make' in either the 'original' or 'psykal_vanilla'
+directories should produce an executable.
 
 If you have any questions about this benchmark then please feel free
 to contact either Andrew Porter or Rupert Ford who can be reached at
