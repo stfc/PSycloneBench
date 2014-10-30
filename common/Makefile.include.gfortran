@@ -6,4 +6,4 @@ F90FLAGS = -Ofast -mtune=native -finline-limit=5000
 
 LDFLAGS = -flto -fwhole-program
 
-OMP_FLAGS = -fopenmp
+OMPFLAGS = -fopenmp

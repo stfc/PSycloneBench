@@ -3,7 +3,7 @@ include ../common/Makefile.include
 # For timing module
 TIMING_DIR = ../common/
 
-F90FLAGS += -I${TIMING_DIR} ${OMP_FLAGS}
+F90FLAGS += -I${TIMING_DIR} ${OMPFLAGS}
 
 LDFLAGS += ${TIMING_DIR}timing_mod.o ${TIMING_DIR}intel_timer_mod.o
 

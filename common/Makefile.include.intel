@@ -13,3 +13,5 @@ F90FLAGS += -no-inline-factor
 
 #LDFLAGS = 
 LDFLAGS = -fast
+
+OMPFLAGS = -openmp
