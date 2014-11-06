@@ -6,9 +6,6 @@ MODULE time_smooth_mod
 
   PRIVATE
 
-  PUBLIC time_smooth_init, invoke_time_smooth
-  PUBLIC time_smooth_type, time_smooth_code
-
   !> Parameter for time smoothing
   REAL(wp) :: alpha
 
@@ -29,6 +26,10 @@ MODULE time_smooth_mod
   CONTAINS
     procedure, nopass :: code => time_smooth_code
   END type time_smooth_type
+
+  PUBLIC time_smooth_init, invoke_time_smooth
+  PUBLIC time_smooth_type, time_smooth_code
+  PUBLIC alpha
 
 CONTAINS
 
