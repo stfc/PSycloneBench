@@ -68,7 +68,7 @@ model_mod.o: field_mod.o shallow_io_mod.o mesh_mod.o \
              time_smooth_mod.o topology_mod.o
 
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $? $(LDFLAGS)
+	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
 
 %.o: %.f90
 	$(F90) $(F90FLAGS) -c $<
