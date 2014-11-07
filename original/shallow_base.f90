@@ -193,7 +193,7 @@
       TIME = 0.
 
       !     Start timer
-      CALL timer_start('Time-stepping',idxt0)
+      CALL timer_start('Time-stepping',idxt0,itmax)
 
 !  ** Start of time loop ** 
       DO ncycle=1,itmax

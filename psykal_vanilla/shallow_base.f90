@@ -117,9 +117,11 @@ program shallow
   CALL copy_field(VNEW, V)
   CALL copy_field(PNEW, P)
 
-  !====================================
-  !     Start timer
-  CALL timer_start('Time-stepping',idxt0)
+  !===================================================
+  ! Start timer. Tell the timing system that 
+  ! this single timed region actually contains itmax-1
+  ! repeats.
+  CALL timer_start('Time-stepping', idxt0, itmax-1)
 
   !  ** Start of time-stepping loop proper ** 
   DO ncycle=2,itmax
