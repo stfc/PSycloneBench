@@ -36,8 +36,6 @@
       USE timing_mod
       IMPLICIT NONE
 
-      INCLUDE 'netcdf.inc'
-
       INTEGER :: m, n    ! global domain size
       INTEGER :: itmax   ! number of timesteps
       INTEGER :: mprint  ! frequency of output    
@@ -427,7 +425,8 @@
 
       IF (l_out) THEN 
 
-         iret = nf_close(ncid)
+         iret = 0
+         !iret = nf_close(ncid)
          call check_err(iret)
       ENDIF
 
@@ -458,9 +457,10 @@
 
       subroutine check_err(iret)
       integer iret
-      include 'netcdf.inc'
-      if(iret .ne. NF_NOERR) then
-         print *, nf_strerror(iret)
+!      include 'netcdf.inc'
+      if(iret .ne. 0) then
+      !if(iret .ne. NF_NOERR) then
+       !  print *, nf_strerror(iret)
          stop
       endif
       end subroutine
@@ -472,7 +472,7 @@
       character(len=*) file
       integer m,n
 !     declarations for netCDF library
-      include 'netcdf.inc'
+!      include 'netcdf.inc'
 !     error status return
       integer iret
 !     netCDF id
@@ -499,37 +499,38 @@
       integer istart(p_rank)
       integer icount(p_rank)
       
+      iret = 0
 !     enter define mode
-      iret = nf_create(file, NF_CLOBBER,ncid)
+      !iret = nf_create(file, NF_CLOBBER,ncid)
       call check_err(iret)
 !     define dimensions
-      iret = nf_def_dim(ncid, 'm', m, m_dim)
+      !iret = nf_def_dim(ncid, 'm', m, m_dim)
       call check_err(iret)
-      iret = nf_def_dim(ncid, 'n', n, n_dim)
+      !iret = nf_def_dim(ncid, 'n', n, n_dim)
       call check_err(iret)
 !     time is an unlimited dimension so that any number of
 !     records can be added
-      iret = nf_def_dim(ncid, 'time', NF_UNLIMITED, time_dim)
+      !iret = nf_def_dim(ncid, 'time', NF_UNLIMITED, time_dim)
       call check_err(iret)
 !     define coordinate variable for time      
       t_dims(1) = time_dim
-      iret = nf_def_var(ncid, 'time', NF_INT, 1, t_dims, t_id)
+      !iret = nf_def_var(ncid, 'time', NF_INT, 1, t_dims, t_id)
       call check_err(iret)
 !     define variables
       p_dims(1) = m_dim
       p_dims(2) = n_dim
       p_dims(3) = time_dim
-      iret = nf_def_var(ncid, 'p', NF_DOUBLE, p_rank, p_dims, p_id)
+      !iret = nf_def_var(ncid, 'p', NF_DOUBLE, p_rank, p_dims, p_id)
       call check_err(iret)
       u_dims(1) = m_dim
       u_dims(2) = n_dim
       u_dims(3) = time_dim
-      iret = nf_def_var(ncid, 'u', NF_DOUBLE, u_rank, u_dims, u_id)
+      !iret = nf_def_var(ncid, 'u', NF_DOUBLE, u_rank, u_dims, u_id)
       call check_err(iret)
       v_dims(1) = m_dim
       v_dims(2) = n_dim
       v_dims(3) = time_dim
-      iret = nf_def_var(ncid, 'v', NF_DOUBLE, v_rank, v_dims, v_id)
+      !iret = nf_def_var(ncid, 'v', NF_DOUBLE, v_rank, v_dims, v_id)
       call check_err(iret)
 !     start netCDF write at the first (1,1,1) position of the array
       istart(1) = 1
@@ -541,7 +542,7 @@
       icount(3) = 1
       
 !     leave define mode
-      iret = nf_enddef(ncid)
+      !iret = nf_enddef(ncid)
       call check_err(iret)
       
 !     end of netCDF definitions
@@ -559,12 +560,13 @@
       integer t_id,t_val
       integer t_start(1), t_count(1)
 
-      iret = nf_put_vara_double(id,varid,istart,icount,var)
+      iret = 0
+      !iret = nf_put_vara_double(id,varid,istart,icount,var)
       call check_err(iret)
       
       t_start(1) = istart(3) 
       t_count(1) = 1
-      iret = nf_put_vara_int(id,t_id,t_start,t_count,t_val)
+      !iret = nf_put_vara_int(id,t_id,t_start,t_count,t_val)
       call check_err(iret)
 
       end subroutine my_ncwrite
