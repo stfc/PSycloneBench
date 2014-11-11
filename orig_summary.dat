@@ -1,0 +1,27 @@
+# Original performance: Millions of pts updated per s  
+#  
+# This data is formatted to be run through bargraph.pl in order to
+# generate a clustered bar chart 
+# (http://www.burningcutlery.com/derek/bargraph)
+=cluster; Gnu 4.8.2, Haswell; Intel 14.0.0, Haswell; Cray 8.3.3, Ivy Bridge; Intel 14.0.1.106, Ivy Bridge; IBM bgxlf 14.1
+=table,
+max=170
+=norotate
+legendx=inside
+#legendy=center
+#=nolegoutline
+=nocommas
+#legendfill=
+xlabel=Problem size
+ylabel=Points updated per second (millions)
+font=Helvetica
+fontsz=12
+xlabelshift=0,-0.5
+# stretch the graph vertically
+yscale=1.2
+xscale=1.1
+64,87.14893617,83.67722165,105.9043758,88.94679696,1
+128,85.55613577,88.27586207,110.1723123,81.73609379,1
+256,87.73226238,92.84692215,105.8551792,83.37913486,1
+512,55.22308827,57.32492155,90.38622333,69.68949383,1
+1024,54.80744303,57.06520526,48.46810743,51.46688394,1

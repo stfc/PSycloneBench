@@ -1,0 +1,27 @@
+# Best PSyKAl performance
+#
+# This data is formatted to be run through bargraph.pl in order to
+# generate a clustered bar chart 
+# (http://www.burningcutlery.com/derek/bargraph)
+=cluster; Gnu 4.8.2  Haswell; Intel 14.0.0  Haswell; Cray 8.3.3  Ivy Bridge; Intel 14.0.1.106  Ivy Bridge; IBM bgxlf 14.1
+=table
+max=170
+=norotate
+legendx=inside
+#legendy=top
+#=nolegoutline
+=nocommas
+#legendfill=
+xlabel=Problem size
+ylabel=Points updated per second (millions)
+font=Helvetica
+fontsz=12
+xlabelshift=0,-0.5
+# stretch the graph vertically
+yscale=1.2
+xscale=1.1
+64   69.42372881  86.32244468 107.497533  81.75648703 1.878899083
+128  61.59398496  84.84722941 107.4360656 76.09846725 1.918501171
+256  60.37402119  83.09369849 100.7734535 75.08707608 1.919625073
+512  47.08468792  50.00696279 89.19132257 61.78415706 1.922158674
+1024 46.02954281  48.47068395 49.03829246 44.28416676 1.917781862
