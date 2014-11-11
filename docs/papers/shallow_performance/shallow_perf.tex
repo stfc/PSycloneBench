@@ -49,62 +49,28 @@
 % have to be run twice to clear warning/error messages.
 
 
-% *** CITATION PACKAGES ***
-%
-%\usepackage{cite}
-% cite.sty was written by Donald Arseneau
-% V1.6 and later of IEEEtran pre-defines the format of the cite.sty package
-% \cite{} output to follow that of IEEE. Loading the cite package will
-% result in citation numbers being automatically sorted and properly
-% "compressed/ranged". e.g., [1], [9], [2], [7], [5], [6] without using
-% cite.sty will become [1], [2], [5]--[7], [9] using cite.sty. cite.sty's
-% \cite will automatically add leading space, if needed. Use cite.sty's
-% noadjust option (cite.sty V3.8 and later) if you want to turn this off
-% such as if a citation ever needs to be enclosed in parenthesis.
-% cite.sty is already installed on most LaTeX systems. Be sure and use
-% version 4.0 (2003-05-27) and later if using hyperref.sty. cite.sty does
-% not currently provide for hyperlinked citations.
-% The latest version can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/cite/
-% The documentation is contained in the cite.sty file itself.
-
+\usepackage{cite}
 
 % *** GRAPHICS RELATED PACKAGES ***
 %
 \ifCLASSINFOpdf
-  % \usepackage[pdftex]{graphicx}
+  \usepackage[pdftex]{graphicx}
   % declare the path(s) where your graphic files are
   % \graphicspath{{../pdf/}{../jpeg/}}
   % and their extensions so you won't have to specify these with
   % every instance of \includegraphics
-  % \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
+  \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
 \else
   % or other class option (dvipsone, dvipdf, if not using dvips). graphicx
   % will default to the driver specified in the system graphics.cfg if no
   % driver is specified.
-  % \usepackage[dvips]{graphicx}
+  \usepackage[dvips]{graphicx}
   % declare the path(s) where your graphic files are
   % \graphicspath{{../eps/}}
   % and their extensions so you won't have to specify these with
   % every instance of \includegraphics
-  % \DeclareGraphicsExtensions{.eps}
+  \DeclareGraphicsExtensions{.eps}
 \fi
-% graphicx was written by David Carlisle and Sebastian Rahtz. It is
-% required if you want graphics, photos, etc. graphicx.sty is already
-% installed on most LaTeX systems. The latest version and documentation
-% can be obtained at: 
-% http://www.ctan.org/tex-archive/macros/latex/required/graphics/
-% Another good source of documentation is "Using Imported Graphics in
-% LaTeX2e" by Keith Reckdahl which can be found at:
-% http://www.ctan.org/tex-archive/info/epslatex/
-%
-% latex, and pdflatex in dvi mode, support graphics in encapsulated
-% postscript (.eps) format. pdflatex in pdf mode supports graphics
-% in .pdf, .jpeg, .png and .mps (metapost) formats. Users should ensure
-% that all non-photo figures use a vector format (.eps, .pdf, .mps) and
-% not a bitmapped formats (.jpeg, .png). IEEE frowns on bitmapped formats
-% which can result in "jaggedy"/blurry rendering of lines and letters as
-% well as large increases in file sizes.
 
 
 % *** MATH PACKAGES ***
@@ -276,7 +242,7 @@
 
 % *** PDF, URL AND HYPERLINK PACKAGES ***
 %
-%\usepackage{url}
+\usepackage{url}
 % url.sty was written by Donald Arseneau. It provides better support for
 % handling and breaking URLs. url.sty is already installed on most LaTeX
 % systems. The latest version and documentation can be obtained at:
@@ -294,6 +260,7 @@
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
+\newcommand{\psykal}{{PS}y{KA}l}
 
 \begin{document}
 %
@@ -411,17 +378,17 @@ Performance, Code-generation, Finite-difference
 for IEEE journal papers produced under \LaTeX\ using
 IEEEtran.cls version 1.8 and later.
 
-\subsection{The 'shallow' Program}
+\subsection{The `shallow' Program}
 For this work we have used a benchmarking program that solves the
 shallow-water equations on a bi-periodic plane following the
-finite-difference scheme introduced by Sadourney.  Originally written
-by Paul Schwartrauber of NCAR.  Organic development - optimised for
-previous hardware.
+finite-difference scheme introduced by Sadourney~\cite{sadourny75}.
+Originally written by Paul Schwartrauber of NCAR.  Organic development
+- optimised for previous hardware.
 
 % needed in second column of first page if using \IEEEpubid
 %\IEEEpubidadjcol
 
-\subsection{The {PS}y{KA}l Approach}
+\subsection{The \psykal Approach}
 Proliferation of lightweight cores is resulting in increased
 complexity in the programming models required to achieve performance.
 Combine with the complexity of e.g. a model simulating circulation in
@@ -431,7 +398,7 @@ computational science demands from the e.g. oceanographic demands.
 
 \begin{figure}
 \centering
-\caption{The {PS}y{KA}l Approach.}
+\caption{The \psykal Approach.}
 \end{figure}
 
 While encapsulation makes it easier to produce more robust software,
@@ -451,11 +418,11 @@ We've run on Intel Ivy Bridge, Intel Haswell, IBM BG/Q, IBM P8.
 were supplied with at the start of this work.  
 
 \item Performance of the vanilla, unoptimised version after it has been
-re-structured following the {PS}y{KA}l approach.
+re-structured following the \psykal approach.
 
 \end{itemize}
 
-Beginning with the vanilla {PS}y{KA}l version, we apply a series of
+Beginning with the vanilla \psykal version, we apply a series of
 optimisations with the aim of recovering, as much as is possible, the
 structure and thus performance of the original version of the code.
 
@@ -478,6 +445,10 @@ These optimisations do not always result in improved performance (AND
 HENCE WE SHOULD CALL THEM TRANSFORMATIONS PERHAPS?). Whether or not
 they do so depends both on the compiler and the problem size.
 
+In figure~\ref{FIG_orig_perf_summary} we plot the performance of the
+original version of the shallow code for the range of compilers and
+hardware considered here.
+
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
 % For figures, \caption should occur after the \includegraphics.
@@ -491,19 +462,33 @@ they do so depends both on the compiler and the problem size.
 % option should be used if it is desired that the figures are to be
 % displayed while in draft mode.
 %
-%\begin{figure}[!t]
-%\centering
-%\includegraphics[width=2.5in]{myfigure}
+\begin{figure}[!t]
+\centering
+\includegraphics[width=2.8in]{orig_summary}
 % where an .eps filename suffix will be assumed under latex, 
 % and a .pdf suffix will be assumed for pdflatex; or what has been declared
 % via \DeclareGraphicsExtensions.
-%\caption{Simulation Results.}
-%\label{fig_sim}
-%\end{figure}
+\caption{Summary of the performance of the original shallow code on 
+the range of compilers and hardware under consideration.}
+\label{FIG_orig_perf_summary}
+\end{figure}
 
-% Note that IEEE typically puts floats only at the top, even when this
-% results in a large percentage of a column being occupied by floats.
+\begin{figure}[!t]
+\centering
+\includegraphics[width=2.8in]{best_psykal_summary}
+\caption{Summary of the best performance achieved by any \psykal 
+version of shallow with each of the compilers and CPUs under 
+consideration.}
+\label{FIG_best_psykal_perf_summary}
+\end{figure}
 
+\begin{figure}[!t]
+\centering
+\includegraphics[width=2.8in]{slowdown_summary}
+\caption{Summary of the performance achieved by any \psykal
+version as a percentage of that achieved by the original version of the code.}
+\label{FIG_slowdown_summary}
+\end{figure}
 
 % An example of a double column floating figure using two subfigures.
 % (The subfig.sty package must be loaded for this to work.)
@@ -591,25 +576,14 @@ The conclusion goes here.
 
 The authors would like to thank...
 
-% can use a bibliography generated by BibTeX as a .bbl file
-% BibTeX documentation can be easily obtained at:
+
 % http://www.ctan.org/tex-archive/biblio/bibtex/contrib/doc/
 % The IEEEtran BibTeX style support page is at:
 % http://www.michaelshell.org/tex/ieeetran/bibtex/
-%\bibliographystyle{IEEEtran}
+\bibliographystyle{IEEEtran}
 % argument is your BibTeX string definitions and bibliography database(s)
-%\bibliography{IEEEabrv,../bib/paper}
+\bibliography{IEEEabrv,shallow_perf}
 %
-% <OR> manually copy in the resultant .bbl file
-% set second argument of \begin to the number of references
-% (used to reserve space for the reference number labels box)
-%\begin{thebibliography}{1}
-
-%\bibitem{IEEEhowto:kopka}
-%H.~Kopka and P.~W. Daly, \emph{A Guide to \LaTeX}, 3rd~ed.\hskip 1em plus
-%  0.5em minus 0.4em\relax Harlow, England: Addison-Wesley, 1999.
-
-%\end{thebibliography}
 
 % biography section
 % 
@@ -624,7 +598,7 @@ The authors would like to thank...
 
 \begin{IEEEbiographynophoto}{A.~R.~Porter}
 Biography text here.
-\end{IEEEbiography}
+\end{IEEEbiographynophoto}
 
 % if you will not have a photo at all:
 \begin{IEEEbiographynophoto}{R.~Ford}
