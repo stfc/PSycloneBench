@@ -436,14 +436,14 @@ computational science demands from the e.g. oceanographic demands.
 
 While encapsulation makes it easier to produce more robust software,
 it can often come with a performance penalty. In this work we
-investigate the origin of this penalty and the steps required to
-remove it.
+investigate in detail the hardware and compiler dependencies of this
+penalty and the steps required to remove it.
 
 
 \section{Results}
 
 We have results for the Gnu, Intel, Cray and IBM compilers.
-We've run on Intel Ivy Bridge, Intel Haswell, and IBM BG/Q.
+We've run on Intel Ivy Bridge, Intel Haswell, IBM BG/Q, IBM P8.
 
 \begin{itemize}
 
@@ -454,6 +454,29 @@ were supplied with at the start of this work.
 re-structured following the {PS}y{KA}l approach.
 
 \end{itemize}
+
+Beginning with the vanilla {PS}y{KA}l version, we apply a series of
+optimisations with the aim of recovering, as much as is possible, the
+structure and thus performance of the original version of the code.
+
+\begin{enumerate}
+
+\item Pass explicit array bounds to middle layer (rather than using
+  assumed-size array arguments)
+
+\item Move kernel routines into same module as middle layer
+
+\item Loop fusion
+
+\item In-lined field-copy operation
+
+\item Fused field-copy operation
+
+\end{enumerate}
+
+These optimisations do not always result in improved performance (AND
+HENCE WE SHOULD CALL THEM TRANSFORMATIONS PERHAPS?). Whether or not
+they do so depends both on the compiler and the problem size.
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
