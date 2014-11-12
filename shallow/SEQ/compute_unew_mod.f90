@@ -2,16 +2,15 @@ MODULE compute_unew_mod
   USE kind_params_mod
   USE kernel_mod
   use argument_mod
-  use field_mod
-  implicit none
+  IMPLICIT none
 
-  private
+  PRIVATE
 
-  public manual_invoke_compute_unew
-  public compute_unew_type, compute_unew_code
+  PUBLIC manual_invoke_compute_unew
+  PUBLIC compute_unew_type, compute_unew_code
 
-  type, extends(kernel_type) :: compute_unew_type
-     type(arg), dimension(6) :: meta_args =    &
+  TYPE, EXTENDS(kernel_type) :: compute_unew_type
+     TYPE(arg), DIMENSION(6) :: meta_args =    &
           (/ arg(WRITE, CU, POINTWISE),        & ! unew
              arg(READ,  CU, POINTWISE),        & ! uold
              arg(READ,  CF, POINTWISE),        & ! z
@@ -19,29 +18,25 @@ MODULE compute_unew_mod
              arg(READ,  CT, POINTWISE),        & ! h
              arg(READ,  R,  POINTWISE)         & ! tdt
            /)
-     !> This kernel operates on fields that live on an
-     !! orthogonal, regular grid.
-     integer :: GRID_TYPE = ORTHOGONAL_REGULAR
-
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
-  contains
+     INTEGER :: ITERATES_OVER = DOFS
+  CONTAINS
     procedure, nopass :: code => compute_unew_code
-  end type compute_unew_type
+  END TYPE compute_unew_type
 
-contains
+CONTAINS
 
   !===================================================
 
   subroutine manual_invoke_compute_unew(unew, uold, z, cv, h, tdt)
+    use topology_mod, only: cu
     implicit none
-    type(r2d_field_type), intent(inout) :: unew
-    type(r2d_field_type), intent(in)    :: uold, z, cv, h
+    real(wp), intent(out), dimension(:,:) :: unew
+    real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
     real(wp), intent(in) :: tdt
     ! Locals
-    integer  :: I, J
-    real(wp) :: dx, dy
+    integer :: I, J
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -75,15 +70,12 @@ contains
     !        +CV(I+1,J))-TDTSDX*(H(I+1,J)-H(I,J))                       
     !   END DO
     ! END DO
-    dx = unew%grid%dx
-    dy = unew%grid%dy
 
-    DO J=unew%internal%ystart, unew%internal%ystop, 1
-       DO I=unew%internal%xstart, unew%internal%xstop, 1
+    DO J=cu%jstart, cu%jstop, 1
+       DO I=cu%istart, cu%istop, 1
 
-          CALL compute_unew_code(i, j, dx, dy, &
-                                 unew%data, uold%data, &
-                                 z%data, cv%data, h%data, tdt)
+          CALL compute_unew_code(i, j, unew, uold, &
+                                 z, cv, h, tdt)
        END DO
     END DO
 
@@ -91,15 +83,15 @@ contains
 
   !===================================================
 
-  subroutine compute_unew_code(i, j, dx, dy, unew, uold, z, cv, h, tdt)
-    implicit none
-    integer,  intent(in) :: I, J
-    real(wp), intent(in) :: dx, dy
-    real(wp), intent(out), dimension(:,:) :: unew
-    real(wp), intent(in),  dimension(:,:) :: uold, z, cv, h
-    real(wp), intent(in) :: tdt
+  SUBROUTINE compute_unew_code(i, j, unew, uold, z, cv, h, tdt)
+    USE model_mod, ONLY: dx
+    IMPLICIT none
+    INTEGER, INTENT(in) :: I, J
+    REAL(wp), INTENT(out), DIMENSION(:,:) :: unew
+    REAL(wp), INTENT(in),  DIMENSION(:,:) :: uold, z, cv, h
+    REAL(wp), INTENT(in) :: tdt
     ! Locals
-    real(wp) :: tdts8, tdtsdx
+    REAL(wp) :: tdts8, tdtsdx
    
     !> These quantities are computed here because tdt is not
     !! constant. (It is == dt for first time step, 2xdt for
@@ -112,6 +104,6 @@ contains
                 (CV(I,J+1)+CV(I-1,J+1)+CV(I-1,J)+CV(I,J)) - &
                 TDTSDX*(H(I,J)-H(I-1,J))
 
-  end subroutine compute_unew_code
+  END SUBROUTINE compute_unew_code
 
-end module compute_unew_mod
+END MODULE compute_unew_mod

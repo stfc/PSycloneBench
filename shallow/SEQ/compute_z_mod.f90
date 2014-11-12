@@ -5,7 +5,6 @@ module compute_z_mod
   use kind_params_mod
   use kernel_mod
   use argument_mod
-  use field_mod
   implicit none
 
   private
@@ -20,10 +19,6 @@ module compute_z_mod
              arg(READ,  CU, POINTWISE),        & ! u
              arg(READ,  CV, POINTWISE)         & ! v
            /)
-     !> This kernel operates on fields that live on an
-     !! orthogonal, regular grid.
-     integer :: GRID_TYPE = ORTHOGONAL_REGULAR
-
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
      integer :: ITERATES_OVER = DOFS
@@ -37,13 +32,13 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! compute_z_code().
-  subroutine manual_invoke_compute_z(zfld, pfld, ufld, vfld)
+  subroutine manual_invoke_compute_z(z, p, u, v)
+    use topology_mod, only: cf
     implicit none
-    type(r2d_field_type), intent(inout) :: zfld
-    type(r2d_field_type), intent(in)    :: pfld, ufld, vfld
+    real(wp), intent(out), dimension(:,:) :: z
+    real(wp), intent(in),  dimension(:,:) :: p, u, v
     ! Locals
     integer :: I, J
-    real(wp) :: dx, dy
 
     ! Note that we do not loop over the full extent of the field.
     ! Fields are allocated with extents (M+1,N+1).
@@ -89,15 +84,10 @@ contains
     !   Ti-1j-1--uij-1---Tij-1---ui+1j-1
     !
 
-    dx = zfld%grid%dx
-    dy = zfld%grid%dy
+    do J=cf%jstart, cf%jstop !2, size(z, 2)
+       do I=cf%istart, cf%istop !2, size(z, 1)
 
-    do J=zfld%internal%ystart, zfld%internal%ystop, 1
-       do I=zfld%internal%xstart, zfld%internal%xstop, 1
-
-          call compute_z_code(i, j, dx, dy,         &
-                              zfld%data, pfld%data, &
-                              ufld%data, vfld%data)
+          call compute_z_code(i, j, z, p, u, v)
        end do
     end do
 
@@ -106,14 +96,14 @@ contains
   !===================================================
 
   !> Compute the potential vorticity on the grid point (i,j)
-  subroutine compute_z_code(i, j, dx, dy, z, p, u, v)
+  subroutine compute_z_code(i, j, z, p, u, v)
+    use mesh_mod, only: fsdx, fsdy
     implicit none
     integer,  intent(in) :: I, J
-    real(wp), intent(in) :: dx, dy
     real(wp), intent(out), dimension(:,:) :: z
     real(wp), intent(in),  dimension(:,:) :: p, u, v
 
-    Z(I,J) =((4.0/dx)*(V(I,J)-V(I-1,J))-(4.0/dy)*(U(I,J)-U(I,J-1)))/ &
+    Z(I,J) =(FSDX*(V(I,J)-V(I-1,J))-FSDY*(U(I,J)-U(I,J-1)))/ &
                  (P(I-1,J-1)+P(I,J-1)+P(I,J)+P(I-1,J))
 
   end subroutine compute_z_code

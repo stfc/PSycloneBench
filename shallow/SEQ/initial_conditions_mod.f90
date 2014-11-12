@@ -1,8 +1,8 @@
-module initial_conditions_mod
-  use physical_params_mod
-  use field_mod
-  implicit none
-  private
+MODULE initial_conditions_mod
+  USE physical_params_mod
+  USE field_mod
+  IMPLICIT none
+  PRIVATE
 
   !> Amplitude of initial oscillations in stream function
   !! Used by invoke_init_stream_fn_kernel()
@@ -25,33 +25,33 @@ CONTAINS
   !! fly in init_stream_fn_code() and init_pressure() and
   !! rely on compiler magic to make sure they're not
   !! recomputed for every grid point.
-  SUBROUTINE init_initial_condition_params(pfld)
+  SUBROUTINE init_initial_condition_params()
+    USE model_mod, ONLY: m, n
     IMPLICIT none
-    type(r2d_field_type), intent(in) :: pfld
 
-    di = TPI/pfld%internal%nx
-    dj = TPI/pfld%internal%ny
+    di = TPI/m
+    dj = TPI/n
 
 
   END SUBROUTINE init_initial_condition_params
 
   !===================================================
 
-  subroutine invoke_init_stream_fn_kernel(psifld)
-    implicit none
-    type(r2d_field_type), intent(inout) :: psifld
+  SUBROUTINE invoke_init_stream_fn_kernel(psi)
+    IMPLICIT none
+    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: psi
     ! Locals
-    integer :: idim1, idim2
-    integer :: i, j
+    INTEGER :: idim1, idim2
+    INTEGER :: i, j
 
-    idim1 = SIZE(psifld%data, 1)
-    idim2 = SIZE(psifld%data, 2)
+    idim1 = SIZE(psi, 1)
+    idim2 = SIZE(psi, 2)
 
     ! Loop over 'columns'
     DO J=1, idim2
       DO I=1, idim1
 
-        CALL init_stream_fn_code(i, j, psifld%data)
+        CALL init_stream_fn_code(i, j, psi)
 
       END DO
     END DO
@@ -76,10 +76,11 @@ CONTAINS
 
   !===================================================
 
-  SUBROUTINE init_pressure(pfld)
+  SUBROUTINE init_pressure(p)
+    USE model_mod, ONLY: m, dx
     IMPLICIT none
-    type(r2d_field_type), target, intent(inout) :: pfld
-    REAL(KIND=wp), DIMENSION(:,:), pointer :: p
+    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: p
+!    TYPE(field_type), INTENT(out) :: p
     ! Locals
     INTEGER :: idim1, idim2
     INTEGER :: i, j
@@ -89,12 +90,10 @@ CONTAINS
     !! pressure field.
     REAL(wp) :: pcf
 
-    p => pfld%data
+    idim1 = SIZE(p, 1)
+    idim2 = SIZE(p, 2)
 
-    idim1 = pfld%grid%nx
-    idim2 = pfld%grid%ny
-
-    EL = pfld%internal%nx * pfld%grid%dx
+    EL = m*dx
     PCF = PI*PI*A*A/(EL*EL)
 
     ! di = 2Pi/(Extent of mesh in x)
@@ -115,70 +114,40 @@ CONTAINS
 
   !===================================================
 
-  subroutine init_velocity_u(ufld, psifld)
-    implicit none
-    ! The horizontal velocity field to initialise
-    type(r2d_field_type), intent(inout), target :: ufld
-    ! The stream function used in the initialisation
-    type(r2d_field_type), intent(in),    target :: psifld
+  SUBROUTINE init_velocity_u(u, psi, m, n)
+    USE mesh_mod, ONLY: dy
+    IMPLICIT none
+    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: u
+    REAL(KIND=wp), INTENT(in),  DIMENSION(:,:) :: psi
+    INTEGER,      INTENT(in) :: m, n
     ! Locals
-    real(kind=wp), pointer, dimension(:,:) :: u, psi
-    integer  :: i, j
-    real(wp) :: dy
-
-    u => ufld%data
-    psi => psifld%data
+    INTEGER :: I, J
 
     ! dy is a property of the mesh
-    dy = ufld%grid%dy
-
-!    do J=1,N
-!       do I=1,M+1
-    do J=ufld%internal%ystart,ufld%internal%ystop
-       do I=ufld%internal%xstart,ufld%internal%xstop
+    DO J=1,N
+       DO I=1,M+1
           U(I,J) = -(PSI(I,J+1)-PSI(I,J))/dy
-       end do
-    end do
-
-  end subroutine init_velocity_u
+       END DO
+    END DO
+  END SUBROUTINE init_velocity_u
 
   !===================================================
 
-  SUBROUTINE init_velocity_v(vfld, psifld)
-    implicit none
-    ! The vertical velocity field to initialise
-    type(r2d_field_type), intent(inout), target :: vfld
-    ! The stream function used in the initialisation
-    type(r2d_field_type), intent(in),    target :: psifld
+  SUBROUTINE init_velocity_v(v, psi, m, n)
+    USE mesh_mod, ONLY: dx
+    IMPLICIT none
+    REAL(KIND=wp), INTENT(out), DIMENSION(:,:) :: v
+    REAL(KIND=wp), INTENT(in),  DIMENSION(:,:) :: psi
+    INTEGER, INTENT(in) :: m, n
     ! Locals
-    real(kind=wp), pointer, dimension(:,:) :: v, psi
-    integer  :: I, J
-    real(wp) :: dx
+    INTEGER :: I, J
 
-    v => vfld%data
-    psi => psifld%data
-    dx = vfld%grid%dx
-
-    DO J=vfld%internal%ystart, vfld%internal%ystop
-       DO I=vfld%internal%xstart, vfld%internal%xstop
-          call init_velocity_v_code(i,j,dx,v,psi)
-!          V(I,J) = (PSI(I+1,J)-PSI(I,J))/DX
+    ! dx is a property of the mesh
+    DO J=1,N+1
+       DO I=1,M
+          V(I,J) = (PSI(I+1,J)-PSI(I,J))/DX
        END DO
     END DO
-
-  CONTAINS
-
-    subroutine init_velocity_v_code(i, j, dx, v, psi)
-      implicit none
-      integer, intent(in) :: i, j
-      real(kind=wp),                 intent(in)  :: dx
-      real(kind=wp), dimension(:,:), intent(out) :: v
-      real(kind=wp), dimension(:,:), intent(in)  :: psi
-
-      V(I,J) = (PSI(I+1,J)-PSI(I,J))/DX
-
-    end subroutine init_velocity_v_code
-
-  end subroutine init_velocity_v
+  END SUBROUTINE init_velocity_v
 
 END MODULE initial_conditions_mod

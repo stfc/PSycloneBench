@@ -32,7 +32,7 @@ contains
   !! apply_bcs_cu_code().
   subroutine manual_invoke_apply_bcs_cu(fld)
     use field_mod,    only: copy_field
-    use topology_mod, only: cu_grid
+    use topology_mod, only: cu
     implicit none
     real(wp), intent(inout), dimension(:,:) :: fld
     ! Locals
@@ -68,11 +68,9 @@ contains
     !
 
 !DIR$ LOOP_INFO max_trips(2)
-    do ihalo = 1, cu_grid%nhalos
+    do ihalo = 1, cu%nhalos
        ! Copy from source to destination
-       CALL copy_field(fld,                     &
-                       cu_grid%halo(ihalo)%src, &
-                       cu_grid%halo(ihalo)%dest)
+       CALL copy_field(fld, cu%halo(ihalo)%src, cu%halo(ihalo)%dest)
     end do
 
   end subroutine manual_invoke_apply_bcs_cu

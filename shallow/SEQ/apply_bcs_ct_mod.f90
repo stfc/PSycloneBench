@@ -30,9 +30,10 @@ contains
   !> Manual implementation of the code needed to invoke
   !! apply_bcs_ct_code().
   subroutine manual_invoke_apply_bcs_ct(fld)
-    use field_mod
+    use field_mod,    only: copy_field
+    use topology_mod, only: ct
     implicit none
-    type(r2d_field_type), intent(inout) :: fld
+    real(wp), intent(inout), dimension(:,:) :: fld
     ! Locals
     integer :: ihalo
 
@@ -64,10 +65,10 @@ contains
     !
 
 !DIR$ LOOP_INFO max_trips(2)
-    do ihalo = 1, fld%num_halos
+    do ihalo = 1, ct%nhalos
 
       ! Copy from source to destination
-      call copy_field(fld, fld%halo(ihalo)%source, fld%halo(ihalo)%dest)
+      call copy_field(fld, ct%halo(ihalo)%src, ct%halo(ihalo)%dest)
   
     end do
 

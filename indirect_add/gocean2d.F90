@@ -145,11 +145,7 @@ CONTAINS
 
             CALL allocation
 
-            ! -grid topo info. 
-            ! This part really depends on model grid. Only a rectilinear
-            ! grid case is devised here. For more complex case, e.g. with land cells
-            ! inside the domain, it is not difficult to write a pre-processing script to 
-            ! generate the Topo info and read it in here.
+            ! -grid topo info
 
             tt_w(1:jpijglot) = 0        !West  T-cell Neighbour of T-cell
             tt_e(1:jpijglot) = 0        !East  T-cell Neighbour of T-cell
@@ -426,7 +422,6 @@ CONTAINS
           REAL(wp) :: zadv, zhpg, zcor, zdiff 
           REAL(wp) :: u_e, u_w, u_s, u_n
           REAL(wp) :: v_e, v_w, v_s, v_n
-          REAL(wp) :: v_sc, v_nc, u_ec, u_wc
           REAL(wp) :: uu_e, uu_w, uu_s, uu_n
           REAL(wp) :: vv_e, vv_w, vv_s, vv_n
           REAL(wp) :: depe, depw, deps, depn
@@ -453,14 +448,12 @@ CONTAINS
 
              jvsw = tv_s(jiw)
              jvse = tv_s(jie)
-             v_sc = 0.5_wp * (vn(jvsw) + vn(jvse))
-             v_s  = 0.5_wp * v_sc * (e1v(jvsw) + e1v(jvse))
+             v_s  = 0.25_wp * (vn(jvsw) + vn(jvse)) * (e1v(jvsw) + e1v(jvse))
              deps = 0.50_wp * (hv(jvsw) + sshn_v(jvsw) + hv(jvse) + sshn_v(jvse))
 
              jvnw = tv_n(jiw)
              jvne = tv_n(jie)
-             v_nc = 0.5_wp * (vn(jvnw) + vn(jvne))
-             v_n  = 0.5_wp * v_nc * (e1v(jvnw) + e1v(jvne))
+             v_n  = 0.25_wp * (vn(jvnw) + vn(jvne)) * (e1v(jvnw) + e1v(jvne))
              depn = 0.50_wp * (hv(jvnw) + sshn_v(jvnw) + hv(jvne) + sshn_v(jvne))
 
             ! -advection (currently first order upwind)
@@ -514,8 +507,8 @@ CONTAINS
                                !for variable viscosity, such as turbulent viscosity
 
             ! -Coriolis' force (can be implemented implicitly)
-            cor = 0.5_wp * (2._wp * omega * SIN(gphiu(ji) * d2r) * (v_sc + v_nc)) * &
-                & e1e2u(ji) * (hu(ji) + sshn_u(ji))
+            cor = 0.5_wp * (2._wp * omega * SIN(gphiu(ji) * d2r) * (v_s + v_n)) * &
+                & e1u(ji) * e2u(ji) * (hu(ji) + sshn_u(ji))
 
             ! -pressure gradient
             hpg = -g * (hu(ji) + sshn_u(ji)) * e2u(ji) * (sshn(jie) - sshn(jiw))
@@ -523,7 +516,7 @@ CONTAINS
             ! -linear bottom friction (implemented implicitly.
 
             ua(ji) = (un(ji) * (hu(ji) + sshn_u(ji)) + rdt * (adv + vis + cor + hpg) / e1e2u(ji)) / &
-                   & (hu(ji) + ssha_u(ji)) / (1.0_wp + cbfr * rdt) 
+                   & (hu(ji) + ssha_u(ji)) / (1.0_wp + cbfr) 
 
           END DO
 
@@ -545,14 +538,12 @@ CONTAINS
 
              juws = tu_w(jis)
              juwn = tu_w(jin)
-             u_wc = 0.5_wp * (un(juws) + un(juwn))
-             u_w  = 0.5_wp * u_wc * (e2u(juws) + e2u(juwn))
+             u_w  = 0.25_wp * (un(juws) + un(juwn)) * (e2u(juws) + e2u(juwn))
              depw = 0.50_wp * (hu(juws) + sshn_u(juws) + hu(juwn) + sshn_u(juwn))
 
              jues = tu_e(jis)
              juen = tu_e(jin)
-             u_ec = 0.5_wp * (un(jues) + un(juen))
-             u_e  = 0.5_wp * u_ec * (e2u(jues) + e2u(juen))
+             u_e  = 0.25_wp * (un(jues) + un(juen)) * (e2u(jues) + e2u(juen))
              depe = 0.50_wp * (hu(jues) + sshn_u(jues) + hu(juen) + sshn_u(juen))
 
             ! -advection (currently first order upwind)
@@ -608,8 +599,8 @@ CONTAINS
 
 
             ! -Coriolis' force (can be implemented implicitly)
-            cor = -0.5_wp * (2._wp * omega * SIN(gphiv(ji) * d2r) * (u_ec + u_wc)) * &
-                & e1e2v(ji) * (hv(ji) + sshn_v(ji))
+            cor = -0.25_wp * (2._wp * omega * SIN(gphiv(ji) * d2r) * (u_e + u_w)) * &
+                & e1v(ji) * e2v(ji) * (hv(ji) + sshn_v(ji))
 
             ! -pressure gradient
             hpg = -g * (hv(ji) + sshn_v(ji)) * e1u(ji) * (sshn(jin) - sshn(jis))
@@ -617,7 +608,7 @@ CONTAINS
             ! -linear bottom friction (implemented implicitly.
 
             va(ji) = (vn(ji) * (hv(ji) + sshn_v(ji)) + rdt * (adv + vis + cor + hpg) / e1e2v(ji) ) / &
-                   & ((hv(ji) + ssha_v(ji))) / (1.0_wp + cbfr * rdt) 
+                   & ((hv(ji) + ssha_v(ji))) / (1.0_wp + cbfr) 
 
           END DO
         END SUBROUTINE momentum
@@ -630,7 +621,7 @@ CONTAINS
           INTEGER :: jiu, jiv
 
           !open boundary condition of clamped ssh
-            amp_tide   = 0.2_wp
+            amp_tide   = 1.0_wp
             omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
             DO ji = 1, jpijglot  ! here can be improved
               IF  (tt_s(ji) < 0) THEN
@@ -731,8 +722,7 @@ CONTAINS
           ! output model results
           CHARACTER(len=5) :: fname
           WRITE(fname, '(I5.5)') istp
-          !OPEN(1, file='go2d_'//fname//'.dat', STATUS='UNKNOWN')
-          OPEN(1, file='go2d_'//fname//'.txt', STATUS='UNKNOWN')
+          OPEN(1, file='go2d_'//fname//'.dat', STATUS='UNKNOWN')
           REWIND(1)
 
           DO ji = 1, jpijglot
@@ -740,9 +730,7 @@ CONTAINS
             rtmp1 = 0.5_wp * (un(tu_e(ji)) + un(tu_w(ji)))
             rtmp2 = 0.5_wp * (vn(tv_n(ji)) + vn(tv_s(ji)))
 
-            !WRITE(1,'(2f20.3, 2f15.4, 2e18.3)') xt(ji), yt(ji), ht(ji), sshn(ji),rtmp1, rtmp2 
-            WRITE(1,'(f20.3,'','',f20.3,'','',f15.4,'','',f15.4,'','',f18.3,'','',f18.3)') &
-                 & xt(ji), yt(ji), ht(ji), sshn(ji),rtmp1, rtmp2 
+            WRITE(1,'(2f20.3, 2f15.4, 2e18.3)') xt(ji), yt(ji), ht(ji), sshn(ji),rtmp1, rtmp2 
 
           END DO
           

@@ -5,7 +5,7 @@ NETCDF_INC = /usr/include
 NETCDF_LIB = /usr/lib64
 
 F90FLAGS = -Wall -Wsurprising -fcheck=all -g -O0
-#F90FLAGS = -O3 -mtune=native
+#F90FLAGS = -O3
 #F90FLAGS = -O3 -fopenmp
 
 F90FLAGS += -I${NETCDF_INC}

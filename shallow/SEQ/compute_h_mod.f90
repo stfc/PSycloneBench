@@ -1,17 +1,16 @@
-module compute_h_mod
-  use kind_params_mod
-  use kernel_mod
+MODULE compute_h_mod
+  USE kind_params_mod
+  USE kernel_mod
   use argument_mod
-  use field_mod
-  implicit none
+  IMPLICIT none
 
-  private
+  PRIVATE
 
-  public manual_invoke_compute_h
-  public compute_h_type, compute_h_code
+  PUBLIC manual_invoke_compute_h
+  PUBLIC compute_h_type, compute_h_code
 
-  type, extends(kernel_type) :: compute_h_type
-     type(arg), dimension(4) :: meta_args =    &
+  TYPE, EXTENDS(kernel_type) :: compute_h_type
+     TYPE(arg), DIMENSION(4) :: meta_args =    &
           (/ arg(WRITE, CT, POINTWISE),        & ! h
              arg(READ,  CT, POINTWISE),        & ! p
              arg(READ,  CU, POINTWISE),        & ! u
@@ -19,19 +18,20 @@ module compute_h_mod
            /)
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
-  contains
+     INTEGER :: ITERATES_OVER = DOFS
+  CONTAINS
     procedure, nopass :: code => compute_h_code
-  end type compute_h_type
+  END TYPE compute_h_type
 
-contains
+CONTAINS
 
   !===================================================
 
-  subroutine manual_invoke_compute_h(hfld, pfld, ufld, vfld)
+  subroutine manual_invoke_compute_h(h, p, u, v)
+    use topology_mod, only: ct
     implicit none
-    type(r2d_field_type), intent(inout) :: hfld
-    type(r2d_field_type), intent(in)    :: pfld, ufld,vfld
+    real(wp), intent(out), dimension(:,:) :: h
+    real(wp), intent(in),  dimension(:,:) :: p, u,v
     ! Locals
     integer :: I, J
 
@@ -80,11 +80,10 @@ contains
     !   uij-1- -Tij-1---ui+1j-1
     !
 
-    DO J=hfld%internal%ystart, hfld%internal%ystop, 1
-       DO I=hfld%internal%xstart, hfld%internal%xstop, 1
+    DO J=ct%jstart, ct%jstop !1, SIZE(h, 2) - 1
+       DO I=ct%istart, ct%istop !1, SIZE(h, 1) - 1
 
-          CALL compute_h_code(i, j, hfld%data, &
-                              pfld%data, ufld%data, vfld%data)
+          CALL compute_h_code(i, j, h, p, u, v)
        END DO
     END DO
 
