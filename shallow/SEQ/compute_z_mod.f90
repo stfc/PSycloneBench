@@ -9,7 +9,7 @@ module compute_z_mod
 
   private
 
-  public manual_invoke_compute_z
+  public invoke_compute_z
   public compute_z_type, compute_z_code
 
   type, extends(kernel_type) :: compute_z_type
@@ -32,7 +32,7 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! compute_z_code().
-  subroutine manual_invoke_compute_z(z, p, u, v)
+  subroutine invoke_compute_z(z, p, u, v)
     use topology_mod, only: cf
     implicit none
     real(wp), intent(out), dimension(:,:) :: z
@@ -91,7 +91,7 @@ contains
        end do
     end do
 
-  end subroutine manual_invoke_compute_z
+  end subroutine invoke_compute_z
 
   !===================================================
 

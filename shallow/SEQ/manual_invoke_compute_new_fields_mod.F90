@@ -3,11 +3,11 @@ MODULE manual_invoke_compute_new_fields_mod
   IMPLICIT none
   PRIVATE
 
-  PUBLIC manual_invoke_compute_new_fields
+  PUBLIC invoke_compute_new_fields
 
 CONTAINS
 
-  SUBROUTINE manual_invoke_compute_new_fields(unew, uold, &
+  SUBROUTINE invoke_compute_new_fields(unew, uold, &
                                               vnew, vold, &
                                               pnew, pold, &
                                               z, cufld, cvfld, hfld, tdt)
@@ -49,6 +49,6 @@ CONTAINS
        END DO
     END DO
 
-  END SUBROUTINE manual_invoke_compute_new_fields
+  END SUBROUTINE invoke_compute_new_fields
 
 END MODULE manual_invoke_compute_new_fields_mod

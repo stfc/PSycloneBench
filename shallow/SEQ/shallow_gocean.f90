@@ -40,11 +40,12 @@ PROGRAM shallow
   use model_mod
   use initial_conditions_mod
   use time_smooth_mod,  only: time_smooth_type
-  use apply_bcs_cf_mod, only: manual_invoke_apply_bcs_cf
-  use apply_bcs_ct_mod, only: manual_invoke_apply_bcs_ct
-  use apply_bcs_cu_mod, only: manual_invoke_apply_bcs_cu
-  use apply_bcs_cv_mod, only: manual_invoke_apply_bcs_cv
-  use manual_invoke_apply_bcs_mod, only: manual_invoke_apply_bcs_uvtf
+  use apply_bcs_cf_mod, only: invoke_apply_bcs_cf
+  use apply_bcs_ct_mod, only: invoke_apply_bcs_ct
+  use apply_bcs_cu_mod, only: invoke_apply_bcs_cu
+  use apply_bcs_cv_mod, only: invoke_apply_bcs_cv
+  use manual_invoke_apply_bcs_mod, only: invoke_apply_bcs_uvtf, &
+                                         invoke_apply_bcs_uvt
   use compute_cu_mod, only: compute_cu_type
   use compute_cv_mod, only: compute_cv_type
   use compute_z_mod, only: compute_z_type
@@ -61,7 +62,7 @@ PROGRAM shallow
   INTEGER :: ncycle
    
   !> Integer tags for timers
-  INTEGER :: idxt0, idxt1
+  INTEGER :: idxt0
 
   !  ** Initialisations of model parameters (dt etc) ** 
   CALL model_init()
@@ -84,86 +85,71 @@ PROGRAM shallow
   CALL init_velocity_v(v, psi, m, n)
 
   !     PERIODIC CONTINUATION
-  CALL manual_invoke_apply_bcs_cu(U)
-  CALL manual_invoke_apply_bcs_cv(V)
+  CALL invoke_apply_bcs_cu(U)
+  CALL invoke_apply_bcs_cv(V)
 
   ! Initialise fields that will hold data at previous time step
   CALL copy_field(U, UOLD)
   CALL copy_field(V, VOLD)
   CALL copy_field(P, POLD)
      
+  !====================================
   ! Write intial values of p, u, and v into a netCDF file   
   CALL model_write(0, p, u, v)
 
+  !====================================
   !     Start timer
   CALL timer_start('Time-stepping',idxt0)
 
-  !  ** Start of time loop ** 
-  DO ncycle=1,itmax
+  !====================================
+  ! Perform the first time step. This is distinct from all
+  ! of the other time steps because of the lack of 
+  ! information from a previous time step.
+  CALL invoke(compute_cu_type(CU, P, U),  &
+              compute_cv_type(CV, P, V),  &
+              compute_z_type(z, P, U, V), &
+              compute_h_type(h, P, U, V), &
+              ! Apply BCs to cu, cv, h, z here
+              compute_unew_type(unew, uold,  z, cv, h, tdt), &
+              compute_vnew_type(vnew, vold,  z, cu, h, tdt), &
+              compute_pnew_type(pnew, pold, cu, cv,    tdt) )
+
+  CALL invoke_apply_bcs_uvt(UNEW, VNEW, PNEW)
+
+  ! Set tdt to = 2*dt
+  CALL increment(tdt, tdt)
+
+  CALL copy_field(UNEW, U)
+  CALL copy_field(VNEW, V)
+  CALL copy_field(PNEW, P)
+
+  !========================================
+  !  ** Start of main time-stepping loop ** 
+  DO ncycle=2,itmax
     
     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
-
-    CALL timer_start('Compute c{u,v},z,h', idxt1)
 
     call invoke( compute_cu_type(CU, P, U), &
                  compute_cv_type(CV, P, V), &
                  compute_z_type(z, P, U, V), &
-                 compute_h_type(h, P, U, V) )
-
-    CALL timer_stop(idxt1)
-
-    ! PERIODIC CONTINUATION
-
-    CALL timer_start('PBCs',idxt1)
-    CALL manual_invoke_apply_bcs_uvtf(CU, CV, H, Z)
-    CALL timer_stop(idxt1)
-
-    ! COMPUTE NEW VALUES U,V AND P
-
-    CALL timer_start('Compute new fields', idxt1)
-    CALL invoke( compute_unew_type(unew, uold, z, cv, h, tdt), &
+                 compute_h_type(h, P, U, V), &
+                 ! PBC update of CU, CV, H and Z here
+                 compute_unew_type(unew, uold, z, cv, h, tdt), &
                  compute_vnew_type(vnew, vold, z, cu, h, tdt), &
-                 compute_pnew_type(pnew, pold, cu, cv, tdt) )
-
-    CALL timer_stop(idxt1)
-
-    ! PERIODIC CONTINUATION
-    CALL timer_start('PBCs',idxt1)
-    CALL manual_invoke_apply_bcs_cu(UNEW)
-    CALL manual_invoke_apply_bcs_cv(VNEW)
-    CALL manual_invoke_apply_bcs_ct(PNEW)
-    CALL timer_stop(idxt1)
+                 compute_pnew_type(pnew, pold, cu, cv, tdt),   &
+                 ! PBC update of UNEW, VNEW, PNEW here
+                 time_smooth_type(u,unew,uold),&
+                 time_smooth_type(v,vnew,vold),&
+                 time_smooth_type(p,pnew,pold))
 
     ! Time is in seconds but we never actually need it
     !CALL increment(time, dt)
-
-    CALL model_write(ncycle, p, u, v)
-
-    ! TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
-    IF(NCYCLE .GT. 1) then
-
-      CALL timer_start('Time smoothing',idxt1)
-
-      call invoke(time_smooth_type(u,unew,uold),&
-                  time_smooth_type(v,vnew,vold),&
-                  time_smooth_type(p,pnew,pold))
-
-      CALL timer_stop(idxt1)
-
-    ELSE ! ncycle == 1
-
-      ! Make TDT actually = 2*DT
-      CALL increment(tdt, tdt)
-
-    ENDIF ! ncycle > 1
-
-    CALL timer_start('Field copy',idxt1)
 
     CALL copy_field(UNEW, U)
     CALL copy_field(VNEW, V)
     CALL copy_field(PNEW, P)
 
-    CALL timer_stop(idxt1)
+    CALL model_write(ncycle, p, u, v)
 
   END DO
 

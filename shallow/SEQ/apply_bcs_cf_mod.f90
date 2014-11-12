@@ -9,7 +9,7 @@ module apply_bcs_cf_mod
 
   private
 
-  public manual_invoke_apply_bcs_cf
+  public invoke_apply_bcs_cf
   public apply_bcs_cf_type, apply_bcs_cf_code
 
   type, extends(kernel_type) :: apply_bcs_cf_type
@@ -29,7 +29,7 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! apply_bcs_cf_code().
-  subroutine manual_invoke_apply_bcs_cf(field)
+  subroutine invoke_apply_bcs_cf(field)
     use field_mod,    only: copy_field
     use topology_mod, only: cf
     implicit none
@@ -74,7 +74,7 @@ contains
 
     end do
 
-  end subroutine manual_invoke_apply_bcs_cf
+  end subroutine invoke_apply_bcs_cf
 
   !===================================================
 

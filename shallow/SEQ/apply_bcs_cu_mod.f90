@@ -10,7 +10,7 @@ module apply_bcs_cu_mod
 
   private
 
-  public manual_invoke_apply_bcs_cu
+  public invoke_apply_bcs_cu
   public apply_bcs_cu_type, apply_bcs_cu_code
 
   type, extends(kernel_type) :: apply_bcs_cu_type
@@ -30,7 +30,7 @@ contains
 
   !> Manual implementation of the code needed to invoke
   !! apply_bcs_cu_code().
-  subroutine manual_invoke_apply_bcs_cu(fld)
+  subroutine invoke_apply_bcs_cu(fld)
     use field_mod,    only: copy_field
     use topology_mod, only: cu
     implicit none
@@ -73,7 +73,7 @@ contains
        CALL copy_field(fld, cu%halo(ihalo)%src, cu%halo(ihalo)%dest)
     end do
 
-  end subroutine manual_invoke_apply_bcs_cu
+  end subroutine invoke_apply_bcs_cu
 
   !===================================================
 

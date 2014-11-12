@@ -6,7 +6,7 @@ MODULE compute_h_mod
 
   PRIVATE
 
-  PUBLIC manual_invoke_compute_h
+  PUBLIC invoke_compute_h
   PUBLIC compute_h_type, compute_h_code
 
   TYPE, EXTENDS(kernel_type) :: compute_h_type
@@ -27,7 +27,7 @@ CONTAINS
 
   !===================================================
 
-  subroutine manual_invoke_compute_h(h, p, u, v)
+  subroutine invoke_compute_h(h, p, u, v)
     use topology_mod, only: ct
     implicit none
     real(wp), intent(out), dimension(:,:) :: h
@@ -87,7 +87,7 @@ CONTAINS
        END DO
     END DO
 
-  END SUBROUTINE manual_invoke_compute_h
+  END SUBROUTINE invoke_compute_h
 
   !===================================================
 
