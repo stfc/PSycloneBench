@@ -192,7 +192,7 @@
 % Instead, use Morten Hogholm'a dblfloatfix which combines the features
 % of both fixltx2e and stfloats:
 %
-% \usepackage{dblfloatfix}
+\usepackage{dblfloatfix}
 % The latest version can be found at:
 % http://www.ctan.org/tex-archive/macros/latex/contrib/dblfloatfix/
 
@@ -260,7 +260,7 @@
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
-\newcommand{\psykal}{{PS}y{KA}l}
+\newcommand{\psykal}{{PS}y{KA}l\ }
 
 \begin{document}
 %
@@ -442,10 +442,15 @@ We do retain I/O because any realistic code has to output results to disk.
 \renewcommand{\arraystretch}{1.3}
 % if using array.sty, it might be a good idea to tweak the value of
 % \extrarowheight as needed to properly center the text within the cells
-\caption{The compilers and CPUs used in this work.}
+\caption{The matrix of compilers and CPUs used in this work. The use
+  of a compiler on a given CPU is indicated by the specification of
+  the version of the compiler in the relevent element. No entry
+  indicates that a compiler was not available/used on that CPU.}
 \label{TABLE_compilers}
 \centering
 \begin{tabular}{|l|c|c|c|c|}
+\hline
+                 & \multicolumn{4}{c|}{Compiler}             \\
 \hline
                  & Gnu   & Intel       & Cray    & IBM bgxlf\\
 \hline
@@ -465,7 +470,7 @@ IBM Power 8      &       &             &         &          \\
 \caption{The compiler flags used in this work.}
 \label{TABLE_compiler_flags}
 \centering
-\begin{tabular}{|l|c|}
+\begin{tabular}{l|c}
 \hline
 Compiler  &  Flags \\
 \hline
@@ -556,10 +561,39 @@ consideration.}
 \begin{figure}[!t]
 \centering
 \includegraphics[width=2.8in]{slowdown_summary}
-\caption{Summary of the performance achieved by any \psykal
-version as a percentage of that achieved by the original version of the code.}
+\caption{Comparison of the performance of the best \psykal
+version with that of the original version of the code. A negative value 
+indicates that the \psykal version is faster than the original.}
 \label{FIG_slowdown_summary}
 \end{figure}
+
+\begin{table*}[!t]
+% increase table row spacing, adjust to taste
+\renewcommand{\arraystretch}{1.3}
+% if using array.sty, it might be a good idea to tweak the value of
+% \extrarowheight as needed to properly center the text within the cells
+\caption{The time (s) taken to do 2000 steps of the $256^2$ case after each 
+code transformation.}
+\label{TABLE_opt_breakdown}
+\centering
+\begin{tabular}{l|c|c|c|c|c}
+\hline
+Compiler:                  &  Gnu    & Intel & Cray & Intel & IBM bgxlf \\
+\hline
+CPU:                       & Haswell & Haswell & Ivy Brige & Ivy Bridge & PowerPC A2 \\
+\hline
+Original                   &  1.49   & 1.41   & 1.24  & 1.57  &        \\
+Vanilla \psykal            & 25.27   & 1.73   & 1.67  & 1.96  &        \\
+Explicitly-sized arrays    & 25.28   & 1.72   & 1.39  & 1.93  & 113.74 \\
+Kernels copied into module &  2.20   & 1.73   & 1.42  & 1.93  &  68.28 \\
+Loops fused                &  2.18   & 1.58   & 1.47  & 1.76  &  71.91 \\
+In-lined field-copy        &  2.17   & 1.58   & 1.46  & 1.75  &  83.36 \\
+Fused field-copy           &  2.18   & 1.85   & 1.30  & 2.07  &  72.62 \\
+\hline
+\%-slow-down c.f. original &  45.3   & 11.7   & 5.0   & 11.0  &        \\
+\hline
+\end{tabular}
+\end{table*}
 
 % An example of a double column floating figure using two subfigures.
 % (The subfig.sty package must be loaded for this to work.)
@@ -599,23 +633,6 @@ version as a percentage of that achieved by the original version of the code.}
 \section{Conclusions}
 The conclusion goes here.
 
-
-
-
-
-% if have a single appendix:
-%\appendix[Proof of the Zonklar Equations]
-% or
-%\appendix  % for no appendix heading
-% do not use \section anymore after \appendix, only \section*
-% is possibly needed
-
-% use appendices with more than one appendix
-% then use \section to start each appendix
-% you must declare a \section before using any
-% \subsection or using \label (\appendices by itself
-% starts a section numbered zero.)
-%
 
 
 % use section* for acknowledgement
