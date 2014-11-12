@@ -79,23 +79,21 @@ the arrays will be allocated as (129,129).)
 4: A note on timing and timing calls
 
 The only timing we actually require is the time per step which is
-obtained from the timer around the timestep loop (which begins at
-timestep 2 in the PSyKAl version). In the provided code this is
-reported to stdout as the 'Average/repeat' time. Other timers might be
-useful to see how the different parts of the code scale but should not
-get in the way of optimisations. As an example, if you fused two loops
-together, each with their own timer then the obvious thing to do would
-be to replace the two timers with a single timer (appropriately named)
-around the fused loop.
+obtained from the timer around the timestep loop. In the provided code
+this is reported to stdout as the 'Average/repeat' time. Other timers
+might be useful to see how the different parts of the code scale but
+should not get in the way of optimisations. As an example, if you
+fused two loops together, each with their own timer then the obvious
+thing to do would be to replace the two timers with a single timer
+(appropriately named) around the fused loop.
 
 Jitter (noise) in the timing results can be a problem, particularly
-for the smaller test cases. For reproducible results you must ensure
-that the process is being pinned to a particular core. Unfortunately,
-the way to do this is system dependent (e.g aprun arguments on the
-Cray, KMP_AFFINITY for the Intel compiler, etc.). The likwid toolset
-(https://code.google.com/p/likwid/) can also help.  We recommend
-repeating the run a number of times (~5-10) and taking the time of the
-quickest run as being 'the answer.'
+for the smaller test cases. We therefore recommend that the number of
+time-steps in the namelist file is set to a value that produces
+run-times for which jitter is not significant.  For reproducible
+results you must ensure that the process is being pinned to a
+particular core.  We recommend repeating the run a number of times
+(~5-10) and taking the time of the quickest run as being 'the answer.'
 
 5: Technical details (compilation etc.)
 

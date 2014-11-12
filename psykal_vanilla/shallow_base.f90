@@ -95,6 +95,14 @@ program shallow
   ! Write intial values of p, u, and v into a netCDF file   
   CALL model_write(0, p, u, v)
 
+  !===================================================
+  ! Start timer. Tell the timing system that 
+  ! this single timed region actually contains itmax
+  ! repeats (albeit with the first time-step slightly
+  ! different from the rest because of the lack of
+  ! values from a previous step).
+  CALL timer_start('Time-stepping', idxt0, itmax)
+
   !====================================
   ! Perform the first time step
   CALL invoke_compute_cu(CU, P, U)
@@ -117,12 +125,7 @@ program shallow
   CALL copy_field(VNEW, V)
   CALL copy_field(PNEW, P)
 
-  !===================================================
-  ! Start timer. Tell the timing system that 
-  ! this single timed region actually contains itmax-1
-  ! repeats.
-  CALL timer_start('Time-stepping', idxt0, itmax-1)
-
+  !====================================
   !  ** Start of time-stepping loop proper ** 
   DO ncycle=2,itmax
     
