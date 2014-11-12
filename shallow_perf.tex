@@ -382,8 +382,11 @@ IEEEtran.cls version 1.8 and later.
 For this work we have used a benchmarking program that solves the
 shallow-water equations on a bi-periodic plane following the
 finite-difference scheme introduced by Sadourney~\cite{sadourny75}.
-Originally written by Paul Schwartrauber of NCAR.  Organic development
-- optimised for previous hardware.
+Originally written by Paul Swarztrauber of the National Center for
+Atmospheric Research, US.  Organic development - optimised for
+previous hardware. In describing our work, we term the version of the
+shallow code obtained at the beginning of this work the `original'
+version.
 
 In what follows we consider square domains of dimension 64, 128, 256,
 512 and 1024.
@@ -423,12 +426,12 @@ cache of 30~MB. The CPU in the IBM BG/Q system is built around the
 PowerPC A2 core with a clock speed of 1.6~GHz. The chip has 32~MB of
 last-level cache.
 
-For completeness, we give the compiler flags used with each compiler
-in Table~\ref{TABLE_compiler_flags}. These flags are particularly
-important for the \psykal versions of the code. The performance of the
-original version of the code is very much less sensitive to the
-compiler options. This is because it consists of a single source file
-and a single routine (excluding those for I/O).
+In Table~\ref{TABLE_compiler_flags} we give the optimisation flags
+used with each compiler. These flags are particularly important for
+the \psykal versions of the code. The performance of the original
+version of the code is very much less sensitive to the compiler
+options. This is because it consists of a single source file
+containing effectively a single routine (excluding those for I/O).
 
 We do retain I/O because any realistic code has to output results to disk.
 
@@ -520,7 +523,6 @@ they do so depends both on the compiler and the problem size.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 
-
 In figure~\ref{FIG_orig_perf_summary} we plot the performance of the
 original version of the shallow code for the range of compilers and
 hardware considered here. This summary demonstrates the effect of the
@@ -531,19 +533,16 @@ $512^{2}$ for the black and yellow bars. The performance of the Ivy
 Bridge system (red and purple bars) only drops to this level when the
 domain size is increased to $1024^{2}$. At this point, the working set
 no longer fits within cache and performance is dominated by the
-bandwidth to main memory making it relatively insensitive to the
+bandwidth to main memory, making it relatively insensitive to the
 choice of compiler.  
 
-For problem sizes that fit within cache there is
-little to choose between the performance obtained from the Intel and
-Gnu compilers.
+For problem sizes that fit within cache there is little to choose
+between the performance obtained from the Intel and Gnu compilers on
+the Intel Haswell CPU.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=2.8in]{orig_summary}
-% where an .eps filename suffix will be assumed under latex, 
-% and a .pdf suffix will be assumed for pdflatex; or what has been declared
-% via \DeclareGraphicsExtensions.
 \caption{Summary of the performance of the original shallow code on 
 the range of compilers and hardware under consideration.}
 \label{FIG_orig_perf_summary}
@@ -567,6 +566,17 @@ indicates that the \psykal version is faster than the original.}
 \label{FIG_slowdown_summary}
 \end{figure}
 
+In Table~\ref{TABLE_opt_breakdown} we show detailed timings of the
+code after each of the transformations has been applied. For the Gnu
+compiler, the vanilla \psykal version of shallow is some 20 times
+slower than the original. Copying the code for each of the kernels
+into the module from which they are called has the most dramatic
+effect on the performance of the compiled code. None of the subsequent
+transformations succeed in significantly improving the performance of
+the compiled executable which is still some 45\% slower than the
+original.
+{\bf What is losing us this 45\%?}
+
 \begin{table*}[!t]
 % increase table row spacing, adjust to taste
 \renewcommand{\arraystretch}{1.3}
@@ -580,7 +590,7 @@ code transformation.}
 \hline
 Compiler:                  &  Gnu    & Intel & Cray & Intel & IBM bgxlf \\
 \hline
-CPU:                       & Haswell & Haswell & Ivy Brige & Ivy Bridge & PowerPC A2 \\
+CPU:                       & Haswell & Haswell & Ivy Bridge & Ivy Bridge & PowerPC A2 \\
 \hline
 Original                   &  1.49   & 1.41   & 1.24  & 1.57  &        \\
 Vanilla \psykal            & 25.27   & 1.73   & 1.67  & 1.96  &        \\
@@ -590,10 +600,58 @@ Loops fused                &  2.18   & 1.58   & 1.47  & 1.76  &  71.91 \\
 In-lined field-copy        &  2.17   & 1.58   & 1.46  & 1.75  &  83.36 \\
 Fused field-copy           &  2.18   & 1.85   & 1.30  & 2.07  &  72.62 \\
 \hline
-\%-slow-down c.f. original &  45.3   & 11.7   & 5.0   & 11.0  &        \\
+\parbox{2.5cm}{\%-slow-down of best c.f. original} &  45.3   & 11.7   & 5.0   & 11.0  &        \\
 \hline
 \end{tabular}
 \end{table*}
+
+% 0.32/1.41 = 23% and 0.39/1.57 = 25%
+Considering now the Intel compiler, Table~\ref{TABLE_opt_breakdown}
+shows that even the vanilla \psykal version of shallow is only
+23--25\% slower than the original version. The only code
+transformation that produced a significant performance improvement for
+this case was the fusion of the computational loops. Further
+investigation of the slow-down caused by attempting to fuse the
+field-copy operation with the preceeding time-smoothing loop revealed
+that the compiler was unable to vectorise the loop after it had
+in-lined the body of the time-smoothing kernel. Once this in-lining
+was done by hand, the compiler was able to vectorise the loop and the
+performance of the original version was recovered.
+
+\begin{figure}
+\begin{verbatim}
+! Time smoothing
+DO J=1,N+1
+  DO I=1,M+1
+    CALL time_smooth_code(i,j,ufld,unew,uold)
+!    uold(i,j) = ufld(i,j) + alpha* &
+!        (unew(i,j) - 2.*ufld(i,j) + uold(i,j))
+
+    CALL time_smooth_code(i,j,vfld,vnew,vold)
+!    vold(i,j) = vfld(i,j) + alpha* &
+!        (vnew(i,j) - 2.*vfld(i,j) + vold(i,j))
+
+    CALL time_smooth_code(i,j,pfld,pnew,pold)
+!    pold(i,j) = pfld(i,j) + alpha* &
+!        (pnew(i,j) - 2.*pfld(i,j) + pold(i,j))
+  END DO
+END DO
+
+! Copy new fields into current fields
+DO J=1,N+1
+  DO I=1,M+1
+    Ufld(I,J) = UNEW(I,J)
+    Vfld(I,J) = VNEW(I,J)
+    Pfld(I,J) = PNEW(I,J)
+  END DO
+END DO
+\end{verbatim}
+\caption{Example of the coding structure that required manual
+  in-lining of the kernel body (as indicated by commented-out lines)
+  to retrieve performance of original shallow with the Intel
+  compiler.}
+\label{FIG_time_smooth_code}
+\end{figure}
 
 % An example of a double column floating figure using two subfigures.
 % (The subfig.sty package must be loaded for this to work.)
