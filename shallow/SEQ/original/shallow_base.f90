@@ -417,11 +417,11 @@
       CALL timer_stop(idxt0)
 
       WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax, SUM(PNEW(:,:))
+           itmax, SUM(PNEW(1:M,1:N))
       WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax,SUM(UNEW(:,:))
+           itmax,SUM(UNEW(2:M+1,1:N))
       WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E15.7)") &
-           itmax,SUM(VNEW(:,:))
+           itmax,SUM(VNEW(1:M,2:N+1))
 
  !     Close the netCDF file
 

@@ -172,15 +172,15 @@ program shallow
 
   CALL timer_stop(idxt0)
 
-  CALL compute_checksum(pnew, csum)
+  CALL compute_checksum(pnew(1:m,1:n), csum)
   CALL model_write_log("('P CHECKSUM after ',I6,' steps = ',E15.7)", &
                        itmax, csum)
 
-  CALL compute_checksum(unew, csum)
+  CALL compute_checksum(unew(2:m+1,1:n), csum)
   CALL model_write_log("('U CHECKSUM after ',I6,' steps = ',E15.7)", &
                        itmax, csum)
 
-  CALL compute_checksum(vnew, csum)
+  CALL compute_checksum(vnew(1:m,2:n+1), csum)
   CALL model_write_log("('V CHECKSUM after ',I6,' steps = ',E15.7)", &
                        itmax, csum)
 
