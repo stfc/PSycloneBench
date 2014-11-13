@@ -11,6 +11,7 @@ contains
                               pfld, pnew, pold, &
                               hfld, zfld, tdt)
     use time_smooth_mod, only: alpha
+    use mesh_mod, only: fsdx, fsdy ! Properties of the grid (4.0/d{x,y})
     implicit none
     real(wp), dimension(M+1,N+1), intent(inout) :: cufld, cvfld
     real(wp), dimension(M+1,N+1), intent(inout) :: unew, vnew, pnew
@@ -31,18 +32,28 @@ contains
     do J= 1, N, 1
        do I = 1, M, 1
 
-          call compute_cu_code(i+1, j, cufld, pfld, ufld)
+          !call compute_cu_code(i+1, j, cufld, pfld, ufld)
+          CUfld(I+1,J) = .5*(Pfld(I+1,J)+Pfld(I,J))*Ufld(I+1,J)
 
-          call compute_cv_code(i, j+1, cvfld, pfld, vfld)
+          !call compute_cv_code(i, j+1, cvfld, pfld, vfld)
+          CVfld(I,J+1) = .5*(Pfld(I,J+1)+Pfld(I,J))*Vfld(I,J+1)
+
        end do
     end do
 
     do J= 1, N, 1
        do I= 1, M, 1
 
-          call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
+          !call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
+          Zfld(I+1,J+1) =(FSDX*(Vfld(I+1,J+1)-Vfld(I,J+1))- &
+                          FSDY*(Ufld(I+1,J+1)-Ufld(I+1,J)))/ &
+                   (pfld(I,J)+Pfld(I+1,J)+Pfld(I+1,J+1)+Pfld(I,J+1))
 
-          call compute_h_code(i, j, hfld, pfld, ufld, vfld)
+          !call compute_h_code(i, j, hfld, pfld, ufld, vfld)
+          Hfld(I,J) = Pfld(I,J) + &
+                      .25*(Ufld(I+1,J)*Ufld(I+1,J)+Ufld(I,J)*Ufld(I,J) & 
+                       + Vfld(I,J+1)*Vfld(I,J+1)+Vfld(I,J)*Vfld(I,J))
+
        END DO
     END DO
 
@@ -117,22 +128,15 @@ contains
     ! Loop over 'columns'
     DO J=1,N+1
       DO I=1,M+1
-        CALL time_smooth_code(i,j,ufld,unew,uold)
-!         uold(i,j) = ufld(i,j) + &
-!              alpha*(unew(i,j) - 2.*ufld(i,j) + uold(i,j))
+        uold(i,j) = ufld(i,j) + &
+              alpha*(unew(i,j) - 2.*ufld(i,j) + uold(i,j))
 
-        CALL time_smooth_code(i,j,vfld,vnew,vold)
-!         vold(i,j) = vfld(i,j) + &
-!              alpha*(vnew(i,j) - 2.*vfld(i,j) + vold(i,j))
+        vold(i,j) = vfld(i,j) + &
+              alpha*(vnew(i,j) - 2.*vfld(i,j) + vold(i,j))
 
-        CALL time_smooth_code(i,j,pfld,pnew,pold)
-!         pold(i,j) = pfld(i,j) + &
-!              alpha*(pnew(i,j) - 2.*pfld(i,j) + pold(i,j))
-      END DO
-    END DO
+        pold(i,j) = pfld(i,j) + &
+              alpha*(pnew(i,j) - 2.*pfld(i,j) + pold(i,j))
 
-    DO J=1,N+1
-      DO I=1,M+1
         Ufld(I,J) = UNEW(I,J)
         Vfld(I,J) = VNEW(I,J)
         Pfld(I,J) = PNEW(I,J)
