@@ -11,7 +11,7 @@ contains
                               pfld, pnew, pold, &
                               hfld, zfld, tdt)
     use time_smooth_mod, only: alpha
-    use mesh_mod, only: fsdx, fsdy ! Properties of the grid (4.0/d{x,y})
+    use mesh_mod, only: dx, dy, fsdx, fsdy ! Properties of the grid (4.0/d{x,y})
     implicit none
     real(wp), dimension(M+1,N+1), intent(inout) :: cufld, cvfld
     real(wp), dimension(M+1,N+1), intent(inout) :: unew, vnew, pnew
@@ -23,6 +23,7 @@ contains
     real(wp),                     intent(in) :: tdt
     ! Locals
     integer :: I, J, idxt
+    REAL(wp) :: tdts8, tdtsdy, tdtsdx
 
     !============================================
     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
@@ -87,17 +88,30 @@ contains
     ! COMPUTE NEW VALUES U,V AND P
     call timer_start('Compute {U,V,P}NEW',idxt)
 
+    tdtsdx = tdt/dx
+    tdtsdy = tdt/dy
+    tdts8 = tdt/8.0d0
+
     DO J=1, N, 1
        DO I= 1, M, 1
 
-          CALL compute_unew_code(i+1, j, unew, uold, &
-                                 zfld, cvfld, hfld, tdt)
+          !CALL compute_unew_code(i+1, j, unew, uold, &
+          !                       zfld, cvfld, hfld, tdt)
+          UNEW(I,J) = UOLD(I,J) +                                 &
+                      TDTS8*(Zfld(I,J+1)+Zfld(I,J)) *                   &
+                      (CVfld(I,J+1)+CVfld(I-1,J+1)+CVfld(I-1,J)+CVfld(I,J)) - &
+                       TDTSDX*(Hfld(I,J)-Hfld(I-1,J))
 
-          CALL compute_vnew_code(i, j+1, vnew, vold, &
-                                 zfld, cufld, hfld, tdt)
+          !CALL compute_vnew_code(i, j+1, vnew, vold, &
+          !                       zfld, cufld, hfld, tdt)
+          VNEW(I,J) = VOLD(I,J)-TDTS8*(Zfld(I+1,J)+Zfld(I,J))           &
+                      *(CUfld(I+1,J)+CUfld(I,J)+CUfld(I,J-1)+CUfld(I+1,J-1)) &
+                      -TDTSDY*(Hfld(I,J)-Hfld(I,J-1))
 
-          CALL compute_pnew_code(i, j, pnew, pold, &
-                                 cufld, cvfld, tdt)
+          !CALL compute_pnew_code(i, j, pnew, pold, &
+          !                       cufld, cvfld, tdt)
+          PNEW(I,J) = POLD(I,J)-TDTSDX*(CUfld(I+1,J)-CUfld(I,J))   & 
+                      -TDTSDY*(CVfld(I,J+1)-CVfld(I,J))
        END DO
     END DO
 
