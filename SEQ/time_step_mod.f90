@@ -39,12 +39,6 @@ contains
           !call compute_cv_code(i, j+1, cvfld, pfld, vfld)
           CVfld(I,J+1) = .5*(Pfld(I,J+1)+Pfld(I,J))*Vfld(I,J+1)
 
-       end do
-    end do
-
-    do J= 1, N, 1
-       do I= 1, M, 1
-
           !call compute_z_code(i+1, j+1, zfld, pfld, ufld, vfld)
           Zfld(I+1,J+1) =(FSDX*(Vfld(I+1,J+1)-Vfld(I,J+1))- &
                           FSDY*(Ufld(I+1,J+1)-Ufld(I+1,J)))/ &
