@@ -56,7 +56,11 @@ program shallow
   implicit none
 
   !> Checksum used for each array
-  REAL(KIND=8) :: csum
+  REAL(KIND=wp) :: csum
+
+  !> Local copies of array extents so that compiler can 'see'
+  !! they remain constant during time-stepping
+  integer :: m_loc, n_loc
 
   !> Loop counter for time-stepping loop
   INTEGER :: ncycle
@@ -117,6 +121,11 @@ program shallow
   CALL copy_field(VNEW, V)
   CALL copy_field(PNEW, P)
 
+  ! Make it clear to the compiler that these quanities are
+  ! held constant for the duration of the time-stepping loop
+  m_loc = m
+  n_loc = n
+
   !====================================
   !     Start timer
   CALL timer_start('Time-stepping',idxt0)
@@ -128,7 +137,8 @@ program shallow
                           u, unew, uold, &
                           v, vnew, vold, &
                           p, pnew, pold, &
-                          h, z, tdt%data)
+                          h, z, tdt%data, &
+                          m_loc, n_loc)
     !call invoke( compute_fluxes(...),              &
     !             periodic_bc(cu),                  &
     !             periodic_bc(cv),                  &
