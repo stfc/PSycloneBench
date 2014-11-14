@@ -5,7 +5,7 @@ F90 = ftn
 #NETCDF_LIB = /usr/lib64
 
 #F90FLAGS =  -g -O0 -h noomp 
-F90FLAGS = -O3 -O ipa5 -h noomp -h display_opt -rd -hpl=${PWD}/shallow_prog_lib -h wp
+F90FLAGS = -O3 -O ipa5 -h noomp -h display_opt -rm -rd -hpl=${PWD}/shallow_prog_lib -h wp
 #F90FLAGS = -O3 -h noomp -h display_opt -rm
 #-h loop_trips=medium
 
@@ -15,5 +15,5 @@ LDFLAGS = -hpl=${PWD}/shallow_prog_lib
 #LDFLAGS =
 
 # For linking with netcdf libraries
-LDFLAGS += -lnetcdff -lnetcdf
+#LDFLAGS += -lnetcdff -lnetcdf
 
