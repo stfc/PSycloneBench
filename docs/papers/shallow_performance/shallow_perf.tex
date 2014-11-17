@@ -1,24 +1,5 @@
-
 %% shallow_perf.tex
 %%
-%% This is a skeleton file demonstrating the use of IEEEtran.cls
-%% (requires IEEEtran.cls version 1.8 or later) with an IEEE journal paper.
-%%
-%% Support sites:
-%% http://www.michaelshell.org/tex/ieeetran/
-%% http://www.ctan.org/tex-archive/macros/latex/contrib/IEEEtran/
-%% and
-%% http://www.ieee.org/
-
-
-
-% *** Authors should verify (and, if needed, correct) their LaTeX system  ***
-% *** with the testflow diagnostic prior to trusting their LaTeX platform ***
-% *** with production work. IEEE's font choices can trigger bugs that do  ***
-% *** not appear when using other class files.                            ***
-% The testflow support page is at:
-% http://www.michaelshell.org/tex/testflow/
-
 % Also note that the "draftcls" or "draftclsnofoot", not "draft", option
 % should be used if it is desired that the figures are to be displayed in
 % draft mode.
@@ -29,25 +10,10 @@
 % manually specify the path to it like:
 % \documentclass[journal]{../sty/IEEEtran}
 
-
-% *** MISC UTILITY PACKAGES ***
-%
-%\usepackage{ifpdf}
-% Heiko Oberdiek's ifpdf.sty is very useful if you need conditional
-% compilation based on whether the output is pdf or dvi.
-% usage:
-% \ifpdf
-%   % pdf code
-% \else
-%   % dvi code
-% \fi
-% The latest version of ifpdf.sty can be obtained from:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/oberdiek/
 % Also, note that IEEEtran.cls V1.7 and later provides a builtin
 % \ifCLASSINFOpdf conditional that works the same way.
 % When switching from latex to pdflatex and vice-versa, the compiler may
 % have to be run twice to clear warning/error messages.
-
 
 \usepackage{cite}
 
@@ -325,7 +291,6 @@
 % column for its text to clear the IEEEpubid mark.
 
 
-
 % use for special paper notices
 %\IEEEspecialpapernotice{(Invited Paper)}
 
@@ -400,7 +365,8 @@ complexity in the programming models required to achieve performance.
 Combine with the complexity of e.g. a model simulating circulation in
 the global ocean. Significant challenge in software engineering.
 Propose an approach for meeting this challenge by separating the
-computational science demands from the e.g. oceanographic demands.
+computational science demands from the {\it e.g.} oceanographic
+demands.
 
 \begin{figure}
 \centering
@@ -458,7 +424,7 @@ We do retain I/O because any realistic code has to output results to disk.
                  & Gnu   & Intel       & Cray    & IBM bgxlf\\
 \hline
 Intel Haswell    & 4.8.2 & 14.0.0      &         &          \\
-Intel Ivy Bridge &       & 14.0.1.106  & 8.3.3   &          \\
+Intel Ivy Bridge & 4.9.1 & 14.0.1.106  & 8.3.3   &          \\
 IBM A2 (BGQ)     &       &             &         & 14.1     \\
 IBM Power 8      &       &             &         &          \\
 \hline
@@ -566,16 +532,16 @@ indicates that the \psykal version is faster than the original.}
 \label{FIG_slowdown_summary}
 \end{figure}
 
-In Table~\ref{TABLE_opt_breakdown} we show detailed timings of the
-code after each of the transformations has been applied. For the Gnu
-compiler, the vanilla \psykal version of shallow is some 20 times
-slower than the original. Copying the code for each of the kernels
-into the module from which they are called has the most dramatic
-effect on the performance of the compiled code. None of the subsequent
-transformations succeed in significantly improving the performance of
-the compiled executable which is still some 45\% slower than the
+In Table~\ref{TABLE_opt_breakdown} we show detailed timings for the
+$256^{2}$ case after each of the transformations has been applied to
+the code. For the Gnu compiler, the vanilla \psykal version of shallow
+is almost 20 times slower than the original. Copying the code for each
+of the kernels into the module from which they are called has the most
+dramatic effect on the performance of the compiled code. The next most
+significant transformation is that of (manually) in-lining the kernel
+code into the bodies of the loops from which they are called. This
+gets the \psykal version to within 8\% of the performance of the
 original.
-{\bf What is losing us this 45\%?}
 
 \begin{table*}[!t]
 % increase table row spacing, adjust to taste
@@ -586,21 +552,24 @@ original.
 code transformation.}
 \label{TABLE_opt_breakdown}
 \centering
-\begin{tabular}{l|c|c|c|c|c}
+\begin{tabular}{l|c|c|c|c|c|c}
 \hline
-Compiler:                  &  Gnu    & Intel & Cray & Intel & IBM bgxlf \\
+Compiler:          &  Gnu    & Intel   & Gnu & Cray & Intel & IBM bgxlf \\
 \hline
-CPU:                       & Haswell & Haswell & Ivy Bridge & Ivy Bridge & PowerPC A2 \\
+CPU:               & \multicolumn{2}{c|}{Haswell} & \multicolumn{3}{c|}{Ivy Bridge} & PowerPC A2 \\
 \hline
-Original                   &  1.49   & 1.41   & 1.24  & 1.57  &        \\
-Vanilla \psykal            & 25.27   & 1.73   & 1.67  & 1.96  &        \\
-Explicitly-sized arrays    & 25.28   & 1.72   & 1.39  & 1.93  & 113.74 \\
-Kernels copied into module &  2.20   & 1.73   & 1.42  & 1.93  &  68.28 \\
-Loops fused                &  2.18   & 1.58   & 1.47  & 1.76  &  71.91 \\
-In-lined field-copy        &  2.17   & 1.58   & 1.46  & 1.75  &  83.36 \\
-Fused field-copy           &  2.18   & 1.85   & 1.30  & 2.07  &  72.62 \\
+Original                             & 1.49 & 1.41 & 1.54 & 1.23 & 1.57  &        \\
+Vanilla \psykal                      & 25.3 & 1.73 & 28.7 & 1.67 & 1.96  &        \\
+Explicitly-sized arrays              & 25.3 & 1.72 & 28.6 & 1.39 & 1.93  & 113.74 \\
+Kernels copied into module           & 2.20 & 1.73 & 1.84 & 1.42 & 1.93  &  68.28 \\
+Loops fused                          & 2.18 & 1.58 & 1.79 & 1.47 & 1.76  &  71.91 \\
+In-lined field-copy                  & 2.17 & 1.58 & 1.77 & 1.46 & 1.75  &  83.36 \\
+Fused field-copy                     & 2.18 & 1.85 & 1.99 & 1.30 & 2.07  &  72.62 \\
+In-line all kernels                  & 1.64 & 1.43 & 1.88 & 1.30 & 1.59  &        \\
+Fully fuse 1st loop nest             & 1.62 & ADD  & 1.55 & 1.25 & 1.55  &        \\
+Explicit, constant array/loop bounds & 1.61 & ADD  & 1.56 & 1.23 & 1.54  &        \\
 \hline
-\parbox{2.5cm}{\%-slow-down of best c.f. original} &  45.3   & 11.7   & 5.0   & 11.0  &        \\
+\parbox{2.5cm}{\%-slow-down of best {\it c.f.} original} & 7.8 & 1.2 & 0.6 & 0.0 & -2.0 &     \\
 \hline
 \end{tabular}
 \end{table*}
@@ -651,6 +620,15 @@ END DO
   to retrieve performance of original shallow with the Intel
   compiler.}
 \label{FIG_time_smooth_code}
+\end{figure}
+
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=85mm]{opt_stages_256}
+\caption{The absolute performance of the code at each stage of 
+optimisation for the $256^{2}$ domain.}
+\label{FIG_opt_stages_256}
 \end{figure}
 
 % An example of a double column floating figure using two subfigures.

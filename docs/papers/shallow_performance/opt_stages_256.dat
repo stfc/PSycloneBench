@@ -1,0 +1,28 @@
+#=cluster; Vanilla; Explicit bounds for array args; Single file; Loop fused; In-lined copy operator; Fused copy operator; In-line kernels; Fully fused; Explicit, constant array/loop bounds
+#=table;
+#Gnu, Haswell;           5.91;	5.91;	68.00;	68.56;	68.82;	68.41;	91.10;	92.28;	92.80
+#Intel, Haswell;         81.71;	81.89;	81.43;	89.50;	89.31;	76.32;	98.84;	0.0;     0.0
+#Gnu, Ivy Bridge;  	5.38;	5.39;	83.88;	86.20;	87.15;	77.50;	82.25;	99.45;	99.20
+#Cray, Ivy Bridge; 	73.64;	88.13;	86.33;	83.47;	83.84;	94.28;	94.28;	98.49;	99.97
+#Intel, Ivy Bridge;	80.07;	81.48;	81.43;	89.36;	90.05;	75.82;	98.77;	98.35;	102.01
+
+=cluster; Original; Vanilla; Explicit bounds for array args; Single file; Loop fused; In-lined copy operator; Fused copy operator; In-line all kernels; Fully fuse 1st loop nest; Explicit, constant array/loop bounds
+ylabel=Points updated per second (millions)
+font=Helvetica
+fontsz=12
+# stretch the graph vertically
+yscale=1.2
+xscale=1.3
+rotateby=-20
+xticshift=-0.5,-0.5
+#max=200
+#legendx=right
+#legendy=center
+#xlabelshift=0,-0.5
+#=norotate
+=table;
+Gnu, Haswell; 87.73226238; 5.186656642; 5.183989875; 59.65953573; 	60.15236347; 60.37402119; 60.01465201; 79.92195122;	80.95861643; 	81.41118012
+Intel, Haswell; 92.84692215; 75.86941422; 76.03225245; 75.60682972; 	83.09369849; 82.92022522; 70.8650519; 91.76783589;	0;  0
+Gnu, Ivy Bridge; 84.94620868; 4.570153417; 4.582296182; 71.25414515; 	73.22458101; 74.03106467; 65.8322451; 69.86780384; 84.48082501; 84.26358084
+Cray, Ivy Bridge; 106.8858662; 78.70868563; 94.19407694; 92.26978663; 	89.22228651; 89.61514006; 100.7734535; 100.7719039; 105.2736414; 106.8579814
+Intel, Ivy Bridge; 83.37913486; 66.76106555; 67.93407277; 67.89184709; 	74.50659391; 75.08707608; 63.21902281; 82.35234984; 84.75396056; 85.05645685
