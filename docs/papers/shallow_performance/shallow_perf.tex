@@ -464,9 +464,12 @@ re-structured following the \psykal approach.
 \end{itemize}
 
 Beginning with the vanilla \psykal version, we apply a series of
-optimisations with the aim of recovering, as much as is possible, the
-structure and thus performance of the original version of the code.
-
+optimisations while obeying the \psykal separation of concerns, {\it
+  i.e.} optimisation is restricted to the `middle layer' and leaves
+the kernel and algorithm layers unchanged. The aim of these
+optimisations is to recover, as much as is possible, the structure and
+thus performance of the original version of the code. The
+optimisations we have performed are as follows:
 \begin{enumerate}
 
 \item Pass explicit array bounds to middle layer (rather than using
@@ -480,31 +483,39 @@ structure and thus performance of the original version of the code.
 
 \item Fused field-copy operation
 
+\item Manually in-line kernel bodies into middle-layer code
+
+\item Fully fuse first loop (only the outer loop of this loop nest was
+  fused in the first pass)
+
+\item Make the array/loop bounds explicitly constant for the
+      duration of the time-stepping loop.
 \end{enumerate}
 
-These optimisations do not always result in improved performance (AND
-HENCE WE SHOULD CALL THEM TRANSFORMATIONS PERHAPS?). Whether or not
-they do so depends both on the compiler and the problem size.
+We shall see that these optimisations do not always result in improved
+performance. Whether or not they do so depends both on the compiler
+and the problem size. We also emphasise that the aim of these
+optimisations is to recover, as far as is possible, the structure of
+the original version of the code. It may well be that transforming the
+code into some other structure would result in better performance on a
+particular architecture. However, exploring this optimisation space is
+beyond the scope of the present work.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 
-In figure~\ref{FIG_orig_perf_summary} we plot the performance of the
+In Figure~\ref{FIG_orig_perf_summary} we plot the performance of the
 original version of the shallow code for the range of compilers and
 hardware considered here. This summary demonstrates the effect of the
 larger last-level cache of the Intel Ivy Bridge system compared to
 that of the Haswell system; note the significant drop in performance
 in going from a problem size of $256^{2}$ to a problem size of
-$512^{2}$ for the black and yellow bars. The performance of the Ivy
-Bridge system (red and purple bars) only drops to this level when the
-domain size is increased to $1024^{2}$. At this point, the working set
-no longer fits within cache and performance is dominated by the
-bandwidth to main memory, making it relatively insensitive to the
-choice of compiler.  
-
-For problem sizes that fit within cache there is little to choose
-between the performance obtained from the Intel and Gnu compilers on
-the Intel Haswell CPU.
+$512^{2}$ for the black and green bars. The performance of the Ivy
+Bridge system with the Cray or Intel compiler (red and purple bars)
+only drops to this level when the domain size is increased to
+$1024^{2}$. At this point, the working set no longer fits within cache
+and performance is dominated by the bandwidth to main memory, making
+it relatively insensitive to the choice of compiler.
 
 \begin{figure}[!t]
 \centering
@@ -514,9 +525,39 @@ the range of compilers and hardware under consideration.}
 \label{FIG_orig_perf_summary}
 \end{figure}
 
+For this compiler-friendly form of the code, there is little
+performance difference between the executables produced by the Gnu and
+Intel compilers. However, the executable produced by the Cray compiler
+generally performs significantly better. {\bf Why is this; can we work
+out what it's doing that the others aren't?}
+
+Note that the results for the Gnu compiler on Ivy Bridge show the same
+drop-off (as problem size is increased) as those on the Haswell
+system. This may be because Archer's login nodes seem to be running on
+older hardware (E5-2650 with 20MB LLC) during the Archer upgrade. {\bf
+  Need to re-run these cases once Archer is back up.}
+
+Moving now the to the \psykal version of shallow,
+Figure~\ref{FIG_best_psykal_perf_summary} plots the performance of the
+fastest \psykal version for each of the compiler/CPU combinations. The
+only significant difference between this and the plot of the
+performance of the original version of the code in
+Figure~\ref{FIG_orig_perf_summary} is that the difference between the
+Gnu- and Intel-compiled executables is slightly more marked. This is
+clarified in Figure~\ref{FIG_slowdown_summary} which plots the
+percentage difference between the performance of the original and the
+(best) \psykal versions of shallow for each compiler/CPU combination.
+It is clear from this plot that the difference in the performance of
+the Gnu- and Intel-compiled excutables on the Haswell system is due to
+the Gnu compiler being unable to recover the performance achieved by
+the original code. In contrast there is no such problem for the
+Gnu-compiled executable on the Ivy Bridge system. We attribute this to
+the more recent version of the compiler on the latter system (4.9.1 as
+opposed to 4.8.2).
+
 \begin{figure}[!t]
 \centering
-\includegraphics[width=2.8in]{best_psykal_summary}
+\includegraphics[width=7.5cm]{best_psykal_summary}
 \caption{Summary of the best performance achieved by any \psykal 
 version of shallow with each of the compilers and CPUs under 
 consideration.}
@@ -532,12 +573,29 @@ indicates that the \psykal version is faster than the original.}
 \label{FIG_slowdown_summary}
 \end{figure}
 
-In Table~\ref{TABLE_opt_breakdown} we show detailed timings for the
-$256^{2}$ case after each of the transformations has been applied to
-the code. For the Gnu compiler, the vanilla \psykal version of shallow
-is almost 20 times slower than the original. Copying the code for each
-of the kernels into the module from which they are called has the most
-dramatic effect on the performance of the compiled code. The next most
+In fact, for the Gnu and Cray compilers on the Ivy Bridge system, the
+\psykal version of shallow is never more than 2\% slower than the
+original and in some cases is faster.  This demonstrates that we can
+reliably recover the performance of the original version of the code,
+despite the significant restructuring required by the \psykal
+approach. {\bf We need to re-run/check the Intel results on Ivy Bridge
+  once Archer is back from its upgrade.}
+
+
+Having show that, in general, we can recover and occasionally improve
+upon the performance of the original version of shallow, the next
+logical step is to examine the necessary code transformations.  We do
+this for the $256^{2}$ case since this fits within cache on both the
+Haswell and Ivy Bridge CPUs.  Table~\ref{TABLE_opt_breakdown} shows
+detailed timings for this case after each transformation has been
+applied to the code. The same data is visualised in
+Figure~\ref{FIG_opt_stages_256} where the performance of the best
+\psykal version for a given compiler/CPU is given relative to the
+performance of the original with the same compiler/CPU. For the Gnu
+compiler, the vanilla \psykal version of shallow is almost 20 times
+slower than the original. Copying the code for each of the kernels
+into the module from which they are called has the most dramatic
+effect on the performance of the compiled code. The next most
 significant transformation is that of (manually) in-lining the kernel
 code into the bodies of the loops from which they are called. This
 gets the \psykal version to within 8\% of the performance of the
@@ -566,10 +624,10 @@ Loops fused                          & 2.18 & 1.58 & 1.79 & 1.47 & 1.76  &  71.9
 In-lined field-copy                  & 2.17 & 1.58 & 1.77 & 1.46 & 1.75  &  83.36 \\
 Fused field-copy                     & 2.18 & 1.85 & 1.99 & 1.30 & 2.07  &  72.62 \\
 In-line all kernels                  & 1.64 & 1.43 & 1.88 & 1.30 & 1.59  &        \\
-Fully fuse 1st loop nest             & 1.62 & ADD  & 1.55 & 1.25 & 1.55  &        \\
-Explicit, constant array/loop bounds & 1.61 & ADD  & 1.56 & 1.23 & 1.54  &        \\
+Fully fuse 1st loop nest             & 1.62 & 1.44 & 1.55 & 1.25 & 1.55  &        \\
+Explicit, constant array/loop bounds & 1.61 & 1.42 & 1.56 & 1.23 & 1.54  &        \\
 \hline
-\parbox{2.5cm}{\%-slow-down of best {\it c.f.} original} & 7.8 & 1.2 & 0.6 & 0.0 & -2.0 &     \\
+\parbox{2.5cm}{\%-slow-down of best {\it c.f.} original} & 7.8 & 0.8 & 0.6 & 0.0 & -2.0 &     \\
 \hline
 \end{tabular}
 \end{table*}
@@ -625,9 +683,12 @@ END DO
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=85mm]{opt_stages_256}
-\caption{The absolute performance of the code at each stage of 
-optimisation for the $256^{2}$ domain.}
+\includegraphics[width=90mm]{opt_stages_256}
+\caption{The performance of the \psykal version of shallow for the
+  $256^{2}$ domain at each stage of optimisation. Results are given as
+  a percentage of the performance of the original code for each
+  compiler/CPU combination. A figure greater than 100\% indicates that
+  the \psykal version performs better than the original.}
 \label{FIG_opt_stages_256}
 \end{figure}
 
@@ -675,8 +736,8 @@ The conclusion goes here.
 \section*{Acknowledgments}
 
 
-The authors would like to thank...
-
+This work made use of the ARCHER UK National Supercomputing Service
+(\url{http://www.archer.ac.uk}).
 
 % http://www.ctan.org/tex-archive/biblio/bibtex/contrib/doc/
 % The IEEEtran BibTeX style support page is at:
