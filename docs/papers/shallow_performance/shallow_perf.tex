@@ -581,25 +581,16 @@ despite the significant restructuring required by the \psykal
 approach. {\bf We need to re-run/check the Intel results on Ivy Bridge
   once Archer is back from its upgrade.}
 
-
 Having show that, in general, we can recover and occasionally improve
 upon the performance of the original version of shallow, the next
 logical step is to examine the necessary code transformations.  We do
 this for the $256^{2}$ case since this fits within cache on both the
-Haswell and Ivy Bridge CPUs.  Table~\ref{TABLE_opt_breakdown} shows
-detailed timings for this case after each transformation has been
-applied to the code. The same data is visualised in
-Figure~\ref{FIG_opt_stages_256} where the performance of the best
-\psykal version for a given compiler/CPU is given relative to the
-performance of the original with the same compiler/CPU. For the Gnu
-compiler, the vanilla \psykal version of shallow is almost 20 times
-slower than the original. Copying the code for each of the kernels
-into the module from which they are called has the most dramatic
-effect on the performance of the compiled code. The next most
-significant transformation is that of (manually) in-lining the kernel
-code into the bodies of the loops from which they are called. This
-gets the \psykal version to within 8\% of the performance of the
-original.
+Haswell and Ivy Bridge CPUs we are using here.
+Table~\ref{TABLE_opt_breakdown} shows detailed timings for this case
+after each transformation has been applied to the code. The same data
+is visualised in Figure~\ref{FIG_opt_stages_256} where the performance
+of the \psykal version for a given compiler/CPU is given relative to
+the performance of the original with the same compiler/CPU. 
 
 \begin{table*}[!t]
 % increase table row spacing, adjust to taste
@@ -612,38 +603,64 @@ code transformation.}
 \centering
 \begin{tabular}{l|c|c|c|c|c|c}
 \hline
-Compiler:          &  Gnu    & Intel   & Gnu & Cray & Intel & IBM bgxlf \\
+Compiler:          &  Gnu    & Intel   & Gnu & Intel & Cray & IBM bgxlf \\
 \hline
 CPU:               & \multicolumn{2}{c|}{Haswell} & \multicolumn{3}{c|}{Ivy Bridge} & PowerPC A2 \\
 \hline
-Original                             & 1.49 & 1.41 & 1.54 & 1.23 & 1.57  &        \\
-Vanilla \psykal                      & 25.3 & 1.73 & 28.7 & 1.67 & 1.96  &        \\
-Explicitly-sized arrays              & 25.3 & 1.72 & 28.6 & 1.39 & 1.93  & 113.74 \\
-Kernels copied into module           & 2.20 & 1.73 & 1.84 & 1.42 & 1.93  &  68.28 \\
-Loops fused                          & 2.18 & 1.58 & 1.79 & 1.47 & 1.76  &  71.91 \\
-In-lined field-copy                  & 2.17 & 1.58 & 1.77 & 1.46 & 1.75  &  83.36 \\
-Fused field-copy                     & 2.18 & 1.85 & 1.99 & 1.30 & 2.07  &  72.62 \\
-In-line all kernels                  & 1.64 & 1.43 & 1.88 & 1.30 & 1.59  &        \\
-Fully fuse 1st loop nest             & 1.62 & 1.44 & 1.55 & 1.25 & 1.55  &        \\
-Explicit, constant array/loop bounds & 1.61 & 1.42 & 1.56 & 1.23 & 1.54  &        \\
+Original                             & 1.49 & 1.41 & 1.54 & 1.57 & 1.23 &        \\
+Vanilla \psykal                      & 25.3 & 1.73 & 28.7 & 1.96 & 1.67 &        \\
+Explicitly-sized arrays              & 25.3 & 1.72 & 28.6 & 1.93 & 1.39 & 113.74 \\
+Kernels copied into module           & 2.20 & 1.73 & 1.84 & 1.93 & 1.42 &  68.28 \\
+Loops fused                          & 2.18 & 1.58 & 1.79 & 1.76 & 1.47 &  71.91 \\
+In-lined field-copy                  & 2.17 & 1.58 & 1.77 & 1.75 & 1.46 &  83.36 \\
+Fused field-copy                     & 2.18 & 1.85 & 1.99 & 2.07 & 1.30 &  72.62 \\
+In-line all kernels                  & 1.64 & 1.43 & 1.88 & 1.59 & 1.30 &        \\
+Fully fuse 1st loop nest             & 1.62 & 1.44 & 1.55 & 1.55 & 1.25 &        \\
+Explicit, constant array/loop bounds & 1.61 & 1.42 & 1.56 & 1.54 & 1.23 &        \\
 \hline
 \parbox{2.5cm}{\%-slow-down of best {\it c.f.} original} & 7.8 & 0.8 & 0.6 & 0.0 & -2.0 &     \\
 \hline
 \end{tabular}
 \end{table*}
 
-% 0.32/1.41 = 23% and 0.39/1.57 = 25%
-Considering now the Intel compiler, Table~\ref{TABLE_opt_breakdown}
-shows that even the vanilla \psykal version of shallow is only
-23--25\% slower than the original version. The only code
-transformation that produced a significant performance improvement for
-this case was the fusion of the computational loops. Further
-investigation of the slow-down caused by attempting to fuse the
-field-copy operation with the preceeding time-smoothing loop revealed
-that the compiler was unable to vectorise the loop after it had
-in-lined the body of the time-smoothing kernel. Once this in-lining
-was done by hand, the compiler was able to vectorise the loop and the
-performance of the original version was recovered.
+With the Gnu compiler (first and third clusters in
+Figure~\ref{FIG_opt_stages_256}), the vanilla \psykal version of
+shallow only achieves ~5-6\% of the performance of the
+original. Simply copying the code for each of the kernel subroutines
+into the module from which they are called has the most dramatic
+effect on the performance of the compiled code; it now achieves almost
+80\% of the performance of the original. The next most significant
+transformation is that of (manually) in-lining the kernel code itself into
+the bodies of the loops from which they are called. This gets the
+\psykal version to within 8\% of the performance of the original.
+{\bf What's losing us 8\% of performance with the Gnu compiler?}
+
+With the Intel compiler, the key transformations to recover
+performance are different (second and fourth clusters in
+Figure~\ref{FIG_opt_stages_256}).  Table~\ref{TABLE_opt_breakdown}
+shows that even the vanilla \psykal version of shallow achieves some
+80\% of the performance of the original version. Only two code
+transformations were required to increase this to 100\%. The first of
+these was the fusion of the computational loops. However, we found
+that performance suffered (purple bar) when this was extended to
+include the loop required for field copies at the end of a time-step
+(Figure~\ref{FIG_time_smooth_code}). Further investigation of this
+slow-down revealed that the compiler was unable to SIMD vectorise the
+newly-fused loop after it had in-lined the body of the kernel called
+from within it. Once this in-lining was done by hand (dark-blue bar),
+the compiler was able to vectorise the loop and the performance of the
+original version of shallow was recovered.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=95mm]{opt_stages_256}
+\caption{The performance of the \psykal version of shallow for the
+  $256^{2}$ domain at each stage of optimisation. Results are given as
+  a percentage of the performance of the original code for each
+  compiler/CPU combination. A figure greater than 100\% indicates that
+  the \psykal version performs better than the original.}
+\label{FIG_opt_stages_256}
+\end{figure}
 
 \begin{figure}
 \begin{verbatim}
@@ -652,15 +669,7 @@ DO J=1,N+1
   DO I=1,M+1
     CALL time_smooth_code(i,j,ufld,unew,uold)
 !    uold(i,j) = ufld(i,j) + alpha* &
-!        (unew(i,j) - 2.*ufld(i,j) + uold(i,j))
-
-    CALL time_smooth_code(i,j,vfld,vnew,vold)
-!    vold(i,j) = vfld(i,j) + alpha* &
-!        (vnew(i,j) - 2.*vfld(i,j) + vold(i,j))
-
-    CALL time_smooth_code(i,j,pfld,pnew,pold)
-!    pold(i,j) = pfld(i,j) + alpha* &
-!        (pnew(i,j) - 2.*pfld(i,j) + pold(i,j))
+!     (unew(i,j) - 2.*ufld(i,j) + uold(i,j))
   END DO
 END DO
 
@@ -668,8 +677,6 @@ END DO
 DO J=1,N+1
   DO I=1,M+1
     Ufld(I,J) = UNEW(I,J)
-    Vfld(I,J) = VNEW(I,J)
-    Pfld(I,J) = PNEW(I,J)
   END DO
 END DO
 \end{verbatim}
@@ -680,17 +687,30 @@ END DO
 \label{FIG_time_smooth_code}
 \end{figure}
 
+The fifth cluster in Figure~\ref{FIG_opt_stages_256} shows the
+evolution of the performance of the \psykal version of shallow with
+the Cray compiler. Again, this has significant differences from the
+behaviour seen with the Gnu and Intel compilers. As with the Intel
+compiler, the performance of the Vanilla \psykal version is fairly
+good at 74\% of that of the original. In contrast to the other
+compilers consisdered so far, the first significant transformation is
+simply to specify the bounds of the arrays being used within the
+middle layer using module variables (as opposed to specifying them as
+assumed size). This tells the compiler that all of the arrays used in
+the middle layer have the same extent and also that all of the
+computational loops are over almost all elements of these arrays. This
+simple change gives a \psykal version that achieves 88\% of the
+performance of the original.
 
-\begin{figure}[!t]
-\centering
-\includegraphics[width=90mm]{opt_stages_256}
-\caption{The performance of the \psykal version of shallow for the
-  $256^{2}$ domain at each stage of optimisation. Results are given as
-  a percentage of the performance of the original code for each
-  compiler/CPU combination. A figure greater than 100\% indicates that
-  the \psykal version performs better than the original.}
-\label{FIG_opt_stages_256}
-\end{figure}
+Subsequent transformations actually harm performance until the
+field-copy operation of Figure~\ref{FIG_time_smooth_code} is fused
+with the preceeding loop. The resulting \psykal version now achieves
+94\% of the original performance. Two further steps are required to
+match the latter. First, the first loop nest has to be fully fused
+(both inner and outer loops fused) and second, the array/loop bounds
+are passed as an argument to the middle layer. This is done in order
+to specify to the compiler that these bounds remain constant for the
+duration of the time-stepping loop.
 
 % An example of a double column floating figure using two subfigures.
 % (The subfig.sty package must be loaded for this to work.)
