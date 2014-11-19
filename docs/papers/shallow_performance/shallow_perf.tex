@@ -161,7 +161,6 @@
 \usepackage{dblfloatfix}
 
 
-
 %\ifCLASSOPTIONcaptionsoff
 %  \usepackage[nomarkers]{endfloat}
 % \let\MYoriglatexcaption\caption
@@ -211,14 +210,9 @@
 %
 % paper title
 % can use linebreaks \\ within to get better formatting as desired
-% Do not put math or special symbols in the title.
 \title{Towards Compiler-Agnostic Performance in Finite-Difference Codes. (TBC)}
 %
-%
 % author names and IEEE memberships
-% note positions of commas and nonbreaking spaces ( ~ ) LaTeX will not break
-% a structure at a ~ so this keeps an author's name from being broken across
-% two lines.
 % use \thanks{} to gain access to the first footnote area
 % a separate \thanks must be used for each paragraph as LaTeX2e's \thanks
 % was not built to handle multiple paragraphs
@@ -243,10 +237,7 @@
 % \thanks is no different in this regard, so shield the last } of each \thanks
 % that ends a line with a % and do not let a space in before the next \thanks.
 % Spaces after \IEEEmembership other than the last one are OK (and needed) as
-% you are supposed to have spaces between the names. For what it is worth,
-% this is a minor point as most people would not even notice if the said evil
-% space somehow managed to creep in.
-
+% you are supposed to have spaces between the names.
 
 
 % The paper headers
@@ -269,10 +260,8 @@
 % Remember, if you use this you must call \IEEEpubidadjcol in the second
 % column for its text to clear the IEEEpubid mark.
 
-
 % use for special paper notices
 %\IEEEspecialpapernotice{(Invited Paper)}
-
 
 % make the title area
 \maketitle
@@ -318,21 +307,9 @@ Performance, Code-generation, Finite-difference
 % 
 % Here we have the typical use of a "T" for an initial drop letter
 % and "HE" in caps to complete the first word.
-\IEEEPARstart{T}{he} challenge presented to scientific software developers by
-the drive towards Exascale computing is considerable.
-
-\subsection{The `shallow' Program}
-For this work we have used a benchmarking program that solves the
-shallow-water equations on a bi-periodic plane following the
-finite-difference scheme introduced by Sadourny~\cite{sadourny75}.
-Originally written by Paul Swarztrauber of the National Center for
-Atmospheric Research, US.  Organic development - optimised for
-previous hardware. In describing our work, we term the version of the
-shallow code obtained at the beginning of this work the `original'
-version.
-
-In what follows we consider square domains of dimension 64, 128, 256,
-512 and 1024.
+\IEEEPARstart{T}{he} challenge presented to the developers of
+scientific software by the drive towards Exascale computing is
+considerable.
 
 % needed in second column of first page if using \IEEEpubid
 %\IEEEpubidadjcol
@@ -355,6 +332,63 @@ While encapsulation makes it easier to produce more robust software,
 it can often come with a performance penalty. In this work we
 investigate in detail the hardware and compiler dependencies of this
 penalty and the steps required to remove it.
+
+\subsection{The `shallow' Program}
+For this work we have used a benchmarking program that solves the
+shallow-water equations on a bi-periodic plane following the
+finite-difference scheme introduced by Sadourny~\cite{sadourny75}.
+Originally written by Paul Swarztrauber of the National Center for
+Atmospheric Research, US.  Organic development - optimised for
+previous hardware. In describing our work, we term the version of the
+shallow code obtained at the beginning of this work the `original'
+version.
+
+In what follows we consider square domains of dimension 64, 128, 256,
+512 and 1024.
+
+Since any real oceanographic computational model must output results,
+we ensure that any \psykal version of shallow retains the Input/Output
+capability of the original. This aids in limiting the optimisations
+that can be performed on the \psykal version to those that should also
+be applicable to full oceanographic models. Note that although we
+retain the I/O functionality, all of the results presented in this work
+carefully exclude the effects of I/O since it is compute performance
+that interests us here.
+
+In order to maximise the flexibility (and thus potential for
+optimisation) of the \psykal version of shallow, we made the kernels
+as fine-grained as possible. In this case, this resulted in eight
+distinct kernels, each of which operated on a single field at a single
+point (since we have chosen to use point-wise kernels). With a little
+bit of tidying/re-structuring, we found it was possible to express the
+contents of the main time-stepping loop as a single invoke (a call to
+the PSy layer) and a call to the I/O system
+(Figure~\ref{FIG_psykal_shallow_structure}). The single PSy-layer
+routine then consists of applying each of the kernels to all of the
+points on the model mesh requiring an update. In its basic,
+unoptimised (`vanilla') form, this PSy-layer routine then contains a
+doubly-nested loop around each kernel call, as indicated by the
+pseudo-code in Figure~\ref{FIG_psykal_shallow_structure}.
+
+\begin{figure}
+\centering
+\includegraphics[width=85mm]{psykal_shallow}
+\caption{A schematic of the vanilla \psykal version of the shallow code.}
+\label{FIG_psykal_shallow_structure}
+\end{figure}
+
+As with any full oceanographic model, boundary conditions must be
+applied at the edges of the model domain. In the case of Shallow we
+have periodic boundary conditions in both the $x$ and $y$ dimensions.
+These are simply implemented by having additional (`halo')
+rows/columns at the edges of the domain and ensuring the data in them
+is up-to-date before it is read. These rows/columns are updated by
+copying data from the corresponding row/column on the opposite side of
+the domain. In the current work, the lines of code to do these copies
+is manually inserted in the PSy-layer routine as required.
+
+{\bf Auto-generated BC code by reasoning about meta-data. But then,
+  that brings us on to meta-data...}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methodology(?)}
@@ -406,15 +440,6 @@ the \psykal versions of the code. The performance of the original
 version of the code is very much less sensitive to the compiler
 options. This is because it consists of a single source file
 containing effectively a single routine (excluding those for I/O).
-
-Since any real oceanographic computational model must output results,
-we ensure that any \psykal version of shallow retains the Input/Output
-capability of the original. This aids in limiting the optimisations
-that can be performed on the \psykal version to those that should also
-be applicable to full oceanographic models. Note that although we
-retain the I/O functionality, all of the results presented in this work
-carefully exclude the effects of I/O since it is compute performance
-that interests us here.
  
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
@@ -435,27 +460,6 @@ IBM bgxlf & -O5 -qinline=auto:level=10    \\
 \hline
 \end{tabular}
 \end{table}
-
-In order to maximise the flexibility (and thus potential for
-optimisation) of the \psykal version of shallow, we made the kernels
-as fine-grained as possible. In this case, this resulted in eight
-distinct kernels, each of which operated on a single field at a single
-point (since we have chosen to use point-wise kernels). With a little
-bit of tidying/re-structuring, we found it was possible to express the
-contents of the main time-stepping loop as a single invoke (a call to
-the PSy layer) and a call to the I/O system
-(Figure~\ref{FIG_psykal_shallow_structure}). The single PSy-layer
-routine then consists of applying each of the kernels to all of the
-points on the model mesh requiring an update.
-
-{\bf How we handle the PBCs.}
-
-\begin{figure}
-\centering
-\includegraphics[width=85mm]{psykal_shallow}
-\caption{A schematic of the vanilla \psykal version of the shallow code.}
-\label{FIG_psykal_shallow_structure}
-\end{figure}
 
 \begin{itemize}
 
