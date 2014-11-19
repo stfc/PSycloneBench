@@ -440,7 +440,15 @@ In order to maximise the flexibility (and thus potential for
 optimisation) of the \psykal version of shallow, we made the kernels
 as fine-grained as possible. In this case, this resulted in eight
 distinct kernels, each of which operated on a single field at a single
-point (since we have chosen to use point-wise kernels).
+point (since we have chosen to use point-wise kernels). With a little
+bit of tidying/re-structuring, we found it was possible to express the
+contents of the main time-stepping loop as a single invoke (a call to
+the PSy layer) and a call to the I/O system
+(Figure~\ref{FIG_psykal_shallow_structure}). The single PSy-layer
+routine then consists of applying each of the kernels to all of the
+points on the model mesh requiring an update.
+
+{\bf How we handle the PBCs.}
 
 \begin{figure}
 \centering
