@@ -159,9 +159,6 @@
 % of both fixltx2e and stfloats:
 %
 \usepackage{dblfloatfix}
-% The latest version can be found at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/dblfloatfix/
-
 
 
 
@@ -203,25 +200,7 @@
 % later in the document, say, to conditionally put the References on a 
 % page by themselves.
 
-
-
-
-% *** PDF, URL AND HYPERLINK PACKAGES ***
-%
 \usepackage{url}
-% url.sty was written by Donald Arseneau. It provides better support for
-% handling and breaking URLs. url.sty is already installed on most LaTeX
-% systems. The latest version and documentation can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/url/
-% Basically, \url{my_url_here}.
-
-
-% *** Do not adjust lengths that control margins, column widths, etc. ***
-% *** Do not use packages that alter fonts (such as pslatex).         ***
-% There should be no need to do such things with IEEEtran.cls V1.6 and later.
-% (Unless specifically asked to do so by the journal or conference you plan
-% to submit to, of course. )
-
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
@@ -322,7 +301,7 @@ Performance, Code-generation, Finite-difference
 \IEEEpeerreviewmaketitle
 
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 % The very first letter is a 2 line initial drop letter followed
 % by the rest of the first word in caps.
@@ -338,15 +317,14 @@ Performance, Code-generation, Finite-difference
 % \IEEEPARstart{T}{his demo} file is ....
 % 
 % Here we have the typical use of a "T" for an initial drop letter
-% and "HIS" in caps to complete the first word.
-\IEEEPARstart{T}{his} demo file is intended to serve as a ``starter file''
-for IEEE journal papers produced under \LaTeX\ using
-IEEEtran.cls version 1.8 and later.
+% and "HE" in caps to complete the first word.
+\IEEEPARstart{T}{he} challenge presented to scientific software developers by
+the drive towards Exascale computing is considerable.
 
 \subsection{The `shallow' Program}
 For this work we have used a benchmarking program that solves the
 shallow-water equations on a bi-periodic plane following the
-finite-difference scheme introduced by Sadourney~\cite{sadourny75}.
+finite-difference scheme introduced by Sadourny~\cite{sadourny75}.
 Originally written by Paul Swarztrauber of the National Center for
 Atmospheric Research, US.  Organic development - optimised for
 previous hardware. In describing our work, we term the version of the
@@ -392,15 +370,6 @@ cache of 30~MB. The CPU in the IBM BG/Q system is built around the
 PowerPC A2 core with a clock speed of 1.6~GHz. The chip has 32~MB of
 last-level cache.
 
-In Table~\ref{TABLE_compiler_flags} we give the optimisation flags
-used with each compiler. These flags are particularly important for
-the \psykal versions of the code. The performance of the original
-version of the code is very much less sensitive to the compiler
-options. This is because it consists of a single source file
-containing effectively a single routine (excluding those for I/O).
-
-We do retain I/O because any realistic code has to output results to disk.
-
 % An example of a floating table. Note that, for IEEE style tables, the 
 % \caption command should come BEFORE the table. Table text will default to
 % \footnotesize as IEEE normally uses this smaller font for tables.
@@ -431,6 +400,22 @@ IBM Power 8      &       &             &         &          \\
 \end{tabular}
 \end{table}
 
+In Table~\ref{TABLE_compiler_flags} we give the optimisation flags
+used with each compiler. These flags are particularly important for
+the \psykal versions of the code. The performance of the original
+version of the code is very much less sensitive to the compiler
+options. This is because it consists of a single source file
+containing effectively a single routine (excluding those for I/O).
+
+Since any real oceanographic computational model must output results,
+we ensure that any \psykal version of shallow retains the Input/Output
+capability of the original. This aids in limiting the optimisations
+that can be performed on the \psykal version to those that should also
+be applicable to full oceanographic models. Note that although we
+retain the I/O functionality, all of the results presented in this work
+carefully exclude the effects of I/O since it is compute performance
+that interests us here.
+ 
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
 \renewcommand{\arraystretch}{1.3}
@@ -451,7 +436,18 @@ IBM bgxlf & -O5 -qinline=auto:level=10    \\
 \end{tabular}
 \end{table}
 
+In order to maximise the flexibility (and thus potential for
+optimisation) of the \psykal version of shallow, we made the kernels
+as fine-grained as possible. In this case, this resulted in eight
+distinct kernels, each of which operated on a single field at a single
+point (since we have chosen to use point-wise kernels).
 
+\begin{figure}
+\centering
+\includegraphics[width=85mm]{psykal_shallow}
+\caption{A schematic of the vanilla \psykal version of the shallow code.}
+\label{FIG_psykal_shallow_structure}
+\end{figure}
 
 \begin{itemize}
 
@@ -630,10 +626,16 @@ original. Simply copying the code for each of the kernel subroutines
 into the module from which they are called has the most dramatic
 effect on the performance of the compiled code; it now achieves almost
 80\% of the performance of the original. The next most significant
-transformation is that of (manually) in-lining the kernel code itself into
-the bodies of the loops from which they are called. This gets the
-\psykal version to within 8\% of the performance of the original.
-{\bf What's losing us 8\% of performance with the Gnu compiler?}
+transformation is that of (manually) in-lining the kernel code itself
+into the bodies of the loops from which they are called. This gets the
+\psykal version to within 8\% of the performance of the original.  The
+dramatic performance improvement obtained from the first
+transformation demonstrates that the Gnu compiler is unable to
+optimise over separate files. Therefore, the fact that the
+time-stepping loop in the \psykal version still retains a call to an
+I/O routine and a call to the middle-layer, both of which are in
+different files, is likely to account for this remaining performance
+penalty of 8\%.
 
 With the Intel compiler, the key transformations to recover
 performance are different (second and fourth clusters in
@@ -682,8 +684,8 @@ END DO
 \end{verbatim}
 \caption{Example of the coding structure that required manual
   in-lining of the kernel body (as indicated by commented-out lines)
-  to retrieve performance of original shallow with the Intel
-  compiler.}
+  to retrieve the performance of the original version of shallow with
+  the Intel compiler.}
 \label{FIG_time_smooth_code}
 \end{figure}
 
