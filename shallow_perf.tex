@@ -309,7 +309,15 @@ Performance, Code-generation, Finite-difference
 % and "HE" in caps to complete the first word.
 \IEEEPARstart{T}{he} challenge presented to the developers of
 scientific software by the drive towards Exascale computing is
-considerable.
+considerable. With power consumption becoming the overriding design
+constraint, CPU clock speeds are falling and the complex,
+multi-purpose compute core is being replaced multiple, simpler
+cores. This philosophy can be seen at work in the rise of so-called
+accelerator based machines in the Top 500 List~\cite{top500} of
+supercomputers: five of the top-ten machines in the November 2014 list
+make use of Intel Xeon Phi's or NVIDIA GPUs. Four of the remaining
+five machines in the top ten are IBM BlueGene/Qs, the CPU of which has
+hardware support for running 64 threads.
 
 % needed in second column of first page if using \IEEEpubid
 %\IEEEpubidadjcol
@@ -497,7 +505,7 @@ transformations we have performed are as follows:
       duration of the time-stepping loop.
 \end{enumerate}
 
-We shall see that these optimisations do not always result in improved
+We shall see that these transformations do not always result in improved
 performance. Whether or not they do so depends both on the compiler
 and the problem size. We also emphasise that the aim of these
 optimisations is to recover, as far as is possible, the structure of
