@@ -113,6 +113,7 @@ subroutine step(grid, istp, &
   use gocean2d_io_mod, only: model_write
   implicit none
   type(grid_type), intent(in) :: grid
+  !> The current time step
   integer,         intent(in) :: istp
   type(r2d_field), intent(inout) :: un, vn, sshn, sshn_u, sshn_v
   type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
