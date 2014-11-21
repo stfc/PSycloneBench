@@ -19,7 +19,8 @@ EXECS = gocean2d
 MODULES = model_mod.o boundary_conditions_mod.o \
           continuity_mod.o initialisation_mod.o \
           momentum_mod.o physical_params_mod.o \
-          time_update_mod.o gocean2d_io_mod.o
+          time_update_mod.o gocean2d_io_mod.o \
+          time_step_mod.o
 
 GENERATED_MODULES = psy.o
 
@@ -59,6 +60,8 @@ continuity_mod.o: model_mod.o ${API_LIB}
 gocean2d_io_mod.o: ${API_LIB}
 model_mod.o: ${API_LIB} gocean2d_io_mod.o
 momentum_mod.o: model_mod.o physical_params_mod.o ${API_DIR}/kind_params_mod.o
+time_step_mod.o: ${API_LIB} momentum_mod.o continuity_mod.o \
+                 time_update_mod.o boundary_conditions_mod.o
 time_update_mod.o: model_mod.o ${API_LIB}
 
 # Generic rules
