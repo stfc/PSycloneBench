@@ -22,7 +22,7 @@ MODULES = physical_params_mod.o \
           initial_conditions_mod.o compute_cu_mod.o compute_cv_mod.o \
           compute_z_mod.o compute_h_mod.o \
           compute_unew_mod.o compute_vnew_mod.o compute_pnew_mod.o \
-          apply_bcs_mod.o time_smooth_mod.o
+          apply_bcs_mod.o time_smooth_mod.o time_step_mod.o
 
 GENERATED_MODULES = psy.o shallow_gen.o
 
@@ -60,6 +60,13 @@ compute_cu_mod.o: ${API_LIB}
 initial_conditions_mod.o: physical_params_mod.o model_mod.o
 
 time_smooth_mod.o: ${API_LIB}
+
+time_step_mod.o: ${API_LIB} \
+                 apply_bcs_mod.o	\
+                 compute_cu_mod.o \
+                 compute_cv_mod.o \
+                 compute_z_mod.o \
+                 compute_h_mod.o
 
 model_mod.o: ${API_LIB} \
              shallow_io_mod.o \
