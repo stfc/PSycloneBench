@@ -10,6 +10,7 @@ module momentum_mod
   private
 
   public invoke_momentum_u, invoke_momentum_v
+  public momentum_u_code, momentum_v_code
 
   !=======================================
 
