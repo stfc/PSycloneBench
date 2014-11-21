@@ -311,13 +311,27 @@ Performance, Code-generation, Finite-difference
 scientific software by the drive towards Exascale computing is
 considerable. With power consumption becoming the overriding design
 constraint, CPU clock speeds are falling and the complex,
-multi-purpose compute core is being replaced multiple, simpler
+multi-purpose compute core is being replaced by multiple, simpler
 cores. This philosophy can be seen at work in the rise of so-called
 accelerator based machines in the Top 500 List~\cite{top500} of
 supercomputers: five of the top-ten machines in the November 2014 list
 make use of Intel Xeon Phi's or NVIDIA GPUs. Four of the remaining
 five machines in the top ten are IBM BlueGene/Qs, the CPU of which has
 hardware support for running 64 threads.
+
+Achieving good performance on large numbers of light-weight cores
+requires exploiting as much parallelism in an application as possible
+and this results in increased complexity in the programming models
+that must be used. This in turn increases the burden of code
+maintenance and code development, in part because two specialisms are
+required: that of the scientific domain which a code is modelling
+({\it e.g.} oceanography) and that of computational science. The
+situation is currently complicated still further by the existence of
+competing hardware technology; if one was to begin writing a major
+scientific application today it is unclear whether one would target
+GPU, Xeon Phi, traditional CPU, FPGA or something else entirely. This
+is a problem because, generally speaking, these different technologies
+require different programming approaches.
 
 % needed in second column of first page if using \IEEEpubid
 %\IEEEpubidadjcol
@@ -597,8 +611,7 @@ In fact, for the Gnu and Cray compilers on the Ivy Bridge system, the
 original and in some cases is faster.  This demonstrates that we can
 reliably recover the performance of the original version of the code,
 despite the significant restructuring required by the \psykal
-approach. {\bf We need to re-run/check the Intel results on Ivy Bridge
-  once Archer is back from its upgrade.}
+approach.
 
 Having show that, in general, we can recover and occasionally improve
 upon the performance of the original version of shallow, the next
@@ -744,6 +757,7 @@ duration of the time-stepping loop.
 % \hfil is used as a separator to get equal spacing.
 % Watch out that the combined width of all the subfigures on a 
 % line do not exceed the text width or a line break will occur.
+
 %
 %\begin{figure*}[!t]
 %\centering
@@ -773,7 +787,18 @@ duration of the time-stepping loop.
 
 
 \section{Conclusions}
-The conclusion goes here.
+
+We have investigated the application of the \psykal separation of
+concerns approach to the domain of finite-difference ocean
+models. This approach enables the computational science (performance)
+related aspects of a computer model to be kept separate from the
+natural (oceanographic) science aspects. In this work we have shown
+that the \psykal approach has the potential to improve performance and
+to improve code structure/maintainability.
+
+The application of code transformations to the middle/PSy layer is key
+to the performance of the \psykal version of a code.
+
 
 
 
