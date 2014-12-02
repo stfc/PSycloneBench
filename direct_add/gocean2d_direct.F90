@@ -68,7 +68,7 @@
 
          !! time stepping 
          DO istp = nit000, nitend, 1
-           print*, 'istp == ', istp
+           !print*, 'istp == ', istp
            CALL step
          END DO
 
