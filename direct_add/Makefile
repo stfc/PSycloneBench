@@ -6,7 +6,7 @@ include Makefile.include
 API_DIR = ../api_v0.2
 API_LIB = ${API_DIR}/gocean_api.a
 
-EXECS = go2d
+EXECS = nemolite2d
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
@@ -15,13 +15,13 @@ COMMON_MODULES = ${API_LIB}
 all: $(EXECS)
 
 # Normal targets
-go2d: 
-	${MAKE} MODULE_LIST="gocean2d_direct.o ${COMMON_MODULES}" go2d.exe
+nemolite2d: 
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
 ${API_LIB}: ${API_DIR}/*.?90
 	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" API_LIB="gocean_api.a"
 
-gocean2d_direct.o: $(COMMON_MODULES)
+nemolite2d.o: $(COMMON_MODULES)
 
 # Generic rules
 
@@ -36,10 +36,7 @@ gocean2d_direct.o: $(COMMON_MODULES)
 
 clean: 
 	${MAKE} -C ${API_DIR} clean
-	rm -f *.o *.mod *.MOD *~ psy.f90
+	rm -f *.o *.mod *.MOD *~
 
 allclean: clean
-	rm -f *.exe fparser.log
-
-docs:
-	doxygen gocean2d.doxy.config
+	rm -f *.exe

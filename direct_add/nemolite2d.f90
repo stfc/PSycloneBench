@@ -1,4 +1,4 @@
-    PROGRAM gocean2d
+PROGRAM nemolite2d
          !!! A Horizontal 2D hydrodynamic ocean model which
          !!   1) using structured grid
          !!   2) using direct data addressig structures
@@ -799,5 +799,4 @@ CONTAINS
 
 !+++++++++++++++++++++++++++++++++++
 
-    END PROGRAM gocean2D
-
+    END PROGRAM nemolite2d
