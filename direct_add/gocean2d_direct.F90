@@ -2,7 +2,7 @@
          !!! A Horizontal 2D hydrodynamic ocean model which
          !!   1) using structured grid
          !!   2) using direct data addressig structures
-
+         use timing_mod
          IMPLICIT NONE
 
          INTEGER,  PARAMETER :: sp = SELECTED_REAL_KIND(6, 37)
@@ -37,22 +37,22 @@
 
          REAL(wp), ALLOCATABLE :: un(:,:),  vn(:,:), ua(:,:),  va(:,:)
 
-         INTEGER  :: jpiglo, jpjglo, jpi, jpj                               !dimensions of grid
-         INTEGER  :: jphgr_msh                                              !type of grid
-         INTEGER  :: nit000, nitend, irecord                                !start-end and record time steps
+         INTEGER  :: jpiglo, jpjglo, jpi, jpj        !dimensions of grid
+         INTEGER  :: jphgr_msh                       !type of grid
+         INTEGER  :: nit000, nitend, irecord         !start-end and record time steps
 
-         REAL(wp) :: dx, dy, dep_const                                      !regular grid size and constant depth
-         REAL(wp) :: rdt                                                    !time step
-                                                                    
-         REAL(wp) :: cbfr                                                   !bottom friction coefficient
-         REAL(wp) :: visc                                                   !backgroud/constant viscosity 
+         REAL(wp) :: dx, dy, dep_const               !regular grid size and constant depth
+         REAL(wp) :: rdt                             !time step
+                                                     
+         REAL(wp) :: cbfr                            !bottom friction coefficient
+         REAL(wp) :: visc                            !backgroud/constant viscosity 
 
-         INTEGER  :: istp                                                   !time stepping index
-         INTEGER  :: ji, jj, jk                                             !temporary loop index
+         INTEGER  :: istp                            !time stepping index
+         INTEGER  :: ji, jj                          !temporary loop index
 
-         INTEGER  :: itmp1, itmp2, itmp3, itmp4, itmp5, itmp6               !integer temporary variables
-         REAL(wp) :: rtmp1, rtmp2, rtmp3, rtmp4, rtmp5, rtmp6               !real    temporary variables 
-
+         INTEGER  :: itmp1, itmp2                    !integer temporary vars
+         REAL(wp) :: rtmp1, rtmp2, rtmp3, rtmp4      !real temporary variables 
+         integer :: idxt ! Index for main-loop timer
 
          !! read in model parameters
          CALL setup
@@ -66,11 +66,15 @@
          istp = 0
          CALL output
 
+         call timer_start('Time-stepping',idxt)
+
          !! time stepping 
          DO istp = nit000, nitend, 1
            !print*, 'istp == ', istp
            CALL step
          END DO
+
+         call timer_stop(idxt)
 
          !! finalise the model run
          CALL finalisation
@@ -302,6 +306,9 @@ CONTAINS
 
 
         SUBROUTINE initialisation
+
+          call timer_init()
+
           ! define (or read in) initil ssh and velocity fields
 !         ! split this part into ssh, sshu, sshv, u, v kernels 
 
@@ -785,6 +792,8 @@ CONTAINS
           !close opened files
           !send out some ending information
           IF(ANY(ierr /= 0, 1)) STOP "in SUBROUTINE finalisation: failed to deallocate arrays"
+
+         call timer_report()
 
         END SUBROUTINE finalisation
 
