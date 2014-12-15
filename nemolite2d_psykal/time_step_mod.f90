@@ -25,19 +25,17 @@ contains
     ! Locals
     integer :: ji, jj
     type(grid_type), pointer :: grid
-    integer :: txstart, txstop, tystart, tystop
-    integer :: uxstart, uxstop, uystart, uystop
-    integer :: uwhole_xstart, uwhole_xstop, &
-               uwhole_ystart, uwhole_ystop
-    integer :: vxstart, vxstop, vystart, vystop
-    integer :: vwhole_xstart, vwhole_xstop, &
-               vwhole_ystart, vwhole_ystop
+    !integer :: txstart, txstop, tystart, tystop
+    !integer :: uxstart, uxstop, uystart, uystop
+    !integer :: uwhole_xstart, uwhole_xstop, &
+    !           uwhole_ystart, uwhole_ystop
+    !integer :: vxstart, vxstop, vystart, vystop
+    !integer :: vwhole_xstart, vwhole_xstop, &
+    !           vwhole_ystart, vwhole_ystop
     integer :: M, N
 
     grid => ssha%grid
-    txstart = grid%simulation_domain%xstart
     M  = grid%simulation_domain%xstop
-    tystart = grid%simulation_domain%ystart
     N  = grid%simulation_domain%ystop
 
     ! In the general case we have to reason about whether or not the
@@ -45,33 +43,33 @@ contains
     ! use. However, this is a middle layer specific to NEMOLite2D and
     ! therefore we know that we have no periodic BCs and are using a
     ! NE stagger
-    txstart = grid%simulation_domain%xstart
-    tystart = grid%simulation_domain%ystart
+    !txstart = 2 ! grid%simulation_domain%xstart
+    !tystart = 2 ! grid%simulation_domain%ystart
 
-    uxstart = grid%simulation_domain%xstart
-    uxstop  = M - 1
-    uystart = grid%simulation_domain%ystart
-    uystop  = N
+    !uxstart = 2 ! grid%simulation_domain%xstart
+    !uxstop  = M - 1
+    !uystart = 2 ! grid%simulation_domain%ystart
+    !uystop  = N
 
-    vxstart = grid%simulation_domain%xstart
-    vxstop  = M
-    vystart = grid%simulation_domain%ystart
-    vystop  = N - 1
+    !vxstart = 2 ! grid%simulation_domain%xstart
+    !vxstop  = M
+    !vystart = 2 ! grid%simulation_domain%ystart
+    !vystop  = N - 1
 
-    uwhole_xstart = uxstart - NBOUNDARY
-    uwhole_xstop  = uxstop  + NBOUNDARY
-    uwhole_ystart = uystart - NBOUNDARY
-    uwhole_ystop  = uystop  + NBOUNDARY
+    !uwhole_xstart = 1 ! uxstart - NBOUNDARY
+    !uwhole_xstop  = M ! uxstop  + NBOUNDARY
+    !uwhole_ystart = 1 ! uystart - NBOUNDARY
+    !uwhole_ystop  = N+1 ! uystop  + NBOUNDARY
 
-    vwhole_xstart = vxstart - NBOUNDARY
-    vwhole_xstop  = vxstop  + NBOUNDARY
-    vwhole_ystart = vystart - NBOUNDARY
-    vwhole_ystop  = vystop  + NBOUNDARY
+    !vwhole_xstart = 1 ! vxstart - NBOUNDARY
+    !vwhole_xstop  = M+1 ! vxstop  + NBOUNDARY
+    !vwhole_ystart = 1 ! vystart - NBOUNDARY
+    !vwhole_ystop  = N ! vystop  + NBOUNDARY
 
 !    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
 !      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
-    do jj = tystart, N, 1
-      do ji = txstart, M, 1
+    do jj = 2, N, 1
+      do ji = 2, M, 1
 
         call continuity_code(ji, jj,                             &
                              ssha%data, sshn_t%data,             &
@@ -83,8 +81,8 @@ contains
 
 !    do jj = ua%internal%ystart, ua%internal%ystop, 1
 !      do ji = ua%internal%xstart, ua%internal%xstop, 1
-    do jj = uystart, uystop, 1
-      do ji = uxstart, uxstop, 1
+    do jj = 2, N, 1
+      do ji = 2, M-1, 1
 
         call momentum_u_code(ji, jj, &
                              ua%data, un%data, vn%data, &
@@ -102,8 +100,8 @@ contains
       end do
     end do
  
-    do jj = vystart, vystop, 1
-      do ji = vxstart, vxstop, 1
+    do jj = 2, N-1, 1
+      do ji = 2, M, 1
 
         call momentum_v_code(ji, jj, &
                              va%data, un%data, vn%data, &
@@ -123,30 +121,36 @@ contains
 
 !    DO jj = ssha%internal%ystart, ssha%internal%ystop 
 !       DO ji = ssha%internal%xstart, ssha%internal%xstop 
-    DO jj = tystart, N
-       DO ji = txstart, M
+    DO jj = 2, N
+       DO ji = 2, M
           call bc_ssh_code(ji, jj, &
                            istp, ssha%data, ssha%grid%tmask)
        END DO
     END DO
 
 
-    do jj = uwhole_ystart, uwhole_ystop, 1
-       do ji = uwhole_xstart, uwhole_xstop, 1
+!    do jj = uwhole_ystart, uwhole_ystop, 1
+!       do ji = uwhole_xstart, uwhole_xstop, 1
+    do jj = 1, N+1, 1
+       do ji = 1, M, 1
           call bc_solid_u_code(ji, jj, ua%data, ua%grid%tmask)
        end do
     end do
 
 !    DO jj = va%whole%ystart, va%whole%ystop, 1 
 !       DO ji = va%whole%xstart, va%whole%xstop, 1
-    do jj = vwhole_ystart, vwhole_ystop, 1
-       do ji = vwhole_xstart, vwhole_xstop, 1
+!    do jj = vwhole_ystart, vwhole_ystop, 1
+!       do ji = vwhole_xstart, vwhole_xstop, 1
+    do jj = 1, N, 1
+       do ji = 1, M+1, 1
           call bc_solid_v_code(ji,jj,va%data,va%grid%tmask)
       end do
     end do
 
-    DO jj = uwhole_ystart, uwhole_ystop, 1
-       DO ji = uwhole_xstart, uwhole_xstop, 1
+!    DO jj = uwhole_ystart, uwhole_ystop, 1
+!       DO ji = uwhole_xstart, uwhole_xstop, 1
+    DO jj = 1, N+1, 1
+       DO ji = 1, M, 1
           call bc_flather_u_code(ji,jj, &
                                  ua%data, hu%data, sshn_u%data, &
                                  ua%grid%tmask)
@@ -155,8 +159,10 @@ contains
 
 !    DO jj = va%whole%ystart, va%whole%ystop, 1 
 !       DO ji = va%whole%xstart, va%whole%xstop, 1
-     DO jj = vwhole_ystart, vwhole_ystop, 1
-       DO ji = vwhole_xstart, vwhole_xstop, 1
+!     DO jj = vwhole_ystart, vwhole_ystop, 1
+!       DO ji = vwhole_xstart, vwhole_xstop, 1
+     DO jj = 1, N, 1
+       DO ji = 1, M+1, 1
           call bc_flather_v_code(ji,jj, &
                                  va%data, hv%data, sshn_v%data, &
                                  va%grid%tmask)
@@ -168,8 +174,8 @@ contains
     call copy_field(va, vn)
     call copy_field(ssha, sshn_t)
 
-    do jj = uystart, uystop, 1
-      do ji = uxstart, uxstop, 1
+    do jj = 2, N, 1
+      do ji = 2, M-1, 1
 
          call next_sshu_code(ji, jj, sshn_u%data, sshn_t%data, &
                             sshn_u%grid%tmask,                 &
@@ -177,8 +183,8 @@ contains
       end do
     end do
 
-    do jj = vystart, vystop, 1
-      do ji = vxstart, vxstop, 1
+    do jj = 2, N-1, 1
+      do ji = 2, M, 1
 
         call next_sshv_code(ji, jj,                   &
                             sshn_v%data, sshn_t%data, &
