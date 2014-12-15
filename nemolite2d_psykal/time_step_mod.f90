@@ -27,7 +27,11 @@ contains
     type(grid_type), pointer :: grid
     integer :: txstart, txstop, tystart, tystop
     integer :: uxstart, uxstop, uystart, uystop
+    integer :: uwhole_xstart, uwhole_xstop, &
+               uwhole_ystart, uwhole_ystop
     integer :: vxstart, vxstop, vystart, vystop
+    integer :: vwhole_xstart, vwhole_xstop, &
+               vwhole_ystart, vwhole_ystop
     integer :: M, N
 
     grid => ssha%grid
@@ -53,6 +57,16 @@ contains
     vxstop  = M
     vystart = grid%simulation_domain%ystart
     vystop  = N - 1
+
+    uwhole_xstart = uxstart - NBOUNDARY
+    uwhole_xstop  = uxstop  + NBOUNDARY
+    uwhole_ystart = uystart - NBOUNDARY
+    uwhole_ystop  = uystop  + NBOUNDARY
+
+    vwhole_xstart = vxstart - NBOUNDARY
+    vwhole_xstop  = vxstop  + NBOUNDARY
+    vwhole_ystart = vystart - NBOUNDARY
+    vwhole_ystop  = vystop  + NBOUNDARY
 
 !    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
 !      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
@@ -107,6 +121,8 @@ contains
 
     ! Apply open and solid boundary conditions
 
+!    DO jj = ssha%internal%ystart, ssha%internal%ystop 
+!       DO ji = ssha%internal%xstart, ssha%internal%xstop 
     DO jj = tystart, N
        DO ji = txstart, M
           call bc_ssh_code(ji, jj, &
@@ -115,28 +131,32 @@ contains
     END DO
 
 
-    do jj = uystart, uystop, 1
-       do ji = uxstart, uxstop, 1
+    do jj = uwhole_ystart, uwhole_ystop, 1
+       do ji = uwhole_xstart, uwhole_xstop, 1
           call bc_solid_u_code(ji, jj, ua%data, ua%grid%tmask)
        end do
     end do
 
-    do jj = vystart, vystop, 1
-       do ji = vxstart, vxstop, 1
+!    DO jj = va%whole%ystart, va%whole%ystop, 1 
+!       DO ji = va%whole%xstart, va%whole%xstop, 1
+    do jj = vwhole_ystart, vwhole_ystop, 1
+       do ji = vwhole_xstart, vwhole_xstop, 1
           call bc_solid_v_code(ji,jj,va%data,va%grid%tmask)
       end do
     end do
 
-    DO jj = uystart, uystop, 1
-       DO ji = uxstart, uxstop, 1
+    DO jj = uwhole_ystart, uwhole_ystop, 1
+       DO ji = uwhole_xstart, uwhole_xstop, 1
           call bc_flather_u_code(ji,jj, &
                                  ua%data, hu%data, sshn_u%data, &
                                  ua%grid%tmask)
        END DO
     END DO
 
-    DO jj = vystart, vystop, 1
-       DO ji = vxstart, vxstop, 1
+!    DO jj = va%whole%ystart, va%whole%ystop, 1 
+!       DO ji = va%whole%xstart, va%whole%xstop, 1
+     DO jj = vwhole_ystart, vwhole_ystop, 1
+       DO ji = vwhole_xstart, vwhole_xstop, 1
           call bc_flather_v_code(ji,jj, &
                                  va%data, hv%data, sshn_v%data, &
                                  va%grid%tmask)
