@@ -28,7 +28,13 @@ contains
     integer :: txstart, txstop, tystart, tystop
     integer :: uxstart, uxstop, uystart, uystop
     integer :: vxstart, vxstop, vystart, vystop
+    integer :: M, N
+
     grid => ssha%grid
+    txstart = grid%simulation_domain%xstart
+    M  = grid%simulation_domain%xstop
+    tystart = grid%simulation_domain%ystart
+    N  = grid%simulation_domain%ystop
 
     ! In the general case we have to reason about whether or not the
     ! domain has PBCs and what sort of offset convention the kernels
@@ -36,24 +42,22 @@ contains
     ! therefore we know that we have no periodic BCs and are using a
     ! NE stagger
     txstart = grid%simulation_domain%xstart
-    txstop  = grid%simulation_domain%xstop
     tystart = grid%simulation_domain%ystart
-    tystop  = grid%simulation_domain%ystop
 
     uxstart = grid%simulation_domain%xstart
-    uxstop  = grid%simulation_domain%xstop - 1
+    uxstop  = M - 1
     uystart = grid%simulation_domain%ystart
-    uystop  = grid%simulation_domain%ystop
+    uystop  = N
 
     vxstart = grid%simulation_domain%xstart
-    vxstop  = grid%simulation_domain%xstop
+    vxstop  = M
     vystart = grid%simulation_domain%ystart
-    vystop  = grid%simulation_domain%ystop - 1
+    vystop  = N - 1
 
 !    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
 !      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
-    do jj = tystart, tystop, 1
-      do ji = txstart, txstop, 1
+    do jj = tystart, N, 1
+      do ji = txstart, M, 1
 
         call continuity_code(ji, jj,                             &
                              ssha%data, sshn_t%data,             &
@@ -103,8 +107,8 @@ contains
 
     ! Apply open and solid boundary conditions
 
-    DO jj = tystart, tystop
-       DO ji = txstart, txstop
+    DO jj = tystart, N
+       DO ji = txstart, M
           call bc_ssh_code(ji, jj, &
                            istp, ssha%data, ssha%grid%tmask)
        END DO
