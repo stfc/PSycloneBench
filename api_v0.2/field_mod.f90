@@ -104,7 +104,9 @@ module field_mod
 
   !> The no. of cols/rows used to define boundary data in the absence
   !! of periodic BCs.
-  integer, parameter :: NBOUNDARY = 1
+  !! \todo remove this parameter and determine it from
+  !! the supplied T mask.
+  integer, public, parameter :: NBOUNDARY = 1
 
 contains
 
