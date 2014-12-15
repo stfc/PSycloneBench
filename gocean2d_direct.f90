@@ -93,6 +93,12 @@ program gocean2d
   ! Stop the timer for the time-stepping section
   call timer_stop(itimer0)
 
+  ! Compute and output some checksums for error checking
+  call model_write_log("('ua checksum = ',E16.8)", &
+                       field_checksum(ua_fld))
+  call model_write_log("('va checksum = ',E16.8)", &
+                       field_checksum(va_fld))
+
   !! finalise the model run
   call model_finalise()
   
