@@ -10,10 +10,8 @@ PSYCLONE_DIR = ../../PSyclone/src
 API_DIR = ../api_v0.2
 API_LIB = ${API_DIR}/gocean_api.a
 
-# The two targets that this Makefile supports
-#  - shallow_base is the version of the code with manual invokes
-#  - shallow_gen uses PSyClone to generate the invokes
-EXECS = gocean2d
+# The targets that this Makefile supports
+EXECS = nemolite2d
 
 # The modules that are common to both targets
 MODULES = model_mod.o boundary_conditions_mod.o \
@@ -43,8 +41,8 @@ shallow_gen:
 	#${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
 
 # Normal targets
-gocean2d: 
-	${MAKE} MODULE_LIST="gocean2d_direct.o ${COMMON_MODULES}" go2d.exe
+nemolite2d: 
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
 ${API_LIB}: ${API_DIR}/*.?90
 	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
