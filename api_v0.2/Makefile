@@ -1,4 +1,3 @@
-
 MODULES = argument_mod.o \
           kind_params_mod.o \
           global_parameters_mod.o \
@@ -14,7 +13,7 @@ MODULES = argument_mod.o \
 all: ${API_LIB}
 
 ${API_LIB}: ${MODULES}
-	ar cr ${API_LIB} ${MODULES}
+	${AR} ${ARFLAGS} ${API_LIB} ${MODULES}
 
 clean:
 	rm -f *.o *.mod *.a
