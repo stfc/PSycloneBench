@@ -24,19 +24,10 @@ contains
     type(r2d_field), intent(in)    :: hu, hv, ht
     ! Locals
     integer :: ji, jj
-    type(grid_type), pointer :: grid
-    !integer :: txstart, txstop, tystart, tystop
-    !integer :: uxstart, uxstop, uystart, uystop
-    !integer :: uwhole_xstart, uwhole_xstop, &
-    !           uwhole_ystart, uwhole_ystop
-    !integer :: vxstart, vxstop, vystart, vystop
-    !integer :: vwhole_xstart, vwhole_xstop, &
-    !           vwhole_ystart, vwhole_ystop
     integer :: M, N
 
-    grid => ssha%grid
-    M  = grid%simulation_domain%xstop
-    N  = grid%simulation_domain%ystop
+    M  = ssha%grid%simulation_domain%xstop
+    N  = ssha%grid%simulation_domain%ystop
 
     ! In the general case we have to reason about whether or not the
     ! domain has PBCs and what sort of offset convention the kernels
