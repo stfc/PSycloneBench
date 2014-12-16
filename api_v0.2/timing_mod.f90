@@ -27,10 +27,20 @@ MODULE timing_mod
    INTEGER, PARAMETER :: MAX_TIMERS = 60
 
    TYPE :: timer_type
+      !> The name of this timed region
       CHARACTER (LABEL_LEN) :: label
+      !> Time at which region was most recently entered
       REAL       (KIND=wp)  :: istart
+      !> Total time spent in this timed region (accumulated over
+      !! all visits).
       REAL       (KIND=wp)  :: total
+      !> The no. of times this timed region has been executed.
       INTEGER               :: count
+      !> The no. of repeated intervals within this timed region.
+      !! Used in timer_report() to produce a mean time per repeat.
+      !! Default value is 1. User can specify value in call to
+      !! timer_start().
+      INTEGER               :: nrepeat
    END TYPE timer_type
 
    INTEGER, SAVE :: nThreads ! No. of OMP threads being used (1 if no OMP)
@@ -129,11 +139,15 @@ MODULE timing_mod
 
 !============================================================================
 
-   SUBROUTINE timer_start(label, idx)
+   SUBROUTINE timer_start(label, idx, nrepeat)
       USE intel_timer_mod
       IMPLICIT none
       CHARACTER (*), INTENT(in) :: label
       INTEGER, INTENT(out) :: idx
+      !> The number of repeated intervals inside this timed region.
+      !! Used to report a time per interval in the report generated
+      !! by timer_report().
+      INTEGER, INTENT(in), OPTIONAL :: nrepeat
       INTEGER :: ji, ith, iclk
 
       IF(LEN_TRIM(label) > LABEL_LEN)THEN
@@ -157,13 +171,24 @@ MODULE timing_mod
          itimerCount(ith) = itimerCount(ith) + 1
          IF(itimerCount(ith) > MAX_TIMERS)THEN
             WRITE(*,"('timer_start: ERROR: max. no. of timers exceeded!')")
-            WRITE(*,"('timer_start: ERROR: thread = ',I3,'label = ',(A))") ith, label
+            WRITE(*,"('timer_start: ERROR: thread = ',I3,'label = ',(A))") &
+                  ith, label
             idx = -1
             itimerCount(ith) = itimerCount(ith) - 1
             RETURN
          END IF
-         timer(itimerCount(ith),ith)%label = TRIM(ADJUSTL(label))
+
          ji = itimerCount(ith)
+
+         ! Initialise this new timer structure
+         timer(ji, ith)%label = TRIM(ADJUSTL(label))
+         if(present(nrepeat))then
+            timer(ji, ith)%nrepeat = nrepeat
+         else
+            ! No repeat specified so default to a value of unity.
+            timer(ji, ith)%nrepeat = 1
+         end if
+
       END IF
 
       ! Increment the count of no. of times we've used this timer
@@ -219,11 +244,36 @@ MODULE timing_mod
 
    END SUBROUTINE timer_stop
 
-!============================================================================
+   !==========================================================================
 
    SUBROUTINE timer_report()
       IMPLICIT none
-      INTEGER :: ji, jt
+      INTEGER       :: jt
+      LOGICAL       :: have_repeats
+
+      ! Check whether any of our timed regions have a non-unity
+      ! no. of repeats
+      have_repeats = .false.
+      do jt = 1, nThreads, 1
+         if( ANY( timer(1:itimerCount(jt),jt)%nrepeat > 1) )then
+            have_repeats = .TRUE.
+            exit
+         end if
+      end do
+
+      if(have_repeats)then
+         call timer_report_with_repeats()
+      else
+         call timer_report_no_repeats()
+      end if
+
+    end SUBROUTINE timer_report
+
+    !==========================================================================
+
+    subroutine timer_report_no_repeats()
+      implicit none
+      INTEGER       :: ji, jt
       REAL(KIND=wp) :: wtime
 
       WRITE(*,"(/'====================== Timing report ==============================')")
@@ -249,8 +299,8 @@ MODULE timing_mod
             ELSE
                wtime = time_in_s(0._wp,timer(ji,jt)%total)
             END IF
+
             ! Truncate the label to 32 chars for table-formatting purposes
-!            WRITE(*,"((A),1x,I4,2x,1F7.3,2x,1F7.3)") &
             WRITE(*,"((A),1x,I4,2x,E13.6,2x,E13.6)") &
                             timer(ji,jt)%label(1:32), timer(ji,jt)%count, &
                             wtime, wtime/REAL(timer(ji,jt)%count)
@@ -258,7 +308,49 @@ MODULE timing_mod
       END DO
       WRITE(*," ('===================================================================')")
 
-   END SUBROUTINE timer_report
+   END SUBROUTINE timer_report_no_repeats
+
+   !==========================================================================
+
+   SUBROUTINE timer_report_with_repeats()
+      IMPLICIT none
+      INTEGER       :: ji, jt
+      REAL(KIND=wp) :: wtime
+
+      WRITE(*,"(/34('='),' Timing report ',34('='))")
+      IF(use_rdtsc_timer)THEN
+         WRITE(*," ('    Timed using Intel Time Stamp Counter. Units are counts.')")
+      ELSE
+         WRITE(*," (' Timed using Fortran SYSTEM_CLOCK intrinsic. Units are seconds.')")
+      END IF
+      WRITE(*,"(83('-'))")
+      WRITE(*,"('Region',26x,'Counts      Total         Average    Average/repeat')")
+      WRITE(*,"(83('-'))")
+      DO jt = 1, nThreads, 1
+         IF(jt > 1)THEN
+            WRITE(*,"(41('- '))")
+         END IF
+
+         IF(nThreads > 1)WRITE(*," ('Thread ',I3)") jt
+
+         DO ji=1,itimerCount(jt),1
+
+            IF(use_rdtsc_timer)THEN
+               wtime = timer(ji,jt)%total
+            ELSE
+               wtime = time_in_s(0._wp,timer(ji,jt)%total)
+            END IF
+
+            ! Truncate the label to 32 chars for table-formatting purposes
+            WRITE(*,"((A),1x,I4,2x,E13.6,2x,E13.6,2x,E13.6)")          &
+                            timer(ji,jt)%label(1:32), timer(ji,jt)%count, &
+                            wtime, wtime/REAL(timer(ji,jt)%count),        &
+                            wtime/REAL(timer(ji,jt)%count * timer(ji,jt)%nrepeat)
+         END DO
+      END DO
+      WRITE(*,"(83('='))")
+
+   END SUBROUTINE timer_report_with_repeats
 
 !============================================================================
 
