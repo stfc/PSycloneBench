@@ -126,9 +126,8 @@ contains
 
              ! write "x-coord, y-coord, depth, ssh, u-velocity, v-velocity" to ASCII files
 
-             !WRITE(1,'(2f20.3, 2f15.4, 2e18.3)')  &            
-!             WRITE(21,'(f20.3,'','',f20.3,'','',f15.4,'','',f15.4,'','',f18.3,'','',f18.3)') &
-              write(21,*) &
+             ! WRITE(21,'(f20.3,'','',f20.3,'','',f15.4,'','',f15.4,'','',f18.3,'','',f18.3)') &
+              write(21,'(5e18.6)') &
              & grid%xt(ji,jj), grid%yt(ji,jj), ht%data(ji,jj), sshn%data(ji,jj), &
                rtmp1, rtmp2 
           END DO
