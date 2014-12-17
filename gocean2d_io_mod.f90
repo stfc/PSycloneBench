@@ -114,22 +114,24 @@ contains
 
        ! output model results
        write(fname, '(I5.5)') istp
-       open(21, file='go2d_'//fname//'.dat', STATUS='UNKNOWN', action='write')
-       !open(21, file='go2d_'//fname//'.csv', STATUS='UNKNOWN')
+       open(21, file='go2d_'//fname//'.dat', STATUS='UNKNOWN', &
+            action='write')
+
        rewind(21)
 
+       ! Loop over 'internal' T points
        DO jj = sshn%internal%ystart, sshn%internal%ystop, 1
           DO ji = sshn%internal%xstart, sshn%internal%xstop, 1
 
              rtmp1 = 0.5_wp * (un%data(ji-1,jj) + un%data(ji,jj))
              rtmp2 = 0.5_wp * (vn%data(ji,jj-1) + vn%data(ji,jj))
 
-             ! write "x-coord, y-coord, depth, ssh, u-velocity, v-velocity" to ASCII files
+             ! write "x-coord, y-coord, depth, ssh, u-velocity,
+             ! v-velocity" to ASCII files
 
-             ! WRITE(21,'(f20.3,'','',f20.3,'','',f15.4,'','',f15.4,'','',f18.3,'','',f18.3)') &
-              write(21,'(5e18.6)') &
-             & grid%xt(ji,jj), grid%yt(ji,jj), ht%data(ji,jj), sshn%data(ji,jj), &
-               rtmp1, rtmp2 
+              write(21,'(6e16.7)') grid%xt(ji,jj), grid%yt(ji,jj), &
+                                   ht%data(ji,jj), sshn%data(ji,jj), &
+                                   rtmp1, rtmp2 
           END DO
           WRITE(21,*)
        END DO
