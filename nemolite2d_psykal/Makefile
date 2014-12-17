@@ -47,7 +47,7 @@ nemolite2d:
 ${API_LIB}: ${API_DIR}/*.?90
 	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
 
-gocean2d_direct.o: $(COMMON_MODULES)
+nemolite2d.o: $(COMMON_MODULES)
 
 shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
@@ -79,6 +79,7 @@ clean:
 
 allclean: clean
 	rm -f *.exe fparser.log
+	rm -rf *_wpl_dir/
 
 docs:
 	doxygen gocean2d.doxy.config

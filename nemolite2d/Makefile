@@ -40,3 +40,5 @@ clean:
 
 allclean: clean
 	rm -f *.exe
+	rm -rf *_wpl_dir
+
