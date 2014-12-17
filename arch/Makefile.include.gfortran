@@ -10,6 +10,6 @@ F90FLAGS +=  -faggressive-function-elimination
 F90FLAGS += -Ofast -mtune=native -finline-limit=50000
 #F90FLAGS = -O3 -fopenmp
 
-F90FLAGS += -I${NETCDF_INC}
-LDFLAGS += -L${NETCDF_LIB} -lnetcdff -lnetcdf
+#F90FLAGS += -I${NETCDF_INC}
+#LDFLAGS += -L${NETCDF_LIB} -lnetcdff -lnetcdf
 
