@@ -96,8 +96,8 @@ CONTAINS
 
           !! Default value
 
-          jpiglo      =      50               !  number of columns of model grid
-          jpjglo      =     100               !  number of rows of model grid
+          jpiglo      =     258               !  number of columns of model grid
+          jpjglo      =     258               !  number of rows of model grid
           jphgr_msh   =       1               !  type of grid (0: read in a data file; 1: setup with following parameters)
           dx          =   1000._wp            !  grid size in x direction (m)
           dy          =   1000._wp            !  grid size in y direction (m)
@@ -115,6 +115,16 @@ CONTAINS
           READ(1, NML=namctl, IOSTAT = ios, ERR = 901)
 901       IF(ios /= 0) STOP "err found in reading namelist file"
           WRITE(*,NML=namctl)
+
+          ! This correction is to allow the same format namelist file for this
+          ! 'original' version of the code and the PSyKAl version. The original
+          ! version implicitly adds on the boundaries to the specified domain
+          ! whereas in the psykal version the user explicitly specifies the
+          ! extent of the domain including boundaries. This is to ensure
+          ! consistency with future developments where the T-mask defining the
+          ! domain may be read from file.
+          jpiglo = jpiglo - 2
+          jpjglo = jpjglo - 2
 
           jpi = jpiglo
           jpj = jpjglo
