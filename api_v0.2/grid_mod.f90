@@ -388,6 +388,12 @@ contains
     grid%simulation_domain%ny =  grid%simulation_domain%ystop -  &
                                  grid%simulation_domain%ystart + 1
 
+    write(*,"('GRID: Simulation domain = [',I4,':',I4,',',I4,':',I4,']')") &
+         grid%simulation_domain%xstart, &
+         grid%simulation_domain%xstop,  &
+         grid%simulation_domain%ystart, &
+         grid%simulation_domain%ystop
+
   end subroutine compute_internal_region
 
   !================================================

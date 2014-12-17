@@ -140,6 +140,10 @@ contains
     ! Local declarations
     type(r2d_field) :: self
     integer :: ierr
+    character(len=8) :: fld_type
+    !> The upper bounds actually used to allocate arrays (as opposed
+    !! to the limits carried around with the field)
+    integer :: upper_x_bound, upper_y_bound
 
     ! Set this field's grid pointer to point to the grid pointed to
     ! by the supplied grid_ptr argument
@@ -148,14 +152,19 @@ contains
     select case(grid_points)
 
     case(U_POINTS)
+       write(fld_type, "('C-U')")
        call cu_field_init(self)
     case(V_POINTS)
+       write(fld_type, "('C-V')")
        call cv_field_init(self)
     case(T_POINTS)
+       write(fld_type, "('C-T')")
        call ct_field_init(self)
     case(F_POINTS)
+       write(fld_type, "('C-F')")
        call cf_field_init(self)
     case(ALL_POINTS)
+       write(fld_type, "('C-All')")
        call field_init(self)
     case default
        call gocean_stop('r2d_field_constructor: ERROR: invalid '//&
@@ -187,9 +196,21 @@ contains
        self%whole%ystop  = self%internal%ystop  + NBOUNDARY
     end if
 
-    write(*,*) 'allocating field with bounds: (', &
-               1,':', self%internal%xstop+1, ',', &
-               1,':',self%internal%ystop+1,')'
+    ! We allocate all fields to have the same extent as that
+    ! with the greatest extents. This enables the (Cray) compiler
+    ! to safely evaluate code within if blocks that are
+    ! checking for conditions at the boundary of the domain.
+    ! Hence we use self%whole%{x,y}stop + 1...
+    !> \todo Implement calculation of largest array extents
+    !! required by any field type rather than hard-wiring
+    !! a simple increase of each extent.
+    upper_x_bound = self%whole%xstop + 1
+    upper_y_bound = self%whole%ystop + 1
+
+    write(*,"('Allocating ',(A),' field with bounds: (',I1,':',I3, ',',I1,':',I3,')')") &
+               TRIM(ADJUSTL(fld_type)), &
+               1, upper_x_bound, 1, upper_y_bound
+
     !allocate(self%data(self%internal%xstart-1:self%internal%xstop+1, &
     !                   self%internal%ystart-1:self%internal%ystop+1),&
     !                   Stat=ierr)
@@ -200,12 +221,18 @@ contains
     ! the generator knows the array bounds. This may give us the
     ! ability to solve this problem (by passing array bounds to the
     ! kernels).
-    allocate(self%data(1:self%internal%xstop+1, &
-                       1:self%internal%ystop+1),&
+    allocate(self%data(1:upper_x_bound, 1:upper_y_bound), &
                        Stat=ierr)
     if(ierr /= 0)then
-       call gocean_stop('r2d_field_constructor: ERROR: failed to allocate field')
+       call gocean_stop('r2d_field_constructor: ERROR: failed to '// &
+                        'allocate field')
     end if
+
+    ! Since we're allocating the arrays to be larger than strictly
+    ! required we explicitly set all elements to -999 in case the code
+    ! does access 'out-of-bounds' elements during speculative
+    ! execution.
+    self%data(:,:) = -999.0
 
   end function r2d_field_constructor
 
