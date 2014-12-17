@@ -207,9 +207,9 @@ contains
     upper_x_bound = self%whole%xstop + 1
     upper_y_bound = self%whole%ystop + 1
 
-    write(*,"('Allocating ',(A),' field with bounds: (',I1,':',I3, ',',I1,':',I3,')')") &
-               TRIM(ADJUSTL(fld_type)), &
-               1, upper_x_bound, 1, upper_y_bound
+!    write(*,"('Allocating ',(A),' field with bounds: (',I1,':',I3, ',',I1,':',I3,')')") &
+!               TRIM(ADJUSTL(fld_type)), &
+!               1, upper_x_bound, 1, upper_y_bound
 
     !allocate(self%data(self%internal%xstart-1:self%internal%xstop+1, &
     !                   self%internal%ystart-1:self%internal%ystop+1),&
