@@ -277,7 +277,7 @@ CONTAINS
         SUBROUTINE allocation
           !! Read in model setup parameters and allocate working arrays
           INTEGER :: ierr(11)
-          
+          REAL(wp) :: init_val
 
           ALLOCATE(e1t(jpi,jpj), e2t(jpi,jpj), e1u(0:jpi,jpj), e2u(0:jpi,jpj), STAT=ierr(1))
           ALLOCATE(e1f(0:jpi,0:jpj), e2f(0:jpi,0:jpj), e1v(jpi,0:jpj), e2v(jpi,0:jpj), STAT=ierr(2)) 
@@ -298,6 +298,14 @@ CONTAINS
           ALLOCATE(pt(0:jpi+1,0:jpj+1), STAT=ierr(11))
 
           IF(ANY(ierr /= 0, 1)) STOP "in SUBROUTINE ALLOCATION: failed to allocate arrays"
+
+          ! Initialise all solution arrays
+          init_val = -999.0
+          ht = init_val ; hu = init_val ; hv = init_val ; hf = init_val
+          sshb = init_val ; sshb_u = init_val ; sshb_v = init_val
+          sshn = init_val ; sshn_u = init_val ; sshn_v = init_val
+          ssha = init_val ; ssha_u = init_val ; ssha_v = init_val
+          un = init_val ; vn = init_val ; ua = init_val ; va = init_val
 
         END SUBROUTINE allocation
 
@@ -755,7 +763,7 @@ CONTAINS
 
               !WRITE(1,'(2f20.3, 2f15.4, 2e18.3)')  &            
               !WRITE(1,'(f20.3,'','',f20.3,'','',f15.4,'','',f15.4,'','',f18.3,'','',f18.3)') &
-              write(1,*) &
+              write(1,'(6e16.7)') &
                    & xt(ji,jj), yt(ji,jj), ht(ji,jj), sshn(ji,jj),rtmp1, rtmp2 
             END DO
             WRITE(1,*)
