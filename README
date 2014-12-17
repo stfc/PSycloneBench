@@ -1,6 +1,6 @@
-This README is for the GOcean Benchmark 2.0. Then benchmark is based
+This README is for the GOcean Benchmark 2.0. The benchmark is based
 upon the 2D, free-surface part of the NEMO ocean model and was created
-by Hedong Liu of the National Oceanographic Centre, Liverpool, UK.
+by Hedong Liu of the National Oceanography Centre, Liverpool, UK.
 
 * BEFORE COMPILING AND RUNNING PLEASE READ THIS DOCUMENT, *
 * ESPECIALLY POINT 5 REGARDING COMPILATION.               *
