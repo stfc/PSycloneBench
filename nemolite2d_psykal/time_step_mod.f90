@@ -72,6 +72,7 @@ contains
 
 !    do jj = ua%internal%ystart, ua%internal%ystop, 1
 !      do ji = ua%internal%xstart, ua%internal%xstop, 1
+!dir$ safe_address
     do jj = 2, N, 1
       do ji = 2, M-1, 1
 
@@ -91,6 +92,7 @@ contains
       end do
     end do
  
+!dir$ safe_address
     do jj = 2, N-1, 1
       do ji = 2, M, 1
 
@@ -122,6 +124,7 @@ contains
 
 !    do jj = uwhole_ystart, uwhole_ystop, 1
 !       do ji = uwhole_xstart, uwhole_xstop, 1
+!dir$ safe_address
     do jj = 1, N+1, 1
        do ji = 1, M, 1
           call bc_solid_u_code(ji, jj, ua%data, ua%grid%tmask)
@@ -132,6 +135,7 @@ contains
 !       DO ji = va%whole%xstart, va%whole%xstop, 1
 !    do jj = vwhole_ystart, vwhole_ystop, 1
 !       do ji = vwhole_xstart, vwhole_xstop, 1
+!dir$ safe_address
     do jj = 1, N, 1
        do ji = 1, M+1, 1
           call bc_solid_v_code(ji,jj,va%data,va%grid%tmask)
@@ -140,6 +144,7 @@ contains
 
 !    DO jj = uwhole_ystart, uwhole_ystop, 1
 !       DO ji = uwhole_xstart, uwhole_xstop, 1
+!dir$ safe_address
     DO jj = 1, N+1, 1
        DO ji = 1, M, 1
           call bc_flather_u_code(ji,jj, &
@@ -152,6 +157,7 @@ contains
 !       DO ji = va%whole%xstart, va%whole%xstop, 1
 !     DO jj = vwhole_ystart, vwhole_ystop, 1
 !       DO ji = vwhole_xstart, vwhole_xstop, 1
+!dir$ safe_address
      DO jj = 1, N, 1
        DO ji = 1, M+1, 1
           call bc_flather_v_code(ji,jj, &
