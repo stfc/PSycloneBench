@@ -54,40 +54,46 @@ or if this produces a performance improvement over compiler inlining.
 3: Problem sizes
 
 Note that the problem size defined in the namelist file is for the
-whole of the model domain. The simulated domain sits within this
+*whole* of the model domain. The simulated domain sits within this
 surrounded by a shell, one deep, of grid points. This shell of grid
 points defines the boundary conditions.  The default size provided is
-256. This is set in the 'namelist' file.  We would like results from
-the following "base" problem sizes: 256, 512, 1024
+258 which gives a simulated domain of 256. This is set in the
+'namelist' file.  We would like results from the following "base"
+problem sizes: 258, 514, 1026. Example namelists for these are given
+in the nemolite2d directory, named
+'namelist.<internal_domain_size>'. Note that the number of time-steps
+is reduced for the larger domain sizes in order to keep run-times
+down.
 
 The following (small) optional sizes are also of interest,
 primarily for *CPU's* as the cache performance can improve for
 smaller problems:
-64, 128
+66, 130
 
 The following (large) optional sizes are also of interest,
 primarily for GPU's, to ensure there is enough work to keep the GPU
 busy:
-2048, 4096
+2050, 4098
 
-Whilst we have provided suggested problem sizes that are powers of 2
-it may be the case that the relative performance differs when
-non-powers-of-two sizes are compared with powers-of-2 sizes and you
-might want to look into these if you have time. (Note that the arrays
-used in the code actually have extents one greater than the supplied
-domain size. For instance, if you specify a domain of 128x128 then
-the arrays will be allocated as (129,129).)
+Whilst we have provided suggested problem sizes that give simulated
+regions that are powers of 2 in extent, it may be the case that the
+relative performance differs when non-powers-of-two sizes are compared
+with powers-of-2 sizes and you might want to look into these if you
+have time. (Note that the arrays used in the code actually have
+extents one greater than the supplied domain size. For instance, if
+you specify a domain of 128x128 then the arrays will be allocated as
+(129,129).)
 
 4: A note on timing and timing calls
 
 The only timing we actually require is the time per step which is
-obtained from the timer around the timestep loop. In the provided code
-this is reported to stdout as the 'Average/repeat' time. Other timers
-might be useful to see how the different parts of the code scale but
-should not get in the way of optimisations. As an example, if you
-fused two loops together, each with their own timer then the obvious
-thing to do would be to replace the two timers with a single timer
-(appropriately named) around the fused loop.
+obtained from the timer around the time-stepping loop. In the provided
+code this is reported to stdout as the 'Average/repeat' time. Other
+timers might be useful to see how the different parts of the code
+scale but should not get in the way of optimisations. As an example,
+if you fused two loops together, each with their own timer then the
+obvious thing to do would be to replace the two timers with a single
+timer (appropriately named) around the fused loop.
 
 Jitter (noise) in the timing results can be a problem, particularly
 for the smaller test cases. We therefore recommend that the number of
@@ -99,14 +105,18 @@ particular core.  We recommend repeating the run a number of times
 
 5: Technical details (compilation etc.)
 
-All of the codes depend upon a configuration file and timing routines
-that are in the 'common' directory.  Before attempting to compile
-anything, change to the common directory and in it create a file named
-'Makefile.include' by either copying or linking to one of the supplied
-Makefile.include.<compiler_name> files. You will almost certainly have
-to edit the settings in this file to match your local set-up.  With
-this done, typing 'make' in either the 'original' or 'psykal_vanilla'
-directories should produce an executable.
+The Makefiles in nemolite2d/ and nemolite2d_psykal/ both expect a
+Makefile.include configuration file to be in the same directory as the
+Makefile. Examples of this file for various compilers are provided in
+the arch directory. Create 'Makefile.include' by either copying or
+linking to one of the supplied arch/Makefile.include.<compiler_name>
+files. You will almost certainly have to edit the settings in the file
+in order to match your local set-up. Once this is done, simply running
+'make' should produce an executable.
+
+Both codes depend upon a library, the source for which is in the
+api_v0.2 directory. It should be built automatically by the make system
+when either of the codes is built.
 
 If you have any questions about this benchmark then please feel free
 to contact either Andrew Porter or Rupert Ford who can be reached at
