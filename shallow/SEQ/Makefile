@@ -9,7 +9,6 @@ PSYCLONE_DIR = ../../../PSyclone/src
 # Location of the code defining the GOcean API
 API_DIR = ../../api_v0.2
 API_LIB = ${API_DIR}/gocean_api.a
-#F90FLAGS += -I${API_DIR}
 
 # The two targets that this Makefile supports
 #  - shallow_base is the version of the code with manual invokes
@@ -26,7 +25,9 @@ MODULES = physical_params_mod.o \
 
 GENERATED_MODULES = psy.o shallow_gen.o
 
-COMMON_MODULES = ${API_LIB} $(MODULES)
+# API lib is an archive that must come at the end of the list of objects
+# passed to the linker
+COMMON_MODULES = $(MODULES) ${API_LIB} 
 
 all: $(EXECS)
 
@@ -62,13 +63,17 @@ initial_conditions_mod.o: physical_params_mod.o model_mod.o
 time_smooth_mod.o: ${API_LIB}
 
 time_step_mod.o: ${API_LIB} \
-                 apply_bcs_mod.o	\
+                 apply_bcs_mod.o \
                  compute_cu_mod.o \
                  compute_cv_mod.o \
+                 compute_pnew_mod.o \
+                 compute_unew_mod.o \
+                 compute_vnew_mod.o \
                  compute_z_mod.o \
                  compute_h_mod.o
 
 model_mod.o: ${API_LIB} \
+             physical_params_mod.o \
              shallow_io_mod.o \
              time_smooth_mod.o
 
@@ -89,6 +94,7 @@ clean:
 
 allclean: clean
 	rm -f *.exe fparser.log
+	rm -rf *_wpl_dir
 
 docs:
 	doxygen shallow.doxy.config
