@@ -3,6 +3,8 @@ PROGRAM nemolite2d
          !!   1) using structured grid
          !!   2) using direct data addressig structures
          use timing_mod
+         use field_mod
+         use gocean_mod,      only: model_write_log
          IMPLICIT NONE
 
          INTEGER,  PARAMETER :: sp = SELECTED_REAL_KIND(6, 37)
@@ -75,6 +77,12 @@ PROGRAM nemolite2d
          END DO
 
          call timer_stop(idxt)
+
+         ! Compute and output some checksums for error checking
+         call model_write_log("('ua checksum = ',E16.8)", &
+                              field_checksum(ua(1:jpiglo,1:jpjglo)) )
+         call model_write_log("('va checksum = ',E16.8)", &
+                              field_checksum(va(1:jpiglo,1:jpjglo)))
 
          !! finalise the model run
          CALL finalisation

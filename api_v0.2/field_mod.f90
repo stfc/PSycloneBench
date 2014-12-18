@@ -70,6 +70,12 @@ module field_mod
      module procedure r2d_field_constructor
   end interface r2d_field
 
+  !> Interface for the field checksum operation. Overloaded to take either
+  !! a field object or a 2D, real(wp) array.
+  interface field_checksum
+     module procedure fld_checksum, array_checksum
+  end interface field_checksum
+
   public increment_field
   public copy_field
   public set_field
@@ -892,7 +898,9 @@ contains
 
   !===================================================
 
-  function field_checksum(field) result(val)
+  !> Compute the checksum of the internal values of the supplied field
+  !> object
+  function fld_checksum(field) result(val)
     implicit none
     type(r2d_field), intent(in) :: field
     real(wp) :: val
@@ -900,7 +908,19 @@ contains
     val = SUM( ABS(field%data(field%internal%xstart:field%internal%xstop, &
                               field%internal%ystart:field%internal%ystop)) )
 
-  end function field_checksum
+  end function fld_checksum
+
+  !===================================================
+
+  !> Compute the checksum of ALL of the elements of supplied array
+  function array_checksum(field) result(val)
+    implicit none
+    real(wp), dimension(:,:), intent(in) :: field
+    real(wp) :: val
+
+    val = SUM( ABS(field(:,:) ) )
+
+  end function array_checksum
 
   !===================================================
 
