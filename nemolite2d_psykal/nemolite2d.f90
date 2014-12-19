@@ -83,11 +83,15 @@ program gocean2d
 
      !call model_write_log("('istp == ',I6)",istp)
 
-     call step(model_grid, istp, &
-               ua_fld, va_fld, un_fld, vn_fld, &
+     call step(model_grid, istp,                   &
+               ua_fld, va_fld, un_fld, vn_fld,     &
                sshn_t_fld, sshn_u_fld, sshn_v_fld, &
                ssha_t_fld, ssha_u_fld, ssha_v_fld, &
                hu_fld, hv_fld, ht_fld)
+
+     call model_write(model_grid, istp,                &
+                      ht_fld, sshn_t_fld, un_fld, vn_fld)
+
   end do
 
   ! Stop the timer for the time-stepping section
@@ -149,7 +153,7 @@ subroutine step(grid, istp, &
 !             )
 
 
-  call model_write(grid, istp, ht, sshn, un, vn)
+!  call model_write(grid, istp, ht, sshn, un, vn)
 
 end subroutine step
 

@@ -10,6 +10,7 @@ contains
   subroutine invoke_time_step(istp, ssha, ssha_u, ssha_v, &
                               sshn_t, sshn_u, sshn_v, &
                               hu, hv, ht, ua, va, un, vn)
+    use timing_mod
     use field_mod
     use grid_mod
     use model_mod,       only: rdt
@@ -24,7 +25,7 @@ contains
     type(r2d_field), intent(in)    :: hu, hv, ht
     ! Locals
     integer :: ji, jj
-    integer :: M, N
+    integer :: M, N, idxt
 
     M  = ssha%grid%simulation_domain%xstop
     N  = ssha%grid%simulation_domain%ystop
@@ -57,6 +58,8 @@ contains
     !vwhole_ystart = 1 ! vystart - NBOUNDARY
     !vwhole_ystop  = N ! vystop  + NBOUNDARY
 
+    call timer_start('Continuity',idxt)
+
 !    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
 !      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
     do jj = 2, N, 1
@@ -70,10 +73,15 @@ contains
       end do
     end do
 
+    call timer_stop(idxt)
+
+    call timer_start('Momentum',idxt)
+
 !    do jj = ua%internal%ystart, ua%internal%ystop, 1
 !      do ji = ua%internal%xstart, ua%internal%xstop, 1
 !dir$ safe_address
     do jj = 2, N, 1
+!DIR$ SIMD
       do ji = 2, M-1, 1
 
         call momentum_u_code(ji, jj, &
@@ -94,6 +102,7 @@ contains
  
 !dir$ safe_address
     do jj = 2, N-1, 1
+!DIR$ SIMD
       do ji = 2, M, 1
 
         call momentum_v_code(ji, jj, &
@@ -110,11 +119,14 @@ contains
       end do
     end do
 
+    call timer_stop(idxt)
+
     ! Apply open and solid boundary conditions
 
 !    DO jj = ssha%internal%ystart, ssha%internal%ystop 
 !       DO ji = ssha%internal%xstart, ssha%internal%xstop 
     DO jj = 2, N
+!DIR$ SIMD
        DO ji = 2, M
           call bc_ssh_code(ji, jj, &
                            istp, ssha%data, ssha%grid%tmask)

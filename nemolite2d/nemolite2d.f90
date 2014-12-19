@@ -428,6 +428,9 @@ CONTAINS
           REAL(wp) :: dudx_w, dudy_s, dvdx_w, dvdy_s
 
           REAL(wp) :: adv, vis, hpg, cor
+          integer :: idxt
+
+          call timer_start('Momentum', idxt)
 
           ! u equation
           DO jj = 1, jpj
@@ -610,6 +613,9 @@ CONTAINS
 !end kernel ua calculation 
           END DO
           END DO
+
+          call timer_stop(idxt)
+
         END SUBROUTINE momentum
 
 !+++++++++++++++++++++++++++++++++++
