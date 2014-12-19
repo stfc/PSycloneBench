@@ -81,7 +81,7 @@ contains
 !      do ji = ua%internal%xstart, ua%internal%xstop, 1
 !dir$ safe_address
     do jj = 2, N, 1
-!DIR$ SIMD
+! SIMD
       do ji = 2, M-1, 1
 
         call momentum_u_code(ji, jj, &
@@ -102,7 +102,7 @@ contains
  
 !dir$ safe_address
     do jj = 2, N-1, 1
-!DIR$ SIMD
+! SIMD
       do ji = 2, M, 1
 
         call momentum_v_code(ji, jj, &
@@ -123,10 +123,12 @@ contains
 
     ! Apply open and solid boundary conditions
 
+    call timer_start('BCs', idxt)
+
 !    DO jj = ssha%internal%ystart, ssha%internal%ystop 
 !       DO ji = ssha%internal%xstart, ssha%internal%xstop 
     DO jj = 2, N
-!DIR$ SIMD
+! SIMD
        DO ji = 2, M
           call bc_ssh_code(ji, jj, &
                            istp, ssha%data, ssha%grid%tmask)
@@ -178,7 +180,12 @@ contains
        END DO
     END DO
 
+    call timer_stop(idxt)
+
     ! Time update of fields
+
+    call timer_start('Next', idxt)
+
     call copy_field(ua, un)
     call copy_field(va, vn)
     call copy_field(ssha, sshn_t)
@@ -201,6 +208,8 @@ contains
                             sshn_v%grid%area_t, sshn_v%grid%area_v)
       end do
     end do
+
+    call timer_stop(idxt)
 
   end subroutine invoke_time_step
 
