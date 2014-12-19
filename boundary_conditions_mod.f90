@@ -362,6 +362,9 @@ contains
     integer  :: jiv
 
     ! Check whether this point is inside the simulated domain
+    !\todo I could set-up a V-mask using exactly the same code structure
+    !! as below. Could then apply the BC and multiply by V-mask and thus
+    !! remove conditionals => get vectorisation.
     IF(tmask(ji,jj) + tmask(ji,jj+1) <= -1) return
     
     IF(tmask(ji,jj) < 0) THEN
@@ -375,6 +378,28 @@ contains
     END IF
 
   end subroutine bc_flather_v_code
+
+  !================================================
+
+  subroutine setup_vmask_code(ji, jj, vmask, tmask)
+    integer, intent(in) :: ji, jj
+    integer,  dimension(:,:), intent(inout) :: vmask
+    integer,  dimension(:,:), intent(in) :: tmask
+    integer :: jiv
+
+    vmask(ji,jj) = 0
+
+    IF(tmask(ji,jj) + tmask(ji,jj+1) <= -1) return
+    
+    IF(tmask(ji,jj) < 0) THEN
+       jiv = jj + 1
+    ELSE IF(tmask(ji,jj+1) < 0) THEN
+       jiv = jj - 1 
+    END IF
+
+    vmask(ji,jiv) = 1
+
+  end subroutine setup_vmask_code
 
   !================================================
 
