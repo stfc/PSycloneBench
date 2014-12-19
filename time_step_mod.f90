@@ -89,14 +89,14 @@ contains
                              hu%data, hv%data, ht%data, &
                              ssha_u%data, sshn_t%data,  &
                              sshn_u%data, sshn_v%data,  &
-                             ua%grid%tmask,  &
-                             ua%grid%dx_u,   &
-                             ua%grid%dx_v,   &
-                             ua%grid%dx_t,   &
-                             ua%grid%dy_u,   &
-                             ua%grid%dy_t,   &
-                             ua%grid%area_u, &
-                             ua%grid%gphiu)
+                             un%grid%tmask,  &
+                             un%grid%dx_u,   &
+                             un%grid%dx_v,   &
+                             un%grid%dx_t,   &
+                             un%grid%dy_u,   &
+                             un%grid%dy_t,   &
+                             un%grid%area_u, &
+                             un%grid%gphiu)
       end do
     end do
  
@@ -108,13 +108,16 @@ contains
         call momentum_v_code(ji, jj, &
                              va%data, un%data, vn%data, &
                              hu%data, hv%data, ht%data, &
-                             ssha_v%data, sshn_t%data,      &
-                             sshn_u%data, sshn_v%data,      &
-                             va%grid%tmask, va%grid%dx_v,   &
-                             va%grid%dx_t, &
-                             va%grid%dy_u, va%grid%dy_v,    &
-                             va%grid%dy_t,     &
-                             va%grid%area_v, va%grid%gphiv)
+                             ssha_v%data, sshn_t%data,  &
+                             sshn_u%data, sshn_v%data,  &
+                             vn%grid%tmask,    &
+                             vn%grid%dx_v,     &
+                             vn%grid%dx_t,     &
+                             vn%grid%dy_u,     &
+                             vn%grid%dy_v,     &
+                             vn%grid%dy_t,     &
+                             vn%grid%area_v,   &
+                             vn%grid%gphiv)
 
       end do
     end do
