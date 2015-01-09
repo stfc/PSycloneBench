@@ -391,23 +391,41 @@ contains
     call copy_field(va, vn)
     call copy_field(ssha, sshn_t)
 
-    do jj = 2, N, 1
+    do jj = 2, N-1, 1
       do ji = 2, M-1, 1
 
          call next_sshu_code(ji, jj, sshn_u%data, sshn_t%data, &
                             sshn_u%grid%tmask,                 &
                             sshn_u%grid%area_t, sshn_u%grid%area_u)
-      end do
-    end do
-
-    do jj = 2, N-1, 1
-      do ji = 2, M, 1
+!!$      end do
+!!$    end do
+!!$
+!!$    do jj = 2, N-1, 1
+!!$      do ji = 2, M-1, 1
 
         call next_sshv_code(ji, jj,                   &
                             sshn_v%data, sshn_t%data, &
                             sshn_v%grid%tmask,        &
                             sshn_v%grid%area_t, sshn_v%grid%area_v)
       end do
+    end do
+
+
+    jj = N
+    do ji = 2, M-1, 1
+
+       call next_sshu_code(ji, jj, sshn_u%data, sshn_t%data, &
+                           sshn_t%grid%tmask,                 &
+                           sshn_t%grid%area_t, sshn_t%grid%area_u)
+    end do
+
+    do jj = 2, N-1, 1
+      ji = M
+
+      call next_sshv_code(ji, jj,                   &
+                          sshn_v%data, sshn_t%data, &
+                          sshn_v%grid%tmask,        &
+                          sshn_v%grid%area_t, sshn_v%grid%area_v)
     end do
 
     call timer_stop(idxt)
