@@ -96,6 +96,7 @@ contains
 !dir$ safe_address
     do jj = 2, N, 1
 ! SIMD
+!dir$ vector always
       do ji = 2, M-1, 1
 
 !!$        call momentum_u_code(ji, jj, &
@@ -205,6 +206,7 @@ contains
 !dir$ safe_address
     do jj = 2, N-1, 1
 ! SIMD
+!dir$ vector always
       do ji = 2, M, 1
 
 !!$        call momentum_v_code(ji, jj, &
