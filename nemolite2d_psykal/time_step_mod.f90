@@ -332,7 +332,7 @@ contains
 ! SIMD
        DO ji = 2, M
           call bc_ssh_code(ji, jj, &
-                           istp, ssha%data, ssha%grid%tmask)
+                           istp, ssha%data, sshn_t%grid%tmask)
        END DO
     END DO
 
@@ -342,7 +342,8 @@ contains
 !dir$ safe_address
     do jj = 1, N+1, 1
        do ji = 1, M, 1
-          call bc_solid_u_code(ji, jj, ua%data, ua%grid%tmask)
+          call bc_solid_u_code(ji, jj, &
+                               ua%data, va%grid%tmask)
        end do
     end do
 
@@ -353,7 +354,8 @@ contains
 !dir$ safe_address
     do jj = 1, N, 1
        do ji = 1, M+1, 1
-          call bc_solid_v_code(ji,jj,va%data,va%grid%tmask)
+          call bc_solid_v_code(ji,jj, &
+                               va%data, ua%grid%tmask)
       end do
     end do
 
@@ -364,7 +366,7 @@ contains
        DO ji = 1, M, 1
           call bc_flather_u_code(ji,jj, &
                                  ua%data, hu%data, sshn_u%data, &
-                                 ua%grid%tmask)
+                                 sshn_u%grid%tmask)
        END DO
     END DO
 
@@ -377,7 +379,7 @@ contains
        DO ji = 1, M+1, 1
           call bc_flather_v_code(ji,jj, &
                                  va%data, hv%data, sshn_v%data, &
-                                 va%grid%tmask)
+                                 sshn_v%grid%tmask)
        END DO
     END DO
 
@@ -391,41 +393,23 @@ contains
     call copy_field(va, vn)
     call copy_field(ssha, sshn_t)
 
-    do jj = 2, N-1, 1
+    do jj = 2, N, 1
       do ji = 2, M-1, 1
 
          call next_sshu_code(ji, jj, sshn_u%data, sshn_t%data, &
-                            sshn_u%grid%tmask,                 &
-                            sshn_u%grid%area_t, sshn_u%grid%area_u)
-!!$      end do
-!!$    end do
-!!$
-!!$    do jj = 2, N-1, 1
-!!$      do ji = 2, M-1, 1
-
-        call next_sshv_code(ji, jj,                   &
-                            sshn_v%data, sshn_t%data, &
-                            sshn_v%grid%tmask,        &
-                            sshn_v%grid%area_t, sshn_v%grid%area_v)
+                            sshn_t%grid%tmask,                 &
+                            sshn_t%grid%area_t, sshn_t%grid%area_u)
       end do
     end do
 
-
-    jj = N
-    do ji = 2, M-1, 1
-
-       call next_sshu_code(ji, jj, sshn_u%data, sshn_t%data, &
-                           sshn_t%grid%tmask,                 &
-                           sshn_t%grid%area_t, sshn_t%grid%area_u)
-    end do
-
     do jj = 2, N-1, 1
-      ji = M
+      do ji = 2, M, 1
 
-      call next_sshv_code(ji, jj,                   &
-                          sshn_v%data, sshn_t%data, &
-                          sshn_v%grid%tmask,        &
-                          sshn_v%grid%area_t, sshn_v%grid%area_v)
+        call next_sshv_code(ji, jj,                   &
+                            sshn_v%data, sshn_t%data, &
+                            sshn_t%grid%tmask,        &
+                            sshn_t%grid%area_t, sshn_t%grid%area_v)
+      end do
     end do
 
     call timer_stop(idxt)
