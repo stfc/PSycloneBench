@@ -68,7 +68,7 @@ PROGRAM nemolite2d
          istp = 0
          CALL output
 
-         call timer_start('Time-stepping',idxt)
+         call timer_start('Time-stepping', idxt, (nitend-nit000+1))
 
          !! time stepping 
          DO istp = nit000, nitend, 1
