@@ -83,7 +83,7 @@ contains
                              ssha%data, sshn_t%data,             &
                              sshn_u%data, sshn_v%data,           &
                              hu%data, hv%data, un%data, vn%data, &
-                             rdt, ssha%grid%area_t)
+                             rdt, sshn_t%grid%area_t)
       end do
     end do
 
