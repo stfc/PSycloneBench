@@ -38,6 +38,7 @@ contains
     real(wp) :: uu_e, uu_n, uu_s, uu_w
     real(wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
     real(wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
+    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
 
     ! end locals for momentum-u
 
@@ -79,11 +80,18 @@ contains
     do jj = 2, N, 1
       do ji = 2, M, 1
 
-        call continuity_code(ji, jj,                             &
-                             ssha%data, sshn_t%data,             &
-                             sshn_u%data, sshn_v%data,           &
-                             hu%data, hv%data, un%data, vn%data, &
-                             rdt, sshn_t%grid%area_t)
+!        call continuity_code(ji, jj,                             &
+!                             ssha%data, sshn_t%data,             &
+!                             sshn_u%data, sshn_v%data,           &
+!                             hu%data, hv%data, un%data, vn%data, &
+!                             rdt, sshn_t%grid%area_t)
+         rtmp1 = (sshn_u%data(ji  ,jj ) + hu%data(ji  ,jj  ))*un%data(ji  ,jj)
+         rtmp2 = (sshn_u%data(ji-1,jj ) + hu%data(ji-1,jj  ))*un%data(ji-1,jj)
+         rtmp3 = (sshn_v%data(ji ,jj ) + hv%data(ji  ,jj  ))*vn%data(ji ,jj)
+         rtmp4 = (sshn_v%data(ji ,jj-1) + hv%data(ji  ,jj-1))*vn%data(ji,jj-1)
+
+         ssha%data(ji,jj) = sshn_t%data(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+                       rdt / sshn_t%grid%area_t(ji,jj)
       end do
     end do
 
