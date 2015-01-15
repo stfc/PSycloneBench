@@ -18,7 +18,7 @@ contains
     use physical_params_mod, only: g, omega, d2r
 !    use momentum_mod,    only: momentum_v_code
 !    use momentum_mod,    only: momentum_u_code
-    use continuity_mod,  only: continuity_code
+!    use continuity_mod,  only: continuity_code
     use time_update_mod, only: next_sshu_code, next_sshv_code
     use boundary_conditions_mod
     implicit none
@@ -27,7 +27,7 @@ contains
     type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
     type(r2d_field), intent(in)    :: hu, hv, ht
     ! Locals
-    integer :: ji, jj
+    integer :: ji, jj, jiu, jiv
     integer :: M, N, idxt
     ! Locals for momentum
     REAL(wp) :: u_e, u_w, v_n, v_s
@@ -39,8 +39,9 @@ contains
     real(wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
     real(wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
     real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
-
-    ! end locals for momentum-u
+    ! end locals for momentum
+    ! Locals for BCs
+    real(wp) :: amp_tide, omega_tide, rtime
 
     M  = ssha%grid%simulation_domain%xstop
     N  = ssha%grid%simulation_domain%ystop
@@ -339,8 +340,25 @@ contains
     DO jj = 2, N
 ! SIMD
        DO ji = 2, M
-          call bc_ssh_code(ji, jj, &
-                           istp, ssha%data, sshn_t%grid%tmask)
+!          call bc_ssh_code(ji, jj, &
+!                           istp, ssha%data, sshn_t%grid%tmask)
+
+          amp_tide   = 0.2_wp
+          omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
+          rtime = real(istp, wp) * rdt
+
+          if(sshn_t%grid%tmask(ji,jj) <= 0) cycle
+
+          IF     (sshn_t%grid%tmask(ji,jj-1) < 0) THEN
+             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+          ELSE IF(sshn_t%grid%tmask(ji,jj+1) < 0) THEN
+             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+          ELSE IF(sshn_t%grid%tmask(ji+1,jj) < 0) THEN
+             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+          ELSE IF(sshn_t%grid%tmask(ji-1,jj) < 0) THEN
+             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+          END IF
+
        END DO
     END DO
 
@@ -350,8 +368,13 @@ contains
 !dir$ safe_address
     do jj = 1, N+1, 1
        do ji = 1, M, 1
-          call bc_solid_u_code(ji, jj, &
-                               ua%data, va%grid%tmask)
+!          call bc_solid_u_code(ji, jj, &
+!                               ua%data, va%grid%tmask)
+
+          if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) == 0)then
+             ua%data(ji,jj) = 0._wp
+          end if
+
        end do
     end do
 
@@ -362,8 +385,12 @@ contains
 !dir$ safe_address
     do jj = 1, N, 1
        do ji = 1, M+1, 1
-          call bc_solid_v_code(ji,jj, &
-                               va%data, ua%grid%tmask)
+!          call bc_solid_v_code(ji,jj, &
+!                               va%data, ua%grid%tmask)
+    if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) == 0)then
+       va%data(ji,jj) = 0._wp
+    end if
+
       end do
     end do
 
@@ -372,9 +399,21 @@ contains
 !dir$ safe_address
     DO jj = 1, N+1, 1
        DO ji = 1, M, 1
-          call bc_flather_u_code(ji,jj, &
-                                 ua%data, hu%data, sshn_u%data, &
-                                 sshn_u%grid%tmask)
+!          call bc_flather_u_code(ji,jj, &
+!                                 ua%data, hu%data, sshn_u%data, &
+!                                 sshn_u%grid%tmask)
+          ! Check whether this point lies within the domain
+          if(sshn_t%grid%tmask(ji,jj) + sshn_t%grid%tmask(ji+1,jj) <= -1) cycle
+
+          if(sshn_t%grid%tmask(ji,jj) < 0) then
+             jiu = ji + 1
+             ua%data(ji,jj) = ua%data(jiu,jj) + &
+                   sqrt(g/hu%data(ji,jj))*(sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
+          else if(sshn_t%grid%tmask(ji+1,jj )< 0) then
+             jiu = ji - 1 
+             ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj)) * &
+                  (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
+          end if
        END DO
     END DO
 
@@ -385,9 +424,21 @@ contains
 !dir$ safe_address
      DO jj = 1, N, 1
        DO ji = 1, M+1, 1
-          call bc_flather_v_code(ji,jj, &
-                                 va%data, hv%data, sshn_v%data, &
-                                 sshn_v%grid%tmask)
+!          call bc_flather_v_code(ji,jj, &
+!                                 va%data, hv%data, sshn_v%data, &
+!                                 sshn_v%grid%tmask)
+          IF(sshn_t%grid%tmask(ji,jj) + sshn_t%grid%tmask(ji,jj+1) <= -1) cycle
+    
+          IF(sshn_t%grid%tmask(ji,jj) < 0) THEN
+             jiv = jj + 1
+             va%data(ji,jj) = va%data(ji,jiv) + SQRT(g/hv%data(ji,jj)) * &
+                  (sshn_v%data(ji,jj) - sshn_v%data(ji,jiv))
+          ELSE IF(sshn_t%grid%tmask(ji,jj+1) < 0) THEN
+             jiv = jj - 1 
+             va%data(ji,jj) = va%data(ji,jiv) + SQRT(g/hv%data(ji,jj)) * &
+                  (sshn_v%data(ji,jj) - sshn_v%data(ji,jiv))
+          END IF
+
        END DO
     END DO
 
