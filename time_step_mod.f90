@@ -19,7 +19,7 @@ contains
 !    use momentum_mod,    only: momentum_v_code
 !    use momentum_mod,    only: momentum_u_code
 !    use continuity_mod,  only: continuity_code
-    use time_update_mod, only: next_sshu_code, next_sshv_code
+!    use time_update_mod, only: next_sshu_code, next_sshv_code
     use boundary_conditions_mod
     implicit none
     integer,         intent(in)    :: istp
@@ -407,8 +407,8 @@ contains
 
           if(sshn_t%grid%tmask(ji,jj) < 0) then
              jiu = ji + 1
-             ua%data(ji,jj) = ua%data(jiu,jj) + &
-                   sqrt(g/hu%data(ji,jj))*(sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
+             ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj))* &
+                  (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
           else if(sshn_t%grid%tmask(ji+1,jj )< 0) then
              jiu = ji - 1 
              ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj)) * &
@@ -452,22 +452,52 @@ contains
     call copy_field(va, vn)
     call copy_field(ssha, sshn_t)
 
+!dir$ safe_address
     do jj = 2, N, 1
+!dir$ vector always
       do ji = 2, M-1, 1
 
-         call next_sshu_code(ji, jj, sshn_u%data, sshn_t%data, &
-                            sshn_t%grid%tmask,                 &
-                            sshn_t%grid%area_t, sshn_t%grid%area_u)
+!         call next_sshu_code(ji, jj, sshn_u%data, sshn_t%data, &
+!                            sshn_t%grid%tmask,                 &
+!                            sshn_t%grid%area_t, sshn_t%grid%area_u)
+
+         if(sshn_t%grid%tmask(ji,jj) + &
+            sshn_t%grid%tmask(ji+1,jj) <= 0) cycle !jump over non-computational domain
+
+         IF(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) > 0) THEN
+            rtmp1 = sshn_t%grid%area_t(ji,jj) * sshn_t%data(ji,jj) + &
+                 sshn_t%grid%area_t(ji+1,jj) * sshn_t%data(ji+1,jj)
+            sshn_u%data(ji,jj) = 0.5_wp * rtmp1 / sshn_t%grid%area_u(ji,jj) 
+         ELSE IF(sshn_t%grid%tmask(ji,jj) <= 0) THEN
+            sshn_u%data(ji,jj) = sshn_t%data(ji+1,jj)
+         ELSE IF(sshn_t%grid%tmask(ji+1,jj) <= 0) THEN
+            sshn_u%data(ji,jj) = sshn_t%data(ji,jj)
+         END IF
+
       end do
     end do
 
+!dir$ safe_address
     do jj = 2, N-1, 1
+!dir$ vector always
       do ji = 2, M, 1
 
-        call next_sshv_code(ji, jj,                   &
-                            sshn_v%data, sshn_t%data, &
-                            sshn_t%grid%tmask,        &
-                            sshn_t%grid%area_t, sshn_t%grid%area_v)
+!        call next_sshv_code(ji, jj,                   &
+!                            sshn_v%data, sshn_t%data, &
+!                            sshn_t%grid%tmask,        &
+!                            sshn_t%grid%area_t, sshn_t%grid%area_v)
+ 
+         if(sshn_t%grid%tmask(ji,jj) + &
+            sshn_t%grid%tmask(ji,jj+1) <= 0)  cycle !jump over non-computational domain
+         if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) > 0) then
+            rtmp1 = sshn_t%grid%area_t(ji,jj)*sshn_t%data(ji,jj) + &
+                 sshn_t%grid%area_t(ji,jj+1) * sshn_t%data(ji,jj+1)
+            sshn_v%data(ji,jj) = 0.5_wp * rtmp1 / sshn_t%grid%area_v(ji,jj) 
+         else if(sshn_t%grid%tmask(ji,jj) <= 0) then
+            sshn_v%data(ji,jj) = sshn_t%data(ji,jj+1)
+         else if(sshn_t%grid%tmask(ji,jj+1) <= 0) then
+            sshn_v%data(ji,jj) = sshn_t%data(ji,jj)
+         end if
       end do
     end do
 
