@@ -78,6 +78,8 @@ contains
 
 !    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
 !      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared), &
+!$OMP private(ji,jj,rtmp1,rtmp2,rtmp3,rtmp4)
     do jj = 2, N, 1
       do ji = 2, M, 1
 
@@ -95,7 +97,7 @@ contains
                        rdt / sshn_t%grid%area_t(ji,jj)
       end do
     end do
-
+!$OMP END PARALLEL DO
     call timer_stop(idxt)
 
     call timer_start('Momentum',idxt)
@@ -103,8 +105,11 @@ contains
 !    do jj = ua%internal%ystart, ua%internal%ystop, 1
 !      do ji = ua%internal%xstart, ua%internal%xstop, 1
 !dir$ safe_address
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared), &
+!$OMP private(ji, jj, u_e, u_w, v_sc, v_s, deps, v_nc, v_n, depn, &
+!$OMP         uu_w, uu_e, uu_s, uu_n, adv, dudx_e, dudx_w, &
+!$OMP         dudy_s, dudy_n, vis, cor, hpg)
     do jj = 2, N, 1
-! SIMD
 !dir$ vector always
       do ji = 2, M-1, 1
 
@@ -211,10 +216,13 @@ contains
 
       end do
     end do
- 
+!$OMP END PARALLEL DO
+
 !dir$ safe_address
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared), &
+!$OMP private(ji,jj,v_n,v_s,depn,deps,u_wc,u_w,depw,depe,u_ec,u_e,&
+!$OMP vv_s,vv_n,vv_w,vv_e,adv,dvdy_n,dvdy_s,dvdx_w,dvdx_e,vis,cor,hpg)
     do jj = 2, N-1, 1
-! SIMD
 !dir$ vector always
       do ji = 2, M, 1
 
@@ -328,6 +336,7 @@ contains
 
       end do
     end do
+!$OMP END PARALLEL DO
 
     call timer_stop(idxt)
 
@@ -337,8 +346,9 @@ contains
 
 !    DO jj = ssha%internal%ystart, ssha%internal%ystop 
 !       DO ji = ssha%internal%xstart, ssha%internal%xstop 
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared) &
+!$OMP private(ji,jj,amp_tide,omega_tide,rtime)
     DO jj = 2, N
-! SIMD
        DO ji = 2, M
 !          call bc_ssh_code(ji, jj, &
 !                           istp, ssha%data, sshn_t%grid%tmask)
@@ -361,11 +371,14 @@ contains
 
        END DO
     END DO
+!$OMP END PARALLEL DO
 
 
 !    do jj = uwhole_ystart, uwhole_ystop, 1
 !       do ji = uwhole_xstart, uwhole_xstop, 1
 !dir$ safe_address
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared) &
+!$OMP private(ji,jj)
     do jj = 1, N+1, 1
        do ji = 1, M, 1
 !          call bc_solid_u_code(ji, jj, &
@@ -377,12 +390,15 @@ contains
 
        end do
     end do
+!$OMP END PARALLEL DO
 
 !    DO jj = va%whole%ystart, va%whole%ystop, 1 
 !       DO ji = va%whole%xstart, va%whole%xstop, 1
 !    do jj = vwhole_ystart, vwhole_ystop, 1
 !       do ji = vwhole_xstart, vwhole_xstop, 1
 !dir$ safe_address
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared) &
+!$OMP private(ji,jj)
     do jj = 1, N, 1
        do ji = 1, M+1, 1
 !          call bc_solid_v_code(ji,jj, &
@@ -393,10 +409,13 @@ contains
 
       end do
     end do
+!$OMP END PARALLEL DO
 
 !    DO jj = uwhole_ystart, uwhole_ystop, 1
 !       DO ji = uwhole_xstart, uwhole_xstop, 1
 !dir$ safe_address
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared) &
+!$OMP private(ji,jj,jiu)
     DO jj = 1, N+1, 1
        DO ji = 1, M, 1
 !          call bc_flather_u_code(ji,jj, &
@@ -416,12 +435,15 @@ contains
           end if
        END DO
     END DO
+!$OMP END PARALLEL DO
 
 !    DO jj = va%whole%ystart, va%whole%ystop, 1 
 !       DO ji = va%whole%xstart, va%whole%xstop, 1
 !     DO jj = vwhole_ystart, vwhole_ystop, 1
 !       DO ji = vwhole_xstart, vwhole_xstop, 1
 !dir$ safe_address
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared) &
+!$OMP private(ji,jj,jiv)
      DO jj = 1, N, 1
        DO ji = 1, M+1, 1
 !          call bc_flather_v_code(ji,jj, &
@@ -441,6 +463,7 @@ contains
 
        END DO
     END DO
+!$OMP END PARALLEL DO
 
     call timer_stop(idxt)
 
@@ -451,11 +474,20 @@ contains
 !    call copy_field(ua, un)
 !    call copy_field(va, vn)
 !    call copy_field(ssha, sshn_t)
-    un%data = ua%data
-    vn%data = va%data
-    sshn_t%data = ssha%data
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared) &
+!$OMP private(ji,jj)
+     do jj = 1, N+1, 1
+       do ji = 1, M+1, 1
+          un%data(ji,jj) = ua%data(ji,jj)
+          vn%data(ji,jj) = va%data(ji,jj)
+          sshn_t%data(ji,jj) = ssha%data(ji,jj)
+       end do
+    end do
+!$OMP END PARALLEL DO
 
 !dir$ safe_address
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared) &
+!$OMP private(ji,jj,rtmp1)
     do jj = 2, N, 1
 !dir$ vector always
       do ji = 2, M-1, 1
@@ -479,8 +511,11 @@ contains
 
       end do
     end do
+!$OMP END PARALLEL DO
 
 !dir$ safe_address
+!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared) &
+!$OMP private(ji,jj,rtmp1)
     do jj = 2, N-1, 1
 !dir$ vector always
       do ji = 2, M, 1
@@ -503,6 +538,7 @@ contains
          end if
       end do
     end do
+!$OMP END PARALLEL DO
 
     call timer_stop(idxt)
 

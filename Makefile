@@ -45,7 +45,7 @@ nemolite2d:
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
 ${API_LIB}: ${API_DIR}/*.?90
-	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
+	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS} ${OMPFLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
 
 nemolite2d.o: $(COMMON_MODULES)
 
@@ -65,13 +65,13 @@ time_update_mod.o: model_mod.o ${API_LIB}
 # Generic rules
 
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
+	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS) ${OMPFLAGS}
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${API_DIR} -c $<
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${API_DIR} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) -I${API_DIR} -c $<
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${API_DIR} -c $<
 
 clean: 
 	${MAKE} -C ${API_DIR} clean
