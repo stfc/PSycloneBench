@@ -448,9 +448,12 @@ contains
 
     call timer_start('Next', idxt)
 
-    call copy_field(ua, un)
-    call copy_field(va, vn)
-    call copy_field(ssha, sshn_t)
+!    call copy_field(ua, un)
+!    call copy_field(va, vn)
+!    call copy_field(ssha, sshn_t)
+    un%data = ua%data
+    vn%data = va%data
+    sshn_t%data = ssha%data
 
 !dir$ safe_address
     do jj = 2, N, 1
