@@ -106,7 +106,9 @@ contains
                        rdt / sshn_t%grid%area_t(ji,jj)
       end do
     end do
-!$OMP END DO
+! This loop writes to ssha and following momentum loop doesn't use that
+! field. Therefore, we do not need to block.
+!$OMP END DO NOWAIT
     call timer_stop(idxt)
 
     call timer_start('Momentum',idxt)
@@ -223,7 +225,10 @@ contains
 
       end do
     end do
-!$OMP END DO
+! This loop writes to ua and subsequent (momentum in v) loop doesn't
+! use this field (or ssha from the preceeding loop) so we do not 
+! have to block here.
+!$OMP END DO NOWAIT
 
 !dir$ safe_address
 !$OMP DO SCHEDULE(RUNTIME)
@@ -342,9 +347,14 @@ contains
 
       end do
     end do
-!$OMP END DO
+!$OMP END DO NOWAIT
 
     call timer_stop(idxt)
+
+! We block here as, strictly speaking, a thread could enter the loop
+! below and begin writing to ssha while another is still in the very
+! first loop and is also writing to ssha.
+!$OMP BARRIER
 
     ! Apply open and solid boundary conditions
 
@@ -377,7 +387,9 @@ contains
 
        END DO
     END DO
-!$OMP END DO
+! This loop only writes to ssha and subsequent loop does not use
+! this field therefore we need not block.
+!$OMP END DO NOWAIT
 
 
 !    do jj = uwhole_ystart, uwhole_ystop, 1
@@ -389,13 +401,17 @@ contains
 !          call bc_solid_u_code(ji, jj, &
 !                               ua%data, va%grid%tmask)
 
+!> \todo It's more compiler-friendly to separately compare these two
+!! integer masks with zero but that's a kernel-level optimisation.
           if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) == 0)then
              ua%data(ji,jj) = 0._wp
           end if
 
        end do
     end do
-!$OMP END DO
+! This loop only writes to ua and subsequent loop does not use this field
+! or the preceeding ssha so no need to block.
+!$OMP END DO NOWAIT
 
 !    DO jj = va%whole%ystart, va%whole%ystop, 1 
 !       DO ji = va%whole%xstart, va%whole%xstop, 1
@@ -413,6 +429,7 @@ contains
 
       end do
     end do
+! We must block here as next loop reads and writes ua.
 !$OMP END DO
 
 !    DO jj = uwhole_ystart, uwhole_ystop, 1
@@ -428,24 +445,30 @@ contains
           if(sshn_t%grid%tmask(ji,jj) + sshn_t%grid%tmask(ji+1,jj) <= -1) cycle
 
           if(sshn_t%grid%tmask(ji,jj) < 0) then
+             ! Read from column to the right (East) of us
              jiu = ji + 1
              ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj))* &
                   (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
           else if(sshn_t%grid%tmask(ji+1,jj )< 0) then
+             ! Read from column to the left of us
              jiu = ji - 1 
              ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj)) * &
                   (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
           end if
        END DO
     END DO
-!$OMP END DO
+! This loop only writes to ua and following loop does not use that field
+! so no need to block here.
+!$OMP END DO NOWAIT
 
 !    DO jj = va%whole%ystart, va%whole%ystop, 1 
 !       DO ji = va%whole%xstart, va%whole%xstop, 1
 !     DO jj = vwhole_ystart, vwhole_ystop, 1
 !       DO ji = vwhole_xstart, vwhole_xstop, 1
 !dir$ safe_address
-!$OMP DO SCHEDULE(RUNTIME)
+! We cannot execute this loop in (OpenMP) parallel because of the 
+! loop-carried dependency in j.
+!$OMP SINGLE
      DO jj = 1, N, 1
        DO ji = 1, M+1, 1
 !          call bc_flather_v_code(ji,jj, &
@@ -465,14 +488,19 @@ contains
 
        END DO
     END DO
-!$OMP END DO
+!$OMP END SINGLE NOWAIT
 
     call timer_stop(idxt)
+
+! We must block here since following loop reads from ua and va.
+!$OMP BARRIER
 
     ! Time update of fields
 
     call timer_start('Next', idxt)
 
+!> \todo It would be more efficient to merge these copies into the 
+!! subsequent loops that update ssh{u,v}
 !    call copy_field(ua, un)
 !    call copy_field(va, vn)
 !    call copy_field(ssha, sshn_t)
@@ -484,6 +512,7 @@ contains
           sshn_t%data(ji,jj) = ssha%data(ji,jj)
        end do
     end do
+! We have to block here since sshn_t is used in the following loop
 !$OMP END DO
 
 !dir$ safe_address
@@ -511,7 +540,8 @@ contains
 
       end do
     end do
-!$OMP END DO
+! No need to block here since sshn_u is not used in the next loop
+!$OMP END DO NOWAIT
 
 !dir$ safe_address
 !$OMP DO SCHEDULE(RUNTIME)
@@ -537,7 +567,7 @@ contains
          end if
       end do
     end do
-!$OMP END DO
+!$OMP END DO NOWAIT
 
     call timer_stop(idxt)
 
