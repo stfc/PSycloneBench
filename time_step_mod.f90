@@ -442,8 +442,8 @@ contains
 !     DO jj = vwhole_ystart, vwhole_ystop, 1
 !       DO ji = vwhole_xstart, vwhole_xstop, 1
 !dir$ safe_address
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(shared) &
-!$OMP private(ji,jj,jiv)
+! Cannot execute this loop thread-parallel over jj because of loop-carried
+! dependency
      DO jj = 1, N, 1
        DO ji = 1, M+1, 1
 !          call bc_flather_v_code(ji,jj, &
@@ -463,7 +463,6 @@ contains
 
        END DO
     END DO
-!$OMP END PARALLEL DO
 
     call timer_stop(idxt)
 
