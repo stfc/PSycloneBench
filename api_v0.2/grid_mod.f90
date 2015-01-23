@@ -254,13 +254,21 @@ contains
        call gocean_stop('grid_init: failed to allocate arrays')
     end if
 
-    ! Copy-in the externally-supplied T-mask, if any
+    ! Copy-in the externally-supplied T-mask, if any. If using OpenMP
+    ! then apply first-touch policy for data locality.
     if( present(tmask) )then
        allocate(grid%tmask(grid%nx,grid%ny), stat=ierr(1))
        if( ierr(1) /= 0 )then
           call gocean_stop('grid_init: failed to allocate array for T mask')
        end if
-       grid%tmask(:,:) = tmask(:,:)
+!$OMP PARALLEL DO schedule(runtime), default(none), private(ji,jj), &
+!$OMP shared(grid, tmask)
+       do jj = 1, grid%ny
+          do ji = 1, grid%nx
+             grid%tmask(ji,jj) = tmask(ji,jj)
+          end do
+       end do
+!$OMP END PARALLEL DO
     else
        ! No T-mask supplied. Check that grid has PBCs in both
        ! x and y dimensions otherwise we won't know what to do.
@@ -278,44 +286,63 @@ contains
 
     ! Initialise the horizontal scale factors for a regular,
     ! orthogonal mesh. (Constant spatial resolution.)
-    grid%dx_t(:, :)   = grid%dx
-    grid%dy_t(:, :)   = grid%dy
+!$OMP PARALLEL DO schedule(runtime), default(none), private(ji,jj), &
+!$OMP shared(grid)
+    do jj = 1, grid%ny
+       do ji = 1, grid%nx
+          grid%dx_t(ji, jj)   = grid%dx
+          grid%dy_t(ji, jj)   = grid%dy
 
-    grid%dx_u(:, :)   = grid%dx
-    grid%dy_u(:, :)   = grid%dy
+          grid%dx_u(ji, jj)   = grid%dx
+          grid%dy_u(ji, jj)   = grid%dy
 
-    grid%dx_v(:, :)   = grid%dx
-    grid%dy_v(:, :)   = grid%dy
+          grid%dx_v(ji, jj)   = grid%dx
+          grid%dy_v(ji, jj)   = grid%dy
 
-    grid%dx_f(:, :)   = grid%dx
-    grid%dy_f(:, :)   = grid%dy
+          grid%dx_f(ji, jj)   = grid%dx
+          grid%dy_f(ji, jj)   = grid%dy
+       end do
+    end do
+!$OMP END PARALLEL DO
 
     ! calculate t,u,v cell area
+!$OMP PARALLEL DO schedule(runtime), default(none), private(ji,jj), &
+!$OMP shared(grid)
     do jj = 1, grid%ny
        do ji = 1, grid%nx
           grid%area_t(ji,jj) = grid%dx_t(ji,jj) * grid%dy_t(ji,jj)
-       end do
-    end do
-  
-    DO jj = 1, grid%ny
-       DO ji = 1, grid%nx
-          grid%area_u(ji,jj) = grid%dx_u(ji,jj) * grid%dy_u(ji,jj)
-       END DO
-    END DO
 
-    DO jj = 1, grid%ny
-       DO ji = 1, grid%nx
+          grid%area_u(ji,jj) = grid%dx_u(ji,jj) * grid%dy_u(ji,jj)
+
           grid%area_v(ji,jj) = grid%dx_v(ji,jj) * grid%dy_v(ji,jj)
        END DO
     END DO
+!$OMP END PARALLEL DO
 
     ! -here is an f-plane testing case
     ! i.e. the Coriolis parameter is set to a constant value.
-    grid%gphiu(:, :) = 50._wp
-    grid%gphiv(:, :) = 50._wp
-    grid%gphif(:, :) = 50._wp
+!$OMP PARALLEL DO schedule(runtime), default(none), private(ji,jj), &
+!$OMP shared(grid)
+    do jj = 1, grid%ny
+       do ji = 1, grid%nx
+          grid%gphiu(ji, jj) = 50._wp
+          grid%gphiv(ji, jj) = 50._wp
+          grid%gphif(ji, jj) = 50._wp
+       end do
+    end do
+!$OMP END PARALLEL DO
 
     ! Co-ordinates of the T points
+    ! Do first-touch initialisation before setting actual values
+!$OMP PARALLEL DO schedule(runtime), default(none), private(ji,jj), &
+!$OMP shared(grid)
+    do jj = 1, grid%ny
+       do ji = 1, grid%nx
+          grid%xt(ji,jj) = 0.0
+          grid%yt(ji,jj) = 0.0
+       end do
+    end do
+
     xstart = grid%simulation_domain%xstart
     xstop  = grid%simulation_domain%xstop
     ystart = grid%simulation_domain%ystart
