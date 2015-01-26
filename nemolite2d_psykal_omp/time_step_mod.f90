@@ -445,7 +445,8 @@ contains
 !     DO jj = vwhole_ystart, vwhole_ystop, 1
 !       DO ji = vwhole_xstart, vwhole_xstop, 1
 !dir$ safe_address
-!$OMP DO SCHEDULE(RUNTIME)
+! We cannot parallelise this over jj because of the loop-carried j dependence
+!$OMP SINGLE
      DO jj = 1, N, 1
        DO ji = 1, M+1, 1
 !          call bc_flather_v_code(ji,jj, &
@@ -465,7 +466,7 @@ contains
 
        END DO
     END DO
-!$OMP END DO
+!$OMP END SINGLE
 
     call timer_stop(idxt)
 
