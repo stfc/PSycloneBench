@@ -84,7 +84,7 @@ contains
     !vwhole_ystart = 1 ! vystart - NBOUNDARY
     !vwhole_ystop  = N ! vystop  + NBOUNDARY
 
-    call timer_start('Continuity',idxt)
+!    call timer_start('Continuity',idxt)
 
 !    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
 !      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
@@ -109,9 +109,9 @@ contains
 ! This loop writes to ssha and following momentum loop doesn't use that
 ! field. Therefore, we do not need to block.
 !$OMP END DO NOWAIT
-    call timer_stop(idxt)
+!    call timer_stop(idxt)
 
-    call timer_start('Momentum',idxt)
+!    call timer_start('Momentum',idxt)
 
 !    do jj = ua%internal%ystart, ua%internal%ystop, 1
 !      do ji = ua%internal%xstart, ua%internal%xstop, 1
@@ -349,7 +349,7 @@ contains
     end do
 !$OMP END DO NOWAIT
 
-    call timer_stop(idxt)
+!    call timer_stop(idxt)
 
 ! We block here as, strictly speaking, a thread could enter the loop
 ! below and begin writing to ssha while another is still in the very
@@ -358,7 +358,7 @@ contains
 
     ! Apply open and solid boundary conditions
 
-    call timer_start('BCs', idxt)
+!    call timer_start('BCs', idxt)
 
 !    DO jj = ssha%internal%ystart, ssha%internal%ystop 
 !       DO ji = ssha%internal%xstart, ssha%internal%xstop 
@@ -490,14 +490,14 @@ contains
     END DO
 !$OMP END SINGLE NOWAIT
 
-    call timer_stop(idxt)
+!    call timer_stop(idxt)
 
 ! We must block here since following loop reads from ua and va.
 !$OMP BARRIER
 
     ! Time update of fields
 
-    call timer_start('Next', idxt)
+!    call timer_start('Next', idxt)
 
 !> \todo It would be more efficient to merge these copies into the 
 !! subsequent loops that update ssh{u,v}
@@ -512,7 +512,9 @@ contains
           sshn_t%data(ji,jj) = ssha%data(ji,jj)
        end do
     end do
-! We have to block here since sshn_t is used in the following loop
+! We have to block here since sshn_t is used in the following loop.
+! We could avoid this by altering the following two loop nests to read from
+! ssha%data instead of sshn_t%data.
 !$OMP END DO
 
 !dir$ safe_address
@@ -569,7 +571,7 @@ contains
     end do
 !$OMP END DO NOWAIT
 
-    call timer_stop(idxt)
+!    call timer_stop(idxt)
 
 !$OMP END PARALLEL
 
