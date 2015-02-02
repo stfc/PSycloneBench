@@ -432,34 +432,6 @@ contains
 ! We must block here as next loop reads and writes ua.
 !$OMP END DO
 
-!    DO jj = uwhole_ystart, uwhole_ystop, 1
-!       DO ji = uwhole_xstart, uwhole_xstop, 1
-!dir$ safe_address
-!$OMP DO SCHEDULE(RUNTIME)
-    DO jj = 1, N+1, 1
-       DO ji = 1, M, 1
-!          call bc_flather_u_code(ji,jj, &
-!                                 ua%data, hu%data, sshn_u%data, &
-!                                 sshn_u%grid%tmask)
-          ! Check whether this point lies within the domain
-          if(sshn_t%grid%tmask(ji,jj) + sshn_t%grid%tmask(ji+1,jj) <= -1) cycle
-
-          if(sshn_t%grid%tmask(ji,jj) < 0) then
-             ! Read from column to the right (East) of us
-             jiu = ji + 1
-             ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj))* &
-                  (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
-          else if(sshn_t%grid%tmask(ji+1,jj )< 0) then
-             ! Read from column to the left of us
-             jiu = ji - 1 
-             ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj)) * &
-                  (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
-          end if
-       END DO
-    END DO
-! This loop only writes to ua and following loop does not use that field
-! so no need to block here.
-!$OMP END DO NOWAIT
 
 !    DO jj = va%whole%ystart, va%whole%ystop, 1 
 !       DO ji = va%whole%xstart, va%whole%xstop, 1
@@ -489,6 +461,35 @@ contains
        END DO
     END DO
 !$OMP END SINGLE NOWAIT
+
+!    DO jj = uwhole_ystart, uwhole_ystop, 1
+!       DO ji = uwhole_xstart, uwhole_xstop, 1
+!dir$ safe_address
+!$OMP DO SCHEDULE(RUNTIME)
+    DO jj = 1, N+1, 1
+       DO ji = 1, M, 1
+!          call bc_flather_u_code(ji,jj, &
+!                                 ua%data, hu%data, sshn_u%data, &
+!                                 sshn_u%grid%tmask)
+          ! Check whether this point lies within the domain
+          if(sshn_t%grid%tmask(ji,jj) + sshn_t%grid%tmask(ji+1,jj) <= -1) cycle
+
+          if(sshn_t%grid%tmask(ji,jj) < 0) then
+             ! Read from column to the right (East) of us
+             jiu = ji + 1
+             ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj))* &
+                  (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
+          else if(sshn_t%grid%tmask(ji+1,jj )< 0) then
+             ! Read from column to the left of us
+             jiu = ji - 1 
+             ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj)) * &
+                  (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
+          end if
+       END DO
+    END DO
+! This loop only writes to ua and following loop does not use that field
+! so no need to block here.
+!$OMP END DO NOWAIT
 
 !    call timer_stop(idxt)
 
