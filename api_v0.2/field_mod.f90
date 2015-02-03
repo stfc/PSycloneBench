@@ -3,6 +3,7 @@ module field_mod
   use region_mod
   use halo_mod
   use grid_mod
+  use omp_tiling_mod
   use gocean_mod, only: gocean_stop
   implicit none
 
@@ -44,6 +45,13 @@ module field_mod
      real(wp), dimension(:,:), allocatable :: data
   end type r2d_field
 
+  type, public, extends(field_type) :: tiled_r2d_field
+     integer :: ntiles
+     type(tile_type), dimension(:), allocatable :: tile
+     !> Array holding the actual field values
+     real(wp), dimension(:,:), allocatable :: data
+  end type tiled_r2d_field
+
   !interface set_field
   !   module procedure set_scalar_field
   !end interface set_field
@@ -70,11 +78,20 @@ module field_mod
      module procedure r2d_field_constructor
   end interface r2d_field
 
+  ! User-defined constructor for tiled_r2d_field type objects
+  interface tiled_r2d_field
+     module procedure tiled_r2d_field_constructor
+  end interface tiled_r2d_field
+
   !> Interface for the field checksum operation. Overloaded to take either
   !! a field object or a 2D, real(wp) array.
   interface field_checksum
-     module procedure fld_checksum, array_checksum
+     module procedure tiled_fld_checksum, fld_checksum, array_checksum
   end interface field_checksum
+
+  !> Info on the tile sizes
+  INTEGER, SAVE                                    :: max_tile_width
+  INTEGER, SAVE                                    :: max_tile_height
 
   public increment_field
   public copy_field
@@ -156,52 +173,9 @@ contains
     ! by the supplied grid_ptr argument
     self%grid => grid
 
-    select case(grid_points)
-
-    case(U_POINTS)
-       write(fld_type, "('C-U')")
-       call cu_field_init(self)
-    case(V_POINTS)
-       write(fld_type, "('C-V')")
-       call cv_field_init(self)
-    case(T_POINTS)
-       write(fld_type, "('C-T')")
-       call ct_field_init(self)
-    case(F_POINTS)
-       write(fld_type, "('C-F')")
-       call cf_field_init(self)
-    case(ALL_POINTS)
-       write(fld_type, "('C-All')")
-       call field_init(self)
-    case default
-       call gocean_stop('r2d_field_constructor: ERROR: invalid '//&
-                        'specifier for type of mesh points')
-    end select
-
-    ! Compute and store dimensions of internal region of field
-    self%internal%nx = self%internal%xstop - self%internal%xstart + 1
-    self%internal%ny = self%internal%ystop - self%internal%ystart + 1
-
-    ! In addition to the 'internal region' of the field, we may have
-    ! external points that define B.C.'s or that act as halos. Here
-    ! we store the full extent of the field, inclusive of such
-    ! points.
-    !> \todo Replace the use of NBOUNDARY here with info. computed
-    !! from the T-point mask.
-    if(self%grid%boundary_conditions(1) /= BC_PERIODIC)then
-       self%whole%xstart = self%internal%xstart - NBOUNDARY
-       self%whole%xstop  = self%internal%xstop  + NBOUNDARY
-    else
-       self%whole%xstart = self%internal%xstart - NBOUNDARY
-       self%whole%xstop  = self%internal%xstop  + NBOUNDARY
-    end if
-    if(self%grid%boundary_conditions(2) /= BC_PERIODIC)then
-       self%whole%ystart = self%internal%ystart - NBOUNDARY
-       self%whole%ystop  = self%internal%ystop  + NBOUNDARY
-    else
-       self%whole%ystart = self%internal%ystart - NBOUNDARY
-       self%whole%ystop  = self%internal%ystop  + NBOUNDARY
-    end if
+    ! Set-up the limits of the 'internal' region of this field
+    !
+    call set_field_bounds(self,grid_points)
 
     ! We allocate all fields to have the same extent as that
     ! with the greatest extents. This enables the (Cray) compiler
@@ -254,9 +228,148 @@ contains
 
   !===================================================
 
+  function tiled_r2d_field_constructor(grid,    &
+                                       grid_points) result(self)
+    implicit none
+    ! Arguments
+    !> Pointer to the grid on which this field lives
+    type(grid_type), intent(in), target  :: grid
+    !> Which grid-point type the field is defined on
+    integer,         intent(in)          :: grid_points
+    ! Local declarations
+    type(tiled_r2d_field) :: self
+    integer :: ierr
+    integer :: ji, jj
+    !> The upper bounds actually used to allocate arrays (as opposed
+    !! to the limits carried around with the field)
+    integer :: upper_x_bound, upper_y_bound
+
+    ! Set this field's grid pointer to point to the grid pointed to
+    ! by the supplied grid_ptr argument
+    self%grid => grid
+
+    ! Set-up the limits of the 'internal' region of this field
+    !
+    call set_field_bounds(self,grid_points)
+
+    call tile_setup(self)
+
+    ! We allocate all fields to have the same extent as that
+    ! with the greatest extents. This enables the (Cray) compiler
+    ! to safely evaluate code within if blocks that are
+    ! checking for conditions at the boundary of the domain.
+    ! Hence we use self%whole%{x,y}stop + 1...
+    !> \todo Implement calculation of largest array extents
+    !! required by any field type rather than hard-wiring
+    !! a simple increase of each extent.
+    upper_x_bound = self%whole%xstop + 1
+    upper_y_bound = self%whole%ystop + 1
+
+    !write(*,"('Allocating ',(A),' field with bounds: (',I1,':',I3, ',',I1,':',I3,')')") &
+    !           TRIM(ADJUSTL(fld_type)), &
+    !           1, upper_x_bound, 1, upper_y_bound
+
+    !allocate(self%data(self%internal%xstart-1:self%internal%xstop+1, &
+    !                   self%internal%ystart-1:self%internal%ystop+1),&
+    !                   Stat=ierr)
+    ! Allocating with a lower bound != 1 causes problems whenever
+    ! array passed as assumed-shape dummy argument because lower
+    ! bounds default to 1 in called unit.
+    ! However, all loops will be in the generated, middle layer and
+    ! the generator knows the array bounds. This may give us the
+    ! ability to solve this problem (by passing array bounds to the
+    ! kernels).
+    allocate(self%data(1:upper_x_bound, 1:upper_y_bound), &
+                       Stat=ierr)
+    if(ierr /= 0)then
+       call gocean_stop('r2d_field_constructor: ERROR: failed to '// &
+                        'allocate field')
+    end if
+
+    ! Since we're allocating the arrays to be larger than strictly
+    ! required we explicitly set all elements to -999 in case the code
+    ! does access 'out-of-bounds' elements during speculative
+    ! execution. If we're running with OpenMP this also gives
+    ! us the opportunity to do a 'first touch' policy to aid with
+    ! memory<->thread locality...
+!$OMP PARALLEL DO schedule(runtime), default(none), &
+!$OMP private(ji,jj), shared(self, upper_x_bound, upper_y_bound)
+    do jj = 1, upper_y_bound, 1
+       do ji = 1, upper_x_bound, 1
+          self%data(ji,jj) = -999.0
+       end do
+    end do
+!$OMP END PARALLEL DO
+
+  end function tiled_r2d_field_constructor
+
+  !===================================================
+
+  subroutine set_field_bounds(fld, grid_points)
+    implicit none
+    !> The field we're working on. We use class as we want this
+    ! to be polymorphic as this routine doesn't care whether the
+    ! field is tiled or not.
+    class(field_type), intent(inout) :: fld
+    !> Which grid-point type the field is defined on
+    integer,          intent(in)    :: grid_points
+    ! Locals
+    character(len=8) :: fld_type
+
+    select case(grid_points)
+
+    case(U_POINTS)
+       write(fld_type, "('C-U')")
+       call cu_field_init(fld)
+    case(V_POINTS)
+       write(fld_type, "('C-V')")
+       call cv_field_init(fld)
+    case(T_POINTS)
+       write(fld_type, "('C-T')")
+       call ct_field_init(fld)
+    case(F_POINTS)
+       write(fld_type, "('C-F')")
+       call cf_field_init(fld)
+    case(ALL_POINTS)
+       write(fld_type, "('C-All')")
+       call field_init(fld)
+    case default
+       call gocean_stop('r2d_field_constructor: ERROR: invalid '//&
+                        'specifier for type of mesh points')
+    end select
+
+    ! Compute and store dimensions of internal region of field
+    fld%internal%nx = fld%internal%xstop - fld%internal%xstart + 1
+    fld%internal%ny = fld%internal%ystop - fld%internal%ystart + 1
+
+    ! In addition to the 'internal region' of the field, we may have
+    ! external points that define B.C.'s or that act as halos. Here
+    ! we store the full extent of the field, inclusive of such
+    ! points.
+    !> \todo Replace the use of NBOUNDARY here with info. computed
+    !! from the T-point mask.
+    if(fld%grid%boundary_conditions(1) /= BC_PERIODIC)then
+       fld%whole%xstart = fld%internal%xstart - NBOUNDARY
+       fld%whole%xstop  = fld%internal%xstop  + NBOUNDARY
+    else
+       fld%whole%xstart = fld%internal%xstart - NBOUNDARY
+       fld%whole%xstop  = fld%internal%xstop  + NBOUNDARY
+    end if
+    if(fld%grid%boundary_conditions(2) /= BC_PERIODIC)then
+       fld%whole%ystart = fld%internal%ystart - NBOUNDARY
+       fld%whole%ystop  = fld%internal%ystop  + NBOUNDARY
+    else
+       fld%whole%ystart = fld%internal%ystart - NBOUNDARY
+       fld%whole%ystop  = fld%internal%ystop  + NBOUNDARY
+    end if
+
+  end subroutine set_field_bounds
+
+  !===================================================
+
   subroutine field_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
     ! Locals
     integer :: M, N
 
@@ -280,7 +393,7 @@ contains
 
   subroutine cu_field_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     fld%defined_on = U_POINTS
 
@@ -303,7 +416,7 @@ contains
 
   subroutine cu_sw_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     ! Set up a field defined on U points when the grid has
     ! a South-West offset:
@@ -383,7 +496,7 @@ contains
 
   subroutine cu_ne_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     ! Set up a field defined on U points when the grid types have 
     ! a North-East offset relative to the T point.
@@ -451,7 +564,7 @@ contains
 
   subroutine cv_field_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     fld%defined_on = V_POINTS
 
@@ -474,7 +587,7 @@ contains
 
   subroutine cv_sw_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     if(fld%grid%boundary_conditions(2) == BC_PERIODIC)then
        ! When implementing periodic boundary conditions, all
@@ -533,7 +646,7 @@ contains
 
   subroutine cv_ne_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     ! ji indexing:
     ! Lowermost ji index of the V points will be the same as the T's.
@@ -583,7 +696,7 @@ contains
 
   subroutine ct_field_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     fld%defined_on = T_POINTS
 
@@ -606,7 +719,7 @@ contains
 
   subroutine ct_sw_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     ! When updating a quantity on T points we write to:
     ! (using x to indicate a location that is written):
@@ -649,7 +762,7 @@ contains
 
   subroutine ct_ne_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     ! When updating a quantity on T points with a NE offset
     ! we write to (using x to indicate a location that is written):
@@ -688,7 +801,7 @@ contains
 
   subroutine cf_field_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     fld%defined_on = F_POINTS
 
@@ -711,7 +824,7 @@ contains
 
   subroutine cf_sw_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     ! When updating a quantity on F points we write to:
     ! (using x to indicate a location that is written):
@@ -772,7 +885,7 @@ contains
 
   subroutine cf_ne_init(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
 
     ! When updating a quantity on F points we write to:
     ! (using x to indicate a location that is written
@@ -922,6 +1035,18 @@ contains
 
   !===================================================
 
+  function tiled_fld_checksum(field) result(val)
+    implicit none
+    type(tiled_r2d_field), intent(in) :: field
+    real(wp) :: val
+    !> \todo Implement tiled_fld_checksum!
+    val = 0.0
+    call gocean_stop('ERROR: Implement tiled_fld_checksum!')
+
+  end function tiled_fld_checksum
+
+  !===================================================
+
   !> Compute the checksum of ALL of the elements of supplied array
   function array_checksum(field) result(val)
     implicit none
@@ -936,7 +1061,7 @@ contains
 
   subroutine init_periodic_bc_halos(fld)
     implicit none
-    type(r2d_field), intent(inout) :: fld
+    class(field_type), intent(inout) :: fld
     ! Locals
     integer :: ihalo
 
@@ -1005,5 +1130,310 @@ contains
     end if
 
   end subroutine init_periodic_bc_halos
+
+  !================================================
+
+  SUBROUTINE tile_setup(fld, nx_arg, ny_arg)
+    use omp_lib, only: omp_get_max_threads
+    implicit none
+    !> Dimensions of the model mesh
+    type(tiled_r2d_field), intent(inout) :: fld
+    !> Optional specification of the dimensions of the tiling grid
+    integer, intent(in), optional :: nx_arg, ny_arg
+    integer :: nx, ny
+    INTEGER :: idx, idy, ival, jval ! For tile extent calculation
+    integer :: internal_width, internal_height
+    INTEGER :: ierr, nwidth
+    INTEGER :: ji,jj, ith
+    INTEGER :: nthreads       ! No. of OpenMP threads being used
+    INTEGER :: jover, junder, idytmp, jover_per_row, junder_per_row
+    INTEGER :: iover, iunder, idxtmp, iover_per_col, iunder_per_col
+    LOGICAL :: nested_par     ! Whether OpenMP supports nested parallelism
+    ! For doing stats on tile sizes
+    INTEGER :: nvects, nvects_sum, nvects_min, nvects_max 
+    LOGICAL, PARAMETER :: print_tiles = .TRUE.
+    ! Whether to automatically compute the dimensions of the tiling grid
+    logical :: auto_tile
+    integer :: xlen, ylen
+    integer :: ntilex, ntiley
+
+    xlen = fld%whole%xstop
+    ylen = fld%whole%ystop
+
+    ! Set-up regular grid of tiles
+    auto_tile = .TRUE.
+
+    ! Dimensions of the grid of tiles. 
+    if(get_grid_dims(nx,ny) )then
+       ntilex = nx
+       ntiley = ny
+       auto_tile = .FALSE.
+    else if( present(nx_arg) .and. present(ny_arg) )then
+       ntilex = nx_arg
+       ntiley = ny_arg
+       auto_tile = .FALSE.
+    else
+       ntilex = 1
+       ntiley = 1
+    end if
+
+    
+    fld%ntiles = ntilex * ntiley
+
+    nthreads = 1
+!$  nthreads = omp_get_max_threads()
+    WRITE (*,"(/'Have ',I3,' OpenMP threads available.')") nthreads
+
+    ! If we've not manually specified a grid of tiles then use the no. of
+    ! threads
+    IF(fld%ntiles == 1 .AND. auto_tile)fld%ntiles = nthreads
+
+    ALLOCATE(fld%tile(fld%ntiles), Stat=ierr)
+    IF(ierr /= 0 )THEN
+       call gocean_stop('Harness: ERROR: failed to allocate tiling structures')
+    END IF
+
+    IF(auto_tile)THEN
+
+       ntilex = INT( SQRT(REAL(fld%ntiles)) )
+       DO WHILE(MOD(fld%ntiles,ntilex) /= 0)
+          ntilex = ntilex - 1
+       END DO
+       ntiley = fld%ntiles/ntilex
+
+       ! Match longest dimension of MPI domain to longest dimension of 
+       ! thread grid
+       IF(xlen > ylen)THEN
+          IF( ntilex < ntiley )THEN
+             ierr   = ntiley
+             ntiley = ntilex
+             ntilex = ierr
+          END IF
+       ELSE
+          ! N >= M so want nthready >= nthreadx
+          IF( ntiley < ntilex )THEN
+             ierr   = ntiley
+             ntiley = ntilex
+             ntilex = ierr
+          END IF
+       END IF
+
+    END IF ! automatic determination of tiling grid
+
+    WRITE (*,"('OpenMP thread tiling using grid of ',I3,'x',I3)") ntilex,ntiley
+
+    ! Tiles at left and right of domain only have single
+    ! overlap. Every other tile has two overlaps. So: 
+    ! xlen = (ntilex-2)*(idx-2) + 2*(idx-1)
+    !      = ntilex.idx - 2.ntilex - 2.idx + 4 + 2.idx - 2
+    !      = ntilex.idx + 2 - 2.ntilex
+    !=> idx = (xlen - 2 + 2.ntilex)/ntilex
+    ! where idx is the whole width of a tile.
+    !idx = NINT(REAL(xlen - 2 + 2*ntilex)/REAL(ntilex))
+    !idy = NINT(REAL(ylen - 2 + 2*ntiley)/REAL(ntiley))
+    ! Alternatively, if we think about the internal regions of the tiles,
+    ! then they should share the domain between them:
+    internal_width = NINT(REAL(xlen) / REAL(ntilex))
+    internal_height = NINT(REAL(ylen) / REAL(ntiley))
+
+    ! Integer arithmetic means that ntiley tiles of height idy might
+    ! actually span a height greater or less than N. If so, we try and
+    ! reduce the height of each row by just one until we've accounted
+    ! for the <jover> extra rows.
+    !nwidth = (ntiley-2)*(idy-2) + 2*(idy-1)
+    nwidth = ntiley * internal_height
+    IF(nwidth > ylen)THEN
+       jover  = nwidth - ylen
+       junder = 0
+    ELSE IF(nwidth < ylen)THEN
+       jover  = 0
+       junder = ylen - nwidth
+    ELSE
+       jover  = 0
+       junder = 0
+    END IF
+    ! Ditto for x dimension
+    !nwidth = (ntilex-2)*(idx-2) + 2*(idx-1)
+    nwidth = ntilex * internal_width
+    IF(nwidth > xlen)THEN
+       iover  = nwidth - xlen
+       iunder = 0
+    ELSE IF(nwidth < xlen)THEN
+       iover  = 0
+       iunder = xlen - nwidth
+    ELSE
+       iover  = 0
+       iunder = 0
+    END IF
+
+    ! For AVX (256-bit vector) instructions, I think we want
+    ! MOD(idx,4) == 0 idx = idx + (4 - MOD(idx,4))
+
+    WRITE(*,"('Tile width = ',I4,', tile height = ',I4)") &
+         internal_width, internal_height
+    WRITE(*,"('iover = ',I3,', iunder = ',I3)") iover, iunder
+    WRITE(*,"('jover = ',I3,', junder = ',I3)") jover, junder
+
+    ith = 1
+    jval = 1
+
+    nvects_max = 0
+    nvects_min = 1000000
+    nvects_sum = 0
+    max_tile_width  = 0
+    max_tile_height = 0
+
+    IF(print_tiles)WRITE(*,"(/'Tile dimensions:')")
+
+    DO jj = 1, ntiley, 1
+
+       ! If necessary, correct the height of this tile row
+       IF(jover > 0)THEN
+          idytmp = internal_height - 1
+          jover = jover - 1
+       ELSE IF(junder > 0)THEN
+          idytmp = internal_height + 1
+          junder = junder - 1
+       ELSE
+          idytmp = internal_height
+       END IF
+
+       ival = 1
+
+       DO ji = 1, ntilex, 1
+         
+          ! If necessary, correct the width of this tile column
+          IF(iover > 0)THEN
+             idxtmp = internal_width - 1
+             iover = iover - 1
+          ELSE IF(iunder > 0)THEN
+             idxtmp = internal_width + 1
+             iunder = iunder - 1
+          ELSE
+             idxtmp = internal_width
+          END IF
+
+          if(ji == 1)then
+             fld%tile(ith)%whole%xstart    = ival
+             fld%tile(ith)%internal%xstart = ival
+          else
+             fld%tile(ith)%whole%xstart    = ival - 1
+             fld%tile(ith)%internal%xstart = ival
+          end if
+          
+          IF(ji == ntilex)THEN
+             fld%tile(ith)%internal%xstop = xlen
+             fld%tile(ith)%whole%xstop = tile(ith)%internal%xstop
+          ELSE
+             fld%tile(ith)%internal%xstop =  MIN(xlen-1, &
+                                     fld%tile(ith)%internal%xstart + idxtmp - 1)
+             fld%tile(ith)%whole%xstop = fld%tile(ith)%internal%xstop + 1
+          END IF
+          
+          if(jj == 1)then
+             fld%tile(ith)%whole%ystart    = jval
+             fld%tile(ith)%internal%ystart = jval
+          else
+             fld%tile(ith)%whole%ystart    = jval - 1
+             fld%tile(ith)%internal%ystart = jval
+          end if
+
+          IF(jj /= ntiley)THEN
+             fld%tile(ith)%internal%ystop =  MIN(fld%tile(ith)%internal%ystart+idytmp-1, &
+                                             ylen-1)
+             fld%tile(ith)%whole%ystop = fld%tile(ith)%internal%ystop + 1
+          ELSE
+             fld%tile(ith)%internal%ystop = ylen
+             fld%tile(ith)%whole%ystop = fld%tile(ith)%internal%ystop
+          END IF
+
+          IF(print_tiles)THEN
+             WRITE(*,"('tile[',I4,'](',I4,':',I4,')(',I4,':',I4,'), interior:(',I4,':',I4,')(',I4,':',I4,') ')")                                       &
+                  ith,                                                 &
+                  fld%tile(ith)%whole%xstart, fld%tile(ith)%whole%xstop,       &
+                  fld%tile(ith)%whole%ystart, fld%tile(ith)%whole%ystop,       &
+                  fld%tile(ith)%internal%xstart, fld%tile(ith)%internal%xstop, &
+                  fld%tile(ith)%internal%ystart, fld%tile(ith)%internal%ystop
+          END IF
+
+          ! Collect some data on the distribution of tile sizes for 
+          ! loadbalance info
+          nvects = (fld%tile(ith)%internal%xstop - fld%tile(ith)%internal%xstart + 1) &
+                  * (fld%tile(ith)%internal%ystop - fld%tile(ith)%internal%ystart + 1)
+          nvects_sum = nvects_sum + nvects
+          nvects_min = MIN(nvects_min, nvects)
+          nvects_max = MAX(nvects_max, nvects)
+
+          ! For use when allocating tile-'private' work arrays
+          max_tile_width  = MAX(max_tile_width, &
+                          (fld%tile(ith)%whole%xstop - fld%tile(ith)%whole%xstart + 1) )
+          max_tile_height = MAX(max_tile_height, &
+                          (fld%tile(ith)%whole%ystop - fld%tile(ith)%whole%ystart + 1) )
+
+          ival = fld%tile(ith)%whole%xstop
+          ith = ith + 1
+       END DO
+       jval = fld%tile(ith-1)%whole%ystop
+    END DO
+
+    ! Allocate tiles themselves
+!!$    do ith = 1, fld%ntiles, 1
+!!$       allocate(fld%tile(ith)%data(fld%tile(ith)%whole%xstop, &
+!!$                                   fld%tile(ith)%whole%ystop)
+!!$    end do
+
+    ! First-touch policy
+!OMP PARALLEL DO schedule(runtime), default(none), shared(fld), &
+!OMP             private(ith)
+!!$    do ith = 1, fld%ntiles, 1
+!!$       fld%tile(ith)%data(:,:) = 0.0
+!!$    end do
+!OMP END PARALLEL DO
+
+    ! Print tile-size statistics
+    WRITE(*,"(/'Mean tile size = ',F8.1,' pts = ',F7.1,' KB')") &
+                                 REAL(nvects_sum)/REAL(fld%ntiles), &
+                                 REAL(8*nvects_sum)/REAL(fld%ntiles*1024)
+    WRITE(*,"('Min,max tile size (pts) = ',I6,',',I6)") nvects_min,nvects_max
+    WRITE(*,"('Tile load imbalance (%) =',F6.2)") &
+                           100.0*(nvects_max-nvects_min)/REAL(nvects_min)
+    WRITE (*,"('Max tile dims are ',I4,'x',I4/)") max_tile_width, &
+                                                  max_tile_height
+
+  END SUBROUTINE tile_setup
+
+  !==============================================
+
+  function get_grid_dims(nx, ny) result(success)
+    implicit none
+    integer, intent(inout) :: nx, ny
+    logical :: success
+    character(len=20) :: lstr
+    integer :: idx, ierr
+
+    success = .FALSE.
+
+    call get_environment_variable(NAME='GOCEAN_OMP_GRID', VALUE=lstr, &
+                                  STATUS=ierr)
+
+    if(ierr /= 0)return
+
+    ! We expect the string to have the format 'AxB' where A and B are
+    ! integers.
+    idx = index(lstr, 'x')
+    if(idx == 0)then
+       write (*,"(/'shallow_omp_mod::get_grid_dims: failed to parse ' &
+                 &  'GOCEAN_OMP_GRID string: ',(A))") TRIM(lstr)
+       write (*,"('   -  will use defaults for dimensions of tiling grid')")
+       return
+    endif
+
+    read(lstr(1:idx-1),*,iostat=ierr) nx
+    if(ierr /= 0)return
+
+    read(lstr(idx+1:),*,iostat=ierr) ny
+    if(ierr == 0)success = .TRUE.
+
+  end function get_grid_dims
 
 end module field_mod

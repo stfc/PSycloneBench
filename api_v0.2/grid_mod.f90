@@ -228,7 +228,7 @@ contains
        ! sides of our rectangular domain. This is actually unnecessary
        ! - depending on the variable staggering used only one of the
        ! E/W halos and one of the N/S halos are required. However,
-       ! this is an optimisation and this framework must be developed
+       ! that is an optimisation and this framework must be developed
        ! in such a way that that optimisation is supported.
        grid%nx = m + 2*HALO_WIDTH_X
        grid%ny = n + 2*HALO_WIDTH_Y
@@ -357,7 +357,6 @@ contains
     DO jj = ystart+1, ystop
       grid%yt(xstart:xstop,jj) = grid%yt(xstart:xstop, jj-1) + grid%dy
     END DO
-
 
   end subroutine grid_init
 
