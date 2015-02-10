@@ -7,7 +7,7 @@ module omp_tiling_mod
   TYPE :: tile_type
      type(region_type) :: internal
      type(region_type) :: whole
-     real(wp), dimension(:,:), allocatable :: data
+     !real(wp), dimension(:,:), allocatable :: data
   END TYPE tile_type
 
   INTEGER, SAVE                                    :: ntiles
@@ -21,7 +21,7 @@ module omp_tiling_mod
   INTEGER, SAVE                                    :: max_tile_height
 
   public openmp_grid_init
-  public tile_type, ntiles, tile
+  public tile_type
 
 contains
 
@@ -235,7 +235,8 @@ contains
           END IF
 
           IF(print_tiles)THEN
-             WRITE(*,"('tile[',I4,'](',I4,':',I4,')(',I4,':',I4,'), interior:(',I4,':',I4,')(',I4,':',I4,') ')")                                       &
+             WRITE(*,"('tile[',I4,'](',I4,':',I4,')(',I4,':',I4,'), "// &
+                  &  "interior:(',I4,':',I4,')(',I4,':',I4,') ')") &
                   ith,                                                 &
                   tile(ith)%whole%xstart, tile(ith)%whole%xstop,       &
                   tile(ith)%whole%ystart, tile(ith)%whole%ystop,       &
