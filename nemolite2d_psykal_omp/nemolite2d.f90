@@ -119,7 +119,7 @@ subroutine step(grid, istp, &
   use kind_params_mod
   use grid_mod
   use field_mod
-  use time_step_mod, only: invoke_time_step
+  use time_step_mod, only: invoke_time_step_tiled
   use gocean2d_io_mod, only: model_write
   implicit none
   type(grid_type), intent(in) :: grid
@@ -129,7 +129,7 @@ subroutine step(grid, istp, &
   type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
   type(r2d_field), intent(in) :: hu, hv, ht
 
-  call invoke_time_step(istp, ssha, ssha_u, ssha_v, &
+  call invoke_time_step_tiled(istp, ssha, ssha_u, ssha_v, &
                         sshn, sshn_u, sshn_v, &
                         hu, hv, ht, ua, va, un, vn)
 

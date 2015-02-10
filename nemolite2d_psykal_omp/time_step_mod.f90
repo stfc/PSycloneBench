@@ -3,7 +3,7 @@ module time_step_mod
 
   private
 
-  public invoke_time_step
+  public invoke_time_step, invoke_time_step_tiled
 
 contains
 
@@ -602,9 +602,9 @@ contains
     use boundary_conditions_mod
     implicit none
     integer,         intent(in)    :: istp
-    type(tiled_r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
-    type(tiled_r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
-    type(tiled_r2d_field), intent(in)    :: hu, hv, ht
+    type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
+    type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
+    type(r2d_field), intent(in)    :: hu, hv, ht
     ! Locals
     integer :: it, ji, jj, jiu, jiv
     integer :: M, N, idxt
@@ -673,7 +673,7 @@ contains
           do ji = ssha%tile(it)%internal%xstart, ssha%tile(it)%internal%xstop, 1
 
         call continuity_code(ji, jj,                             &
-                             ssha%tile(it)%data, sshn_t%data,             &
+                             ssha%data, sshn_t%data,             &
                              sshn_u%data, sshn_v%data,           &
                              hu%data, hv%data, un%data, vn%data, &
                              rdt, sshn_t%grid%area_t)
@@ -694,18 +694,12 @@ contains
 
 !    call timer_start('Momentum',idxt)
 
-!    do jj = ua%internal%ystart, ua%internal%ystop, 1
-!      do ji = ua%internal%xstart, ua%internal%xstop, 1
 !dir$ safe_address
 !$OMP DO SCHEDULE(RUNTIME)
-    do jj = 2, N, 1
-! SIMD
+    do it = 1, ua%ntiles, 1
+       do jj= ua%tile(it)%internal%ystart, ua%tile(it)%internal%ystop, 1
 !dir$ vector always
-      do ji = 2, M-1, 1
-!OMP DO SCHEDULE(RUNTIME)
-!    do it = 1, ntiles, 1
-!       do jj= tile(it)%internal%jstart, tile(it)%internal%jstop, 1
-!          do ji = tile(it)%internal%istart, tile(it)%internal%istop, 1
+          do ji =ua%tile(it)%internal%xstart, ua%tile(it)%internal%xstop, 1
 
 !!$        call momentum_u_code(ji, jj, &
 !!$                             ua%data, un%data, vn%data, &
@@ -808,8 +802,9 @@ contains
                  (adv + vis + cor + hpg) / un%grid%area_u(ji,jj)) / &
                 (hu%data(ji,jj) + ssha_u%data(ji,jj)) / (1.0_wp + cbfr * rdt) 
 
+        end do
       end do
-    end do
+   end do ! Loop over tiles
 ! This loop writes to ua and subsequent (momentum in v) loop doesn't
 ! use this field (or ssha from the preceeding loop) so we do not 
 ! have to block here.
@@ -817,10 +812,10 @@ contains
 
 !dir$ safe_address
 !$OMP DO SCHEDULE(RUNTIME)
-    do jj = 2, N-1, 1
-! SIMD
+    do it = 1, va%ntiles, 1
+       do jj= va%tile(it)%internal%ystart, va%tile(it)%internal%ystop, 1
 !dir$ vector always
-      do ji = 2, M, 1
+          do ji = va%tile(it)%internal%xstart, va%tile(it)%internal%xstop, 1
 
 !!$        call momentum_v_code(ji, jj, &
 !!$                             va%data, un%data, vn%data, &
@@ -932,6 +927,7 @@ contains
 
       end do
     end do
+ end do ! Loop over tiles
 !$OMP END DO NOWAIT
 
 !    call timer_stop(idxt)
@@ -945,12 +941,10 @@ contains
 
 !    call timer_start('BCs', idxt)
 
-!    DO jj = ssha%internal%ystart, ssha%internal%ystop 
-!       DO ji = ssha%internal%xstart, ssha%internal%xstop 
 !$OMP DO SCHEDULE(RUNTIME)
-    DO jj = 2, N
-! SIMD
-       DO ji = 2, M
+    do it = 1, ssha%ntiles, 1
+       do jj= ssha%tile(it)%internal%ystart, ssha%tile(it)%internal%ystop, 1
+          do ji = ssha%tile(it)%internal%xstart, ssha%tile(it)%internal%xstop, 1
 !          call bc_ssh_code(ji, jj, &
 !                           istp, ssha%data, sshn_t%grid%tmask)
 
@@ -972,6 +966,7 @@ contains
 
        END DO
     END DO
+ end do ! Loop over tiles
 ! This loop only writes to ssha and subsequent loop does not use
 ! this field therefore we need not block.
 !$OMP END DO NOWAIT
@@ -981,8 +976,9 @@ contains
 !       do ji = uwhole_xstart, uwhole_xstop, 1
 !dir$ safe_address
 !$OMP DO SCHEDULE(RUNTIME)
-    do jj = 1, N+1, 1
-       do ji = 1, M, 1
+    do it = 1, ua%ntiles, 1
+       do jj= ua%tile(it)%whole%ystart, ua%tile(it)%whole%ystop, 1
+          do ji = ua%tile(it)%whole%xstart, ua%tile(it)%whole%xstop, 1
 !          call bc_solid_u_code(ji, jj, &
 !                               ua%data, va%grid%tmask)
 
@@ -994,6 +990,7 @@ contains
 
        end do
     end do
+end do
 ! This loop only writes to ua and subsequent loop does not use this field
 ! or the preceeding ssha so no need to block.
 !$OMP END DO NOWAIT
@@ -1004,8 +1001,10 @@ contains
 !       do ji = vwhole_xstart, vwhole_xstop, 1
 !dir$ safe_address
 !$OMP DO SCHEDULE(RUNTIME)
-    do jj = 1, N, 1
-       do ji = 1, M+1, 1
+    do it = 1, ua%ntiles, 1
+       do jj= va%tile(it)%whole%ystart, va%tile(it)%whole%ystop, 1
+          do ji = va%tile(it)%whole%xstart, va%tile(it)%whole%xstop, 1
+
 !          call bc_solid_v_code(ji,jj, &
 !                               va%data, ua%grid%tmask)
     if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) == 0)then
@@ -1014,6 +1013,7 @@ contains
 
       end do
     end do
+ end do ! Loop over tiles
 ! We must block here as next loop reads and writes ua.
 !$OMP END DO
 
@@ -1051,8 +1051,10 @@ contains
 !       DO ji = uwhole_xstart, uwhole_xstop, 1
 !dir$ safe_address
 !$OMP DO SCHEDULE(RUNTIME)
-    DO jj = 1, N+1, 1
-       DO ji = 1, M, 1
+    do it = 1, ua%ntiles, 1
+       do jj= ua%tile(it)%whole%ystart, ua%tile(it)%whole%ystop, 1
+          do ji = ua%tile(it)%whole%xstart, ua%tile(it)%whole%xstop, 1
+
 !          call bc_flather_u_code(ji,jj, &
 !                                 ua%data, hu%data, sshn_u%data, &
 !                                 sshn_u%grid%tmask)
@@ -1072,6 +1074,7 @@ contains
           end if
        END DO
     END DO
+ end do ! Loop over tiles
 ! This loop only writes to ua and following loop does not use that field
 ! so no need to block here.
 !$OMP END DO NOWAIT
@@ -1105,9 +1108,10 @@ contains
 
 !dir$ safe_address
 !$OMP DO SCHEDULE(RUNTIME)
-    do jj = 2, N, 1
+    do it = 1, sshn_u%ntiles, 1
+       do jj= sshn_u%tile(it)%internal%ystart, sshn_u%tile(it)%internal%ystop, 1
 !dir$ vector always
-      do ji = 2, M-1, 1
+          do ji = sshn_u%tile(it)%internal%xstart, sshn_u%tile(it)%internal%xstop, 1
 
 !         call next_sshu_code(ji, jj, sshn_u%data, sshn_t%data, &
 !                            sshn_t%grid%tmask,                 &
@@ -1128,14 +1132,16 @@ contains
 
       end do
     end do
+ end do
 ! No need to block here since sshn_u is not used in the next loop
 !$OMP END DO NOWAIT
 
 !dir$ safe_address
 !$OMP DO SCHEDULE(RUNTIME)
-    do jj = 2, N-1, 1
+    do it = 1, sshn_v%ntiles, 1
+       do jj= sshn_v%tile(it)%internal%ystart, sshn_v%tile(it)%internal%ystop, 1
 !dir$ vector always
-      do ji = 2, M, 1
+          do ji = sshn_v%tile(it)%internal%xstart, sshn_v%tile(it)%internal%xstop, 1
 
 !        call next_sshv_code(ji, jj,                   &
 !                            sshn_v%data, sshn_t%data, &
@@ -1155,6 +1161,7 @@ contains
          end if
       end do
     end do
+ end do ! Loop over tiles
 !$OMP END DO NOWAIT
 
 !    call timer_stop(idxt)
