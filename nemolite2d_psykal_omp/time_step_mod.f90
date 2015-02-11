@@ -1091,14 +1091,28 @@ end do
 !    call copy_field(ua, un)
 !    call copy_field(va, vn)
 !    call copy_field(ssha, sshn_t)
+
 !$OMP DO SCHEDULE(RUNTIME)
-     do jj = 1, N+1, 1
-       do ji = 1, M+1, 1
-          un%data(ji,jj) = ua%data(ji,jj)
-          vn%data(ji,jj) = va%data(ji,jj)
-          sshn_t%data(ji,jj) = ssha%data(ji,jj)
+    do it = 1, un%ntiles, 1 ! Each field has the same no. of tiles
+
+       do jj= un%tile(it)%whole%ystart, un%tile(it)%whole%ystop, 1
+          do ji = un%tile(it)%whole%xstart, un%tile(it)%whole%xstop, 1
+             un%data(ji,jj) = ua%data(ji,jj)
+          end do
        end do
-    end do
+
+       do jj= vn%tile(it)%whole%ystart, vn%tile(it)%whole%ystop, 1
+          do ji = vn%tile(it)%whole%xstart, vn%tile(it)%whole%xstop, 1
+             vn%data(ji,jj) = va%data(ji,jj)
+          end do
+       end do
+
+       do jj= sshn_t%tile(it)%whole%ystart, sshn_t%tile(it)%whole%ystop, 1
+          do ji = sshn_t%tile(it)%whole%xstart, sshn_t%tile(it)%whole%xstop, 1
+             sshn_t%data(ji,jj) = ssha%data(ji,jj)
+          end do
+       end do
+    end do ! End loop over tiles
 ! We have to block here since sshn_t is used in the following loop.
 ! We could avoid this by altering the following two loop nests to read from
 ! ssha%data instead of sshn_t%data.
