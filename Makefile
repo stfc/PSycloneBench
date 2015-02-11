@@ -10,7 +10,7 @@ nemolite2d_perf.aux: nemolite2d_perf.tex
 	pdflatex $<
 
 # List of figures that are GENERATED from .dat files of the same name
-FIG_FILES = opt_stages_256.pdf
+FIG_FILES = orig_summary.pdf opt_stages_256.pdf
 
 figs: ${FIG_FILES}
 
