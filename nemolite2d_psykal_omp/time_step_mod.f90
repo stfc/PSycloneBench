@@ -12,7 +12,6 @@ contains
                               hu, hv, ht, ua, va, un, vn)
     use kind_params_mod
     use timing_mod
-    use omp_tiling_mod
     use field_mod
     use grid_mod
     use model_mod,       only: rdt, cbfr, visc
@@ -590,7 +589,6 @@ contains
                                     hu, hv, ht, ua, va, un, vn)
     use kind_params_mod
     use timing_mod
-    use omp_tiling_mod
     use field_mod
     use grid_mod
     use model_mod,       only: rdt, cbfr, visc

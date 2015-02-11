@@ -3,7 +3,6 @@ module field_mod
   use region_mod
   use halo_mod
   use grid_mod
-  use omp_tiling_mod
   use gocean_mod, only: gocean_stop
   implicit none
 
@@ -17,6 +16,13 @@ module field_mod
   integer, public, parameter :: F_POINTS   = 3
   !> A field that lives on all grid-points of the grid
   integer, public, parameter :: ALL_POINTS = 4
+
+  !> A field is sub-divided into tiles for coarse-grained OpenMP
+  type :: tile_type
+     type(region_type) :: internal
+     type(region_type) :: whole
+     !real(wp), dimension(:,:), allocatable :: data
+  end type tile_type
 
   type, public :: field_type
      !> Which mesh points the field is defined upon
@@ -42,6 +48,8 @@ module field_mod
 
   type, public, extends(field_type) :: r2d_field
      integer :: ntiles
+     !> The dimensions of the tiles into which the field
+     !! is sub-divided.
      type(tile_type), dimension(:), allocatable :: tile
      !> Array holding the actual field values
      real(wp), dimension(:,:), allocatable :: data
@@ -1068,14 +1076,13 @@ contains
     !> Optional specification of the dimensions of the tiling grid
     integer, intent(in), optional :: nx_arg, ny_arg
     integer :: nx, ny
-    INTEGER :: idx, idy, ival, jval ! For tile extent calculation
+    INTEGER :: ival, jval ! For tile extent calculation
     integer :: internal_width, internal_height
     INTEGER :: ierr, nwidth
     INTEGER :: ji,jj, ith
     INTEGER :: nthreads       ! No. of OpenMP threads being used
-    INTEGER :: jover, junder, idytmp, jover_per_row, junder_per_row
-    INTEGER :: iover, iunder, idxtmp, iover_per_col, iunder_per_col
-    LOGICAL :: nested_par     ! Whether OpenMP supports nested parallelism
+    INTEGER :: jover, junder, idytmp
+    INTEGER :: iover, iunder, idxtmp
     ! For doing stats on tile sizes
     INTEGER :: nvects, nvects_sum, nvects_min, nvects_max 
     LOGICAL, PARAMETER :: print_tiles = .TRUE.
@@ -1250,8 +1257,8 @@ contains
              fld%tile(ith)%whole%xstart    = fld%whole%xstart
              fld%tile(ith)%internal%xstart = ival
           else
-             fld%tile(ith)%whole%xstart    = ival - 1
              fld%tile(ith)%internal%xstart = ival
+             fld%tile(ith)%whole%xstart    = ival
           end if
           
           IF(ji == ntilex)THEN
@@ -1260,21 +1267,21 @@ contains
           ELSE
              fld%tile(ith)%internal%xstop =  MIN(fld%internal%xstop-1, &
                                      fld%tile(ith)%internal%xstart + idxtmp - 1)
-             fld%tile(ith)%whole%xstop = fld%tile(ith)%internal%xstop + 1
+             fld%tile(ith)%whole%xstop = fld%tile(ith)%internal%xstop
           END IF
           
           if(jj == 1)then
              fld%tile(ith)%whole%ystart    = fld%whole%ystart
              fld%tile(ith)%internal%ystart = jval
           else
-             fld%tile(ith)%whole%ystart    = jval - 1
+             fld%tile(ith)%whole%ystart    = jval
              fld%tile(ith)%internal%ystart = jval
           end if
 
           IF(jj /= ntiley)THEN
              fld%tile(ith)%internal%ystop =  MIN(fld%tile(ith)%internal%ystart+idytmp-1, &
                                              fld%internal%ystop-1)
-             fld%tile(ith)%whole%ystop = fld%tile(ith)%internal%ystop + 1
+             fld%tile(ith)%whole%ystop = fld%tile(ith)%internal%ystop
           ELSE
              fld%tile(ith)%internal%ystop = fld%internal%ystop
              fld%tile(ith)%whole%ystop = fld%whole%ystop
