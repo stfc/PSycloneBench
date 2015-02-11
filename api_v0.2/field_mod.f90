@@ -882,8 +882,17 @@ contains
     IMPLICIT none
     type(r2d_field), intent(in)    :: field_in
     type(r2d_field), intent(inout) :: field_out
-        
-    field_out%data(:,:) = field_in%data(:,:)
+    integer :: it, ji, jj
+
+!$OMP DO SCHEDULE(RUNTIME)
+    do it = 1, field_out%ntiles, 1
+       do jj= field_out%tile(it)%whole%ystart, field_out%tile(it)%whole%ystop
+          do ji = field_out%tile(it)%whole%xstart, field_out%tile(it)%whole%xstop
+             field_out%data(ji,jj) = field_in%data(ji,jj)
+          end do
+       end do
+    end do
+!$OMP END DO
         
   end subroutine copy_2dfield
 
@@ -1066,7 +1075,17 @@ contains
     integer :: ntilex, ntiley
 
     if(.not. TILED_FIELDS)then
-       fld%ntiles = 0
+       fld%ntiles = 1
+       allocate(fld%tile(fld%ntiles), Stat=ierr)
+       if(ierr /= 0 )then
+          call gocean_stop('Harness: ERROR: failed to allocate tiling structures')
+       end if
+
+       ! We only have one tile and so we can simply copy in the
+       ! regions already defined for the field as a whole
+       fld%tile(1)%whole    = fld%whole
+       fld%tile(1)%internal = fld%internal
+
        return
     end if
 
