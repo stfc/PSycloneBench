@@ -1,0 +1,21 @@
+=cluster; Vanilla; Safe-loop directives; In-line momentum kernels; Momentum vectorisation; Clean RHS; In-line Continuity kernel; In-line remaining kernels; In-line field copies
+font=Helvetica
+fontsz=12
+# stretch the graph vertically
+yscale=1.2
+xscale=1.3
+rotateby=-20
+xticshift=-0.5,-0.5
+#max=200
+#legendx=right
+#legendy=center
+#xlabelshift=0,-0.5
+#=norotate
+=table;
+# Performance as % of original version so 100% means it as fast as original.
+ylabel=Performance relative to original (%)
+Gnu, Ivy Bridge; 7.92E+01; 7.92E+01; 1.11E+02; 1.11E+02; 1.11E+02; 1.25E+02; 1.52E+02; 1.53E+02
+Intel, Ivy Bridge; 5.36E+01; 5.36E+01; 8.72E+01; 8.72E+01; 9.21E+01; 9.65E+01; 9.78E+01; 1.02E+02
+Cray, Ivy Bridge; 9.86E+01; 1.02E+02; 1.01E+02; 1.73E+02; 1.72E+02; 1.70E+02; 1.68E+02; 1.67E+02
+
+
