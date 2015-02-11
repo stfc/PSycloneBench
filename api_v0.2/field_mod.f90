@@ -19,11 +19,18 @@ module field_mod
 
   !> A field is sub-divided into tiles for coarse-grained OpenMP
   type :: tile_type
+     !> Tile region to use when only a field's 'internal'
+     !! points are required
      type(region_type) :: internal
+     !> Tile region to use when all of a field's points are required
      type(region_type) :: whole
+     ! Could potentially physically divide up an array into 
+     ! distinct tiles and store the data for each separately...
      !real(wp), dimension(:,:), allocatable :: data
   end type tile_type
 
+  !> The base field type. Intended to represent a global field
+  !! such as the x-component of velocity.
   type, public :: field_type
      !> Which mesh points the field is defined upon
      integer :: defined_on
@@ -46,6 +53,7 @@ module field_mod
      real(wp) :: data
   end TYPE scalar_field
 
+  !> A real, 2D field.
   type, public, extends(field_type) :: r2d_field
      integer :: ntiles
      !> The dimensions of the tiles into which the field
@@ -81,11 +89,6 @@ module field_mod
      module procedure r2d_field_constructor
   end interface r2d_field
 
-  ! User-defined constructor for tiled_r2d_field type objects
-!  interface tiled_r2d_field
-!     module procedure tiled_r2d_field_constructor
-!  end interface tiled_r2d_field
-
   !> Interface for the field checksum operation. Overloaded to take either
   !! a field object or a 2D, real(wp) array.
   interface field_checksum
@@ -93,8 +96,8 @@ module field_mod
   end interface field_checksum
 
   !> Info on the tile sizes
-  INTEGER, SAVE                                    :: max_tile_width
-  INTEGER, SAVE                                    :: max_tile_height
+  INTEGER, SAVE :: max_tile_width
+  INTEGER, SAVE :: max_tile_height
 
   public increment_field
   public copy_field
@@ -138,23 +141,6 @@ module field_mod
   logical, public, parameter :: TILED_FIELDS = .TRUE.
 
 contains
-
-  !===================================================
-
-!  function field_constructor(grid_ptr,    &
-!                             grid_points) result(self)
-!    implicit none
-!    ! Arguments
-!    !> Pointer to the grid on which this field lives
-!    type(grid_type),       intent(in), pointer :: grid_ptr
-!    !> Which grid-point type the field is defined on
-!    integer,               intent(in)          :: grid_points
-!    ! Local declarations
-!    type(field_type) :: self
-!
-!    stop 'field_constructor: ERROR: I should not have been called!'
-!
-!  end function field_constructor
 
   !===================================================
 
@@ -970,18 +956,6 @@ contains
 
   !===================================================
 
-!!$  function tiled_fld_checksum(field) result(val)
-!!$    implicit none
-!!$    type(tiled_r2d_field), intent(in) :: field
-!!$    real(wp) :: val
-!!$    !> \todo Implement tiled_fld_checksum!
-!!$    val = 0.0
-!!$    call gocean_stop('ERROR: Implement tiled_fld_checksum!')
-!!$
-!!$  end function tiled_fld_checksum
-
-  !===================================================
-
   !> Compute the checksum of ALL of the elements of supplied array
   function array_checksum(field) result(val)
     implicit none
@@ -1345,6 +1319,11 @@ contains
 
   !==============================================
 
+  !> Routine to get the dimensions of the OpenMP tiling grid.
+  !! Reads the GOCEAN_OMP_GRID environment variable which
+  !! should have the format "NxM" where N is nx and M is ny.
+  !! Returns false if the environment variable is not set
+  !! or does not conform to this format.
   function get_grid_dims(nx, ny) result(success)
     implicit none
     integer, intent(inout) :: nx, ny
