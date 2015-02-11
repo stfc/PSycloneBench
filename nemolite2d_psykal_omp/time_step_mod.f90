@@ -670,18 +670,18 @@ contains
        do jj= ssha%tile(it)%internal%ystart, ssha%tile(it)%internal%ystop, 1
           do ji = ssha%tile(it)%internal%xstart, ssha%tile(it)%internal%xstop, 1
 
-        call continuity_code(ji, jj,                             &
-                             ssha%data, sshn_t%data,             &
-                             sshn_u%data, sshn_v%data,           &
-                             hu%data, hv%data, un%data, vn%data, &
-                             rdt, sshn_t%grid%area_t)
-!!$         rtmp1 = (sshn_u%data(ji  ,jj ) + hu%data(ji  ,jj  ))*un%data(ji  ,jj)
-!!$         rtmp2 = (sshn_u%data(ji-1,jj ) + hu%data(ji-1,jj  ))*un%data(ji-1,jj)
-!!$         rtmp3 = (sshn_v%data(ji ,jj ) + hv%data(ji  ,jj  ))*vn%data(ji ,jj)
-!!$         rtmp4 = (sshn_v%data(ji ,jj-1) + hv%data(ji  ,jj-1))*vn%data(ji,jj-1)
-!!$
-!!$         ssha%data(ji,jj) = sshn_t%data(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
-!!$                       rdt / sshn_t%grid%area_t(ji,jj)
+!!$        call continuity_code(ji, jj,                             &
+!!$                             ssha%data, sshn_t%data,             &
+!!$                             sshn_u%data, sshn_v%data,           &
+!!$                             hu%data, hv%data, un%data, vn%data, &
+!!$                             rdt, sshn_t%grid%area_t)
+         rtmp1 = (sshn_u%data(ji  ,jj ) + hu%data(ji  ,jj  ))*un%data(ji  ,jj)
+         rtmp2 = (sshn_u%data(ji-1,jj ) + hu%data(ji-1,jj  ))*un%data(ji-1,jj)
+         rtmp3 = (sshn_v%data(ji ,jj ) + hv%data(ji  ,jj  ))*vn%data(ji ,jj)
+         rtmp4 = (sshn_v%data(ji ,jj-1) + hv%data(ji  ,jj-1))*vn%data(ji,jj-1)
+
+         ssha%data(ji,jj) = sshn_t%data(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+                       rdt / sshn_t%grid%area_t(ji,jj)
         end do
       end do
     end do
@@ -946,25 +946,25 @@ contains
 !          call bc_ssh_code(ji, jj, &
 !                           istp, ssha%data, sshn_t%grid%tmask)
 
-          amp_tide   = 0.2_wp
-          omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
-          rtime = real(istp, wp) * rdt
+             amp_tide   = 0.2_wp
+             omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
+             rtime = real(istp, wp) * rdt
 
-          if(sshn_t%grid%tmask(ji,jj) <= 0) cycle
+             if(sshn_t%grid%tmask(ji,jj) <= 0) cycle
 
-          IF     (sshn_t%grid%tmask(ji,jj-1) < 0) THEN
-             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
-          ELSE IF(sshn_t%grid%tmask(ji,jj+1) < 0) THEN
-             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
-          ELSE IF(sshn_t%grid%tmask(ji+1,jj) < 0) THEN
-             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
-          ELSE IF(sshn_t%grid%tmask(ji-1,jj) < 0) THEN
-             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
-          END IF
+             IF     (sshn_t%grid%tmask(ji,jj-1) < 0) THEN
+                ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+             ELSE IF(sshn_t%grid%tmask(ji,jj+1) < 0) THEN
+                ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+             ELSE IF(sshn_t%grid%tmask(ji+1,jj) < 0) THEN
+                ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+             ELSE IF(sshn_t%grid%tmask(ji-1,jj) < 0) THEN
+                ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+             END IF
 
+          END DO
        END DO
-    END DO
- end do ! Loop over tiles
+    end do ! Loop over tiles
 ! This loop only writes to ssha and subsequent loop does not use
 ! this field therefore we need not block.
 !$OMP END DO NOWAIT
@@ -982,13 +982,13 @@ contains
 
 !> \todo It's more compiler-friendly to separately compare these two
 !! integer masks with zero but that's a kernel-level optimisation.
-          if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) == 0)then
-             ua%data(ji,jj) = 0._wp
-          end if
+             if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) == 0)then
+                ua%data(ji,jj) = 0._wp
+             end if
 
+          end do
        end do
     end do
-end do
 ! This loop only writes to ua and subsequent loop does not use this field
 ! or the preceeding ssha so no need to block.
 !$OMP END DO NOWAIT
@@ -1005,13 +1005,13 @@ end do
 
 !          call bc_solid_v_code(ji,jj, &
 !                               va%data, ua%grid%tmask)
-    if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) == 0)then
-       va%data(ji,jj) = 0._wp
-    end if
+             if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) == 0)then
+                va%data(ji,jj) = 0._wp
+             end if
 
-      end do
-    end do
- end do ! Loop over tiles
+          end do
+       end do
+    end do ! Loop over tiles
 ! We must block here as next loop reads and writes ua.
 !$OMP END DO
 
@@ -1021,37 +1021,38 @@ end do
 !     DO jj = vwhole_ystart, vwhole_ystop, 1
 !       DO ji = vwhole_xstart, vwhole_xstop, 1
 !dir$ safe_address
-! We cannot execute this loop in (OpenMP) parallel because of the 
-! loop-carried dependency in j.
+    ! We cannot execute this loop in (OpenMP) parallel because of the 
+    ! loop-carried dependency in j.
 !$OMP SINGLE
-     DO jj = 1, N, 1
-       DO ji = 1, M+1, 1
+     do jj = 1, N, 1
+       do ji = 1, M+1, 1
 !          call bc_flather_v_code(ji,jj, &
 !                                 va%data, hv%data, sshn_v%data, &
 !                                 sshn_v%grid%tmask)
-          IF(sshn_t%grid%tmask(ji,jj) + sshn_t%grid%tmask(ji,jj+1) <= -1) cycle
+          if(sshn_t%grid%tmask(ji,jj) + sshn_t%grid%tmask(ji,jj+1) <= -1) cycle
     
-          IF(sshn_t%grid%tmask(ji,jj) < 0) THEN
+          if(sshn_t%grid%tmask(ji,jj) < 0) then
              jiv = jj + 1
-             va%data(ji,jj) = va%data(ji,jiv) + SQRT(g/hv%data(ji,jj)) * &
+             va%data(ji,jj) = va%data(ji,jiv) + sqrt(g/hv%data(ji,jj)) * &
                   (sshn_v%data(ji,jj) - sshn_v%data(ji,jiv))
-          ELSE IF(sshn_t%grid%tmask(ji,jj+1) < 0) THEN
+          else if(sshn_t%grid%tmask(ji,jj+1) < 0) then
              jiv = jj - 1 
-             va%data(ji,jj) = va%data(ji,jiv) + SQRT(g/hv%data(ji,jj)) * &
+             va%data(ji,jj) = va%data(ji,jiv) + sqrt(g/hv%data(ji,jj)) * &
                   (sshn_v%data(ji,jj) - sshn_v%data(ji,jiv))
-          END IF
+          end if
 
-       END DO
-    END DO
+       end do
+    end do
 !$OMP END SINGLE NOWAIT
 
 !    DO jj = uwhole_ystart, uwhole_ystop, 1
 !       DO ji = uwhole_xstart, uwhole_xstop, 1
 !dir$ safe_address
+    ! This loop has a carried dependency in i and therefore we cannot
+    ! parallelise the loop over i. Therefore we cannot use tiles here.
 !$OMP DO SCHEDULE(RUNTIME)
-    do it = 1, ua%ntiles, 1
-       do jj= ua%tile(it)%whole%ystart, ua%tile(it)%whole%ystop, 1
-          do ji = ua%tile(it)%whole%xstart, ua%tile(it)%whole%xstop, 1
+    do jj = 1, N+1, 1
+       do ji = 1, M, 1
 
 !          call bc_flather_u_code(ji,jj, &
 !                                 ua%data, hu%data, sshn_u%data, &
@@ -1063,18 +1064,16 @@ end do
              ! Read from column to the right (East) of us
              jiu = ji + 1
              ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj))* &
-                  (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
+                     (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
           else if(sshn_t%grid%tmask(ji+1,jj )< 0) then
              ! Read from column to the left of us
              jiu = ji - 1 
              ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj)) * &
-                  (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
+                     (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
           end if
-       END DO
-    END DO
- end do ! Loop over tiles
-! This loop only writes to ua and following loop does not use that field
-! so no need to block here.
+       end do
+    end do
+! This nowait is purely for timing purposes
 !$OMP END DO NOWAIT
 
 !    call timer_stop(idxt)
