@@ -360,7 +360,7 @@ penalty and the steps required to remove it.
 For this work we have used a  program 
 
 Since any real oceanographic computational model must output results,
-we ensure that any \psykal version of shallow retains the Input/Output
+we ensure that any \psykal version of nemolite2d retains the Input/Output
 capability of the original. This aids in limiting the optimisations
 that can be performed on the \psykal version to those that should also
 be applicable to full oceanographic models. Note that although we
@@ -376,18 +376,18 @@ point (since we have chosen to use point-wise kernels). With a little
 bit of tidying/re-structuring, we found it was possible to express the
 contents of the main time-stepping loop as a single invoke (a call to
 the PSy layer) and a call to the I/O system
-(Figure~\ref{FIG_psykal_shallow_structure}). The single PSy-layer
+(Figure~\ref{FIG_psykal_nemolite2d_structure}). The single PSy-layer
 routine then consists of applying each of the kernels to all of the
 points on the model mesh requiring an update. In its basic,
 unoptimised (`vanilla') form, this PSy-layer routine then contains a
 doubly-nested loop around each kernel call, as indicated by the
-pseudo-code in Figure~\ref{FIG_psykal_shallow_structure}.
+pseudo-code in Figure~\ref{FIG_psykal_nemolite2d_structure}.
 
 \begin{figure}
 \centering
-%\includegraphics[width=85mm]{psykal_shallow}
-\caption{A schematic of the vanilla \psykal version of the shallow code.}
-\label{FIG_psykal_shallow_structure}
+%\includegraphics[width=85mm]{psykal_nemolite2d}
+\caption{A schematic of the vanilla \psykal version of the nemolite2d code.}
+\label{FIG_psykal_nemolite2d_structure}
 \end{figure}
 
 As with any full oceanographic model, boundary conditions must be
@@ -473,6 +473,24 @@ approach.
 {\bf Performance analysis as motivation for the code
   tranformations. More detail on each transformation.}
 
+\begin{table}[!t]
+\caption{The performance profile of the original and \psykal 
+versions of nemolite2d ($128^{2}$ domain and Intel compiler).}
+\label{TABLE_profile}
+\centering
+\begin{tabular}{l|c|c|c|c}
+\hline
+Section & \multicolumn{2}{c|}{Original} & \multicolumn{2}{c}{\psykal} \\
+        & Time (s) & \%  & Time (s) & \% \\
+\hline
+Continuity  & 0.096 & 2.7  & 0.33  & 6.6 \\
+Momentum    & 3.00  & 84.5 & 4.05  & 79.5 \\
+BCs         & 0.16  & 4.6  & 0.29  & 5.7 \\
+Time-update & 0.29  & 8.1  & 0.41  & 8.1 \\
+\hline
+\end{tabular}
+\end{table}
+
 Beginning with the vanilla \psykal version, we then apply a series of
 code transformations while obeying the \psykal separation of concerns,
 {\it i.e.} optimisation is restricted to the middle, {PS}y layer and leaves
@@ -482,12 +500,19 @@ thus performance of the original version of the code. The
 transformations we have performed are as follows:
 \begin{enumerate}
 
+\item Addition of 'safe-loop' directives
 
-\item In-lined field-copy operation
+\item In-line Momentum kernel bodies into middle-layer code
 
-\item Manually in-line kernel bodies into middle-layer code
+\item Force SIMD vectorisation of the Momentum kernels using directives
 
-\item Plus others\ldots
+\item Work around limitations related to derived types
+
+\item In-line the Continuity kernel
+
+\item In-line remaining kernels (BCs and time-update)
+
+\item In-line field-copy operations
 
 \end{enumerate}
 
@@ -509,9 +534,9 @@ different compilers make when optimising the code.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 
-In Figure~\ref{FIG_orig_perf_summary} we plot the performance of the
-original version of the nemolite2d code for the range of compilers and
-hardware considered here. 
+In Figure~\ref{FIG_orig_perf_summary} we plot the serial performance
+of the original version of the nemolite2d code for the range of
+compilers and hardware considered here.
 
 \begin{figure}[!t]
 \centering
@@ -531,13 +556,13 @@ Figure~\ref{FIG_orig_perf_summary} is that the difference between the
 Gnu- and Intel-compiled executables is slightly more marked. This is
 clarified in Figure~\ref{FIG_slowdown_summary} which plots the
 percentage difference between the performance of the original and the
-(best) \psykal versions of shallow for each compiler/CPU combination.
+(best) \psykal versions of nemolite2d for each compiler/CPU combination.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=7.5cm]{best_psykal_summary}
 \caption{Summary of the best performance achieved by any \psykal 
-version of shallow with each of the compilers and CPUs under 
+version of nemolite2d with each of the compilers and CPUs under 
 consideration.}
 \label{FIG_best_psykal_perf_summary}
 \end{figure}
@@ -552,7 +577,7 @@ indicates that the \psykal version is faster than the original.}
 \end{figure}
 
 Having show that, in general, we can recover and occasionally improve
-upon the performance of the original version of shallow, the next
+upon the performance of the original version of nemolite2d, the next
 logical step is to examine the necessary code transformations.  We do
 this for the $256^{2}$ case since this fits within cache on both the
 Haswell and Ivy Bridge CPUs we are using here.
@@ -588,7 +613,7 @@ Vanilla \psykal                      & 25.3 & 1.73 & 28.7 & 1.96 & 1.67 &       
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=95mm]{opt_stages_256}
+\includegraphics[width=90mm]{opt_stages_256}
 \caption{The performance of the \psykal version of nemolite2d for the
   $256^{2}$ domain at each stage of optimisation. Results are given as
   a percentage of the performance of the original code for each
