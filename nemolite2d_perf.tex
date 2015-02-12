@@ -359,6 +359,9 @@ penalty and the steps required to remove it.
 \subsection{The `nemolite2d' Program}
 For this work we have used a  program 
 
+{\bf Description of the structure of the program at the Algorithm
+  level so that it links in to Profile data in results section.}
+
 Since any real oceanographic computational model must output results,
 we ensure that any \psykal version of nemolite2d retains the Input/Output
 capability of the original. This aids in limiting the optimisations
@@ -468,53 +471,77 @@ IBM bgxlf & -O5 -qinline=auto:level=10      \\
 Before applying any code transformations, we benchmark the original
 version of the code. We also benchmark the vanilla, unoptimised
 version after it has been re-structured following the \psykal
-approach.
-
-{\bf Performance analysis as motivation for the code
-  tranformations. More detail on each transformation.}
+approach. In addition to this benchmarking, we profile these versions
+of the code at the algorithm level (using a high-level timing
+API). The resulting profiles are given in
+Table~\ref{TABLE_profile}. The Momentum section dominates the profile
+of both versions of the code, accounting for around 80\% of the
+wall-clock time spent doing time-stepping. In terms of performance
+loss when moving from the original to the \psykal version of the code
+however, the Momentum section is not too bad -- it slows down by some
+33\%. This is in contrast to the Continuity and BCs sections which
+slow down by factors of approximately three and two, respectively.
 
 \begin{table}[!t]
-\caption{The performance profile of the original and \psykal 
-versions of nemolite2d ($128^{2}$ domain and Intel compiler).}
+\caption{The performance profile of the original and \psykal versions
+  of nemolite2d (for 2000 time-steps of the $128^{2}$ domain and the
+  Intel compiler).}
 \label{TABLE_profile}
 \centering
 \begin{tabular}{l|c|c|c|c}
 \hline
-Section & \multicolumn{2}{c|}{Original} & \multicolumn{2}{c}{\psykal} \\
+Section & \multicolumn{2}{c|}{Original} & \multicolumn{2}{c}{Vanilla \psykal} \\
         & Time (s) & \%  & Time (s) & \% \\
 \hline
-Continuity  & 0.096 & 2.7  & 0.33  & 6.6 \\
+Continuity  & 0.10  & 2.7  & 0.33  & 6.6  \\
 Momentum    & 3.00  & 84.5 & 4.05  & 79.5 \\
-BCs         & 0.16  & 4.6  & 0.29  & 5.7 \\
-Time-update & 0.29  & 8.1  & 0.41  & 8.1 \\
+BCs         & 0.16  & 4.6  & 0.29  & 5.7  \\
+Time-update & 0.29  & 8.1  & 0.41  & 8.1  \\
 \hline
 \end{tabular}
 \end{table}
 
 Beginning with the vanilla \psykal version, we then apply a series of
 code transformations while obeying the \psykal separation of concerns,
-{\it i.e.} optimisation is restricted to the middle, {PS}y layer and leaves
-the kernel and algorithm layers unchanged. The aim of these
-optimisations is to recover, as much as is possible, the structure and
-thus performance of the original version of the code. The
-transformations we have performed are as follows:
-\begin{enumerate}
+{\it i.e.} optimisation is restricted to the middle, {PS}y layer and
+leaves the kernel and algorithm layers unchanged. The aim of these
+optimisations is to recover, as much as is possible, the performance
+of the original version of the code. The transformations we have
+performed and the reasons for them are described in the following sections.
 
-\item Addition of 'safe-loop' directives
+\subsection{Addition of `safe-loop' directives}
 
-\item In-line Momentum kernel bodies into middle-layer code
+Much of the optimisations we have performed have been informed by the
+diagnostic output produced by either the Cray or Intel compilers. Many
+of the nemolite2d kernels contain conditional statements. These
+statements are there to check whether {\it e.g.} the current grid
+point is wet or neighbours a boundary point. A compiler is better able
+to optimise such a loop if it can be sure that all array accesses
+within the body of the loop are safe for every trip, irrespective of
+the conditional statements. In its diagnostic output the Cray compiler
+notes this with messages of the form:
+\begin{verbatim}
+ftn-6375 ftn: VECTOR File = nemolite2d.f90,
+ Line = 448 
+A loop starting at line 448 would benefit 
+from "!dir$ safe_address".
+\end{verbatim}
+In order that we could safely add such directives we altered the field
+module to allocate all arrays holding field data with extents greater
+than strictly required such that any array accesses within the kernels
+would remain within bounds.
 
-\item Force SIMD vectorisation of the Momentum kernels using directives
+\subsection{In-line Momentum kernel bodies into middle-layer code}
 
-\item Work around limitations related to derived types
+\subsection{Force SIMD vectorisation of the Momentum kernels using directives}
 
-\item In-line the Continuity kernel
+\subsection{Work around limitations related to derived types}
 
-\item In-line remaining kernels (BCs and time-update)
+\subsection{In-line the Continuity kernel}
 
-\item In-line field-copy operations
+\subsection{In-line remaining kernels (BCs and time-update)}
 
-\end{enumerate}
+\subsection{In-line field-copy operations}
 
 We shall see that these transformations do not always result in improved
 performance. Whether or not they do so depends both on the compiler
