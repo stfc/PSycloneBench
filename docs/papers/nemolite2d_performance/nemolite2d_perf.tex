@@ -509,7 +509,7 @@ optimisations is to recover, as much as is possible, the performance
 of the original version of the code. The transformations we have
 performed and the reasons for them are described in the following sections.
 
-\subsection{Addition of `safe-loop' directives}
+\subsection{Addition of `safe-address' directives}
 
 Much of the optimisations we have performed have been informed by the
 diagnostic output produced by either the Cray or Intel compilers. Many
@@ -527,11 +527,26 @@ A loop starting at line 448 would benefit
 from "!dir$ safe_address".
 \end{verbatim}
 In order that we could safely add such directives we altered the field
-module to allocate all arrays holding field data with extents greater
-than strictly required such that any array accesses within the kernels
-would remain within bounds.
+module to allocate all field-data arrays with extents greater than
+strictly required.  We were then able to safely add the safe\_address
+before all of the loops where the Cray compiler indicated it might be
+useful (the Momentum loops and some of the BC loops).
 
 \subsection{In-line Momentum kernel bodies into middle-layer code}
+
+From our previous work~\cite{shallow_psykal} on a similar code we know
+that kernel in-lining is critical to obtaining performance with the
+Gnu and Intel compilers. For the Gnu compiler, this is because it
+cannot perform in-lining when routines are in separate source files
+{\bf do we have evidence for this?}. Although the Intel compiler does
+not have this limitation, we have found (both here and in our previous
+work~\cite{shallow_psykal}) that the number of optimisations it
+performs is reduced if it first has to in-line a routine.
+
+The profiling data in Table~\ref{TABLE_profile} shows that it is the
+Momentum section that accounts for the bulk of the model run-time.  We
+therefore chose to in-line the two kernels (one for each of the $x$
+and $y$ components of momentum) called within this section.
 
 \subsection{Force SIMD vectorisation of the Momentum kernels using directives}
 
