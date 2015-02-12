@@ -645,8 +645,40 @@ Further comparison of the diagnostic output from the Cray and Intel
 compilers revealed that the Cray compiler was vectorising the
 Continuity section while the Intel compiler reported that it was
 unable to do so due to dependencies. After some experimentation we
-found that this was due to the compiler's limited analysis of the way
-components of Fortran derived types were being used.
+found that this was due to limitations in the compiler's analysis of
+the way components of Fortran derived types were being used. Each
+GOcean field object, in addition to the array holding the local
+section of the field, contains a pointer to a GOcean grid object. If a
+kernel requires grid-related quantities ({\it e.g.} the grid spacing)
+then these are obtained by passing it a reference to the appropriate
+array within the grid object. Although these grid-related quantities
+are read-only within a compute kernel, if they were obtained from the
+same object as that containing the array to which that kernel writes
+then the Intel compiler identified a dependency preventing
+vectorisation.  This limitation was simply removed by ensuring that
+all read-only quantities were accessed via field objects that were
+themselves read-only for the kernel at hand.
+\begin{verbatim}
+do jj = 2, N, 1
+ do ji = 2, M, 1
+
+   call continuity_code(ji, jj,      &
+                        ssha%data,   &
+                        sshn_t%data, &
+                        ...,         &
+                        sshn_t%grid%area_t)
+\end{verbatim}
+instead of
+\begin{verbatim}
+do jj = 2, N, 1
+ do ji = 2, M, 1
+
+   call continuity_code(ji, jj,      &
+                        ssha%data,   &
+                        sshn_t%data, &
+                        ...,         &
+                        ssha%grid%area_t)
+\end{verbatim}
 
 \subsection{In-line the Continuity kernel}
 
