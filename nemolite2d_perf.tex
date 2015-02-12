@@ -535,22 +535,118 @@ useful (the Momentum loops and some of the BC loops).
 \subsection{In-line Momentum kernel bodies into middle-layer code}
 
 From our previous work~\cite{shallow_psykal} on a similar code we know
-that kernel in-lining is critical to obtaining performance with the
-Gnu and Intel compilers. For the Gnu compiler, this is because it
-cannot perform in-lining when routines are in separate source files
-{\bf do we have evidence for this?}. Although the Intel compiler does
-not have this limitation, we have found (both here and in our previous
+that kernel in-lining is critical to obtaining performance with both
+the Gnu and Intel compilers. For the Gnu compiler, this is because it
+cannot perform in-lining when routines are in separate source
+files. In our previous work we obtained an order-of-magnitude speed-up
+simply by moving subroutines into the module containing the middle
+layer (from which the kernels are called). A further performance
+improvement of roughly 30\% was obtained when the kernel code was
+manually inserted at the site of the subroutine call.
+
+Although the Intel compiler does do in-lining when routines are in
+separate source files, we have found (both here and in our previous
 work~\cite{shallow_psykal}) that the number of optimisations it
-performs is reduced if it first has to in-line a routine.
+performs is reduced if it first has to in-line a routine. For the
+Intel-compiled Shallow code, manually inserting kernel code at the
+site of the subroutine call increased performance by about 25\%.
+
+In fact, in-lining can have a significant effect on the Intel
+compiler's ability to vectorise a loop. Taking the loop that calls the
+kernel for the u-component of momentum as an example, before in-lining
+the compiler reports:
+\begin{verbatim}
+LOOP BEGIN at time_step_mod.f90(85,7) 
+  inlined into nemolite2d.f90(86,11)
+ remark #15335: loop was not vectorized: 
+  vectorization possible but seems 
+  inefficient. 
+ --- begin vector loop cost summary ---
+ scalar loop cost: 1307 
+ vector loop cost: 2391.000 
+ estimated potential speedup: 0.540 
+ lightweight vector operations: 1133 
+ medium-overhead vector operations: 1 
+ vectorized math library calls: 1 
+ --- end vector loop cost summary ---
+LOOP END
+\end{verbatim}
+After we have manually in-lined the kernel body, the compiler reports:
+\begin{verbatim}
+LOOP BEGIN at time_step_mod.f90(97,7) 
+  inlined into nemolite2d.f90(86,11)
+ LOOP WAS VECTORIZED
+ --- begin vector loop cost summary ---
+ scalar loop cost: 1253 
+ vector loop cost: 521.750 
+ estimated potential speedup: 2.350 
+ lightweight vector operations: 697 
+ medium-overhead vector operations: 1 
+ vectorized math library calls: 1 
+ --- end vector loop cost summary ---
+LOOP END
+\end{verbatim}
+Looking at the `estimated potential speedup' in the compiler outputs
+above, it is clear that the way in which the compiler vectorises the
+two versions must be very different. This conclusion is borne out by
+the fact that if one persuades the compiler to vectorise the first
+version (through the use of a directive) then the performance of the
+resulting binary is worse than that where the loop is left
+un-vectorised.
 
 The profiling data in Table~\ref{TABLE_profile} shows that it is the
 Momentum section that accounts for the bulk of the model run-time.  We
 therefore chose to in-line the two kernels (one for each of the $x$
-and $y$ components of momentum) called within this section.
+and $y$ components of momentum) called within this section. Given our
+findings with the shallow code, we have chosen to do full, manual
+inlining of the kernel code.
 
 \subsection{Force SIMD vectorisation of the Momentum kernels using directives}
 
+It turns out that the Cray-compiled binaries of both the original and
+\psykal versions of nemolite2d perform considerably less well than
+their Intel-compiled counterparts. Comparison of the diagnostic output
+from each of the compilers revealed that while the Intel compiler was
+happy to vectorise the Momentum loops, the Cray compiler was choosing
+not to:
+\begin{verbatim}
+   99.          do ji = 2, M-1, 1
+ A loop starting at line 99 was blocked 
+ with block size 256.
+
+ A loop starting at line 99 was not
+ vectorized because it contains 
+ conditional code which is more
+ efficient if executed in scalar mode.
+\end{verbatim}
+Inserting the Cray `vector always' directive persuaded the compiler
+to vectorise the loop:
+\begin{verbatim}
+  99.    !dir$ vector always
+  100.          do ji = 2, M-1, 1
+ A loop starting at line 100 was blocked
+ with block size 256.
+
+ A loop starting at line 100 requires an 
+ estimated 17 vector registers at 
+ line 151; 1 of these have been 
+ preemptively forced to memory.
+
+ A loop starting at line 100 was vectorized.
+\end{verbatim}
+which gave a significant performance improvement. This behaviour is in
+contrast to that obtained with the Intel compiler: its predictions
+about whether vectorising a loop would be beneficial were generally
+found to be reliable.
+
 \subsection{Work around limitations related to derived types}
+
+Further comparison of the diagnostic output from the Cray and Intel
+compilers revealed that the Cray compiler was vectorising the
+Continuity section while the Intel compiler reported that it was
+unable to do so due to dependencies. After some experimentation we
+found that this was due to the compiler's limited analysis of the way
+components of Fortran derived types were being used.
 
 \subsection{In-line the Continuity kernel}
 
