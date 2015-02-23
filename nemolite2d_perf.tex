@@ -488,15 +488,16 @@ slow down by factors of approximately three and two, respectively.
   Intel compiler).}
 \label{TABLE_profile}
 \centering
-\begin{tabular}{l|c|c|c|c}
+\begin{tabular}{l|c|c|c|c|c|c}
 \hline
-Section & \multicolumn{2}{c|}{Original} & \multicolumn{2}{c}{Vanilla \psykal} \\
-        & Time (s) & \%  & Time (s) & \% \\
+Section & \multicolumn{2}{c|}{Original} & \multicolumn{2}{c|}{Vanilla \psykal} &
+\multicolumn{2}{c}{Optimised \psykal} \\
+        & Time (s) & \%  & Time (s) & \%  & Time(s) & \% \\
 \hline
-Continuity  & 0.10  & 2.7  & 0.33  & 6.6  \\
-Momentum    & 3.00  & 84.5 & 4.05  & 79.5 \\
-BCs         & 0.16  & 4.6  & 0.29  & 5.7  \\
-Time-update & 0.29  & 8.1  & 0.41  & 8.1  \\
+Continuity  & 0.10  & 2.7  & 0.33  & 6.6  & 0.11 & \\
+Momentum    & 3.00  & 84.5 & 4.05  & 79.5 & 2.09 & \\
+BCs         & 0.16  & 4.6  & 0.29  & 5.7  & 0.27 & \\
+Time-update & 0.29  & 8.1  & 0.41  & 8.1  & 0.29 & \\
 \hline
 \end{tabular}
 \end{table}
@@ -533,6 +534,15 @@ before all of the loops where the Cray compiler indicated it might be
 useful (the Momentum loops and some of the BC loops).
 
 \subsection{In-line Momentum kernel bodies into middle-layer code}
+
+The profiling data in Table~\ref{TABLE_profile} shows that it is the
+Momentum section that accounts for the bulk of the model run-time.  We
+therefore chose to attempt to optimise this section first. In-keeping
+with the \psykal approach, we are only permitted to optimise the middle
+(PSy) layer which, for this section comprises calls to two kernels,
+one for each of the $x$ and $y$ components of momentum. These kernels
+are relatively large; each comprises roughly 85 lines of Fortran
+(excluding variable declarations).
 
 From our previous work~\cite{shallow_psykal} on a similar code we know
 that kernel in-lining is critical to obtaining performance with both
@@ -592,14 +602,11 @@ two versions must be very different. This conclusion is borne out by
 the fact that if one persuades the compiler to vectorise the first
 version (through the use of a directive) then the performance of the
 resulting binary is worse than that where the loop is left
-un-vectorised.
+un-vectorised. {\bf In principle we could investigate this by looking
+  at the assembler that the Intel compiler generates\ldots}
 
-The profiling data in Table~\ref{TABLE_profile} shows that it is the
-Momentum section that accounts for the bulk of the model run-time.  We
-therefore chose to in-line the two kernels (one for each of the $x$
-and $y$ components of momentum) called within this section. Given our
-findings with the shallow code, we have chosen to do full, manual
-inlining of the kernel code.
+For the best possible performance, we have chosen to do full, manual
+inlining for the two kernels making up the Momentum section.
 
 \subsection{Force SIMD vectorisation of the Momentum kernels using directives}
 
@@ -641,7 +648,15 @@ found to be reliable.
 
 \subsection{Work around limitations related to derived types}
 
-Further comparison of the diagnostic output from the Cray and Intel
+Having optimised the Momentum section as much as permitted by the
+\psykal approach, we turn our attention to the three remaining
+sections of the code. The profile data in Table~\ref{TABLE_profile}
+shows that these regions are all comparable in terms of cost. What is
+striking however, is that the cost of the Continuity section increases
+by more than a factor of three in moving to the \psykal version of the
+code.
+
+Comparison of the diagnostic output from the Cray and Intel
 compilers revealed that the Cray compiler was vectorising the
 Continuity section while the Intel compiler reported that it was
 unable to do so due to dependencies. After some experimentation we
@@ -657,18 +672,9 @@ same object as that containing the array to which that kernel writes
 then the Intel compiler identified a dependency preventing
 vectorisation.  This limitation was simply removed by ensuring that
 all read-only quantities were accessed via field objects that were
-themselves read-only for the kernel at hand.
-\begin{verbatim}
-do jj = 2, N, 1
- do ji = 2, M, 1
-
-   call continuity_code(ji, jj,      &
-                        ssha%data,   &
-                        sshn_t%data, &
-                        ...,         &
-                        sshn_t%grid%area_t)
-\end{verbatim}
-instead of
+themselves read-only for the kernel at hand.  For instance, the call
+to the continuity kernel, which confused the Intel compiler, originally
+looked like this:
 \begin{verbatim}
 do jj = 2, N, 1
  do ji = 2, M, 1
@@ -679,10 +685,33 @@ do jj = 2, N, 1
                         ...,         &
                         ssha%grid%area_t)
 \end{verbatim}
+where {\it ssha} is the only field that is written to by the kernel.
+We remove any potential confusion by instead obtaining the
+grid-related (read-only) quantities from a field ({\it sshn\_t} in
+this case) that is only read by the kernel:
+\begin{verbatim}
+do jj = 2, N, 1
+ do ji = 2, M, 1
+
+   call continuity_code(ji, jj,      &
+                        ssha%data,   &
+                        sshn_t%data, &
+                        ...,         &
+                        sshn_t%grid%area_t)
+\end{verbatim}
 
 \subsection{In-line the Continuity kernel}
 
+
+As with the Momentum kernel, we know that obtaining optimal
+performance from both the Gnu and Intel compilers requires that a
+kernel be manually inlined at its call site. We do this for the
+Continuity kernel in this optimisation step.
+
 \subsection{In-line remaining kernels (BCs and time-update)}
+
+Having optimised the Continuity section we finally turn our attention
+to the Boundary Condition and Time-Update sections.
 
 \subsection{In-line field-copy operations}
 
