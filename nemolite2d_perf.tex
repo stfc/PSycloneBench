@@ -475,12 +475,15 @@ approach. In addition to this benchmarking, we profile these versions
 of the code at the algorithm level (using a high-level timing
 API). The resulting profiles are given in
 Table~\ref{TABLE_profile}. The Momentum section dominates the profile
-of both versions of the code, accounting for around 80\% of the
-wall-clock time spent doing time-stepping. In terms of performance
-loss when moving from the original to the \psykal version of the code
-however, the Momentum section is not too bad -- it slows down by some
-33\%. This is in contrast to the Continuity and BCs sections which
-slow down by factors of approximately three and two, respectively.
+of both versions of the code, accounting for around 70--80\% of the
+wall-clock time spent doing time-stepping. It is also the key section
+when we consider the performance loss when moving from the original to
+the \psykal version of the code; it slows down by a factor of
+two. Although less significant in terms of absolute time, the
+Continuity section is also dramatically slower in the \psykal version,
+this time by a factor of three. In contrast, the performance of the
+Time-update and Boundary Condition regions are not significantly
+affected by the move so the \psykal version.
 
 \begin{table}[!t]
 \caption{The performance profile of the original and \psykal versions
@@ -491,13 +494,13 @@ slow down by factors of approximately three and two, respectively.
 \begin{tabular}{l|c|c|c|c|c|c}
 \hline
 Section & \multicolumn{2}{c|}{Original} & \multicolumn{2}{c|}{Vanilla \psykal} &
-\multicolumn{2}{c}{Optimised \psykal} \\
+\multicolumn{2}{c}{Final \psykal} \\
         & Time (s) & \%  & Time (s) & \%  & Time(s) & \% \\
 \hline
-Continuity  & 0.10  & 2.7  & 0.33  & 6.6  & 0.11 & \\
-Momentum    & 3.00  & 84.5 & 4.05  & 79.5 & 2.09 & \\
-BCs         & 0.16  & 4.6  & 0.29  & 5.7  & 0.27 & \\
-Time-update & 0.29  & 8.1  & 0.41  & 8.1  & 0.29 & \\
+Momentum    & 1.98  & 72.6  & 4.05  & 79.5 & 2.09 & 75.3 \\
+Time-update & 0.40  & 14.6  & 0.41  & 8.1  & 0.29 & 10.6 \\
+BCs         & 0.25  & 9.1   & 0.29  & 5.7  & 0.27 & 9.9  \\
+Continuity  & 0.10  & 3.7   & 0.33  & 6.6  & 0.11 & 4.1  \\
 \hline
 \end{tabular}
 \end{table}
@@ -705,30 +708,43 @@ do jj = 2, N, 1
 
 As with the Momentum kernel, we know that obtaining optimal
 performance from both the Gnu and Intel compilers requires that a
-kernel be manually inlined at its call site. We do this for the
+kernel be manually in-lined at its call site. We do this for the
 Continuity kernel in this optimisation step.
 
 \subsection{In-line remaining kernels (BCs and time-update)}
 
 Having optimised the Continuity section we finally turn our attention
-to the Boundary Condition and Time-Update sections.
+to the Boundary Condition and Time-update sections. The kernels in
+these sections are small and dominated by conditional statements.  We
+therefore limited our optimisation of them to manually in-lining each
+of the kernels into the PSy layer.
 
 \subsection{In-line field-copy operations}
 
-We shall see that these transformations do not always result in improved
-performance. Whether or not they do so depends both on the compiler
-and the problem size. We also emphasise that the aim of these
-optimisations is to recover, as far as is possible, the structure of
-the original version of the code. It may well be that transforming the
-code into some other structure would result in better performance on a
-particular architecture. However, exploring this optimisation space is
-beyond the scope of the present work.
+The Time-update section includes several array copies where fields for
+the current time-step become the fields at the previous time-step.
+Initially we implemented these copies as 'built-in' kernels (in the
+GOcean library) as they are specified in the algorithm layer. However,
+we obtained better performance by simply in-lining these array copies
+into the PSy layer.
+
+We shall see that the transformations we have just described do not
+always result in improved performance. Whether or not they do so
+depends both on the compiler used and the problem size. We also
+emphasise that the aim of these optimisations is to make the PSy layer
+as compiler-friendly as possible, following the lessons learned from
+our previous work with the Shallow code~\cite{shallow_psykal}. It may
+well be that transforming the code into some other structure would
+result in better performance on a particular architecture. However,
+exploring this optimisation space is beyond the scope of the present
+work.
 
 We explore the extent to which performance depends upon the problem
-size by using square domains of dimension 64, 128, 256, 512 and
-1024. This range allows us to investigate what happens when cache is
-exhausted as well as giving us some insight into the decisions that
-different compilers make when optimising the code.
+size by using square domains of dimension 64, 128, 256, 512 and 1024
+for the traditional, cache-based CPU systems. This range allows us to
+investigate what happens when cache is exhausted as well as giving us
+some insight into the decisions that different compilers make when
+optimising the code.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
