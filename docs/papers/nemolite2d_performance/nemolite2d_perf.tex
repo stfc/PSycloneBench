@@ -820,45 +820,53 @@ indicates that the \psykal version is faster than the original.}
 \label{FIG_slowdown_summary}
 \end{figure}
 
-Having show that we can recover and often improve upon the performance
-of the original version of nemolite2d, the next logical step is to
-examine the necessary code transformations in detail.  We do this for
-the $256^{2}$ case since this fits within cache on the Ivy Bridge CPUs
-we are using here.  Table~\ref{TABLE_opt_breakdown} shows detailed
-timings for this case after each transformation has been applied to
-the code. The same data is visualised in
+Having show that we can recover, and often improve upon, the
+performance of the original version of nemolite2d, the next logical
+step is to examine the necessary code transformations in detail.  We
+do this for the $256^{2}$ case since this fits within cache on the Ivy
+Bridge CPUs we are using here.  Table~\ref{TABLE_opt_breakdown} shows
+detailed performance figures for this case after each transformation has been
+applied to the code. The same data is visualised in
 Figure~\ref{FIG_opt_stages_256} where the performance of the \psykal
 version for a given compiler/CPU is given relative to the performance
 of the original with the same compiler/CPU.
 
-\begin{table*}[!t]
+\begin{table}[!t]
 % increase table row spacing, adjust to taste
 \renewcommand{\arraystretch}{1.3}
 % if using array.sty, it might be a good idea to tweak the value of
 % \extrarowheight as needed to properly center the text within the cells
-\caption{The time (s) taken to do 2000 steps of the $256^2$ case after each 
-code transformation.}
+\caption{Performance (millions of points updated per second) for
+  the $256^2$ case after each code transformation.}
 \label{TABLE_opt_breakdown}
 \centering
-\begin{tabular}{l|c|c|c|c|c|c}
+\begin{tabular}{l|c|c|c}
 \hline
-Compiler:          &  Gnu    & Intel   & Gnu & Intel & Cray & IBM bgxlf \\
+Compiler:           & Gnu & Intel & Cray  \\
 \hline
-CPU:               & \multicolumn{2}{c|}{Haswell} & \multicolumn{3}{c|}{Ivy Bridge} & PowerPC A2 \\
+CPU:                & \multicolumn{3}{c}{Ivy Bridge}  \\
 \hline
-Original                             & 1.49 & 1.41 & 1.54 & 1.57 & 1.23 &        \\
-Vanilla \psykal                      & 25.3 & 1.73 & 28.7 & 1.96 & 1.67 &        \\
+Original         & 3.87 & 12.2 & 6.83 \\
+Vanilla \psykal  & 3.07 & 6.55 & 6.73 \\
+Safe-loop        & 3.07 & 6.55 & 6.95 \\
+In-line Momentum & 4.31 & 10.7 & 6.93 \\
+SIMD Momentum    & 4.31 & 10.7 & 11.8 \\
+\parbox{2.5cm}{\raggedright Arrays from read-only objects} & 4.31 & 11.3 & 11.8 \\
+In-line Continuity         & 4.83 & 11.8 & 11.6 \\
+In-line remaining kernels  & 5.89 & 12.0 & 11.5 \\
+In-line field copies       & 5.92 & 12.5 & 11.4 \\
 \hline
-\parbox{2.5cm}{\%-slow-down of best {\it c.f.} original} & 7.8 & 0.8 & 0.6 & 0.0 & -2.0 &     \\
+\parbox{2.5cm}{\%-slow-down of best {\it c.f.} original} & -34.62 & -2.39 & -42.22 \\
 \hline
 \end{tabular}
-\end{table*}
+\end{table}
+
 
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=90mm]{opt_stages_256}
-\caption{The performance of the \psykal version of nemolite2d for the
+\caption{Performance of the \psykal version of nemolite2d for the
   $256^{2}$ domain at each stage of optimisation. Results are given as
   a percentage of the performance of the original code for each
   compiler/CPU combination. A figure greater than 100\% indicates that
