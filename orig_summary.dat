@@ -5,7 +5,7 @@
 # (http://www.burningcutlery.com/derek/bargraph)
 =cluster; Gnu, Ivy Bridge; Intel, Ivy Bridge; Cray, Ivy Bridge
 =table
-max=16
+max=15
 =norotate
 legendx=inside
 #legendy=center

@@ -401,6 +401,7 @@ applied at the edges of the model domain.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methodology(?)}
+\label{sec_methodology}
 
 Our aim in this work is to achieve portable performance. Consequently,
 we have performed tests with the hardware and compilers listed in
@@ -749,29 +750,47 @@ optimising the code.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 
+We first consider the performance of the code in serial and examine
+the effects of the transformations described in
+Section~\ref{sec_methodology}. Once we have arrived at an optimal form
+for the serial version of nemolite2d we then investigate its parallel
+performance on both CPU- and GPU-based systems.
+
+\subsection{Serial Performance}
+
 In Figure~\ref{FIG_orig_perf_summary} we plot the serial performance
 of the original version of the nemolite2d code for the range of
-compilers and hardware considered here.
+compilers and CPUs considered here. Unlike the Shallow code, the
+original version of nemolite2d has not been optimised. Although it is
+still a single source file it is, in common with NEMO itself,
+logically structured with separate subroutines performing different
+parts of the physics within each time step. This structuring and the
+heavy use of conditional statements favour the Intel compiler which
+significantly out-performs both the Gnu and Cray compilers. Only when
+the problem size falls out of cache does the performance gap begin to
+narrow. The reason for the performance deficit of the Cray-compiled
+binary comes down to SIMD vectorisation, an issue that we explore
+below.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=2.8in]{orig_summary}
 \caption{Summary of the performance of the original version of the 
 nemolite2d code on 
-the range of compilers and hardware under consideration.}
+the range of compilers and CPU-based systems under consideration.}
 \label{FIG_orig_perf_summary}
 \end{figure}
 
 Moving now the to the \psykal version of nemolite2d,
 Figure~\ref{FIG_best_psykal_perf_summary} plots the performance of the
-fastest \psykal version for each of the compiler/CPU combinations. The
-only significant difference between this and the plot of the
-performance of the original version of the code in
-Figure~\ref{FIG_orig_perf_summary} is that the difference between the
-Gnu- and Intel-compiled executables is slightly more marked. This is
-clarified in Figure~\ref{FIG_slowdown_summary} which plots the
-percentage difference between the performance of the original and the
-(best) \psykal versions of nemolite2d for each compiler/CPU combination.
+fastest \psykal version for each of the compiler/CPU combinations.
+While the Intel compiler still produces the best-performing binary,
+the Cray-compiled binary is now a very close second. In fact, the
+performance of both the Gnu- and Cray-compiled \psykal versions is
+generally significantly greater than that of their respective original
+versions. We also note that best absolute performance (in terms of
+grid points processed per second) with any compiler is obtained with
+the $256^2$ domain.
 
 \begin{figure}[!t]
 \centering
@@ -782,6 +801,16 @@ consideration.}
 \label{FIG_best_psykal_perf_summary}
 \end{figure}
 
+Figure~\ref{FIG_slowdown_summary} plots the percentage difference
+between the performance of the original and the best \psykal versions
+of nemolite2d for each compiler/CPU combination. This shows that it is
+only the Intel-compiled binary running the $64^2$ domain that is
+slower with the \psykal version of the code (and then only by some
+3\%). For all other points in the space, the optimised \psykal version
+of the code performs better. The results for the Cray compiler are
+however somewhat sqewed by the fact that it did not SIMD vectorise key
+parts of the original version (see below).
+
 \begin{figure}[!t]
 \centering
 \includegraphics[width=2.8in]{slowdown_summary}
@@ -791,16 +820,16 @@ indicates that the \psykal version is faster than the original.}
 \label{FIG_slowdown_summary}
 \end{figure}
 
-Having show that, in general, we can recover and occasionally improve
-upon the performance of the original version of nemolite2d, the next
-logical step is to examine the necessary code transformations.  We do
-this for the $256^{2}$ case since this fits within cache on both the
-Haswell and Ivy Bridge CPUs we are using here.
-Table~\ref{TABLE_opt_breakdown} shows detailed timings for this case
-after each transformation has been applied to the code. The same data
-is visualised in Figure~\ref{FIG_opt_stages_256} where the performance
-of the \psykal version for a given compiler/CPU is given relative to
-the performance of the original with the same compiler/CPU. 
+Having show that we can recover and often improve upon the performance
+of the original version of nemolite2d, the next logical step is to
+examine the necessary code transformations in detail.  We do this for
+the $256^{2}$ case since this fits within cache on the Ivy Bridge CPUs
+we are using here.  Table~\ref{TABLE_opt_breakdown} shows detailed
+timings for this case after each transformation has been applied to
+the code. The same data is visualised in
+Figure~\ref{FIG_opt_stages_256} where the performance of the \psykal
+version for a given compiler/CPU is given relative to the performance
+of the original with the same compiler/CPU.
 
 \begin{table*}[!t]
 % increase table row spacing, adjust to taste
@@ -872,7 +901,10 @@ Vanilla \psykal                      & 25.3 & 1.73 & 28.7 & 1.96 & 1.67 &       
 % stfloats package.
 
 
+\subsection{Parallel Performance}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
 
 We have investigated the application of the \psykal separation of
