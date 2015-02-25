@@ -515,6 +515,7 @@ of the original version of the code. The transformations we have
 performed and the reasons for them are described in the following sections.
 
 \subsection{Addition of `safe-address' directives}
+\label{sec_safe_address}
 
 Much of the optimisations we have performed have been informed by the
 diagnostic output produced by either the Cray or Intel compilers. Many
@@ -538,6 +539,7 @@ before all of the loops where the Cray compiler indicated it might be
 useful (the Momentum loops and some of the BC loops).
 
 \subsection{In-line Momentum kernel bodies into middle-layer code}
+\label{sec_inline_mom}
 
 The profiling data in Table~\ref{TABLE_profile} shows that it is the
 Momentum section that accounts for the bulk of the model run-time.  We
@@ -705,7 +707,7 @@ do jj = 2, N, 1
 \end{verbatim}
 
 \subsection{In-line the Continuity kernel}
-
+\label{sec_cont_inline}
 
 As with the Momentum kernel, we know that obtaining optimal
 performance from both the Gnu and Intel compilers requires that a
@@ -713,6 +715,7 @@ kernel be manually in-lined at its call site. We do this for the
 Continuity kernel in this optimisation step.
 
 \subsection{In-line remaining kernels (BCs and time-update)}
+\label{sec_inline_all_kernels}
 
 Having optimised the Continuity section we finally turn our attention
 to the Boundary Condition and Time-update sections. The kernels in
@@ -721,6 +724,7 @@ therefore limited our optimisation of them to manually in-lining each
 of the kernels into the PSy layer.
 
 \subsection{In-line field-copy operations}
+\label{sec_inline_fldcopy}
 
 The Time-update section includes several array copies where fields for
 the current time-step become the fields at the previous time-step.
@@ -831,13 +835,43 @@ Figure~\ref{FIG_opt_stages_256} where the performance of the \psykal
 version for a given compiler/CPU is given relative to the performance
 of the original with the same compiler/CPU.
 
+Looking at the results for the Gnu compiler (and the Ivy Bridge CPU)
+first, all of the steps-up in performance correspond to kernel
+in-lining. None of the other transformations had any effect on the
+performance of the compiled code. In fact, simply in-lining the two
+kernels associated with the Momentum section was enough to improve
+upon the performance of the original code. 
+
+With the Intel compiler, the single largest performance increase is
+again due to kernel in-lining (of the Momentum kernels). This is
+because the compiler does a much better job of SIMD vectorising the
+loops involved than it does when it first has to in-line the kernel
+itself (as evidenced by its own diagnostic output - see
+Section~\ref{sec_inline_mom}). However, although this gives a
+significant performance increase it is not sufficient to match the
+performance of the original version. This is only achieved by
+in-lining every kernel and making the lack of data dependencies
+between arrays accessed from different field objects more explicit.
+
+The Cray compiler is distinct from the other two in that kernel
+in-lining does not give any performance benefit and in fact, for the
+smaller kernels, it can actually hurt performance. Thus the key
+transformation is to encourage the compiler to SIMD vectorise the
+Momentum section via a compiler-specific directive (without this it
+concludes that such vectorisation would be inefficient). Of the other
+transformations, only the addition of the compiler-specific
+safe\_address directive (see Section~\ref{sec_safe_address}) was found
+to give any benefit.
+
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
 \renewcommand{\arraystretch}{1.3}
 % if using array.sty, it might be a good idea to tweak the value of
 % \extrarowheight as needed to properly center the text within the cells
-\caption{Performance (millions of points updated per second) for
-  the $256^2$ case after each code transformation.}
+\caption{Performance (millions of points updated per second) for the
+  $256^2$ case after each code transformation. Where an optimisation
+  utilises compiler-specific directives then performance figures for
+  the other compilers are omitted.}
 \label{TABLE_opt_breakdown}
 \centering
 \begin{tabular}{l|c|c|c}
@@ -848,15 +882,15 @@ CPU:                & \multicolumn{3}{c}{Ivy Bridge}  \\
 \hline
 Original         & 3.87 & 12.2 & 6.83 \\
 Vanilla \psykal  & 3.07 & 6.55 & 6.73 \\
-Safe-loop        & 3.07 & 6.55 & 6.95 \\
+Safe-address     & --   & --   & 6.95 \\
 In-line Momentum & 4.31 & 10.7 & 6.93 \\
-SIMD Momentum    & 4.31 & 10.7 & 11.8 \\
-\parbox{2.5cm}{\raggedright Arrays from read-only objects} & 4.31 & 11.3 & 11.8 \\
+SIMD Momentum    & --   & --   & 11.8 \\
+\parbox{2.5cm}{\raggedright Grid data from read-only objects} & 4.31 & 11.3 & 11.8 \\
 In-line Continuity         & 4.83 & 11.8 & 11.6 \\
 In-line remaining kernels  & 5.89 & 12.0 & 11.5 \\
 In-line field copies       & 5.92 & 12.5 & 11.4 \\
 \hline
-\parbox{2.5cm}{\%-slow-down of best {\it c.f.} original} & -34.62 & -2.39 & -42.22 \\
+\parbox{2.5cm}{\raggedright \%-speed-up of best {\it c.f.} original} & 34.62 & 2.39 & 42.22 \\
 \hline
 \end{tabular}
 \end{table}
@@ -867,10 +901,9 @@ In-line field copies       & 5.92 & 12.5 & 11.4 \\
 \centering
 \includegraphics[width=90mm]{opt_stages_256}
 \caption{Performance of the \psykal version of nemolite2d for the
-  $256^{2}$ domain at each stage of optimisation. Results are given as
-  a percentage of the performance of the original code for each
-  compiler/CPU combination. A figure greater than 100\% indicates that
-  the \psykal version performs better than the original.}
+  $256^{2}$ domain at each stage of optimisation. The first (black)
+  bar of each cluster gives the performance of the original version of
+  nemolite2d for that compiler/CPU combination.}
 \label{FIG_opt_stages_256}
 \end{figure}
 
