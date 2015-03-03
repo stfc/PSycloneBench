@@ -410,9 +410,15 @@ piece of hardware, the version number used in this work is specified.
 The Intel Haswell-based system (Xeon E5-1620 v2) has a clock speed of
 3.7~GHz and 10~MB of last-level cache. The Intel Ivy Bridge-based
 system (Xeon E5-2697) has a clock speed of 2.7~GHz and a last-level
-cache of 30~MB. The CPU in the IBM BG/Q system is built around the
-PowerPC A2 core with a clock speed of 1.6~GHz. The chip has 32~MB of
-last-level cache.
+cache of 30~MB. 
+
+We first describe the code transformations performed for the serial
+version of nemolite2d.  We then move on to the construction of
+parallel versions of the code using OpenMP and OpenACC. Again, we
+describe the key steps we have taken in this process in order to
+maximise the performance of the code.
+
+\subsection{Transformations of Serial Nemolite2D}
 
 % An example of a floating table. Note that, for IEEE style tables, the 
 % \caption command should come BEFORE the table. Table text will default to
@@ -430,13 +436,12 @@ last-level cache.
 \centering
 \begin{tabular}{|l|c|c|c|c|}
 \hline
-                 & \multicolumn{4}{c|}{Compiler}             \\
+                 & \multicolumn{4}{c|}{Compiler}            \\
 \hline
-                 & Gnu   & Intel       & Cray    & IBM bgxlf\\
+                 & Gnu   & Intel       & Cray    & IBM      \\
 \hline
 Intel Haswell    & 4.8.2 & 14.0.0      &         &          \\
 Intel Ivy Bridge & 4.9.1 & 15.0.0.090  & 8.3.3   &          \\
-IBM A2 (BGQ)     &       &             &         &   --     \\
 IBM Power 8      &       &             &         &          \\
 \hline
 \end{tabular}
@@ -469,11 +474,11 @@ IBM bgxlf & -O5 -qinline=auto:level=10      \\
 \end{table}
 
 
-Before applying any code transformations, we benchmark the original
-version of the code. We also benchmark the vanilla, unoptimised
-version after it has been re-structured following the \psykal
-approach. In addition to this benchmarking, we profile these versions
-of the code at the algorithm level (using a high-level timing
+Before applying any code transformations, we first benchmark the
+original, serial version of the code. We also benchmark the vanilla,
+unoptimised version after it has been re-structured following the
+\psykal approach. In addition to this benchmarking, we profile these
+versions of the code at the algorithm level (using a high-level timing
 API). The resulting profiles are given in
 Table~\ref{TABLE_profile}. The Momentum section dominates the profile
 of both versions of the code, accounting for around 70--80\% of the
@@ -484,7 +489,7 @@ two. Although less significant in terms of absolute time, the
 Continuity section is also dramatically slower in the \psykal version,
 this time by a factor of three. In contrast, the performance of the
 Time-update and Boundary Condition regions are not significantly
-affected by the move so the \psykal version.
+affected by the move to the \psykal version.
 
 \begin{table}[!t]
 \caption{The performance profile of the original and \psykal versions
@@ -514,7 +519,7 @@ optimisations is to recover, as much as is possible, the performance
 of the original version of the code. The transformations we have
 performed and the reasons for them are described in the following sections.
 
-\subsection{Addition of `safe-address' directives}
+\subsubsection{Addition of `safe-address' directives}
 \label{sec_safe_address}
 
 Much of the optimisations we have performed have been informed by the
@@ -538,7 +543,7 @@ strictly required.  We were then able to safely add the safe\_address
 before all of the loops where the Cray compiler indicated it might be
 useful (the Momentum loops and some of the BC loops).
 
-\subsection{In-line Momentum kernel bodies into middle-layer code}
+\subsubsection{In-line Momentum kernel bodies into middle-layer code}
 \label{sec_inline_mom}
 
 The profiling data in Table~\ref{TABLE_profile} shows that it is the
@@ -614,7 +619,7 @@ un-vectorised. {\bf In principle we could investigate this by looking
 For the best possible performance, we have chosen to do full, manual
 inlining for the two kernels making up the Momentum section.
 
-\subsection{Force SIMD vectorisation of the Momentum kernels using directives}
+\subsubsection{Force SIMD vectorisation of the Momentum kernels using directives}
 
 It turns out that the Cray-compiled binaries of both the original and
 \psykal versions of nemolite2d perform considerably less well than
@@ -652,7 +657,7 @@ contrast to that obtained with the Intel compiler: its predictions
 about whether vectorising a loop would be beneficial were generally
 found to be reliable.
 
-\subsection{Work around limitations related to derived types}
+\subsubsection{Work around limitations related to derived types}
 
 Having optimised the Momentum section as much as permitted by the
 \psykal approach, we turn our attention to the three remaining
@@ -706,7 +711,7 @@ do jj = 2, N, 1
                         sshn_t%grid%area_t)
 \end{verbatim}
 
-\subsection{In-line the Continuity kernel}
+\subsubsection{In-line the Continuity kernel}
 \label{sec_cont_inline}
 
 As with the Momentum kernel, we know that obtaining optimal
@@ -714,7 +719,7 @@ performance from both the Gnu and Intel compilers requires that a
 kernel be manually in-lined at its call site. We do this for the
 Continuity kernel in this optimisation step.
 
-\subsection{In-line remaining kernels (BCs and time-update)}
+\subsubsection{In-line remaining kernels (BCs and time-update)}
 \label{sec_inline_all_kernels}
 
 Having optimised the Continuity section we finally turn our attention
@@ -723,7 +728,7 @@ these sections are small and dominated by conditional statements.  We
 therefore limited our optimisation of them to manually in-lining each
 of the kernels into the PSy layer.
 
-\subsection{In-line field-copy operations}
+\subsubsection{In-line field-copy operations}
 \label{sec_inline_fldcopy}
 
 The Time-update section includes several array copies where fields for
@@ -750,6 +755,15 @@ for the traditional, cache-based CPU systems. This range allows us to
 investigate what happens when cache is exhausted as well as giving us
 some insight into the decisions that different compilers make when
 optimising the code.
+
+\subsection{Construction of OpenMP-Parallel Nemolite2D}
+
+For this part of the work we began with the optimal \psykal version of
+the code, as obtained after applying the various transformations
+described in the previous section. As with the transformations of the
+serial code, our purpose here is to determine the functionality
+required of the PSyclone code generation system.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
@@ -944,6 +958,40 @@ In-line field copies       & 5.92 & 12.5 & 11.4 \\
 
 \subsection{Parallel Performance}
 
+\subsubsection{OpenMP Version}
+
+For the OpenMP-parallel version of nemolite2d we began with the
+optimised form of the serial version, as described in the previous
+section.
+
+\begin{figure}
+\centering
+\includegraphics[width=2.8in]{omp_scaling_256_gnu}
+\caption{Performance of the OpenMP-parallel version of \psykal
+  nemolite2d for the Gnu compiler on a single Intel Ivy Bridge
+  socket. The 24-thread runs employed hyperthreading.}
+\label{FIG_gnu_omp_256}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=2.8in]{omp_scaling_256_intel}
+\caption{Performance of the OpenMP-parallel version of \psykal
+  nemolite2d for the Intel compiler on a single Intel Ivy Bridge
+  socket. The 24-thread runs employed hyperthreading.}
+\label{FIG_intel_omp_256}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=2.8in]{omp_scaling_256_cray}
+\caption{Performance of the OpenMP-parallel version of \psykal
+  nemolite2d for the Cray compiler on a single Intel Ivy Bridge
+  socket. The 24-thread runs employed hyperthreading.}
+\label{FIG_cray_omp_256}
+\end{figure}
+
+\subsubsection{OpenACC Version}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
