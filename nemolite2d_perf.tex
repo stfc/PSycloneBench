@@ -619,7 +619,8 @@ un-vectorised. {\bf In principle we could investigate this by looking
 For the best possible performance, we have chosen to do full, manual
 inlining for the two kernels making up the Momentum section.
 
-\subsubsection{Force SIMD vectorisation of the Momentum kernels using directives}
+\subsubsection{Force SIMD vectorisation of the Momentum kernels 
+ using directives}
 
 It turns out that the Cray-compiled binaries of both the original and
 \psykal versions of nemolite2d perform considerably less well than
@@ -757,13 +758,101 @@ some insight into the decisions that different compilers make when
 optimising the code.
 
 \subsection{Construction of OpenMP-Parallel Nemolite2D}
+\label{sec_omp_steps}
 
 For this part of the work we began with the optimal \psykal version of
 the code, as obtained after applying the various transformations
 described in the previous section. As with the transformations of the
 serial code, our purpose here is to determine the functionality
-required of the PSyclone code generation system.
+required of the PSyclone code-generation system.
 
+\subsubsection{Separate PARALLEL DOs}
+\label{sec_sep_dos}
+
+The simplest possible OpenMP-parallel implementation consists of
+parallelising each loop nest in the PSy layer. This was done by
+inserting an OpenMP PARALLEL DO directive before each loop nest so
+that the iterations of the outermost or $j$ loop (over the y-dimension
+of the model domain) are shared amongst the OpenMP threads. This
+leaves the innermost ($i$) loop available for SIMD vectorisation by
+the compiler.
+
+The loop nest dealing with the application of the Flather boundary
+condition to the y-component of velocity has a loop-carried dependency
+in $j$ which prevented its being executed in parallel. This was
+therefore left unchanged and executed on thread 0 only.
+
+\subsubsection{Single PARALLEL region}
+\label{sec_single_parallel}
+
+Although very simple to implement, the use of separate PARALLEL DO
+directives causes the team of OpenMP threads to be repeatedly created
+and destroyed. This may be avoided by keeping the thread team in
+existence for as long as possible using an OpenMP PARALLEL region.  We
+therefore enclosed the whole of the PSy layer (in this code, a single
+subroutine) within a single PARALLEL region. The directive preceeding
+each loop nest to be parallelised was then changed to an OpenMP DO. We
+ensured that the v-Flather loop nest was executed in serial (by the
+first thread to encounter it) by enclosing it within an OpenMP SINGLE
+section.
+
+\subsubsection{First-touch policy}
+\label{sec_1sttouch}
+
+When executing an OpenMP-parallel program on a Non-Uniform Memory
+Access (NUMA) compute node it becomes important to ensure that the
+memory locations accessed by each thread are local to the hardware
+core upon which it is executing. One way of doing this is to implement
+a so-called 'first-touch policy' whereby memory addresses that will
+generally be accessed by a given thread during program execution are
+first initialised by that thread. This is simply achieved by using an
+OpenMP-parallel loop to initialise newly-allocated arrays to some
+value, {\it e.g.} zero.
+
+Since data arrays are managed within the GOcean Library {\bf (is this
+  a good/appropriate name?)} this optimisation can again be
+implemented without changing user code (the Application and Kernel
+layers).
+
+\subsubsection{Minimise thread synchronisation}
+\label{sec_synch}
+
+By default, the OpenMP END DO directive includes an implicit barrier,
+thus causing all threads to wait until the slowest has completed the
+preceeding loop. Such synchronisation limits performance at larger
+thread counts and, for the nemolite2d code, is frequently unecessary.
+{\it E.g.} if a kernel does not make use of the results of a
+preceeding kernel call then there is clearly no need for threads to
+wait between the two kernels.
+
+We analysed the inter-dependencies of each of the code sections within
+the PSy layer and removed all unecessary barriers by adding the NOWAIT
+qualifier to the relevant OpenMP END DO or END SINGLE directives. This
+reduced the number of barriers from eleven down to four.
+
+\subsubsection{Amortize serial region}
+\label{sec_amortize}
+
+As previously mentioned, the v-Flather section has to be executed in
+serial becuase of a loop-carried dependence in $j$. (In principle we
+could choose to parallelise the inner, $i$ loop but that would inhibit
+its SIMD vectorisation.) This introduces a load-imbalance between the
+threads. We attempt to mitigate this by moving this serial section to
+before the (parallel) u-Flather section. Since these two sections are
+independent, the aim is that the thread that performs the serial,
+v-Flather computation then performs a smaller share of the following
+u-Flather loop. In practice, this requires that some form of dynamic
+thread scheduling is used.
+
+\subsubsection{Thread scheduling}
+\label{sec_scheduling}
+
+In order to investigate how thread scheduling affects performance we
+used the `runtime' argument to the OpenMP SCHEDULE qualifier for all
+of our OpenMP parallel loops. The actual schedule to use can then be
+set at run-time using the OMP\_SCHEDULE environment variable. We
+experimented with using the static, dynamic and guided (with varying
+chunk size) OpenMP schedules.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
@@ -909,8 +998,6 @@ In-line field copies       & 5.92 & 12.5 & 11.4 \\
 \end{tabular}
 \end{table}
 
-
-
 \begin{figure}[!t]
 \centering
 \includegraphics[width=90mm]{opt_stages_256}
@@ -945,9 +1032,6 @@ In-line field copies       & 5.92 & 12.5 & 11.4 \\
 % captions (using the optional argument to \subfloat[]), but instead will
 % reference/describe all of them (a), (b), etc., within the main caption.
 
-
-
-
 % Note that IEEE does not put floats in the very first column - or typically
 % anywhere on the first page for that matter. Also, in-text middle ("here")
 % positioning is not used. Most IEEE journals use top floats exclusively.
@@ -960,9 +1044,13 @@ In-line field copies       & 5.92 & 12.5 & 11.4 \\
 
 \subsubsection{OpenMP Version}
 
-For the OpenMP-parallel version of nemolite2d we began with the
-optimised form of the serial version, as described in the previous
-section.
+As with the serial optimisations, we consider the effect of each of
+the OpenMP optimisation steps described in Section~\ref{sec_omp_steps}
+for the $256^2$
+domain. Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
+and~\ref{FIG_cray_omp_256} show the performance of each of the
+versions of the code for the Gnu, Intel and Cray compilers,
+respectively.
 
 \begin{figure}
 \centering
