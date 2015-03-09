@@ -204,6 +204,9 @@
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
+\newlength{\picwidth}
+\setlength{\picwidth}{85mm}
+
 \newcommand{\psykal}{{PS}y{KA}l\ }
 
 \begin{document}
@@ -851,7 +854,7 @@ In order to investigate how thread scheduling affects performance we
 used the `runtime' argument to the OpenMP SCHEDULE qualifier for all
 of our OpenMP parallel loops. The actual schedule to use can then be
 set at run-time using the OMP\_SCHEDULE environment variable. We
-experimented with using the static, dynamic and guided (with varying
+experimented with using the standard static, dynamic and guided (with varying
 chunk size) OpenMP schedules.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1054,7 +1057,7 @@ respectively.
 
 \begin{figure}
 \centering
-\includegraphics[width=2.8in]{omp_scaling_256_gnu}
+\includegraphics[width=\picwidth]{omp_scaling_256_gnu}
 \caption{Performance of the OpenMP-parallel version of \psykal
   nemolite2d for the Gnu compiler on a single Intel Ivy Bridge
   socket. The 24-thread runs employed hyperthreading.}
@@ -1063,7 +1066,7 @@ respectively.
 
 \begin{figure}
 \centering
-\includegraphics[width=2.8in]{omp_scaling_256_intel}
+\includegraphics[width=\picwidth]{omp_scaling_256_intel}
 \caption{Performance of the OpenMP-parallel version of \psykal
   nemolite2d for the Intel compiler on a single Intel Ivy Bridge
   socket. The 24-thread runs employed hyperthreading.}
@@ -1072,7 +1075,7 @@ respectively.
 
 \begin{figure}
 \centering
-\includegraphics[width=2.8in]{omp_scaling_256_cray}
+\includegraphics[width=\picwidth]{omp_scaling_256_cray}
 \caption{Performance of the OpenMP-parallel version of \psykal
   nemolite2d for the Cray compiler on a single Intel Ivy Bridge
   socket. The 24-thread runs employed hyperthreading.}
@@ -1080,6 +1083,21 @@ respectively.
 \end{figure}
 
 \subsubsection{OpenACC Version}
+
+\begin{figure}
+\centering
+\includegraphics[width=\picwidth]{gpu_opt_stages}
+\caption{Performance of the various GPU implementations of nemolite2d.}
+\label{FIG_gpu_opt_stages}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\picwidth]{cpu_cf_gpu}
+\caption{Performance of the best OpenMP-parallel version of \psykal
+  nemolite2d (on a single Intel Ivy Bridge socket) compared with the best GPU implementation.}
+\label{FIG_cpu_cf_gpu}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
