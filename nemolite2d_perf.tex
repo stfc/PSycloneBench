@@ -221,7 +221,7 @@
 % was not built to handle multiple paragraphs
 %
 
-\author{J.~Appleyard, H.~Lieu, J.~Holt, R.~W.~Ford, G.~D.~Riley and A.~R.~Porter% <-this % stops a space
+\author{J.~Appleyard, R.~W.~Ford, J.~Holt, H.~Lieu, A.~R.~Porter and G.~D.~Riley% <-this % stops a space
 \thanks{J.~Appleyard is with NVIDIA.}%
 \thanks{H.~Lieu and J.~Holt are with the National Oceanography Centre, Liverpool, UK.}%
 \thanks{A.~R.~Porter and R.~Ford are with the Science and Technology Facilities Council, UK.}% <-this % stops a space
@@ -432,21 +432,22 @@ maximise the performance of the code.
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
 \renewcommand{\arraystretch}{1.3}
-\caption{The matrix of compilers and CPUs used in this work. The use
-  of a compiler on a given CPU is indicated by the specification of
-  the version of the compiler in the relevent element. No entry
-  indicates that a compiler was not available/used on that CPU.}
+\caption{The matrix of compilers and hardware used in this work. The
+  use of a compiler on a given system is indicated by the specification
+  of the version of the compiler in the relevent element. No entry
+  indicates that a compiler was not available/used on that system.}
 \label{TABLE_compilers}
 \centering
-\begin{tabular}{|l|c|c|c|c|}
+\begin{tabular}{|l|c|c|c|c|c|}
 \hline
-                 & \multicolumn{4}{c|}{Compiler}            \\
+                 & \multicolumn{5}{c|}{Compiler}            \\
 \hline
-                 & Gnu   & Intel       & Cray    & IBM      \\
+                 & Gnu   & Intel       & Cray    & IBM    &  PGI \\
 \hline
-Intel Haswell    & 4.8.2 & 14.0.0      &         &          \\
-Intel Ivy Bridge & 4.9.1 & 15.0.0.090  & 8.3.3   &          \\
-IBM Power 8      &       &             &         &          \\
+Intel Haswell    & 4.8.2 & 14.0.0      &         &        &  \\
+Intel Ivy Bridge & 4.9.1 & 15.0.0.090  & 8.3.3   &        &  \\
+IBM Power 8      &       &             &         &        &  \\
+NVIDIA Tesla K40 &       &             &         &        &  {\bf Jeremy} \\
 \hline
 \end{tabular}
 \end{table}
@@ -472,7 +473,8 @@ Compiler  &  Flags \\
 Gnu       & -Ofast -mtune=native -finline-limit=50000    \\
 Intel     & -O3 -fast -fno-inline-factor -xHost   \\
 Cray      & -O3 -O ipa5 -h wp               \\
-IBM bgxlf & -O5 -qinline=auto:level=10      \\
+IBM       & -O5 -qinline=auto:level=10      \\
+PGI       & {\bf Jeremy to supply} \\
 \hline
 \end{tabular}
 \end{table}
@@ -1046,31 +1048,55 @@ In-line field copies       & 5.92 & 12.5 & 11.4 \\
 
 \subsection{Parallel Performance}
 
+We now turn to transformations related to parallelisation of the
+nemolite2d code; the introduction of OpenMP and OpenACC directives. In
+keeping with the \psykal approach, these transformations are
+restricted to the PSy (middle) layer of the code.
+
 \subsubsection{OpenMP Version}
 
 As with the serial optimisations, we consider the effect of each of
 the OpenMP optimisation steps described in Section~\ref{sec_omp_steps}
-for the $256^2$
-domain. Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
+for the $256^2$ domain. For this we principally use a single Intel,
+Ivy Bridge socket which has 12 hardware cores and support for up to 24
+threads with hyperthreading.
+Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
 and~\ref{FIG_cray_omp_256} show the performance of each of the
-versions of the code for the Gnu, Intel and Cray compilers,
-respectively.
+versions of the code on this system for the Gnu, Intel and Cray
+compilers, respectively.
 
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{omp_scaling_256_gnu}
 \caption{Performance of the OpenMP-parallel version of \psykal
   nemolite2d for the Gnu compiler on a single Intel Ivy Bridge
-  socket. The 24-thread runs employed hyperthreading.}
+  socket. The 24-thread runs employed hyperthreading and the optimal
+  OpenMP schedule is given in parentheses.}
 \label{FIG_gnu_omp_256}
 \end{figure}
+
+The simplest OpenMP implementation (black lines) fails to scale beyond
+two threads for any of the compilers. However, as soon as a single
+PARALLEL region is introduced, the situation is greatly improved with
+all three executables now scaling out to at least 12 threads (red
+lines). {\bf Add parallel efficiency lines to the OMP scaling plots to
+  highlight that things are still not brilliant.}
+
+In restricting ourselves to a single socket, we are keeping all
+threads within a single NUMA region. It is therefore surprising that
+implementing a `first-touch' policy has any effect and yet, for the
+Gnu- and Intel-compiled binaries, it appears to improve performance
+when hyperthreading is employed to run on 24 threads (green lines in
+Figures~\ref{FIG_gnu_omp_256} and ~\ref{FIG_intel_omp_256}). {\bf Can
+  we explain this?}
 
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{omp_scaling_256_intel}
 \caption{Performance of the OpenMP-parallel version of \psykal
   nemolite2d for the Intel compiler on a single Intel Ivy Bridge
-  socket. The 24-thread runs employed hyperthreading.}
+  socket. The 24-thread runs employed hyperthreading and the optimal
+  OpenMP schedule is given in parentheses.}
 \label{FIG_intel_omp_256}
 \end{figure}
 
@@ -1079,11 +1105,64 @@ respectively.
 \includegraphics[width=\picwidth]{omp_scaling_256_cray}
 \caption{Performance of the OpenMP-parallel version of \psykal
   nemolite2d for the Cray compiler on a single Intel Ivy Bridge
-  socket. The 24-thread runs employed hyperthreading.}
+  socket. The 24-thread runs employed hyperthreading and the optimal
+  OpenMP schedule is given in parentheses.}
 \label{FIG_cray_omp_256}
 \end{figure}
 
+The final optimisation step found to have any significant effect is to
+minimise the amount of thread synchronisation by introducing the
+NOWAIT qualifier wherever possible (blue lines). For the Gnu compiler,
+this improves the performance of the executable on eight or more
+threads while, for the Intel compiler, it only gives an improvement
+for the 24-thread case. Moving the SINGLE region before a parallel
+loop is marginally beneficial for the Gnu- and Cray-compiled binaries
+and yet reduces the performance of the Intel binary (purple lines).
+
+We have used different scales for the $y$-axes in each of the plots in
+Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
+and~\ref{FIG_cray_omp_256} in order to highlight the performance
+differences between the code versions with a given compiler. However,
+the best performance obtained on twelve threads ({\it i.e.}  without
+hyperthreading) is 52.1, 55.6 and 46.3 (million points/s) for the Gnu,
+Intel and Cray compilers, respectively. This serves to emphasise the
+democratisation that the introduction of OpenMP has had; for the
+serial case the Cray- and Intel-compiled exectables were a factor of
+two faster than the Gnu-compiled binary
+(Figure~\ref{FIG_opt_stages_256}). In the OpenMP version, the
+Gnu-compiled binary is only 6\% slower than that produced by the Intel
+compiler and is 13\% {\em faster} that that of the Cray compiler. In
+part this situation comes about because of the effect that adding the
+OpenMP compiler flag has on the optimisations performed by the
+compiler.  In particular, the Cray compiler no-longer vectorises the
+key Momentum section, despite the directive added during the serial
+optimisation work.
+
+A further complication is the choice of scheduling of the OpenMP
+threads.  We have investigated the performance of each of the
+executables (and thus the associated OpenMP run-time library) with the
+standard OpenMP {\it static}, {\it dynamic} and {\it guided}
+scheduling policies~\cite{openmp_standard}. For the Intel
+compiler/run-time, static loop scheduling was found to be best for all
+versions apart from that where we have attempted to amortize the cost
+of the SINGLE section. This is to be expected since that strategy
+requires some form of dynamic loop scheduling in order to reduce the
+load imbalance introduced by the SINGLE section.
+
+In contrast, some form of dynamic scheduling gave a performance
+improvement with the Gnu compiler/run-time even for the `first-touch'
+version of the code. This is despite the fact that this version
+contains (implicit) thread synchronisation after every parallel loop.
+For the Cray compiler/run-time, some form of dynamic scheduling became
+optimal once inter-thread synchronisation was reduced using the NOWAIT
+qualifiers.
+
 \subsubsection{OpenACC Version}
+
+The introduction of OpenACC directives proved to be simpler than
+producing the OpenMP version of nemolite2d {\bf - Jeremy to clarify
+  whether this is true}.  Consequently we only show the performance of
+{\bf xxx} versions of the code in Figure~\ref{FIG_gpu_opt_stages}.
 
 \begin{figure}
 \centering
@@ -1092,13 +1171,37 @@ respectively.
 \label{FIG_gpu_opt_stages}
 \end{figure}
 
+In Figure~\ref{FIG_cpu_cf_gpu} we compare the absolute performance of
+the OpenMP and OpenACC implementations of nemolite2d across the range
+of problem sizes considered. The OpenMP figures are the maximum
+performance obtained from a whole Intel Ivy Bridge socket by any
+version of the code on any number of threads for a given
+compiler/run-time. For the smallest domain size ($64^2$) the OpenMP
+version significantly outperforms the GPU because there is
+insufficient parallelism to fully utilise the GPU and one time-step
+takes only 80~$\mu$s. The execution of a single time-step is then
+dominated by the time taken to launch a kernel on the GPU rather than
+the execution of the kernel itself.
+
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{cpu_cf_gpu}
 \caption{Performance of the best OpenMP-parallel version of \psykal
-  nemolite2d (on a single Intel Ivy Bridge socket) compared with the best GPU implementation.}
+  nemolite2d (on a single Intel Ivy Bridge socket) compared with the best GPU implementation. {\bf This should really be best OpenACC version as that's what PSyclone can support.}}
 \label{FIG_cpu_cf_gpu}
 \end{figure}
+
+Once the problem size is increased to $128^2$, a single time-step
+takes roughly 200~$\mu$s and only the Intel-compiled OpenMP version is
+comparable in performance to the OpenACC version. For all of the
+larger problem sizes plotted in Figure~\ref{FIG_cpu_cf_gpu} the GPU
+version is considerably faster than the CPU.  For problem sizes of
+$1024^2$ and greater, the 30MB cache of the Ivy Bridge CPU is
+exhausted and performance becomes limited by the bandwidth to main
+memory. At this stage the OpenACC version of the code on the GPU is
+some {\bf 3.7 (this is the factor for the CUDA version!)} times faster
+than the OpenMP version on the CPU. {\bf Can we relate this to the
+  difference in peak memory b/w between the GPU and CPU?}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
