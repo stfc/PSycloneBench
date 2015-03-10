@@ -1070,8 +1070,9 @@ compilers, respectively.
 \includegraphics[width=\picwidth]{omp_scaling_256_gnu}
 \caption{Performance of the OpenMP-parallel version of \psykal
   nemolite2d for the Gnu compiler on a single Intel Ivy Bridge
-  socket. The 24-thread runs employed hyperthreading and the optimal
-  OpenMP schedule is given in parentheses.}
+  socket. The corresponding parallel efficiencies are shown using open
+  symbols and dashed lines. The 24-thread runs employed hyperthreading
+  and the optimal OpenMP schedule is given in parentheses.}
 \label{FIG_gnu_omp_256}
 \end{figure}
 
@@ -1095,8 +1096,10 @@ Figures~\ref{FIG_gnu_omp_256} and ~\ref{FIG_intel_omp_256}). {\bf Can
 \includegraphics[width=\picwidth]{omp_scaling_256_intel}
 \caption{Performance of the OpenMP-parallel version of \psykal
   nemolite2d for the Intel compiler on a single Intel Ivy Bridge
-  socket. The 24-thread runs employed hyperthreading and the optimal
-  OpenMP schedule is given in parentheses.}
+  socket.  The corresponding parallel efficiencies are shown using
+  open symbols and dashed lines. The 24-thread runs employed
+  hyperthreading and the optimal OpenMP schedule is given in
+  parentheses.}
 \label{FIG_intel_omp_256}
 \end{figure}
 
@@ -1105,19 +1108,22 @@ Figures~\ref{FIG_gnu_omp_256} and ~\ref{FIG_intel_omp_256}). {\bf Can
 \includegraphics[width=\picwidth]{omp_scaling_256_cray}
 \caption{Performance of the OpenMP-parallel version of \psykal
   nemolite2d for the Cray compiler on a single Intel Ivy Bridge
-  socket. The 24-thread runs employed hyperthreading and the optimal
-  OpenMP schedule is given in parentheses.}
+  socket.  The corresponding parallel efficiencies are shown using
+  open symbols and dashed lines. The 24-thread runs employed
+  hyperthreading and the optimal OpenMP schedule is given in
+  parentheses.}
 \label{FIG_cray_omp_256}
 \end{figure}
 
-The final optimisation step found to have any significant effect is to
-minimise the amount of thread synchronisation by introducing the
-NOWAIT qualifier wherever possible (blue lines). For the Gnu compiler,
-this improves the performance of the executable on eight or more
-threads while, for the Intel compiler, it only gives an improvement
-for the 24-thread case. Moving the SINGLE region before a parallel
-loop is marginally beneficial for the Gnu- and Cray-compiled binaries
-and yet reduces the performance of the Intel binary (purple lines).
+The final optimisation step that we found to have any significant
+effect is to minimise the amount of thread synchronisation by
+introducing the NOWAIT qualifier wherever possible (blue lines). For
+the Gnu compiler, this improves the performance of the executable on
+eight or more threads while, for the Intel compiler, it only gives an
+improvement for the 24-thread case. Moving the SINGLE region before a
+parallel loop is marginally beneficial for the Gnu- and Cray-compiled
+binaries and yet reduces the performance of the Intel binary (purple
+lines).
 
 We have used different scales for the $y$-axes in each of the plots in
 Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
