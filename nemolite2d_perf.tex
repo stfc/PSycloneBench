@@ -1080,16 +1080,16 @@ The simplest OpenMP implementation (black lines) fails to scale beyond
 two threads for any of the compilers. However, as soon as a single
 PARALLEL region is introduced, the situation is greatly improved with
 all three executables now scaling out to at least 12 threads (red
-lines). {\bf Add parallel efficiency lines to the OMP scaling plots to
-  highlight that things are still not brilliant.}
+lines, square symbols). {\bf Add parallel efficiency lines to the OMP
+  scaling plots to highlight that things are still not brilliant.}
 
 In restricting ourselves to a single socket, we are keeping all
 threads within a single NUMA region. It is therefore surprising that
 implementing a `first-touch' policy has any effect and yet, for the
 Gnu- and Intel-compiled binaries, it appears to improve performance
-when hyperthreading is employed to run on 24 threads (green lines in
-Figures~\ref{FIG_gnu_omp_256} and ~\ref{FIG_intel_omp_256}). {\bf Can
-  we explain this?}
+when hyperthreading is employed to run on 24 threads (green lines and
+diamond symbols in Figures~\ref{FIG_gnu_omp_256} and
+~\ref{FIG_intel_omp_256}). {\bf Can we explain this?}
 
 \begin{figure}
 \centering
@@ -1117,13 +1117,25 @@ Figures~\ref{FIG_gnu_omp_256} and ~\ref{FIG_intel_omp_256}). {\bf Can
 
 The final optimisation step that we found to have any significant
 effect is to minimise the amount of thread synchronisation by
-introducing the NOWAIT qualifier wherever possible (blue lines). For
-the Gnu compiler, this improves the performance of the executable on
-eight or more threads while, for the Intel compiler, it only gives an
-improvement for the 24-thread case. Moving the SINGLE region before a
-parallel loop is marginally beneficial for the Gnu- and Cray-compiled
-binaries and yet reduces the performance of the Intel binary (purple
-lines).
+introducing the NOWAIT qualifier wherever possible (blue lines and
+upwards-triangle symbols). For the Gnu compiler, this improves the
+performance of the executable on eight or more threads while, for the
+Intel compiler, it only gives an improvement for the 24-thread
+case. Moving the SINGLE region before a parallel loop is marginally
+beneficial for the Gnu- and Cray-compiled binaries and yet reduces the
+performance of the Intel binary (purple lines and right-pointing
+triangles).
+
+In order to quantify the scaling behaviour of the different versions
+of nemolite2d with the different compilers/run-time environments, we
+also plot the parallel efficiency in
+Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
+and~\ref{FIG_cray_omp_256}. We define parallel efficiency, $E(n)$, on
+a number of threads, $n$, as:
+\begin{equation}
+E(n) = 100 * \frac{P(n)}{ n*P(1)}
+\end{equation}
+where $P(n)$ is the performance of the code on $n$ threads.
 
 We have used different scales for the $y$-axes in each of the plots in
 Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
