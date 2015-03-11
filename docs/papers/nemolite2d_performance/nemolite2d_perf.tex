@@ -1065,6 +1065,18 @@ and~\ref{FIG_cray_omp_256} show the performance of each of the
 versions of the code on this system for the Gnu, Intel and Cray
 compilers, respectively.
 
+In order to quantify the scaling behaviour of the different versions
+of nemolite2d with the different compilers/run-time environments, we
+also plot the parallel efficiency in
+Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
+and~\ref{FIG_cray_omp_256} (dashed lines and open symbols). We define
+parallel efficiency (\%), $E(n)$, on a number of threads, $n$, as:
+\[
+E(n) = 100  \frac{P(n)}{ n P(1)}
+\]
+where $P(m)$ is the performance of the code on $m$ threads. For a
+perfect, linearly-scaling code, $E(n)$ will be 100\%.
+
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{omp_scaling_256_gnu}
@@ -1076,12 +1088,15 @@ compilers, respectively.
 \label{FIG_gnu_omp_256}
 \end{figure}
 
-The simplest OpenMP implementation (black lines) fails to scale beyond
-two threads for any of the compilers. However, as soon as a single
-PARALLEL region is introduced, the situation is greatly improved with
-all three executables now scaling out to at least 12 threads (red
-lines, square symbols). {\bf Add parallel efficiency lines to the OMP
-  scaling plots to highlight that things are still not brilliant.}
+The simplest OpenMP implementation (black lines, circle symbols) fails
+to scale well for any of the compilers. For the Intel and Gnu
+versions, parallel efficiency is already less than 50\% on just four
+threads. The Cray version however does better and is about 45\%
+efficient on eight threads.
+
+With the move to a single PARALLEL region, the situation
+is greatly improved with all three executables now scaling out to at
+least 12 threads with $\sim70$\% efficiency (red lines, square symbols).
 
 In restricting ourselves to a single socket, we are keeping all
 threads within a single NUMA region. It is therefore surprising that
@@ -1125,17 +1140,6 @@ case. Moving the SINGLE region before a parallel loop is marginally
 beneficial for the Gnu- and Cray-compiled binaries and yet reduces the
 performance of the Intel binary (purple lines and right-pointing
 triangles).
-
-In order to quantify the scaling behaviour of the different versions
-of nemolite2d with the different compilers/run-time environments, we
-also plot the parallel efficiency in
-Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
-and~\ref{FIG_cray_omp_256}. We define parallel efficiency, $E(n)$, on
-a number of threads, $n$, as:
-\begin{equation}
-E(n) = 100 * \frac{P(n)}{ n*P(1)}
-\end{equation}
-where $P(n)$ is the performance of the code on $n$ threads.
 
 We have used different scales for the $y$-axes in each of the plots in
 Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
