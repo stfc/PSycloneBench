@@ -1160,6 +1160,34 @@ compiler.  In particular, the Cray compiler no-longer vectorises the
 key Momentum section, despite the directive added during the serial
 optimisation work.
 
+Since NEMO and similar finite-difference codes tend to be
+memory-bandwidth bound, we checked the sensitivity of our performance
+results to this quantity by benchmarking using two sockets of Intel
+Ivy Bridge ({\it i.e.} using a complete node of Archer). For this
+configuration we ensured that threads were evenly shared over the two
+sockets. The performance obtained for the $256^2$ case with the `early
+SINGLE' version of the code is compared with the single-socket
+performance in Figure~\ref{FIG_omp_2socks}. Surprisingly, doubling the
+available memory bandwidth in this way has little effect on
+performance - the two-socket performance figures track those from a
+single socket very closely. The only realy difference in performance
+is at 24 threads where, in addition to the difference in available
+memory bandwidth, the single-socket configuration is using
+hyperthreading while the two-socket case is not.  {\bf Have query in
+  with Archer helpdesk on behaviour seen with Cray compiler here. Also
+  would like to run 512 case on 2 sockets to see how it goes out to 48
+  threads.}
+
+\begin{figure}
+\centering
+\includegraphics[width=\picwidth]{1and2sockets}
+\caption{Performance of the OpenMP-parallel version of \psykal
+  nemolite2d on one and two sockets of Intel Ivy Bridge. The 24-thread
+  runs on a single socket used hyperthreading and the two-socket runs
+  had the threads shared equally between the sockets.}
+\label{FIG_omp_2socks}
+\end{figure}
+
 A further complication is the choice of scheduling of the OpenMP
 threads.  We have investigated the performance of each of the
 executables (and thus the associated OpenMP run-time library) with the
