@@ -218,9 +218,10 @@
 % was not built to handle multiple paragraphs
 %
 
-\author{A.~R.~Porter, R.~Ford and G.~Riley% <-this % stops a space
+\author{R.~W.~Ford, M.~Modani, G.~D.~Riley and A.~R.~Porter% <-this % stops a space
 \thanks{A.~R.~Porter and R.~Ford are with the Science and Technology Facilities Council, UK.}% <-this % stops a space
 \thanks{G.~Riley is with the University of Manchester, Manchester, UK.}% <-this % stops a space
+\thanks{M.~Modani is with IBM.}
 }
 
 % note the % following the last \IEEEmembership and also \thanks - 
@@ -427,8 +428,8 @@ piece of hardware, the version number used in this work is specified.
 The Intel Haswell-based system (Xeon E5-1620 v2) has a clock speed of
 3.7~GHz and 10~MB of last-level cache. The Intel Ivy Bridge-based
 system (Xeon E5-2697) has a clock speed of 2.7~GHz and a last-level
-cache of 30~MB. The CPU in the IBM BG/Q system is built around the
-PowerPC A2 core with a clock speed of 1.6~GHz. The chip has 32~MB of
+cache of 30~MB. The CPU in the IBM Power-8 system is built around the
+PowerPC xxx core with a clock speed of 4.1~GHz. The chip has xxx~MB of
 last-level cache.
 
 % An example of a floating table. Note that, for IEEE style tables, the 
@@ -449,12 +450,11 @@ last-level cache.
 \hline
                  & \multicolumn{4}{c|}{Compiler}             \\
 \hline
-                 & Gnu   & Intel       & Cray    & IBM bgxlf\\
+                 & Gnu   & Intel       & Cray    & IBM     \\
 \hline
 Intel Haswell    & 4.8.2 & 14.0.0      &         &          \\
 Intel Ivy Bridge & 4.9.1 & 14.0.1.106  & 8.3.3   &          \\
-IBM A2 (BGQ)     &       &             &         & 14.1     \\
-IBM Power 8      &       &             &         &          \\
+IBM Power 8      &       &             &         & 14.1     \\
 \hline
 \end{tabular}
 \end{table}
@@ -479,7 +479,7 @@ Compiler  &  Flags \\
 Gnu       & -Ofast -mtune=native -finline-limit=50000    \\
 Intel     & -O3 -fast -fno-inline-factor    \\
 Cray      & -O3 -O ipa5 -h wp               \\
-IBM bgxlf & -O5 -qinline=auto:level=10      \\
+IBM       & \bf{CHECK} -O5 -qinline=auto:level=10      \\
 \hline
 \end{tabular}
 \end{table}
@@ -632,31 +632,52 @@ the performance of the original with the same compiler/CPU.
 \renewcommand{\arraystretch}{1.3}
 % if using array.sty, it might be a good idea to tweak the value of
 % \extrarowheight as needed to properly center the text within the cells
-\caption{The time (s) taken to do 2000 steps of the $256^2$ case after each 
+\caption{The mean time-per-step (s) for the $256^2$ case after each 
 code transformation.}
 \label{TABLE_opt_breakdown}
 \centering
 \begin{tabular}{l|c|c|c|c|c|c}
 \hline
-Compiler:          &  Gnu    & Intel   & Gnu & Intel & Cray & IBM bgxlf \\
+Compiler:          &  Gnu  & Intel   & Gnu & Intel & Cray & IBM \\
 \hline
-CPU:               & \multicolumn{2}{c|}{Haswell} & \multicolumn{3}{c|}{Ivy Bridge} & PowerPC A2 \\
+CPU:               & \multicolumn{2}{c|}{Haswell} & \multicolumn{3}{c|}{Ivy Bridge} & Power8 \\
 \hline
-Original                             & 1.49 & 1.41 & 1.54 & 1.57 & 1.23 &        \\
-Vanilla \psykal                      & 25.3 & 1.73 & 28.7 & 1.96 & 1.67 &        \\
-Explicitly-sized arrays              & 25.3 & 1.72 & 28.6 & 1.93 & 1.39 & 113.74 \\
-Kernels copied into module           & 2.20 & 1.73 & 1.84 & 1.93 & 1.42 &  68.28 \\
-Loops fused                          & 2.18 & 1.58 & 1.79 & 1.76 & 1.47 &  71.91 \\
-In-lined field-copy                  & 2.17 & 1.58 & 1.77 & 1.75 & 1.46 &  83.36 \\
-Fused field-copy                     & 2.18 & 1.85 & 1.99 & 2.07 & 1.30 &  72.62 \\
-In-line all kernels                  & 1.64 & 1.43 & 1.88 & 1.59 & 1.30 &        \\
-Fully fuse 1st loop nest             & 1.62 & 1.44 & 1.55 & 1.55 & 1.25 &        \\
-Explicit, constant array/loop bounds & 1.61 & 1.42 & 1.56 & 1.54 & 1.23 &        \\
+Original                               &  7.47E-04 & 7.06E-04 &	7.70E-04 & 7.77E-04 & 6.13E-04 &  1.17E-03  \\
+Vanilla \psykal                        &  1.26E-02 & 8.64E-04 &	1.38E-02 & 9.82E-04 & 8.33E-04 &  7.87E-03  \\
+Explicitly-sized arrays                &  1.26E-02 & 8.62E-04 &	1.38E-02 & 9.65E-04 & 6.96E-04 &  6.74E-03  \\
+Kernels copied into module             &  1.10E-03 & 8.67E-04 &	9.42E-04 & 9.65E-04 & 7.10E-04 &  3.13E-03  \\
+Loops fused                            &  1.09E-03 & 7.89E-04 &	9.07E-04 & 8.80E-04 & 7.35E-04 &  3.60E-03  \\
+In-lined field-copy                    &  1.09E-03 & 7.90E-04 &	9.07E-04 & 8.73E-04 & 7.31E-04 &  3.62E-03  \\
+Fused field-copy                       &  1.09E-03 & 9.25E-04 &	1.02E-03 & 1.04E-03 & 6.50E-04 &  4.11E-03  \\
+In-line all kernels                    &  8.20E-04 & 7.14E-04 &	9.32E-04 & 8.52E-04 & 6.50E-04 &  1.07E-03  \\
+Fully fuse 1st loop nest               &  8.10E-04 & 7.18E-04 &	7.76E-04 & 7.92E-04 & 6.23E-04 &  1.07E-03  \\
+Explicit, constant array/loop bounds   &  8.05E-04 & 7.12E-04 &	7.81E-04 & 7.91E-04 & 6.13E-04 &  1.07E-03  \\
 \hline
-\parbox{2.5cm}{\%-slow-down of best {\it c.f.} original} & 7.8 & 0.8 & 0.6 & 0.0 & -2.0 &     \\
+\parbox{2.5cm}{\%-slow-down of best {\it c.f.} original} & 7.8 & 0.8 & 0.8 & 1.8 & 0.03 & -9.0    \\
 \hline
 \end{tabular}
 \end{table*}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 With the Gnu compiler (first and third clusters in
 Figure~\ref{FIG_opt_stages_256}), the vanilla \psykal version of
