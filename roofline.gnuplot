@@ -16,12 +16,18 @@ AI_FILE = "shallow_arithmetic_intensity.dat"
 L_MEM_X=0.125
 L_MEM_ANG=36
 
-# ragen of each axis
+# range of each axis
 MAX_X=8
 MIN_Y=0.5
 MAX_Y=32
 set xrange [0.125:MAX_X]
 set yrange [MIN_Y:MAX_Y]
+
+# Kernel constants
+# First loop nest of shallow has AI = 0.3 FLOP/byte
+SHALLOW_LOOP1_AI = 0.3
+# Each momentum kernel (u,v) of nemolite2d has AI = 0.44 FLOP/byte
+NEMOLITE_MOM_AI = 0.44
 
 # CPU CONSTANTS
 # For single core of Xeon E5-2697 v2 (Archer), as measured with 
@@ -39,11 +45,12 @@ C_ILP_ONLY		= 2 * C_SIMD
 # For single core of Xeon E5-2697 v2 (Archer) as measured with 
 # the 'copy' result of STREAM
 # with arrays of 15M elements. Therefore, this is bandwidth to 
-# main memory, not cache:
+# main memory, not cache. Units are GB/s.
 PEAK_MEM_BW=8.4
 # Using arrays of 0.5M elements I think we get bandwidth to
 # L3 cache:
 PEAK_L3_BW=17.7
+
 NUM_CHANNELS=2
 # first ceiling, without multiple memory channels
 C_NO_MULTI_CHANNEL	= NUM_CHANNELS
@@ -60,11 +67,15 @@ roofline(x, y)		= cpu_ceiling(x, y)
 # LINE STYLES
 LINE_ROOF=1
 LINE_CEIL=2
-LINE_LOOP1=3
+LINE_LOOP1_512=3
+LINE_LOOP1_1024=4
+LINE_MOM_512=5
 
 set style line LINE_ROOF	lt 1 lw 6 lc rgb "#8B0000"
 set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
-set style line LINE_LOOP1       lt 1 lw 4 lc rgb "green"
+set style line LINE_LOOP1_512       lt 1 lw 4 lc rgb "red"
+set style line LINE_LOOP1_1024       lt 1 lw 4 lc rgb "green"
+set style line LINE_MOM_512       lt 1 lw 4 lc rgb "violet"
 
 # PLOTS
 set multiplot
@@ -95,8 +106,14 @@ plot cpu_ceiling(x, cpu_roof / C_ILP_ONLY) ls LINE_CEIL
 set label 8 "In L3" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_L3_BW)*1.1) rotate by L_MEM_ANG
 plot mem_ceiling(mem_roof(x,PEAK_L3_BW)) ls LINE_CEIL
 
-# First loop nest of shallow has AI = 0.3
-set arrow from 0.3,MIN_Y to 0.3,mem_roof(0.3,PEAK_MEM_BW) nohead ls LINE_LOOP1
+
+#set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,mem_roof(0.3,PEAK_MEM_BW) nohead ls LINE_LOOP1
+set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.0 nohead ls LINE_LOOP1_512
+set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.1 nohead ls LINE_LOOP1_1024
+
+# Momentum kernel of nemolite2d has AI = 0.44 FLOP/byte
+set label 11 "nemolite2d: Momentum" at (NEMOLITE_MOM_AI),1.0
+set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,mem_roof(NEMOLITE_MOM_AI,PEAK_MEM_BW) nohead ls LINE_MOM_512
 
 # ROOFLINE
 set label 1 "Peak FP Performance" at (MAX_X-1),(PEAK_GFLOPS*1.1) right
