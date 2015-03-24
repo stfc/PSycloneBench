@@ -84,16 +84,16 @@ LINE_LOOP1_1024=4
 LINE_MOM_512=5
 LINE_MOM_256=6
 
-# Width of the vertical 'bars'
-# We want log(bar_width(x)) = constant
-bar_width(x) = int(exp(x*8.0))
+# Width of the vertical 'bars' at x=1
+BAR_WIDTH = 12
 
 set style line LINE_ROOF	lt 1 lw 6 lc rgb "#8B0000"
 set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
-set style line LINE_LOOP1_512       lt 1 lw 4 lc rgb "red"
-set style line LINE_LOOP1_1024       lt 1 lw 4 lc rgb "green"
-set style line LINE_MOM_512       lt 1 lw 4 lc rgb "violet"
-set style line LINE_MOM_256       lt 1 lw 4 lc rgb "orange"
+
+set style line LINE_LOOP1_512     lt 1 lc rgb "red"
+set style line LINE_LOOP1_1024    lt 1 lc rgb "green"
+set style line LINE_MOM_512       lt 1 lc rgb "violet"
+set style line LINE_MOM_256       lt 1 lc rgb "orange"
 
 # PLOTS
 set multiplot
@@ -105,20 +105,20 @@ set multiplot
 #set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,mem_roof(0.3,PEAK_BW) nohead ls LINE_LOOP1
 # Loop1 of shallow with 512^2 achieves 7.0 GFLOPS
 set label 12 "shallow: loop 1, 512" at (SHALLOW_LOOP1_AI),8.0 front textcolor ls LINE_LOOP1_512
-set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.0 nohead ls LINE_LOOP1_512 lw bar_width(SHALLOW_LOOP1_AI)
+set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.0 nohead ls LINE_LOOP1_512 lw BAR_WIDTH*SHALLOW_LOOP1_AI
 
 set label 13 "shallow: loop 1, 1024" at (SHALLOW_LOOP1_AI*1.06), 4.2 front textcolor ls LINE_LOOP1_1024
 # Loop1 of shallow with 1024^2 achieves 4.1 GFLOPS
-set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.1 nohead ls LINE_LOOP1_1024 lw bar_width(SHALLOW_LOOP1_AI)
+set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.1 nohead ls LINE_LOOP1_1024 lw BAR_WIDTH*SHALLOW_LOOP1_AI
 
 # From Nemolite2D
 
 # 256 domain should fit within L3 cache
 set label 14 "nemolite2d: Mom, 256" at (NEMOLITE_MOM_AI*1.06),3.3 front textcolor ls LINE_MOM_256
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.3 nohead ls LINE_MOM_256 lw bar_width(NEMOLITE_MOM_AI)
+set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.3 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
 # 512 domain ~spills from L3 cache to main memory
 set label 11 "nemolite2d: Mom, 512" at (NEMOLITE_MOM_AI*1.06),2.8 front textcolor ls LINE_MOM_512
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.0 nohead ls LINE_MOM_512 lw bar_width(NEMOLITE_MOM_AI)
+set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.0 nohead ls LINE_MOM_512 lw BAR_WIDTH*NEMOLITE_MOM_AI
 
 
 # CPU CEILINGS
