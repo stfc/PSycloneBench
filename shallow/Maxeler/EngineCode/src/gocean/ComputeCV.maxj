@@ -1,0 +1,34 @@
+package gocean;
+
+import com.maxeler.maxcompiler.v2.kernelcompiler.Kernel;
+import com.maxeler.maxcompiler.v2.kernelcompiler.KernelParameters;
+import com.maxeler.maxcompiler.v2.kernelcompiler.stdlib.core.CounterChain;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEType;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEVar;
+
+class ComputeCV extends Kernel {
+
+	private static final DFEType type = dfeFloat(11,53);
+
+	protected ComputeCV(KernelParameters parameters) {
+		super(parameters);
+
+		DFEVar p = io.input("p", type);
+		DFEVar v = io.input("v", type);
+		int width = 256;
+
+		CounterChain chain = control.count.makeCounterChain();
+		DFEVar j = chain.addCounter(width*width, 1);
+
+	    // CV(I,J) = .5d0*(P(I,J+1)+P(I,J))*V(I,J)
+	    // TODO Presumably a stream offset has to be set at compile time
+	    // otherwise it would be best to set it with an integer DEFVar?
+        DFEVar cv =  j < width*(width-1) ? 0.5*(stream.offset(p, width) + p)*v : 0.0;
+        //DFEVar cv = j < width*(width-1) ? p*v : 0.0;
+
+        //debug.simPrintf("j = %d, cv = %e\n", j, cv);
+
+		io.output("cv", cv, type);
+	}
+
+}
