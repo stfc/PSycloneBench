@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<buildProfile>
+<common>
+<boardModel type="MAIA"/>
+<simulation enabled="true"/>
+<enableMPCX enabled="false"/>
+</common>
+<maxFiles>
+<maxFile buildName="GOcean" buildOrUseExisting="build">
+<runConfiguration askBeforeAutoBuild="false">
+<mainClass>gocean.GOceanManager</mainClass>
+<maxHeapSize>2</maxHeapSize>
+</runConfiguration>
+<selectEngineTarget enabled="false">VECTIS</selectEngineTarget>
+<overrideEnableMPCX enabled="false" value="false"/>
+</maxFile>
+</maxFiles>
+<cpuCode targetType="executable">
+<libraryName/>
+<exeName>GOcean</exeName>
+<skin>
+<ancillaryReleaseInformation enabled="false">
+<dir name=""/>
+</ancillaryReleaseInformation>
+</skin>
+<arguments/>
+<remoteExecution enabled="false">
+<remoteMachineName/>
+<scriptName/>
+</remoteExecution>
+<customDefinitions/>
+</cpuCode>
+<simulator>
+<deleteDRAM enabled="false"/>
+<maxDRAMSize enabled="false"/>
+<DRAMFile enabled="false"/>
+<socketName>arp91_nnGOcean</socketName>
+<startStopScript enabled="true"/>
+<numberOfDevices>1</numberOfDevices>
+<ethernetOneEnabled enabled="false"/>
+<ipAddressOne/>
+<netmaskOne/>
+<pcapFileOne/>
+<ethernetTwoEnabled enabled="false"/>
+<ipAddressTwo/>
+<netmaskTwo/>
+<pcapFileTwo/>
+</simulator>
+</buildProfile>
