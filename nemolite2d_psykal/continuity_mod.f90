@@ -16,7 +16,7 @@ module continuity_mod
              arg(READ,  CV, POINTWISE),        & ! hv
              arg(READ,  CU, POINTWISE),        & ! un
              arg(READ,  CV, POINTWISE),        & ! vn
-             arg(READ,  TIME_STEP),            &
+             arg(READ,  R,  POINTWISE),        & ! Time-step
              arg(READ,  GRID_AREA_T)           &
            /)
      !> We only have one value per grid point and that means
