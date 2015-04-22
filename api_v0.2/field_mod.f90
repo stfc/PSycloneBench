@@ -49,10 +49,6 @@ module field_mod
      type(halo_type), dimension(:), allocatable :: halo
   end type field_type
 
-  type, public, extends(field_type) :: scalar_field
-     real(wp) :: data
-  end TYPE scalar_field
-
   !> A real, 2D field.
   type, public, extends(field_type) :: r2d_field
      integer :: ntiles
@@ -63,22 +59,13 @@ module field_mod
      real(wp), dimension(:,:), allocatable :: data
   end type r2d_field
 
-  !interface set_field
-  !   module procedure set_scalar_field
-  !end interface set_field
-
   !> Interface for the copy_field operation. Overloaded to take
-  !! a scalar, an array or an r2d_field type.
+  !! an array or an r2d_field type.
   !! \todo Remove support for raw arrays from this interface.
   interface copy_field
-     module procedure copy_scalar_field,                            &
-                      copy_2dfield_array, copy_2dfield_array_patch, &
+     module procedure copy_2dfield_array, copy_2dfield_array_patch, &
                       copy_2dfield, copy_2dfield_patch
   end interface copy_field
-
-  interface increment_field
-     module procedure increment_scalar_field, increment_scalar_field_r8
-  end interface increment_field
 
 !  interface field_type
 !     module procedure field_constructor
@@ -99,7 +86,6 @@ module field_mod
   INTEGER, SAVE :: max_tile_width
   INTEGER, SAVE :: max_tile_height
 
-  public increment_field
   public copy_field
   public set_field
   public field_checksum
@@ -841,17 +827,6 @@ contains
 
   !===================================================
 
-  SUBROUTINE copy_scalar_field(field_in, field_out)
-    IMPLICIT none
-    type(scalar_field), INTENT(in) :: field_in
-    type(scalar_field), INTENT(out) :: field_out
-
-    field_out = field_in
-
-  END SUBROUTINE copy_scalar_field
-
-  !===================================================
-
   SUBROUTINE copy_2dfield_array(field_in, field_out)
     IMPLICIT none
     REAL(wp), INTENT(in),  DIMENSION(:,:) :: field_in
@@ -911,36 +886,12 @@ contains
 
   !===================================================
 
-  subroutine increment_scalar_field(field, incr)
-    implicit none
-    type(scalar_field), intent(inout) :: field
-    type(scalar_field), intent(in)    :: incr
-
-    field%data = field%data + incr%data
-
-  END SUBROUTINE increment_scalar_field
-
-  !===================================================
-
-  subroutine increment_scalar_field_r8(field, incr)
-    implicit none
-    type(scalar_field), intent(inout) :: field
-    real(wp), intent(in)    :: incr
-
-    field%data = field%data + incr
-
-  END SUBROUTINE increment_scalar_field_r8
-
-  !===================================================
-
   SUBROUTINE set_field(fld, val)
     implicit none
     class(field_type), INTENT(out) :: fld
     real(wp), INTENT(in) :: val
 
     select type(fld)
-    type is (scalar_field)
-       fld%data = val
     type is (r2d_field)
        fld%data = val
     class default
