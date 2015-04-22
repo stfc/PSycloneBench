@@ -1,5 +1,5 @@
 # Makefile.include is a symbolic link to the desired
-# Makefile.include.<compiler> file.
+# Makefile.include.<compiler> file in the arch dir.
 include Makefile.include
 
 # Location of the psyclone source files (for doing the code
@@ -33,14 +33,13 @@ all: $(EXECS)
 
 # Targets involving the code-generation framework
 shallow_gen.f90: shallow_gocean.f90
-	python ${PSYCLONE_DIR}/generator.py -api gocean shallow_gocean.f90 -oalg shallow_gen.f90 -opsy psy.f90
+	python ${PSYCLONE_DIR}/generator.py -api gocean1.0 shallow_gocean.f90 -oalg shallow_gen.f90 -opsy psy.f90
 
 # psy.f90 is generated at the same time as shallow_gen.f90
 psy.f90: shallow_gen.f90
 
 # The generated code depends on the generated Psy middle-layer
 shallow_gen:
-	@echo "Code generation not yet working for version 0.2 of the GOcean API!"
 	${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
 
 # Normal targets
