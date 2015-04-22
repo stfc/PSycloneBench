@@ -11,7 +11,7 @@ API_DIR = ../api_v0.2
 API_LIB = ${API_DIR}/gocean_api.a
 
 # The targets that this Makefile supports
-EXECS = nemolite2d
+EXECS = nemolite2d nemolite2d_gen
 
 # The modules that are common to both targets
 MODULES = model_mod.o boundary_conditions_mod.o \
@@ -20,7 +20,7 @@ MODULES = model_mod.o boundary_conditions_mod.o \
           time_update_mod.o gocean2d_io_mod.o \
           time_step_mod.o
 
-GENERATED_MODULES = psy.o
+GENERATED_MODULES = psy.o nemolite2d_gen.o
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
@@ -29,16 +29,15 @@ COMMON_MODULES = $(MODULES) ${API_LIB}
 all: $(EXECS)
 
 # Targets involving the code-generation framework
-shallow_gen.f90: shallow_gocean.f90
-	python ${PSYCLONE_DIR}/generator.py -api gocean shallow_gocean.f90 -oalg shallow_gen.f90 -opsy psy.f90
+nemolite2d_gen.f90: nemolite2d_alg.f90
+	python ${PSYCLONE_DIR}/generator.py -api gocean1.0 nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 -opsy psy.f90
 
-# psy.f90 is generated at the same time as shallow_gen.f90
-psy.f90: shallow_gen.f90
+# psy.f90 is generated at the same time as nemolite2d_gen.f90
+psy.f90: nemolite2d_gen.f90
 
 # The generated code depends on the generated Psy middle-layer
-shallow_gen:
-	@echo "Code generation not yet working for version 0.2 of the GOcean API!"
-	#${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
+nemolite2d_gen:
+	${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" nemolite2d_gen.exe
 
 # Normal targets
 nemolite2d: 
@@ -49,7 +48,7 @@ ${API_LIB}: ${API_DIR}/*.?90
 
 nemolite2d.o: $(COMMON_MODULES)
 
-shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
+nemolite2d_gen.o: $(COMMON_MODULES) psy.o
 
 # Interdependencies between modules, alphabetical order
 
@@ -75,7 +74,7 @@ time_update_mod.o: model_mod.o ${API_LIB}
 
 clean: 
 	${MAKE} -C ${API_DIR} clean
-	rm -f *.o *.mod *.MOD *~ psy.f90
+	rm -f *.o *.mod *.MOD *~ psy.f90 nemolite2d_gen.f90
 
 allclean: clean
 	rm -f *.exe fparser.log
