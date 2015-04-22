@@ -77,8 +77,13 @@ program shallow
   INTEGER :: idxt0, idxt1
 
   ! Create the model grid
-  model_grid = grid_type(ARAKAWA_C,                        &
-                         (/BC_PERIODIC,BC_PERIODIC,BC_NONE/) )
+  !> \todo The call to grid_type here should *not* specify the grid
+  !! offset choice as that is an implementation detail. PSyclone
+  !! should re-write this call to pass the offset information after it
+  !! has examined the kernels to see what they are expecting.
+  model_grid = grid_type(ARAKAWA_C,                           &
+                         (/BC_PERIODIC,BC_PERIODIC,BC_NONE/), &
+                         OFFSET_SW)
 
   !  ** Initialisations of model parameters (dt etc) ** 
   CALL model_init(model_grid)
@@ -180,12 +185,9 @@ program shallow
     ! COMPUTE NEW VALUES U,V AND P
 
     call timer_start('Compute new fields', idxt1)
-    call invoke( compute_unew(unew_fld, uold_fld, z_fld, &
-                              cv_fld, h_fld, tdt%data),  &
-                 compute_vnew(vnew_fld, vold_fld, z_fld, &
-                              cu_fld, h_fld, tdt%data),  &
-                 compute_pnew(pnew_fld, pold_fld,        &
-                              cu_fld, cv_fld, tdt%data) )
+    call invoke( compute_unew(unew_fld, uold_fld, z_fld, cv_fld, h_fld, tdt), &
+                 compute_vnew(vnew_fld, vold_fld, z_fld, cu_fld, h_fld, tdt), &
+                 compute_pnew(pnew_fld, pold_fld, cu_fld, cv_fld, tdt) )
     call timer_stop(idxt1)
 
     ! PERIODIC CONTINUATION
