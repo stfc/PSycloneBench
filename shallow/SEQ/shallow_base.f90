@@ -110,9 +110,7 @@ program shallow
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
-  ! dt and tdt are examples of fields that are actually a 
-  ! single parameter.
-  CALL copy_field(dt, tdt)
+  tdt = dt
 
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
@@ -168,18 +166,18 @@ program shallow
   CALL invoke_apply_bcs(z_fld)
 
   CALL invoke_compute_unew(unew_fld, uold_fld,  z_fld, cv_fld, &
-                           h_fld, tdt%data)
+                           h_fld, tdt)
   CALL invoke_compute_vnew(vnew_fld, vold_fld,  z_fld, cu_fld, &
-                           h_fld, tdt%data)
+                           h_fld, tdt)
   CALL invoke_compute_pnew(pnew_fld, pold_fld, cu_fld, cv_fld, &
-                           tdt%data)
+                           tdt)
 
   CALL invoke_apply_bcs(UNEW_fld)
   CALL invoke_apply_bcs(VNEW_fld)
   CALL invoke_apply_bcs(PNEW_fld)
 
   ! Set tdt to = 2*dt
-  CALL increment_field(tdt, tdt)
+  tdt = tdt + dt
 
   CALL copy_field(UNEW_fld, U_fld)
   CALL copy_field(VNEW_fld, V_fld)

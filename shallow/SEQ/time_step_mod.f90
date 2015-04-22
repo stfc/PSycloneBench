@@ -24,7 +24,7 @@ contains
     type(r2d_field), intent(inout) :: hfld, zfld, pfld, &
                                                ufld, vfld
     type(r2d_field), intent(inout) :: uold, vold, pold
-    type(scalar_field), intent(in) :: tdt
+    real(wp),        intent(in)    :: tdt
 
     ! Locals
     integer :: I, J, idim1, idim2
@@ -85,7 +85,7 @@ contains
           CALL compute_unew_code(i, j,                  &
                                  unew%data, uold%data,  &
                                  zfld%data, cvfld%data, &
-                                 hfld%data, tdt%data, dx)
+                                 hfld%data, tdt, dx)
        END DO
     END DO
 
@@ -97,7 +97,7 @@ contains
           CALL compute_vnew_code(i, j,                  &
                                  vnew%data, vold%data,  &
                                  zfld%data, cufld%data, &
-                                 hfld%data, tdt%data, dy)
+                                 hfld%data, tdt, dy)
        END DO
     END DO
     dx = pnew%grid%dx
@@ -109,7 +109,7 @@ contains
           CALL compute_pnew_code(i, j,                 &
                                  pnew%data, pold%data, &
                                  cufld%data, cvfld%data, &
-                                 tdt%data, dx, dy)
+                                 tdt, dx, dy)
        END DO
     END DO
 
@@ -125,8 +125,7 @@ contains
 
     ! TIME SMOOTHING AND UPDATE FOR NEXT CYCLE
     
-    ! Here we will query what should be field objects to get at
-    ! raw data.
+    ! Here we field objects to get at raw data.
     idim1 = SIZE(ufld%data, 1)
     idim2 = SIZE(ufld%data, 2)
 

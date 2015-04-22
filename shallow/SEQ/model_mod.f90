@@ -7,8 +7,8 @@ MODULE model_mod
 
   integer :: itmax   !< number of timesteps
 
-  type(scalar_field) :: dt  !< model timestep (seconds)
-  type(scalar_field) :: tdt !< 2xdt apart from first step when is just dt
+  real(wp) :: dt  !< model timestep (seconds)
+  real(wp) :: tdt !< 2xdt apart from first step when is just dt
 
   ! solution arrays
   ! Fields are allocated with extents (M+1,N+1).
@@ -93,7 +93,7 @@ CONTAINS
     CALL grid_init(grid, m, n, dxloc, dyloc)
 
     ! Set model time-step
-    CALL set_field(dt, dt_loc)
+    dt = dt_loc
 
     ! Initialise time-smoothing module
     CALL time_smooth_init(alpha_loc)
@@ -102,7 +102,7 @@ CONTAINS
     CALL model_write_init(m,n)
 
     ! Log model parameters
-    CALL print_initial_values(m,n,dxloc,dyloc, dt%data, alpha_loc)
+    CALL print_initial_values(m,n,dxloc,dyloc, dt, alpha_loc)
 
   END SUBROUTINE model_init
 

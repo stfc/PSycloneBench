@@ -113,9 +113,7 @@ program shallow
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
-  ! dt and tdt are examples of fields that are actually a 
-  ! single parameter.
-  CALL copy_field(dt, tdt)
+  tdt = dt
 
   !     INITIAL VALUES OF THE STREAM FUNCTION AND P
 
@@ -217,7 +215,7 @@ program shallow
     else ! ncycle == 1
 
       ! Make TDT actually = 2*DT
-      call increment_field(tdt, tdt)
+       tdt = tdt + dt
 
     endif ! ncycle > 1
 
