@@ -112,9 +112,10 @@ end program gocean2d
 
 !+++++++++++++++++++++++++++++++++++
 
-subroutine step(grid, istp, &
+subroutine step(grid, istp    , &
                 ua, va, un, vn, &
-                sshn, sshn_u, sshn_v, ssha, ssha_u, ssha_v, &
+                sshn_t, sshn_u, sshn_v, &
+                ssha_t, ssha_u, ssha_v, &
                 hu, hv, ht)
   use kind_params_mod
   use grid_mod
@@ -122,27 +123,30 @@ subroutine step(grid, istp, &
   use model_mod, only: rdt ! The model time-step
   use time_step_mod, only: invoke_time_step
   use gocean2d_io_mod, only: model_write
-  use continuity_mod, only: continuity
+  use continuity_mod,  only: continuity
+  use momentum_mod,    only: momentum_u, momentum_v
+  !use boundary_conditions_mod, only: bc_ssh, bc_solid_u, bc_solid_v
   implicit none
   type(grid_type), intent(in) :: grid
   !> The current time step
   integer,         intent(in) :: istp
-  type(r2d_field), intent(inout) :: un, vn, sshn, sshn_u, sshn_v
-  type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
+  type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
+  type(r2d_field), intent(inout) :: ua, va, ssha_t, ssha_u, ssha_v
   type(r2d_field), intent(inout) :: hu, hv, ht
 
-  call invoke_time_step(istp, ssha, ssha_u, ssha_v, &
-                        sshn, sshn_u, sshn_v, &
+  call invoke_time_step(istp, ssha_t, ssha_u, ssha_v, &
+                        sshn_t, sshn_u, sshn_v, &
                         hu, hv, ht, ua, va, un, vn)
 
   call invoke(                                               &
-              continuity(ssha, sshn, sshn_u, sshn_v, &
-                         hu, hv, un, vn, rdt) )!,                    &
-!              momentum_u(ua, un, vn,                         &
-!                         ssha_u, sshn_t, sshn_u, sshn_v),    &
-!              momentum_v(va, un, vn, hu, hv, ht,             &
-!                         ssha_v, sshn_t, sshn_u, sshn_v),    &
-!              bc_ssh(istp, ssha),                            &
+              continuity(ssha_t, sshn_t, sshn_u, sshn_v,     &
+                         hu, hv, un, vn, rdt),               &
+              momentum_u(ua, un, vn, hu, hv, ht,             &
+                         ssha_u, sshn_t, sshn_u, sshn_v),    &
+              momentum_v(va, un, vn, hu, hv, ht,             &
+                         ssha_v, sshn_t, sshn_u, sshn_v) )!,    &
+
+!  call invoke(bc_ssh(istp, ssha) )!,                            &
 !              bc_solid_u(ua),                                &
 !              bc_solid_v(va),                                &
 !              bc_flather_u(ua, hu, sshn_u),                  &
