@@ -23,7 +23,7 @@ MODULES = physical_params_mod.o \
           compute_unew_mod.o compute_vnew_mod.o compute_pnew_mod.o \
           apply_bcs_mod.o time_smooth_mod.o time_step_mod.o
 
-GENERATED_MODULES = psy.o shallow_gen.o
+GENERATED_MODULES = shallow_gen.o psy.o
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
@@ -55,12 +55,15 @@ shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
 # Interdependencies between modules, alphabetical order
 
+apply_bcs_mod.o: ${API_LIB}
 compute_cu_mod.o: ${API_LIB}
-
 initial_conditions_mod.o: physical_params_mod.o model_mod.o
-
+model_mod.o: ${API_LIB} \
+             physical_params_mod.o \
+             shallow_io_mod.o \
+             time_smooth_mod.o
+physical_params_mod.o:  ${API_LIB}
 time_smooth_mod.o: ${API_LIB}
-
 time_step_mod.o: ${API_LIB} \
                  apply_bcs_mod.o \
                  compute_cu_mod.o \
@@ -70,13 +73,6 @@ time_step_mod.o: ${API_LIB} \
                  compute_vnew_mod.o \
                  compute_z_mod.o \
                  compute_h_mod.o
-
-model_mod.o: ${API_LIB} \
-             physical_params_mod.o \
-             shallow_io_mod.o \
-             time_smooth_mod.o
-
-apply_bcs_mod.o: ${API_LIB}
 
 %.exe: $(MODULE_LIST)
 	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
