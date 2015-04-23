@@ -119,6 +119,8 @@ contains
 
        rewind(21)
 
+       write(21, '("# x  y  depth   ssh  u  v")')
+
        ! Loop over 'internal' T points
        DO jj = sshn%internal%ystart, sshn%internal%ystop, 1
           DO ji = sshn%internal%xstart, sshn%internal%xstop, 1
