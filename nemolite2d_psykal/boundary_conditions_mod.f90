@@ -13,6 +13,7 @@ module boundary_conditions_mod
   public invoke_bc_flather_u, invoke_bc_flather_v
   public invoke_bc_ssh
   public bc_ssh, bc_solid_u, bc_solid_v
+  public bc_flather_u, bc_flather_v
   public bc_ssh_code, bc_solid_u_code, bc_solid_v_code
   public bc_flather_u_code, bc_flather_v_code
 

@@ -124,11 +124,12 @@ subroutine step(istp,           &
   use grid_mod
   use field_mod
   use model_mod, only: rdt ! The model time-step
-  use time_step_mod, only: invoke_time_step
   use gocean2d_io_mod, only: model_write
   use continuity_mod,  only: continuity
   use momentum_mod,    only: momentum_u, momentum_v
-  use boundary_conditions_mod, only: bc_ssh, bc_solid_u, bc_solid_v
+  use boundary_conditions_mod, only: bc_ssh, bc_solid_u, bc_solid_v, &
+                                     bc_flather_u, bc_flather_v
+  use time_update_mod, only: next_sshu, next_sshv
   implicit none
   !> The current time step
   real(wp),        intent(inout) :: istp
@@ -136,9 +137,9 @@ subroutine step(istp,           &
   type(r2d_field), intent(inout) :: ua, va, ssha_t, ssha_u, ssha_v
   type(r2d_field), intent(inout) :: hu, hv, ht
 
-  call invoke_time_step(istp, ssha_t, ssha_u, ssha_v, &
-                        sshn_t, sshn_u, sshn_v, &
-                        hu, hv, ht, ua, va, un, vn)
+  !call invoke_time_step(istp, ssha_t, ssha_u, ssha_v, &
+  !                      sshn_t, sshn_u, sshn_v, &
+  !                      hu, hv, ht, ua, va, un, vn)
 
   call invoke(                                               &
               continuity(ssha_t, sshn_t, sshn_u, sshn_v,     &
@@ -148,17 +149,17 @@ subroutine step(istp,           &
               momentum_v(va, un, vn, hu, hv, ht,             &
                          ssha_v, sshn_t, sshn_u, sshn_v) )!,    &
 
-  call invoke(bc_ssh(istp, ssha_t) )!,                            &
-!              bc_solid_u(ua),                                &
-!              bc_solid_v(va),                                &
-!              bc_flather_u(ua, hu, sshn_u),                  &
-!              bc_flather_v(va, hv, sshn_v),                  &
+  call invoke(bc_ssh(istp, ssha_t),                          &
+              bc_solid_u(ua),                                &
+              bc_solid_v(va),                                &
+              bc_flather_u(ua, hu, sshn_u),                  &
+              bc_flather_v(va, hv, sshn_v),                  &
 !              copy_field(ua, un),                            &
 !              copy_field(va, vn),                            &
 !              copy_field(ssha, sshn_t),                      &
-!              next_sshu(sshn_u, sshn_t),                     &
-!              next_sshv(sshn_v, sshn_t)                      &
-!             )
+              next_sshu(sshn_u, sshn_t),                     &
+              next_sshv(sshn_v, sshn_t)                      &
+             )
 
 
 !  call model_write(grid, istp, ht, sshn, un, vn)
