@@ -22,7 +22,7 @@ contains
 !    use time_update_mod, only: next_sshu_code, next_sshv_code
     use boundary_conditions_mod
     implicit none
-    integer,         intent(in)    :: istp
+    real(wp),        intent(in)    :: istp
     type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
     type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
     type(r2d_field), intent(in)    :: hu, hv, ht
@@ -345,7 +345,7 @@ contains
 
           amp_tide   = 0.2_wp
           omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
-          rtime = real(istp, wp) * rdt
+          rtime = istp * rdt
 
           if(sshn_t%grid%tmask(ji,jj) <= 0) cycle
 

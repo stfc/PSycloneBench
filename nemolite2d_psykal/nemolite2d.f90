@@ -29,7 +29,8 @@ program gocean2d
   type(r2d_field) :: ua_fld, va_fld
 
   ! time stepping index
-  integer :: istp   
+  integer :: istp  
+  real(wp) :: rstp 
   integer :: itimer0
 
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
@@ -82,8 +83,9 @@ program gocean2d
   do istp = nit000, nitend, 1
 
      !call model_write_log("('istp == ',I6)",istp)
+     rstp = real(istp, wp)
 
-     call step(model_grid, istp,                   &
+     call step(rstp,                               &
                ua_fld, va_fld, un_fld, vn_fld,     &
                sshn_t_fld, sshn_u_fld, sshn_v_fld, &
                ssha_t_fld, ssha_u_fld, ssha_v_fld, &
@@ -112,7 +114,7 @@ end program gocean2d
 
 !+++++++++++++++++++++++++++++++++++
 
-subroutine step(grid, istp, &
+subroutine step(istp,           &
                 ua, va, un, vn, &
                 sshn, sshn_u, sshn_v, ssha, ssha_u, ssha_v, &
                 hu, hv, ht)
@@ -122,9 +124,8 @@ subroutine step(grid, istp, &
   use time_step_mod, only: invoke_time_step
   use gocean2d_io_mod, only: model_write
   implicit none
-  type(grid_type), intent(in) :: grid
   !> The current time step
-  integer,         intent(in) :: istp
+  real(wp),           intent(in) :: istp
   type(r2d_field), intent(inout) :: un, vn, sshn, sshn_u, sshn_v
   type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
   type(r2d_field), intent(in) :: hu, hv, ht

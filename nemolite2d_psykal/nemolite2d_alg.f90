@@ -29,7 +29,10 @@ program gocean2d
   type(r2d_field) :: ua_fld, va_fld
 
   ! time stepping index
-  integer :: istp   
+  integer :: istp 
+  ! Current time-step index as real (because PSyclone currently
+  ! does not support non-integer scalar args).
+  real(wp) :: cstp
   integer :: itimer0
 
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
@@ -82,8 +85,8 @@ program gocean2d
   do istp = nit000, nitend, 1
 
      !call model_write_log("('istp == ',I6)",istp)
-
-     call step(model_grid, istp,                   &
+     cstp = real(istp,wp)
+     call step(cstp,                               &
                ua_fld, va_fld, un_fld, vn_fld,     &
                sshn_t_fld, sshn_u_fld, sshn_v_fld, &
                ssha_t_fld, ssha_u_fld, ssha_v_fld, &
@@ -112,7 +115,7 @@ end program gocean2d
 
 !+++++++++++++++++++++++++++++++++++
 
-subroutine step(grid, istp    , &
+subroutine step(istp,           &
                 ua, va, un, vn, &
                 sshn_t, sshn_u, sshn_v, &
                 ssha_t, ssha_u, ssha_v, &
@@ -125,11 +128,10 @@ subroutine step(grid, istp    , &
   use gocean2d_io_mod, only: model_write
   use continuity_mod,  only: continuity
   use momentum_mod,    only: momentum_u, momentum_v
-  !use boundary_conditions_mod, only: bc_ssh, bc_solid_u, bc_solid_v
+  use boundary_conditions_mod, only: bc_ssh, bc_solid_u, bc_solid_v
   implicit none
-  type(grid_type), intent(in) :: grid
   !> The current time step
-  integer,         intent(in) :: istp
+  real(wp),        intent(inout) :: istp
   type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
   type(r2d_field), intent(inout) :: ua, va, ssha_t, ssha_u, ssha_v
   type(r2d_field), intent(inout) :: hu, hv, ht
@@ -146,7 +148,7 @@ subroutine step(grid, istp    , &
               momentum_v(va, un, vn, hu, hv, ht,             &
                          ssha_v, sshn_t, sshn_u, sshn_v) )!,    &
 
-!  call invoke(bc_ssh(istp, ssha) )!,                            &
+  call invoke(bc_ssh(istp, ssha_t) )!,                            &
 !              bc_solid_u(ua),                                &
 !              bc_solid_v(va),                                &
 !              bc_flather_u(ua, hu, sshn_u),                  &
