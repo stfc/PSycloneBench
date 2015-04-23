@@ -37,7 +37,7 @@ psy.f90: nemolite2d_gen.f90
 
 # The generated code depends on the generated Psy middle-layer
 nemolite2d_gen:
-	${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" nemolite2d_gen.exe
+	${MAKE} MODULE_LIST="${GENERATED_MODULES} ${COMMON_MODULES}" nemolite2d_gen.exe
 
 # Normal targets
 nemolite2d: 
