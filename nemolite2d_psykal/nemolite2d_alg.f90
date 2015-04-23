@@ -153,11 +153,16 @@ subroutine step(istp,           &
               bc_solid_u(ua),                                &
               bc_solid_v(va),                                &
               bc_flather_u(ua, hu, sshn_u),                  &
-              bc_flather_v(va, hv, sshn_v),                  &
+              bc_flather_v(va, hv, sshn_v) )!,                  &
+
 !              copy_field(ua, un),                            &
 !              copy_field(va, vn),                            &
-!              copy_field(ssha, sshn_t),                      &
-              next_sshu(sshn_u, sshn_t),                     &
+!              copy_field(ssha_t, sshn_t),                      &
+  un%data = ua%data
+  vn%data = va%data
+  sshn_t%data = ssha_t%data
+
+  call invoke(next_sshu(sshn_u, sshn_t),                     &
               next_sshv(sshn_v, sshn_t)                      &
              )
 
