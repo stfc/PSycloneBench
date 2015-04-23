@@ -20,7 +20,7 @@ MODULES = model_mod.o boundary_conditions_mod.o \
           time_update_mod.o gocean2d_io_mod.o \
           time_step_mod.o
 
-GENERATED_MODULES = psy.o nemolite2d_gen.o
+GENERATED_MODULES = nemolite2d_gen.o psy.o
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
