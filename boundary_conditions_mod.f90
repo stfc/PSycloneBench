@@ -12,6 +12,7 @@ module boundary_conditions_mod
   public invoke_bc_solid_u,   invoke_bc_solid_v
   public invoke_bc_flather_u, invoke_bc_flather_v
   public invoke_bc_ssh
+  public bc_ssh, bc_solid_u, bc_solid_v
   public bc_ssh_code, bc_solid_u_code, bc_solid_v_code
   public bc_flather_u_code, bc_flather_v_code
 
@@ -151,7 +152,7 @@ contains
 
   subroutine invoke_bc_ssh(istep, ssha)
     implicit none
-    integer,            intent(in)    :: istep
+    real(wp),           intent(in)    :: istep
     type(r2d_field),    intent(inout) :: ssha
     ! Locals
     integer  :: ji, jj
@@ -172,14 +173,14 @@ contains
     implicit none
     integer, intent(in)  :: ji, jj
     integer, dimension(:,:),  intent(in)    :: tmask
-    integer,                  intent(in)    :: istep
+    real(wp),                 intent(in)    :: istep
     real(wp), dimension(:,:), intent(inout) :: ssha
     ! Locals
     real(wp) :: amp_tide, omega_tide, rtime
 
     amp_tide   = 0.2_wp
     omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
-    rtime = real(istep, wp) * rdt
+    rtime = istep * rdt
 
     if(tmask(ji,jj) <= 0) return
     IF     (tmask(ji,jj-1) < 0) THEN
