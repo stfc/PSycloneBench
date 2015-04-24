@@ -23,7 +23,8 @@ MODULES = physical_params_mod.o \
           compute_unew_mod.o compute_vnew_mod.o compute_pnew_mod.o \
           apply_bcs_mod.o time_smooth_mod.o time_step_mod.o
 
-GENERATED_MODULES = shallow_gen.o psy.o
+# The modules only used when doing code generation
+GENERATED_MODULES = infrastructure_mod.o psy.o
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
@@ -32,7 +33,7 @@ COMMON_MODULES = $(MODULES) ${API_LIB}
 all: $(EXECS)
 
 # Targets involving the code-generation framework
-shallow_gen.f90: shallow_alg.f90
+shallow_gen.f90: infrastructure_mod.f90 shallow_alg.f90
 	python ${PSYCLONE_DIR}/generator.py -api gocean1.0 shallow_alg.f90 -oalg shallow_gen.f90 -opsy psy.f90
 
 # psy.f90 is generated at the same time as shallow_gen.f90
@@ -40,7 +41,13 @@ psy.f90: shallow_gen.f90
 
 # The generated code depends on the generated Psy middle-layer
 shallow_gen:
-	${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
+	${MAKE} MODULE_LIST="shallow_gen.o ${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
+
+# Our module providing fake infrastructure kernels is in the API directory
+# but we need it to be in the same directory as all of the other kernel
+# files.
+infrastructure_mod.f90:
+	ln -sf ${API_DIR}/infrastructure_mod.f90 .
 
 # Normal targets
 shallow_base: ${API_LIB}
@@ -57,6 +64,7 @@ shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
 apply_bcs_mod.o: ${API_LIB}
 compute_cu_mod.o: ${API_LIB}
+infrastructure_mod.o: ${API_LIB}
 initial_conditions_mod.o: physical_params_mod.o model_mod.o
 model_mod.o: ${API_LIB} \
              physical_params_mod.o \

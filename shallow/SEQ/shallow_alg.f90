@@ -52,6 +52,7 @@ program shallow
   use compute_unew_mod, only: compute_unew
   use compute_vnew_mod, only: compute_vnew
   use compute_pnew_mod, only: compute_pnew
+  use infrastructure_mod,only: copy
   implicit none
 
   type(grid_type), target :: model_grid
@@ -120,8 +121,6 @@ program shallow
   call init_initial_condition_params(p_fld)
   call invoke_init_stream_fn_kernel(psi_fld)
   call init_pressure(p_fld)
-  !CALL invoke_apply_bcs(psi_fld)
-  !CALL invoke_apply_bcs(p_fld)
 
   !     INITIALIZE VELOCITIES
  
@@ -197,7 +196,7 @@ program shallow
     call timer_stop(idxt1)
 
     ! Time is in seconds but we never actually need it
-    !CALL increment(time, dt)
+    !time = time + dt
 
     call model_write(ncycle, p_fld, u_fld, v_fld)
 
@@ -221,9 +220,14 @@ program shallow
 
     call timer_start('Field copy',idxt1)
 
-    call copy_field(UNEW_fld, U_fld)
-    call copy_field(VNEW_fld, V_fld)
-    call copy_field(PNEW_fld, p_fld)
+    call invoke(                       &
+                copy(u_fld, unew_fld), &
+                copy(v_fld, vnew_fld), &
+                copy(p_fld, pnew_fld)  &
+               )
+!    call copy_field(UNEW_fld, U_fld)
+!    call copy_field(VNEW_fld, V_fld)
+!    call copy_field(PNEW_fld, p_fld)
 
     call timer_stop(idxt1)
 
