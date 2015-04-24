@@ -28,6 +28,10 @@ public CG, DG, R
 !! \todo Work out where POINTWISE and DOFS should be declared.
 integer, public, parameter :: POINTWISE = 2, DOFS = 5
 
+!> The points in the domain that a kernel will update
+integer, public, parameter :: INTERNAL_PTS = 0, &
+                              EXTERNAL_PTS = 1, &
+                              ALL_PTS = 2
 !> The type of grid that a kernel is written to operate on.
 !! NEMO uses an orthogonal, curvilinear mesh while
 !! shallow has a regular mesh (constant spatial resolution).
