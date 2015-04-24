@@ -17,9 +17,9 @@ module time_update_mod
              arg(READ,      GRID_AREA_U)     &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> We update only those points within the internal region
+     !! of the simulated domain.
+     integer :: ITERATES_OVER = INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -45,9 +45,9 @@ module time_update_mod
              arg(READ,      GRID_AREA_V)     &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> We update only those points within the internal region
+     !! of the simulated domain.
+     integer :: ITERATES_OVER = INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
