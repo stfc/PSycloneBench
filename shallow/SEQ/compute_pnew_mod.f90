@@ -25,9 +25,8 @@ module compute_pnew_mod
      !! orthogonal, regular grid.
      integer :: GRID_TYPE = ORTHOGONAL_REGULAR
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     INTEGER :: ITERATES_OVER = DOFS
+     !> This kernel writes only to internal grid points
+     INTEGER :: ITERATES_OVER = INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is

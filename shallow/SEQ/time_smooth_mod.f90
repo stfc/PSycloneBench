@@ -25,15 +25,17 @@ module time_smooth_mod
              arg(READ, EVERY, POINTWISE),     &
              arg(READWRITE , EVERY, POINTWISE)      &
            /)
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     INTEGER :: ITERATES_OVER = DOFS
+
+     !> This kernel writes only to internal points of the
+     !! simulation domain.
+     INTEGER :: ITERATES_OVER = INTERNAL_PTS
   
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
      !! an implementation choice. This can be thought of as choosing
      !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel is independent of this choice.
+     !! point. This kernel is independent of this choice (because it
+     !! acts in time rather than space).
      integer :: index_offset = OFFSET_ANY
 
   CONTAINS

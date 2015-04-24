@@ -18,9 +18,9 @@ module compute_h_mod
              arg(READ,  CU, POINTWISE),        & ! u
              arg(READ,  CV, POINTWISE)         & ! v
            /)
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> This kernel writes only to internal points of the
+     !! simulation domain.
+     integer :: ITERATES_OVER = INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is

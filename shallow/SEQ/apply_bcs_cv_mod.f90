@@ -16,9 +16,8 @@ module apply_bcs_cv_mod
      type(arg), dimension(1) :: meta_args =    &
           (/ arg(READWRITE, CV, POINTWISE)     & ! field
            /)
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> This kernel writes only to external points
+     integer :: ITERATES_OVER = EXTERNAL_PTS
   contains
     procedure, nopass :: code => apply_bcs_cv_code
   end type apply_bcs_cv_type

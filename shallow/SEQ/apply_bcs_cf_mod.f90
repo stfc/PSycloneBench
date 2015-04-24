@@ -16,9 +16,9 @@ module apply_bcs_cf_mod
      type(arg), dimension(1) :: meta_args =    &
           (/ arg(READWRITE, CF, POINTWISE)     & ! field
            /)
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> This kernel writes only to internal points of the
+     !! simulation domain.
+     integer :: ITERATES_OVER = INTERNAL_PTS
   contains
     procedure, nopass :: code => apply_bcs_cf_code
   end type apply_bcs_cf_type
