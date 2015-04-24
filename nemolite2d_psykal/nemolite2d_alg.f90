@@ -129,7 +129,8 @@ subroutine step(istp,           &
   use momentum_mod,    only: momentum_u, momentum_v
   use boundary_conditions_mod, only: bc_ssh, bc_solid_u, bc_solid_v, &
                                      bc_flather_u, bc_flather_v
-  use time_update_mod, only: next_sshu, next_sshv
+  use time_update_mod,    only: next_sshu, next_sshv
+  use infrastructure_mod, only: copy
   implicit none
   !> The current time step
   real(wp),        intent(inout) :: istp
@@ -137,37 +138,24 @@ subroutine step(istp,           &
   type(r2d_field), intent(inout) :: ua, va, ssha_t, ssha_u, ssha_v
   type(r2d_field), intent(inout) :: hu, hv, ht
 
-  !call invoke_time_step(istp, ssha_t, ssha_u, ssha_v, &
-  !                      sshn_t, sshn_u, sshn_v, &
-  !                      hu, hv, ht, ua, va, un, vn)
-
   call invoke(                                               &
               continuity(ssha_t, sshn_t, sshn_u, sshn_v,     &
                          hu, hv, un, vn, rdt),               &
               momentum_u(ua, un, vn, hu, hv, ht,             &
                          ssha_u, sshn_t, sshn_u, sshn_v),    &
               momentum_v(va, un, vn, hu, hv, ht,             &
-                         ssha_v, sshn_t, sshn_u, sshn_v) )!,    &
-
-  call invoke(bc_ssh(istp, ssha_t),                          &
+                         ssha_v, sshn_t, sshn_u, sshn_v),    &
+              bc_ssh(istp, ssha_t),                          &
               bc_solid_u(ua),                                &
               bc_solid_v(va),                                &
               bc_flather_u(ua, hu, sshn_u),                  &
-              bc_flather_v(va, hv, sshn_v) )!,                  &
-
-!              copy_field(ua, un),                            &
-!              copy_field(va, vn),                            &
-!              copy_field(ssha_t, sshn_t),                      &
-  un%data = ua%data
-  vn%data = va%data
-  sshn_t%data = ssha_t%data
-
-  call invoke(next_sshu(sshn_u, sshn_t),                     &
+              bc_flather_v(va, hv, sshn_v),                  &
+              copy(un, ua),                                  &
+              copy(vn, va),                                  &
+              copy(sshn_t, ssha_t),                          &
+              next_sshu(sshn_u, sshn_t),                     &
               next_sshv(sshn_v, sshn_t)                      &
              )
-
-
-!  call model_write(grid, istp, ht, sshn, un, vn)
 
 end subroutine step
 
