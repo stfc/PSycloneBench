@@ -32,8 +32,8 @@ COMMON_MODULES = $(MODULES) ${API_LIB}
 all: $(EXECS)
 
 # Targets involving the code-generation framework
-shallow_gen.f90: shallow_gocean.f90
-	python ${PSYCLONE_DIR}/generator.py -api gocean1.0 shallow_gocean.f90 -oalg shallow_gen.f90 -opsy psy.f90
+shallow_gen.f90: shallow_alg.f90
+	python ${PSYCLONE_DIR}/generator.py -api gocean1.0 shallow_alg.f90 -oalg shallow_gen.f90 -opsy psy.f90
 
 # psy.f90 is generated at the same time as shallow_gen.f90
 psy.f90: shallow_gen.f90
