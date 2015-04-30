@@ -30,9 +30,6 @@ program gocean2d
 
   ! time stepping index
   integer :: istp 
-  ! Current time-step index as real (because PSyclone currently
-  ! does not support non-integer scalar args).
-  real(wp) :: cstp
   integer :: itimer0
 
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
@@ -85,8 +82,8 @@ program gocean2d
   do istp = nit000, nitend, 1
 
      !call model_write_log("('istp == ',I6)",istp)
-     cstp = real(istp,wp)
-     call step(cstp,                               &
+
+     call step(istp,                               &
                ua_fld, va_fld, un_fld, vn_fld,     &
                sshn_t_fld, sshn_u_fld, sshn_v_fld, &
                ssha_t_fld, ssha_u_fld, ssha_v_fld, &
@@ -133,7 +130,7 @@ subroutine step(istp,           &
   use infrastructure_mod, only: copy
   implicit none
   !> The current time step
-  real(wp),        intent(inout) :: istp
+  integer,         intent(inout) :: istp
   type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
   type(r2d_field), intent(inout) :: ua, va, ssha_t, ssha_u, ssha_v
   type(r2d_field), intent(inout) :: hu, hv, ht
