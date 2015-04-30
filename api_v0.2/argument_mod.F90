@@ -42,7 +42,7 @@ end type arg
 ! Types to enable declarations of elements.
 integer, public, parameter :: CG(3) = [1,2,3]
 integer, public, parameter :: DG(0:3) = [0,1,2,3]
-integer, public, parameter :: R=0
+integer, public, parameter :: R=0, I=1
 integer, public, parameter :: EVERY=1
 ! The four types of grid-point on an Arakawa C-grid
 integer, public, parameter :: CU=1, CV=2, CT=3, CF=4
@@ -79,7 +79,7 @@ integer, public, parameter :: GRID_LAT_V  = 13
 integer, public, parameter :: GRID_DX_CONST = 14
 !> Kernel requires the vertical grid spacing of the grid.
 !! Requires/assumes that this quantity is constant.
-integer, public, parameter :: GRID_DY_CONST = 14
+integer, public, parameter :: GRID_DY_CONST = 15
 
 public :: arg
 public :: READ, WRITE, READWRITE, INC
