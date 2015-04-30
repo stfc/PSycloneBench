@@ -21,7 +21,7 @@ module boundary_conditions_mod
 
   type, extends(kernel_type) :: bc_ssh
      type(arg), dimension(3) :: meta_args =  &
-          (/ arg(READ,       R, POINTWISE),  &
+          (/ arg(READ,       I, POINTWISE),  &
              arg(READWRITE, CT, POINTWISE),  &
              arg(READ,      GRID_MASK_T)     &
            /)
@@ -158,7 +158,7 @@ contains
 
   subroutine invoke_bc_ssh(istep, ssha)
     implicit none
-    real(wp),           intent(in)    :: istep
+    integer,            intent(in)    :: istep
     type(r2d_field),    intent(inout) :: ssha
     ! Locals
     integer  :: ji, jj
@@ -179,14 +179,14 @@ contains
     implicit none
     integer, intent(in)  :: ji, jj
     integer, dimension(:,:),  intent(in)    :: tmask
-    real(wp),                 intent(in)    :: istep
+    integer,                  intent(in)    :: istep
     real(wp), dimension(:,:), intent(inout) :: ssha
     ! Locals
     real(wp) :: amp_tide, omega_tide, rtime
 
     amp_tide   = 0.2_wp
     omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
-    rtime = istep * rdt
+    rtime = real(istep,wp) * rdt
 
     if(tmask(ji,jj) <= 0) return
     IF     (tmask(ji,jj-1) < 0) THEN
