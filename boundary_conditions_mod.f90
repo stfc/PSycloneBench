@@ -20,10 +20,10 @@ module boundary_conditions_mod
   !=======================================
 
   type, extends(kernel_type) :: bc_ssh
-     type(arg), dimension(3) :: meta_args =  &
-          (/ arg(READ,       I, POINTWISE),  &
-             arg(READWRITE, CT, POINTWISE),  &
-             arg(READ,      GRID_MASK_T)     &
+     type(arg), dimension(3) :: meta_args =        &
+          (/ arg(READ,      I_SCALAR, POINTWISE),  &
+             arg(READWRITE, CT,       POINTWISE),  &
+             arg(READ,      GRID_MASK_T)           &
            /)
 
      !> This is a boundary-conditions kernel and therefore

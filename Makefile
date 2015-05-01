@@ -7,7 +7,8 @@ include Makefile.include
 PSYCLONE_DIR = ../../PSyclone/src
 
 # Location of the code defining the GOcean API
-API_DIR = ../api_v0.2
+API_VERSION=1.0
+API_DIR = ../api_v${API_VERSION}
 API_LIB = ${API_DIR}/gocean_api.a
 
 # The targets that this Makefile supports
