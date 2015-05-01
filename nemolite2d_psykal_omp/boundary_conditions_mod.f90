@@ -19,8 +19,8 @@ module boundary_conditions_mod
 
   type, extends(kernel_type) :: bc_ssh
      type(arg), dimension(3) :: meta_args =  &
-          (/ arg(READ,       R, POINTWISE),  &
-             arg(READWRITE, CT, POINTWISE),  &
+          (/ arg(READ,      R_SCALAR, POINTWISE),  &
+             arg(READWRITE, CT,       POINTWISE),  &
              arg(READ,      GRID_MASK_T)     &
            /)
 

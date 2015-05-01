@@ -1,6 +1,7 @@
 include ../Makefile.include
 
-API_DIR = ../../../api_v0.2
+API_VERSION=1.0
+API_DIR = ../../../api_v${API_VERSION}
 API_LIB = ${API_DIR}/gocean_api.a
 
 # For timing module in new version of code

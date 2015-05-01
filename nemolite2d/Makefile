@@ -3,7 +3,8 @@
 include Makefile.include
 
 # Location of the code defining the GOcean API
-API_DIR = ../api_v0.2
+API_VERSION=1.0
+API_DIR = ../api_v${API_VERSION}
 API_LIB = ${API_DIR}/gocean_api.a
 
 EXECS = nemolite2d

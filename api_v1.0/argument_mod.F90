@@ -40,9 +40,7 @@ end type arg
 !-------------------------------------------------------------------------------
 
 ! Types to enable declarations of elements.
-integer, public, parameter :: CG(3) = [1,2,3]
-integer, public, parameter :: DG(0:3) = [0,1,2,3]
-integer, public, parameter :: R=0, I=1
+integer, public, parameter :: R_SCALAR=0, I_SCALAR=1
 integer, public, parameter :: EVERY=1
 ! The four types of grid-point on an Arakawa C-grid
 integer, public, parameter :: CU=1, CV=2, CT=3, CF=4

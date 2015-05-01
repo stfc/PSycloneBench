@@ -17,7 +17,7 @@ module compute_pnew_mod
              arg(READ,  CT, POINTWISE),        & ! pold
              arg(READ,  CU, POINTWISE),        & ! cu
              arg(READ,  CV, POINTWISE),        & ! cv
-             arg(READ,  R,  POINTWISE),        & ! tdt
+             arg(READ,  R_SCALAR, POINTWISE),  & ! tdt
              arg(READ,  GRID_DX_CONST),        & ! dx
              arg(READ,  GRID_DY_CONST)         & ! dy
            /)

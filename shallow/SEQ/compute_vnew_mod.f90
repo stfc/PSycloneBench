@@ -18,7 +18,7 @@ module compute_vnew_mod
              arg(READ,  CF, POINTWISE),        & ! z
              arg(READ,  CU, POINTWISE),        & ! cu
              arg(READ,  CT, POINTWISE),        & ! h
-             arg(READ,  R,  POINTWISE),        & ! tdt
+             arg(READ,  R_SCALAR, POINTWISE),  & ! tdt
              arg(READ,  GRID_DY_CONST)         & ! dy
            /)
      !> This kernel operates on fields that live on an

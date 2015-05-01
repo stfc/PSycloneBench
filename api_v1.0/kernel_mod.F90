@@ -21,7 +21,6 @@ private
 public CELLS, EDGES, VERTICES, FE, DP, arg
 public READ, WRITE, READWRITE, INC
 public SUM, MIN, MAX
-public CG, DG, R
 
 !> These quantities should be defined somewhere in the lfric
 !! infrastructure but at the moment they are not!
