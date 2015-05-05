@@ -17,10 +17,19 @@ slowdown_summary.pdf \
 gpu_opt_stages.pdf \
 cpu_cf_gpu.pdf
 
-figs: ${FIG_FILES}
+GRACE_PLOTS = omp_scaling_32_gnu.pdf \
+              omp_scaling_32_cray.pdf \
+              omp_scaling_32_intel.pdf
+
+figs: ${FIG_FILES} ${GRACE_PLOTS}
 
 %.pdf: %.dat
 	./bargraph.pl $< > $*.eps
+	epstopdf $*.eps
+	rm $*.eps
+
+%.pdf: %.agr
+	gracebat -hdevice EPS -printfile $*.eps $<
 	epstopdf $*.eps
 	rm $*.eps
 

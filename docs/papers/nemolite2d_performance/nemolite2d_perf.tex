@@ -221,10 +221,10 @@
 % was not built to handle multiple paragraphs
 %
 
-\author{J.~Appleyard, R.~W.~Ford, J.~Holt, H.~Lieu, A.~R.~Porter and G.~D.~Riley% <-this % stops a space
+\author{J.~Appleyard, M.~Ashworth, R.~W.~Ford, J.~Holt, H.~Lieu, A.~R.~Porter and G.~D.~Riley% <-this % stops a space
 \thanks{J.~Appleyard is with NVIDIA.}%
 \thanks{H.~Lieu and J.~Holt are with the National Oceanography Centre, Liverpool, UK.}%
-\thanks{A.~R.~Porter and R.~Ford are with the Science and Technology Facilities Council, UK.}% <-this % stops a space
+\thanks{M.~Ashworth, R.~W.~Ford and A.~R.~Porter are with the Science and Technology Facilities Council, UK.}% <-this % stops a space
 \thanks{G.~Riley is with the University of Manchester, Manchester, UK.}% <-this % stops a space
 }
 
@@ -1206,6 +1206,42 @@ contains (implicit) thread synchronisation after every parallel loop.
 For the Cray compiler/run-time, some form of dynamic scheduling became
 optimal once inter-thread synchronisation was reduced using the NOWAIT
 qualifiers.
+
+
+\begin{figure}
+\centering
+\includegraphics[width=\picwidth]{omp_scaling_32_gnu}
+\caption{Performance of the OpenMP-parallel version of \psykal
+  nemolite2d for the Gnu compiler on a single Intel Ivy Bridge
+  socket. The corresponding parallel efficiencies are shown using open
+  symbols and dashed lines. The 24-thread runs employed hyperthreading
+  and the optimal OpenMP schedule is given in parentheses.}
+\label{FIG_gnu_omp_32}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\picwidth]{omp_scaling_32_intel}
+\caption{Performance of the OpenMP-parallel version of \psykal
+  nemolite2d for the Intel compiler on a single Intel Ivy Bridge
+  socket.  The corresponding parallel efficiencies are shown using
+  open symbols and dashed lines. The 24-thread runs employed
+  hyperthreading and the optimal OpenMP schedule is given in
+  parentheses.}
+\label{FIG_intel_omp_32}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\picwidth]{omp_scaling_32_cray}
+\caption{Performance of the OpenMP-parallel version of \psykal
+  nemolite2d for the Cray compiler on a single Intel Ivy Bridge
+  socket.  The corresponding parallel efficiencies are shown using
+  open symbols and dashed lines. The 24-thread runs employed
+  hyperthreading and the optimal OpenMP schedule is given in
+  parentheses.}
+\label{FIG_cray_omp_32}
+\end{figure}
 
 \subsubsection{OpenACC Version}
 
