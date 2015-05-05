@@ -18,3 +18,5 @@ OMPFLAGS = -fopenmp
 F90FLAGS += -I${NETCDF_INC}
 LDFLAGS += -L${NETCDF_LIB} -lnetcdff -lnetcdf
 
+AR = ar
+

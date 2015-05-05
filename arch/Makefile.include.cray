@@ -13,3 +13,5 @@ F90FLAGS = -O3 -h noomp -h display_opt -rm
 # optimisation (-h wp)
 #LDFLAGS = -hpl=${PWD}/shallow_prog_lib
 LDFLAGS =
+
+AR = ar

@@ -55,7 +55,7 @@ shallow_base: ${API_LIB}
 	${MAKE} MODULE_LIST="shallow_base.o ${COMMON_MODULES}" shallow_base.exe
 
 ${API_LIB}: ${API_DIR}/*.?90
-	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" API_LIB="gocean_api.a"
+	${MAKE} -C ${API_DIR} AR="${AR}" F90="${F90}" F90FLAGS="${F90FLAGS}" API_LIB="gocean_api.a"
 
 shallow_base.o: $(COMMON_MODULES)
 
