@@ -95,6 +95,8 @@ int main(void)
 	write_s.param_start = 0;
 	write_s.param_size  = lmem_size;
 	write_s.instream_cpu2lmem = unew;
+	write_s.instream_cpu2lmem_v = vnew;
+	write_s.instream_cpu2lmem_p = pnew;
 
 	GOcean_writeLMem_run(engine, &write_s);
 
@@ -105,7 +107,7 @@ int main(void)
 	// Read back from LMEM
 	printf("Reading %d bytes back from LMEM, sizeBytes\n", sizeBytes);
 	GOcean_readLMem_actions_t read_s;
-	GOcean_readLMem(lmem_size, 0, unew);
+	GOcean_readLMem(lmem_size, 0, unew, vnew, pnew);
 
 	max_unload(engine);
 	printf("Done.\n");

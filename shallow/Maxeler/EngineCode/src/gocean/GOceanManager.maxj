@@ -84,10 +84,24 @@ public class GOceanManager extends CustomManager {
 				                      MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
 		DFELink lmem2cpu_u = addStreamFromOnCardMemory("test_out",
 				                      MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
+		DFELink cpu2lmem_v = addStreamToOnCardMemory("v_in",
+                                      MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
+        DFELink lmem2cpu_v = addStreamFromOnCardMemory("v_out",
+                                      MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
+		DFELink cpu2lmem_p = addStreamToOnCardMemory("p_in",
+                                      MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
+        DFELink lmem2cpu_p = addStreamFromOnCardMemory("p_out",
+                                      MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
 
-		// Incoming test stream goes to LMEM
+		// Incoming u stream goes to LMEM
         DFELink atest = addStreamFromCPU("cpu2lmem");
         cpu2lmem_u <== atest;
+        // Incoming v stream goes to LMEM
+        DFELink vlink = addStreamFromCPU("cpu2lmem_v");
+        cpu2lmem_v <== vlink;
+        // Incoming p stream goes to LMEM
+        DFELink plink = addStreamFromCPU("cpu2lmem_p");
+        cpu2lmem_p <== plink;
 
 		// We need a 'Fanout' Routing Block to duplicate the input stream 'p' from the CPU to
 		// the various kernels that need it.
@@ -260,6 +274,12 @@ public class GOceanManager extends CustomManager {
         // test is streamed back to the CPU from LMEM
         DFELink testout = addStreamToCPU("lmem2cpu");
         testout <== lmem2cpu_u;
+        // v is streamed back to CPU from LMEM
+        DFELink vlinkout = addStreamToCPU("lmem2cpu_v");
+        vlinkout <== lmem2cpu_v;
+        // p is streamed back to CPU from LMEM
+        DFELink plinkout = addStreamToCPU("lmem2cpu_p");
+        plinkout <== lmem2cpu_p;
 
 		//configBuild(engineParameters);
 	}
@@ -274,7 +294,12 @@ public class GOceanManager extends CustomManager {
 		InterfaceParam sizeInBytes = size*dptype.sizeInBytes();
 
 		ei.setLMemLinear("test_out", start*dptype.sizeInBytes(), sizeInBytes);
+		ei.setLMemLinear("v_out", start*dptype.sizeInBytes() + sizeInBytes, sizeInBytes);
+		ei.setLMemLinear("p_out", start*dptype.sizeInBytes() + 2*sizeInBytes, sizeInBytes);
 		ei.setStream("lmem2cpu", dptype, sizeInBytes);
+		ei.setStream("lmem2cpu_v", dptype, sizeInBytes);
+		ei.setStream("lmem2cpu_p", dptype, sizeInBytes);
+
 		ei.ignoreAll(EngineInterface.Direction.IN_OUT);
 
 		return ei;
@@ -290,7 +315,12 @@ public class GOceanManager extends CustomManager {
 		InterfaceParam sizeBytes = size*dptype.sizeInBytes();
 
 		ei.setStream("cpu2lmem", dptype, sizeBytes);
+		ei.setStream("cpu2lmem_v", dptype, sizeBytes);
+		ei.setStream("cpu2lmem_p", dptype, sizeBytes);
 		ei.setLMemLinear("test_in", start*dptype.sizeInBytes(), sizeBytes);
+		ei.setLMemLinear("v_in", start*dptype.sizeInBytes() + sizeBytes, sizeBytes);
+		ei.setLMemLinear("p_in", start*dptype.sizeInBytes() + 2*sizeBytes, sizeBytes);
+
 		ei.ignoreAll(EngineInterface.Direction.IN_OUT);
 
 		return ei;
