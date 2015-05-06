@@ -1050,8 +1050,10 @@ In-line field copies       & 5.92 & 12.5 & 11.4 \\
 
 We now turn to transformations related to parallelisation of the
 nemolite2d code; the introduction of OpenMP and OpenACC directives. In
-keeping with the \psykal approach, these transformations are
-restricted to the PSy (middle) layer of the code.
+keeping with the \psykal approach we do not modify either the
+Algorithm- or Kernel-layer code.  Any code changes are restricted to
+either the PSy (middle) layer or the underlying library that manages
+e.g. the construction of field objects.
 
 \subsubsection{OpenMP Version}
 
@@ -1059,7 +1061,7 @@ As with the serial optimisations, we consider the effect of each of
 the OpenMP optimisation steps described in Section~\ref{sec_omp_steps}
 for the $256^2$ domain. For this we principally use a single Intel,
 Ivy Bridge socket which has 12 hardware cores and support for up to 24
-threads with hyperthreading.
+threads with hyperthreading (i.e. two threads per core).
 Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
 and~\ref{FIG_cray_omp_256} show the performance of each of the
 versions of the code on this system for the Gnu, Intel and Cray
@@ -1076,6 +1078,33 @@ E(n) = 100  \frac{P(n)}{ n P(1)}
 \]
 where $P(m)$ is the performance of the code on $m$ threads. For a
 perfect, linearly-scaling code, $E(n)$ will be 100\%.
+
+Since the space to explore consists of three different compilers, six
+different domain sizes, five stages of optimisation and six different
+thread counts we can only consider a slice through it in what follows.
+In order to inform our choice of domain size,
+Figure~\ref{FIG_omp_domain_size} shows the scaling behaviour of the
+most performant, Intel-compiled version of nemolite2d. Although it is
+common for production runs of NEMO to use MPI sub-domains of $20
+\times 20$ ({\bf do we have/need a reference for that?}), it is clear
+from Figure~\ref{FIG_omp_domain_size} that the limited quantity of
+parallelism in the $32 \times 32$ domain inhibits scaling. Therefore,
+to fully test the performance of our OpenMP implementations we have
+chosen to examine results for the $256 \times 256$ domain and these
+are shown in Figures~\ref{FIG_gnu_omp_256}, \ref{FIG_intel_omp_256}
+and \ref{FIG_cray_omp_256}.
+
+\begin{figure}
+\centering
+\includegraphics[width=\picwidth]{omp_scaling_problem_size}
+\caption{The scaling behaviour of the most performant OpenMP-parallel
+  version of \psykal nemolite2d for the full range of domain sizes
+  considered on the CPU. Results are for the Intel compiler on a
+  single Intel Ivy Bridge socket. The corresponding parallel
+  efficiencies are shown using open symbols and dashed lines. The
+  24-thread runs employed hyperthreading.}
+\label{FIG_omp_domain_size}
+\end{figure}
 
 \begin{figure}
 \centering
@@ -1208,40 +1237,40 @@ optimal once inter-thread synchronisation was reduced using the NOWAIT
 qualifiers.
 
 
-\begin{figure}
-\centering
-\includegraphics[width=\picwidth]{omp_scaling_32_gnu}
-\caption{Performance of the OpenMP-parallel version of \psykal
-  nemolite2d for the Gnu compiler on a single Intel Ivy Bridge
-  socket. The corresponding parallel efficiencies are shown using open
-  symbols and dashed lines. The 24-thread runs employed hyperthreading
-  and the optimal OpenMP schedule is given in parentheses.}
-\label{FIG_gnu_omp_32}
-\end{figure}
+%\begin{figure}
+%\centering
+%\includegraphics[width=\picwidth]{omp_scaling_32_gnu}
+%\caption{Performance of the OpenMP-parallel version of \psykal
+%  nemolite2d for the Gnu compiler on a single Intel Ivy Bridge
+%  socket. The corresponding parallel efficiencies are shown using open
+%  symbols and dashed lines. The 24-thread runs employed hyperthreading
+%  and the optimal OpenMP schedule is given in parentheses.}
+%\label{FIG_gnu_omp_32}
+%\end{figure}
 
-\begin{figure}
-\centering
-\includegraphics[width=\picwidth]{omp_scaling_32_intel}
-\caption{Performance of the OpenMP-parallel version of \psykal
-  nemolite2d for the Intel compiler on a single Intel Ivy Bridge
-  socket.  The corresponding parallel efficiencies are shown using
-  open symbols and dashed lines. The 24-thread runs employed
-  hyperthreading and the optimal OpenMP schedule is given in
-  parentheses.}
-\label{FIG_intel_omp_32}
-\end{figure}
+%\begin{figure}
+%\centering
+%\includegraphics[width=\picwidth]{omp_scaling_32_intel}
+%\caption{Performance of the OpenMP-parallel version of \psykal
+%  nemolite2d for the Intel compiler on a single Intel Ivy Bridge
+%  socket.  The corresponding parallel efficiencies are shown using
+%  open symbols and dashed lines. The 24-thread runs employed
+%  hyperthreading and the optimal OpenMP schedule is given in
+%  parentheses.}
+%\label{FIG_intel_omp_32}
+%\end{figure}
 
-\begin{figure}
-\centering
-\includegraphics[width=\picwidth]{omp_scaling_32_cray}
-\caption{Performance of the OpenMP-parallel version of \psykal
-  nemolite2d for the Cray compiler on a single Intel Ivy Bridge
-  socket.  The corresponding parallel efficiencies are shown using
-  open symbols and dashed lines. The 24-thread runs employed
-  hyperthreading and the optimal OpenMP schedule is given in
-  parentheses.}
-\label{FIG_cray_omp_32}
-\end{figure}
+%\begin{figure}
+%\centering
+%\includegraphics[width=\picwidth]{omp_scaling_32_cray}
+%\caption{Performance of the OpenMP-parallel version of \psykal
+%  nemolite2d for the Cray compiler on a single Intel Ivy Bridge
+%  socket.  The corresponding parallel efficiencies are shown using
+%  open symbols and dashed lines. The 24-thread runs employed
+%  hyperthreading and the optimal OpenMP schedule is given in
+%  parentheses.}
+%\label{FIG_cray_omp_32}
+%\end{figure}
 
 \subsubsection{OpenACC Version}
 
