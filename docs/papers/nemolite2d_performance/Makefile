@@ -17,9 +17,11 @@ slowdown_summary.pdf \
 gpu_opt_stages.pdf \
 cpu_cf_gpu.pdf
 
+# Plots generated from Grace (xmgrace)
 GRACE_PLOTS = omp_scaling_32_gnu.pdf \
               omp_scaling_32_cray.pdf \
-              omp_scaling_32_intel.pdf
+              omp_scaling_32_intel.pdf \
+              omp_scaling_problem_size.pdf
 
 figs: ${FIG_FILES} ${GRACE_PLOTS}
 
