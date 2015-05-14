@@ -21,9 +21,6 @@ MODULES = model_mod.o boundary_conditions_mod.o \
           time_update_mod.o gocean2d_io_mod.o \
           time_step_mod.o
 
-# The modules only used when doing code generation
-GENERATED_MODULES = infrastructure_mod.o psy.o
-
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
 COMMON_MODULES = $(MODULES) ${API_LIB}
@@ -39,12 +36,14 @@ nemolite2d_gen.f90: infrastructure_mod.f90 nemolite2d_alg.f90
 # psy.f90 is generated at the same time as nemolite2d_gen.f90
 psy.f90: nemolite2d_gen.f90
 
+# psy_omp.f90 is the same PSy layer but with OpenMP transformations
+# applied to it.
 psy_omp.f90: nemolite2d_alg.f90 nemolite2d_omp_transform.py
 	python nemolite2d_omp_transform.py > psy_omp.f90
 
 # The generated code depends on the generated Psy middle-layer
 nemolite2d_gen:
-	${MAKE} MODULE_LIST="nemolite2d_gen.o ${GENERATED_MODULES} ${COMMON_MODULES}" nemolite2d_gen.exe
+	${MAKE} MODULE_LIST="nemolite2d_gen.o psy.o infrastructure_mod.o ${COMMON_MODULES}" nemolite2d_gen.exe
 
 nemolite2d_gen_omp:
 	${MAKE} MODULE_LIST="nemolite2d_gen.o psy_omp.o infrastructure_mod.o ${COMMON_MODULES}" nemolite2d_gen_omp.exe
@@ -91,7 +90,7 @@ time_update_mod.o: model_mod.o ${API_LIB}
 
 clean: 
 	${MAKE} -C ${API_DIR} clean
-	rm -f *.o *.mod *.MOD *~ psy.f90 nemolite2d_gen.f90
+	rm -f *.o *.mod *.MOD *~ psy.f90 psy_omp.f90 nemolite2d_gen.f90
 
 allclean: clean
 	rm -f infrastructure_mod.f90
