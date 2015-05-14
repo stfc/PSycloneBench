@@ -2,7 +2,6 @@ module momentum_mod
   use kind_params_mod
   use kernel_mod
   use argument_mod
-  use physical_params_mod
   use grid_mod
   use field_mod
   implicit none
@@ -141,6 +140,7 @@ contains
                              hu, hv, ht, ssha_u, &
                              sshn, sshn_u, sshn_v, &
                              tmask, e1u, e1v, e1t, e2u, e2t, e12u, gphiu)
+    use physical_params_mod
     use model_mod, only: rdt, cbfr, visc
     implicit none
     integer, intent(in) :: ji, jj
@@ -289,6 +289,7 @@ contains
                              sshn, sshn_u, sshn_v, &
                              tmask, e1v, e1t, e2u, e2v, e2t, e12v, gphiv)
 
+    use physical_params_mod
     use model_mod, only: rdt, cbfr, visc
     implicit none
     integer, intent(in) :: ji, jj
