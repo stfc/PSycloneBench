@@ -12,7 +12,7 @@ API_DIR = ../api_v${API_VERSION}
 API_LIB = ${API_DIR}/gocean_api.a
 
 # The targets that this Makefile supports
-EXECS = nemolite2d nemolite2d_gen
+EXECS = nemolite2d nemolite2d_gen nemolite2d_gen_omp
 
 # The modules that are common to both targets
 MODULES = model_mod.o boundary_conditions_mod.o \
@@ -39,9 +39,15 @@ nemolite2d_gen.f90: infrastructure_mod.f90 nemolite2d_alg.f90
 # psy.f90 is generated at the same time as nemolite2d_gen.f90
 psy.f90: nemolite2d_gen.f90
 
+psy_omp.f90: nemolite2d_alg.f90 nemolite2d_omp_transform.py
+	python nemolite2d_omp_transform.py > psy_omp.f90
+
 # The generated code depends on the generated Psy middle-layer
 nemolite2d_gen:
 	${MAKE} MODULE_LIST="nemolite2d_gen.o ${GENERATED_MODULES} ${COMMON_MODULES}" nemolite2d_gen.exe
+
+nemolite2d_gen_omp:
+	${MAKE} MODULE_LIST="nemolite2d_gen.o psy_omp.o infrastructure_mod.o ${COMMON_MODULES}" nemolite2d_gen_omp.exe
 
 # Out module providing fake infrastructure kernels is in the API directory
 # but we need it to be in the same directory as all of the other kernel
