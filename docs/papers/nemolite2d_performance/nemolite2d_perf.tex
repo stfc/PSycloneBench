@@ -221,9 +221,9 @@
 % was not built to handle multiple paragraphs
 %
 
-\author{J.~Appleyard, M.~Ashworth, R.~W.~Ford, J.~Holt, H.~Lieu, A.~R.~Porter and G.~D.~Riley% <-this % stops a space
+\author{J.~Appleyard, M.~Ashworth, R.~W.~Ford, J.~Holt, H.~Liu, A.~R.~Porter and G.~D.~Riley% <-this % stops a space
 \thanks{J.~Appleyard is with NVIDIA.}%
-\thanks{H.~Lieu and J.~Holt are with the National Oceanography Centre, Liverpool, UK.}%
+\thanks{H.~Liu and J.~Holt are with the National Oceanography Centre, Liverpool, UK.}%
 \thanks{M.~Ashworth, R.~W.~Ford and A.~R.~Porter are with the Science and Technology Facilities Council, UK.}% <-this % stops a space
 \thanks{G.~Riley is with the University of Manchester, Manchester, UK.}% <-this % stops a space
 }
@@ -361,10 +361,48 @@ investigate in detail the hardware and compiler dependencies of this
 penalty and the steps required to remove it.
 
 \subsection{The `nemolite2d' Program}
-For this work we have used a  program 
 
-{\bf Description of the structure of the program at the Algorithm
-  level so that it links in to Profile data in results section.}
+For this work we have used a program "nemolite2d" developed by
+ourselves.  “nemolite2d” is a vertically-averaged version of NEMO
+(Nucleus for European Modelling of the Ocean), which only keeps its
+dynamical part. The whole model system is represented through one
+continuity equation (for the update of the sea-surface height) and two
+vertically-integrated momentum equations (for the two velocity
+components, respectively).
+
+(add above three equations in .tex file).
+
+The external forcing includes surface wind stress, bottom friction,
+and open boundary barotropic forcing. A lateral slip boundary
+condition is applied along the coast lines. The open boundary
+conditions can be set as a clipped or a Flather's radiation
+condition (Flather, 1976). The bottom friction takes a semi-implicit
+form for the sake of model stability. As done in the original version
+of NEMO, a constant or Smagorinsky horizontal viscosity coefficient is
+used for the horizontal viscosity term.
+
+The traditional Arakawa C structured grid is employed here for the
+discretisation of the computational domain. A two-dimensional integer
+array is used to identify the different parts of the computational
+domain; it has the value of one for ocean, zero for land and minus
+one for ocean cells outside of the computational domain. This array
+serves as a mark to identify ocean cells, land cells, solid boundaries
+and open boundaries.
+
+For the sake of simplicity, the explicit Eulerian forward time
+stepping method is implemented here, except that the bottom friction
+takes a semi-implicit form.  The Coriolis force can be set in explicit
+or implicit form. The advection term is computed with a first-order
+upwind scheme.
+
+The order of the model computation is as follows:
+\begin{enumerate}
+\item Set the initial conditions (water depth, sea surface height, velocity)
+\item integrate the continuity equation for the new sea surface height
+\item update the different terms in the right hand side of the momentum equations (advection, Coriolis forcing(if set in explicit form), pressure gradient, and, horizontal viscosity
+\item update the velocity vectors by summing up the values in 3), and implicitly with the bottom friction and Coriolis forcing (if set in implicit form)
+\item apply the boundary conditions on to the open boundary and solid boundary cells.
+\end{enumerate}
 
 Since any real oceanographic computational model must output results,
 we ensure that any \psykal version of nemolite2d retains the Input/Output
