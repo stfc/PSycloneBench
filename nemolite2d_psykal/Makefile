@@ -46,7 +46,7 @@ nemolite2d_gen:
 	${MAKE} MODULE_LIST="nemolite2d_gen.o psy.o infrastructure_mod.o ${COMMON_MODULES}" nemolite2d_gen.exe
 
 nemolite2d_gen_omp:
-	${MAKE} MODULE_LIST="nemolite2d_gen.o psy_omp.o infrastructure_mod.o ${COMMON_MODULES}" nemolite2d_gen_omp.exe
+	${MAKE} MODULE_LIST="nemolite2d_gen.o psy_omp.o infrastructure_mod.o ${COMMON_MODULES}" F90FLAGS="${F90FLAGS} ${OMPFLAGS}" nemolite2d_gen_omp.exe
 
 # Out module providing fake infrastructure kernels is in the API directory
 # but we need it to be in the same directory as all of the other kernel
@@ -59,7 +59,7 @@ nemolite2d:
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
 ${API_LIB}: ${API_DIR}/*.?90
-	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
+	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS} ${OMPFLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
 
 nemolite2d.o: $(COMMON_MODULES)
 
@@ -95,6 +95,7 @@ clean:
 allclean: clean
 	rm -f infrastructure_mod.f90
 	rm -f *.exe fparser.log
+	rm -f *.lst *.cg *.opt *.optrpt *.s
 	rm -rf *_wpl_dir/
 
 docs:
