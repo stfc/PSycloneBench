@@ -1,6 +1,6 @@
 # Build settings for Intel compiler
-F90 = ifort
-#F90 = ftn
+#F90 = ifort
+F90 = ftn
 
 #NETCDF_INC = /usr/include
 #NETCDF_LIB = /usr/lib64
@@ -17,12 +17,18 @@ F90FLAGS += -no-inline-max-per-compile -no-inline-factor
 # For output of source-code-annotated assembler
 #F90FLAGS += -S -fsource-asm -fverbose-asm
 
-OMPFLAGS = -openmp
+OMPFLAGS = 
+# Comment out line below if not building with OpenMP
+OMPFLAGS += -openmp
 
 #F90FLAGS += -I${NETCDF_INC}
 #LDFLAGS = 
 LDFLAGS = -fast
 #LDFLAGS += -L${NETCDF_LIB} -lnetcdff -lnetcdf
+
+# Add the (possibly empty) OMP flags to the compile and link flags
+F90FLAGS += ${OMPFLAGS}
+LDFLAGS += ${OMPFLAGS}
 
 # The archiver used to generate the API library. We must
 # use Intel's xiar if doing IPO as otherwise the library
