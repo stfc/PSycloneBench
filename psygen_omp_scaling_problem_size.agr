@@ -1,33 +1,61 @@
 # Grace project file
 #
-@version 50125
+@version 50123
 @page size 792, 612
 @page scroll 5%
 @page inout 5%
 @link page off
-@map font 13 to "ZapfDingbats", "ZapfDingbats"
-@map font 4 to "Helvetica", "Helvetica"
-@map font 6 to "Helvetica-Bold", "Helvetica-Bold"
-@map font 5 to "Helvetica-Oblique", "Helvetica-Oblique"
-@map font 7 to "Helvetica-BoldOblique", "Helvetica-BoldOblique"
-@map font 17 to "Nimbus-Sans-L-Regular-Condensed", "Nimbus-Sans-L-Regular-Condensed"
-@map font 18 to "Nimbus-Sans-L-Bold-Condensed", "Nimbus-Sans-L-Bold-Condensed"
-@map font 19 to "Nimbus-Sans-L-Regular-Condensed-Italic", "Nimbus-Sans-L-Regular-Condensed-Italic"
-@map font 20 to "Nimbus-Sans-L-Bold-Condensed-Italic", "Nimbus-Sans-L-Bold-Condensed-Italic"
-@map font 0 to "Times-Roman", "Times-Roman"
-@map font 2 to "Times-Bold", "Times-Bold"
-@map font 1 to "Times-Italic", "Times-Italic"
-@map font 3 to "Times-BoldItalic", "Times-BoldItalic"
 @map font 8 to "Courier", "Courier"
 @map font 10 to "Courier-Bold", "Courier-Bold"
-@map font 9 to "Courier-Oblique", "Courier-Oblique"
 @map font 11 to "Courier-BoldOblique", "Courier-BoldOblique"
-@map font 29 to "URW-Palladio-L-Roman", "URW-Palladio-L-Roman"
-@map font 30 to "URW-Palladio-L-Bold", "URW-Palladio-L-Bold"
-@map font 31 to "URW-Palladio-L-Italic", "URW-Palladio-L-Italic"
-@map font 32 to "URW-Palladio-L-Bold-Italic", "URW-Palladio-L-Bold-Italic"
+@map font 9 to "Courier-Oblique", "Courier-Oblique"
+@map font 14 to "Courier-Regular", "Courier-Regular"
+@map font 15 to "Dingbats-Regular", "Dingbats-Regular"
+@map font 4 to "Helvetica", "Helvetica"
+@map font 6 to "Helvetica-Bold", "Helvetica-Bold"
+@map font 7 to "Helvetica-BoldOblique", "Helvetica-BoldOblique"
+@map font 5 to "Helvetica-Oblique", "Helvetica-Oblique"
+@map font 20 to "NimbusMonoL-Bold", "NimbusMonoL-Bold"
+@map font 21 to "NimbusMonoL-BoldOblique", "NimbusMonoL-BoldOblique"
+@map font 22 to "NimbusMonoL-Regular", "NimbusMonoL-Regular"
+@map font 23 to "NimbusMonoL-RegularOblique", "NimbusMonoL-RegularOblique"
+@map font 24 to "NimbusRomanNo9L-Medium", "NimbusRomanNo9L-Medium"
+@map font 25 to "NimbusRomanNo9L-MediumItalic", "NimbusRomanNo9L-MediumItalic"
+@map font 26 to "NimbusRomanNo9L-Regular", "NimbusRomanNo9L-Regular"
+@map font 27 to "NimbusRomanNo9L-RegularItalic", "NimbusRomanNo9L-RegularItalic"
+@map font 28 to "NimbusSansL-Bold", "NimbusSansL-Bold"
+@map font 29 to "NimbusSansL-BoldCondensed", "NimbusSansL-BoldCondensed"
+@map font 30 to "NimbusSansL-BoldCondensedItalic", "NimbusSansL-BoldCondensedItalic"
+@map font 31 to "NimbusSansL-BoldItalic", "NimbusSansL-BoldItalic"
+@map font 32 to "NimbusSansL-Regular", "NimbusSansL-Regular"
+@map font 33 to "NimbusSansL-RegularCondensed", "NimbusSansL-RegularCondensed"
+@map font 34 to "NimbusSansL-RegularCondensedItalic", "NimbusSansL-RegularCondensedItalic"
+@map font 35 to "NimbusSansL-RegularItalic", "NimbusSansL-RegularItalic"
+@map font 36 to "StandardSymbolsL-Regular", "StandardSymbolsL-Regular"
 @map font 12 to "Symbol", "Symbol"
-@map font 34 to "URW-Chancery-L-Medium-Italic", "URW-Chancery-L-Medium-Italic"
+@map font 38 to "Symbol-Regular", "Symbol-Regular"
+@map font 2 to "Times-Bold", "Times-Bold"
+@map font 3 to "Times-BoldItalic", "Times-BoldItalic"
+@map font 1 to "Times-Italic", "Times-Italic"
+@map font 0 to "Times-Roman", "Times-Roman"
+@map font 43 to "URWBookmanL-DemiBold", "URWBookmanL-DemiBold"
+@map font 44 to "URWBookmanL-DemiBoldItalic", "URWBookmanL-DemiBoldItalic"
+@map font 45 to "URWBookmanL-Light", "URWBookmanL-Light"
+@map font 46 to "URWBookmanL-LightItalic", "URWBookmanL-LightItalic"
+@map font 47 to "URWChanceryL-MediumItalic", "URWChanceryL-MediumItalic"
+@map font 48 to "URWGothicL-Book", "URWGothicL-Book"
+@map font 49 to "URWGothicL-BookOblique", "URWGothicL-BookOblique"
+@map font 50 to "URWGothicL-Demi", "URWGothicL-Demi"
+@map font 51 to "URWGothicL-DemiOblique", "URWGothicL-DemiOblique"
+@map font 52 to "URWPalladioL-Bold", "URWPalladioL-Bold"
+@map font 53 to "URWPalladioL-BoldItalic", "URWPalladioL-BoldItalic"
+@map font 54 to "URWPalladioL-Italic", "URWPalladioL-Italic"
+@map font 55 to "URWPalladioL-Roman", "URWPalladioL-Roman"
+@map font 56 to "Utopia-Bold", "Utopia-Bold"
+@map font 57 to "Utopia-BoldItalic", "Utopia-BoldItalic"
+@map font 58 to "Utopia-Italic", "Utopia-Italic"
+@map font 59 to "Utopia-Regular", "Utopia-Regular"
+@map font 13 to "ZapfDingbats", "ZapfDingbats"
 @map color 0 to (255, 255, 255), "white"
 @map color 1 to (0, 0, 0), "black"
 @map color 2 to (255, 0, 0), "red"
@@ -63,7 +91,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Thu Jun 11 11:30:42 2015"
+@timestamp def "Tue Jun 16 12:06:42 2015"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -110,7 +138,7 @@
 @g0 fixedpoint format general general
 @g0 fixedpoint prec 6, 6
 @with g0
-@    world 1, 0, 24, 100
+@    world 1, 0, 12, 100
 @    stack world 0, 0, 0, 0
 @    znorm 1
 @    view 0.150000, 0.150000, 1.150000, 0.850000
@@ -141,7 +169,7 @@
 @    xaxis  label color 1
 @    xaxis  label place normal
 @    xaxis  tick on
-@    xaxis  tick major 4
+@    xaxis  tick major 2
 @    xaxis  tick minor ticks 1
 @    xaxis  tick default 6
 @    xaxis  tick place rounded true
@@ -233,7 +261,7 @@
 @    altyaxis  off
 @    legend on
 @    legend loctype view
-@    legend 0.87, 0.36
+@    legend 0.87, 0.32
 @    legend box color 1
 @    legend box pattern 1
 @    legend box linewidth 1.0
@@ -403,7 +431,7 @@
 @    s2 legend  "128"
 @    s3 hidden false
 @    s3 type xy
-@    s3 symbol 1
+@    s3 symbol 4
 @    s3 symbol size 0.730000
 @    s3 symbol color 4
 @    s3 symbol pattern 1
@@ -450,9 +478,9 @@
 @    s3 errorbar riser clip length 0.100000
 @    s3 comment "Cols 1:5"
 @    s3 legend  "256"
-@    s4 hidden false
+@    s4 hidden true
 @    s4 type xy
-@    s4 symbol 1
+@    s4 symbol 5
 @    s4 symbol size 0.730000
 @    s4 symbol color 10
 @    s4 symbol pattern 1
@@ -499,9 +527,9 @@
 @    s4 errorbar riser clip length 0.100000
 @    s4 comment "Cols 1:6"
 @    s4 legend  "512"
-@    s5 hidden false
+@    s5 hidden true
 @    s5 type xy
-@    s5 symbol 1
+@    s5 symbol 6
 @    s5 symbol size 0.730000
 @    s5 symbol color 11
 @    s5 symbol pattern 1
@@ -695,6 +723,153 @@
 @    s8 errorbar riser clip length 0.100000
 @    s8 comment "Cols 1:4"
 @    s8 legend  ""
+@    s9 hidden false
+@    s9 type xy
+@    s9 symbol 4
+@    s9 symbol size 0.730000
+@    s9 symbol color 4
+@    s9 symbol pattern 1
+@    s9 symbol fill color 4
+@    s9 symbol fill pattern 0
+@    s9 symbol linewidth 2.0
+@    s9 symbol linestyle 1
+@    s9 symbol char 65
+@    s9 symbol char font 0
+@    s9 symbol skip 0
+@    s9 line type 1
+@    s9 line linestyle 3
+@    s9 line linewidth 2.0
+@    s9 line color 4
+@    s9 line pattern 1
+@    s9 baseline type 0
+@    s9 baseline off
+@    s9 dropline off
+@    s9 fill type 0
+@    s9 fill rule 0
+@    s9 fill color 1
+@    s9 fill pattern 1
+@    s9 avalue off
+@    s9 avalue type 2
+@    s9 avalue char size 1.000000
+@    s9 avalue font 0
+@    s9 avalue color 1
+@    s9 avalue rot 0
+@    s9 avalue format general
+@    s9 avalue prec 3
+@    s9 avalue prepend ""
+@    s9 avalue append ""
+@    s9 avalue offset 0.000000 , 0.000000
+@    s9 errorbar on
+@    s9 errorbar place both
+@    s9 errorbar color 4
+@    s9 errorbar pattern 1
+@    s9 errorbar size 1.000000
+@    s9 errorbar linewidth 1.0
+@    s9 errorbar linestyle 1
+@    s9 errorbar riser linewidth 1.0
+@    s9 errorbar riser linestyle 1
+@    s9 errorbar riser clip off
+@    s9 errorbar riser clip length 0.100000
+@    s9 comment "Cols 1:5"
+@    s9 legend  ""
+@    s10 hidden true
+@    s10 type xy
+@    s10 symbol 5
+@    s10 symbol size 0.730000
+@    s10 symbol color 10
+@    s10 symbol pattern 1
+@    s10 symbol fill color 10
+@    s10 symbol fill pattern 0
+@    s10 symbol linewidth 2.0
+@    s10 symbol linestyle 1
+@    s10 symbol char 65
+@    s10 symbol char font 0
+@    s10 symbol skip 0
+@    s10 line type 1
+@    s10 line linestyle 3
+@    s10 line linewidth 2.0
+@    s10 line color 10
+@    s10 line pattern 1
+@    s10 baseline type 0
+@    s10 baseline off
+@    s10 dropline off
+@    s10 fill type 0
+@    s10 fill rule 0
+@    s10 fill color 1
+@    s10 fill pattern 1
+@    s10 avalue off
+@    s10 avalue type 2
+@    s10 avalue char size 1.000000
+@    s10 avalue font 0
+@    s10 avalue color 1
+@    s10 avalue rot 0
+@    s10 avalue format general
+@    s10 avalue prec 3
+@    s10 avalue prepend ""
+@    s10 avalue append ""
+@    s10 avalue offset 0.000000 , 0.000000
+@    s10 errorbar on
+@    s10 errorbar place both
+@    s10 errorbar color 10
+@    s10 errorbar pattern 1
+@    s10 errorbar size 1.000000
+@    s10 errorbar linewidth 1.0
+@    s10 errorbar linestyle 1
+@    s10 errorbar riser linewidth 1.0
+@    s10 errorbar riser linestyle 1
+@    s10 errorbar riser clip off
+@    s10 errorbar riser clip length 0.100000
+@    s10 comment "Cols 1:6"
+@    s10 legend  ""
+@    s11 hidden true
+@    s11 type xy
+@    s11 symbol 6
+@    s11 symbol size 0.730000
+@    s11 symbol color 11
+@    s11 symbol pattern 1
+@    s11 symbol fill color 11
+@    s11 symbol fill pattern 0
+@    s11 symbol linewidth 2.0
+@    s11 symbol linestyle 1
+@    s11 symbol char 65
+@    s11 symbol char font 0
+@    s11 symbol skip 0
+@    s11 line type 1
+@    s11 line linestyle 3
+@    s11 line linewidth 2.0
+@    s11 line color 11
+@    s11 line pattern 1
+@    s11 baseline type 0
+@    s11 baseline off
+@    s11 dropline off
+@    s11 fill type 0
+@    s11 fill rule 0
+@    s11 fill color 1
+@    s11 fill pattern 1
+@    s11 avalue off
+@    s11 avalue type 2
+@    s11 avalue char size 1.000000
+@    s11 avalue font 0
+@    s11 avalue color 1
+@    s11 avalue rot 0
+@    s11 avalue format general
+@    s11 avalue prec 3
+@    s11 avalue prepend ""
+@    s11 avalue append ""
+@    s11 avalue offset 0.000000 , 0.000000
+@    s11 errorbar on
+@    s11 errorbar place both
+@    s11 errorbar color 11
+@    s11 errorbar pattern 1
+@    s11 errorbar size 1.000000
+@    s11 errorbar linewidth 1.0
+@    s11 errorbar linestyle 1
+@    s11 errorbar riser linewidth 1.0
+@    s11 errorbar riser linestyle 1
+@    s11 errorbar riser clip off
+@    s11 errorbar riser clip length 0.100000
+@    s11 comment "Cols 1:7"
+@    s11 legend  ""
 @target G0.S0
 @type xy
 1 24.6
@@ -775,4 +950,31 @@
 8 32.3
 12 42
 24 63.2
+&
+@target G0.S9
+@type xy
+1 5.2
+2 10
+4 19
+8 34.2
+12 45.2
+24 51.2
+&
+@target G0.S10
+@type xy
+1 5.02
+2 9.92
+4 18.8
+8 33.8
+12 45.8
+24 79.2
+&
+@target G0.S11
+@type xy
+1 4.9
+2 9.58
+4 17.8
+8 32.2
+12 44.1
+24 73.5
 &
