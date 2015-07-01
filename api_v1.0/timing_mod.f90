@@ -301,7 +301,7 @@ MODULE timing_mod
             END IF
 
             ! Truncate the label to 32 chars for table-formatting purposes
-            WRITE(*,"((A),1x,I4,2x,E13.6,2x,E13.6)") &
+            WRITE(*,"((A),1x,I5,1x,E13.6,2x,E13.6)") &
                             timer(ji,jt)%label(1:32), timer(ji,jt)%count, &
                             wtime, wtime/REAL(timer(ji,jt)%count)
          END DO
