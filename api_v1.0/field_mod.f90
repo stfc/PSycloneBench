@@ -67,10 +67,6 @@ module field_mod
                       copy_2dfield, copy_2dfield_patch
   end interface copy_field
 
-!  interface field_type
-!     module procedure field_constructor
-!  end interface field_type
-
   ! User-defined constructor for r2d_field type objects
   interface r2d_field
      module procedure r2d_field_constructor
@@ -157,24 +153,20 @@ contains
 
     call tile_setup(self)
 
-    ! We allocate all fields to have the same extent as that
-    ! with the greatest extents. This enables the (Cray) compiler
+    ! We allocate *all* fields to have the same extent as that
+    ! of the grid. This enables the (Cray) compiler
     ! to safely evaluate code within if blocks that are
     ! checking for conditions at the boundary of the domain.
     ! Hence we use self%whole%{x,y}stop + 1...
-    !> \todo Implement calculation of largest array extents
-    !! required by any field type rather than hard-wiring
-    !! a simple increase of each extent.
-    upper_x_bound = self%whole%xstop + 1
-    upper_y_bound = self%whole%ystop + 1
+    upper_x_bound = self%grid%nx
+    upper_y_bound = self%grid%ny
 
     write(*,"('Allocating ',(A),' field with bounds: (',I1,':',I3, ',',I1,':',I3,')')") &
                TRIM(ADJUSTL(fld_type)), &
                1, upper_x_bound, 1, upper_y_bound
+    write(*,"('T-mask has bounds:  (',I1,':',I3, ',',I1,':',I3,')')") &
+         1, self%grid%nx, 1, self%grid%ny
 
-    !allocate(self%data(self%internal%xstart-1:self%internal%xstop+1, &
-    !                   self%internal%ystart-1:self%internal%ystop+1),&
-    !                   Stat=ierr)
     ! Allocating with a lower bound != 1 causes problems whenever
     ! array passed as assumed-shape dummy argument because lower
     ! bounds default to 1 in called unit.
@@ -1019,7 +1011,7 @@ contains
     INTEGER :: iover, iunder, idxtmp
     ! For doing stats on tile sizes
     INTEGER :: nvects, nvects_sum, nvects_min, nvects_max 
-    LOGICAL, PARAMETER :: print_tiles = .TRUE.
+    LOGICAL, PARAMETER :: print_tiles = .FALSE.
     ! Whether to automatically compute the dimensions of the tiling grid
     logical :: auto_tile
     integer :: xlen, ylen
@@ -1151,10 +1143,12 @@ contains
     ! For AVX (256-bit vector) instructions, I think we want
     ! MOD(idx,4) == 0 idx = idx + (4 - MOD(idx,4))
 
-    WRITE(*,"('Tile width = ',I4,', tile height = ',I4)") &
-         internal_width, internal_height
-    WRITE(*,"('iover = ',I3,', iunder = ',I3)") iover, iunder
-    WRITE(*,"('jover = ',I3,', junder = ',I3)") jover, junder
+    if(print_tiles)then
+       WRITE(*,"('Tile width = ',I4,', tile height = ',I4)") &
+            internal_width, internal_height
+       WRITE(*,"('iover = ',I3,', iunder = ',I3)") iover, iunder
+       WRITE(*,"('jover = ',I3,', junder = ',I3)") jover, junder
+    end if
 
     ith = 1
     ! The starting point of the tiles in y
@@ -1276,14 +1270,16 @@ contains
 !OMP END PARALLEL DO
 
     ! Print tile-size statistics
-    WRITE(*,"(/'Mean tile size = ',F8.1,' pts = ',F7.1,' KB')") &
-                                 REAL(nvects_sum)/REAL(fld%ntiles), &
-                                 REAL(8*nvects_sum)/REAL(fld%ntiles*1024)
-    WRITE(*,"('Min,max tile size (pts) = ',I6,',',I6)") nvects_min,nvects_max
-    WRITE(*,"('Tile load imbalance (%) =',F6.2)") &
-                           100.0*(nvects_max-nvects_min)/REAL(nvects_min)
-    WRITE (*,"('Max tile dims are ',I4,'x',I4/)") max_tile_width, &
-                                                  max_tile_height
+    if(print_tiles)then
+       WRITE(*,"(/'Mean tile size = ',F8.1,' pts = ',F7.1,' KB')") &
+            REAL(nvects_sum)/REAL(fld%ntiles), &
+            REAL(8*nvects_sum)/REAL(fld%ntiles*1024)
+       WRITE(*,"('Min,max tile size (pts) = ',I6,',',I6)") nvects_min,nvects_max
+       WRITE(*,"('Tile load imbalance (%) =',F6.2)") &
+            100.0*(nvects_max-nvects_min)/REAL(nvects_min)
+       WRITE (*,"('Max tile dims are ',I4,'x',I4/)") max_tile_width, &
+            max_tile_height
+    end if
 
   END SUBROUTINE tile_setup
 
