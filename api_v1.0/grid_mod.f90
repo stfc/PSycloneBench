@@ -204,12 +204,14 @@ contains
   !!                  the contents of the domain. Need not be
   !!                  supplied if domain is all wet and has PBCs.
   subroutine grid_init(grid, m, n, dxarg, dyarg, tmask)
+    use global_parameters_mod, only: ALIGNMENT
     implicit none
     type(grid_type), intent(inout) :: grid
     integer,         intent(in)    :: m, n
     real(wp),        intent(in)    :: dxarg, dyarg
     integer, dimension(m,n), intent(in), optional :: tmask
     ! Locals
+    integer :: mlocal
     integer :: ierr(5)
     integer :: ji, jj
     integer :: xstart, ystart ! Start of internal region of T-pts
@@ -219,8 +221,16 @@ contains
     if( present(tmask) )then
        ! A T-mask has been supplied and that tells us everything
        ! about the extent of this model.
-       grid%nx = m
-       grid%ny = n
+       ! Extend the domain by unity in each dimension to allow
+       ! for staggering of variables. All fields will be
+       ! allocated with extent (nx,ny).
+       mlocal = m + 1
+       if( mod(mlocal, ALIGNMENT) > 0 )then
+          grid%nx = (mlocal/ALIGNMENT + 1)*ALIGNMENT
+       else
+          grid%nx = mlocal
+       end if
+       grid%ny = n + 1
     else
        ! No T-mask has been supplied so we assume we're implementing
        ! periodic boundary conditions and allow for halos of width
@@ -233,6 +243,51 @@ contains
        grid%nx = m + 2*HALO_WIDTH_X
        grid%ny = n + 2*HALO_WIDTH_Y
     end if
+
+    ! Copy-in the externally-supplied T-mask, if any. If using OpenMP
+    ! then apply first-touch policy for data locality.
+    if( present(tmask) )then
+       allocate(grid%tmask(grid%nx,grid%ny), stat=ierr(1))
+       if( ierr(1) /= 0 )then
+          call gocean_stop('grid_init: failed to allocate array for T mask')
+       end if
+!$OMP PARALLEL DO schedule(runtime), default(none), private(ji,jj), &
+!$OMP shared(grid, tmask)
+       do jj = 1, n
+          grid%tmask(1:m,jj) = tmask(1:m,jj)
+          ! Our saved mask is padded for alignment purposes so set
+          ! any additional points to be outside the domain
+          do ji = m+1, grid%nx
+             grid%tmask(ji,jj) = tmask(m,jj)
+          end do
+       end do
+       ! Additional rows
+       do jj = n+1, grid%ny
+          do ji = 1, m
+             grid%tmask(ji, jj) = tmask(ji, n)
+          end do
+       end do
+       ! Additional corner points
+       do jj = n+1, grid%ny
+          do ji = m+1, grid%nx
+             grid%tmask(ji,jj) = tmask(m,n)
+          end do
+       end do
+!$OMP END PARALLEL DO
+    else
+       ! No T-mask supplied. Check that grid has PBCs in both
+       ! x and y dimensions otherwise we won't know what to do.
+       if( .not. ( (grid%boundary_conditions(1) == BC_PERIODIC) .and. &
+                   (grid%boundary_conditions(2) == BC_PERIODIC) ) )then
+          call gocean_stop('grid_init: ERROR: No T-mask supplied and '// &
+                           'grid does not have periodic boundary conditions!')
+       end if
+    end if ! T-mask supplied
+
+    ! Use the T mask to determine the dimensions of the
+    ! internal, simulated region of the grid.
+    ! This call sets grid%simulation_domain.
+    call compute_internal_region(grid, m, n)
 
     ! For a regular, orthogonal mesh the spatial resolution is constant
     grid%dx = dxarg
@@ -253,36 +308,6 @@ contains
     if( any(ierr /= 0, 1) )then
        call gocean_stop('grid_init: failed to allocate arrays')
     end if
-
-    ! Copy-in the externally-supplied T-mask, if any. If using OpenMP
-    ! then apply first-touch policy for data locality.
-    if( present(tmask) )then
-       allocate(grid%tmask(grid%nx,grid%ny), stat=ierr(1))
-       if( ierr(1) /= 0 )then
-          call gocean_stop('grid_init: failed to allocate array for T mask')
-       end if
-!$OMP PARALLEL DO schedule(runtime), default(none), private(ji,jj), &
-!$OMP shared(grid, tmask)
-       do jj = 1, grid%ny
-          do ji = 1, grid%nx
-             grid%tmask(ji,jj) = tmask(ji,jj)
-          end do
-       end do
-!$OMP END PARALLEL DO
-    else
-       ! No T-mask supplied. Check that grid has PBCs in both
-       ! x and y dimensions otherwise we won't know what to do.
-       if( .not. ( (grid%boundary_conditions(1) == BC_PERIODIC) .and. &
-                   (grid%boundary_conditions(2) == BC_PERIODIC) ) )then
-          call gocean_stop('grid_init: ERROR: No T-mask supplied and '// &
-                           'grid does not have periodic boundary conditions!')
-       end if
-    end if ! T-mask supplied
-
-    ! Use the T mask to determine the dimensions of the
-    ! internal, simulated region of the grid.
-    ! This call sets grid%simulation_domain.
-    call compute_internal_region(grid)
 
     ! Initialise the horizontal scale factors for a regular,
     ! orthogonal mesh. (Constant spatial resolution.)
@@ -364,10 +389,14 @@ contains
 
   !> Use the T-mask to deduce the inner or simulated region
   !! of the supplied grid.
-  subroutine compute_internal_region(grid)
+  subroutine compute_internal_region(grid, morig, norig)
     implicit none
     type(grid_type), intent(inout) :: grid
-
+    !> The original dimensions of the supplied T-mask (before we
+    !! padded for alignment). This is a bit of a hack to the 
+    !! interface but it will do for now (in the absence of an 
+    !! algorithm to determine the internal region).
+    integer,         intent(in) :: morig, norig
 
     if( allocated(grid%tmask) )then
 
@@ -392,9 +421,9 @@ contains
        !! examining the T-point mask.
        ! This defines the internal region of any T-point field.
        grid%simulation_domain%xstart = 2
-       grid%simulation_domain%xstop  = grid%nx - 1
+       grid%simulation_domain%xstop  = morig - 1
        grid%simulation_domain%ystart = 2
-       grid%simulation_domain%ystop  = grid%ny - 1
+       grid%simulation_domain%ystop  = norig - 1
 
     else
 

@@ -11,6 +11,10 @@ module global_parameters_mod
   ! Default length for names (eg of fields and function spaces)
   integer, parameter, public :: NAME_LEN = 1024
 
+  ! What boundary to align arrays on
+  ! 256 bit = 4 d.p. words
+  integer, parameter, public :: ALIGNMENT = 4
+
   ! Iteration spaces for kernels.
   public :: CELLS, EDGES, VERTICES
   enum, bind(c)
