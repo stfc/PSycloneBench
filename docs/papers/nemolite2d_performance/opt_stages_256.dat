@@ -1,4 +1,4 @@
-=cluster; Original; Vanilla PSyKAl; Safe-address directives; In-line momentum kernels; SIMD Momentum; Grid data from read-only objects; In-line Continuity kernel; In-line remaining kernels; In-line field copies
+=cluster; Original; Vanilla PSyKAl; Constant loop bounds; Safe-address directives; In-line momentum kernels; SIMD Momentum; Grid data from read-only objects; In-line Continuity kernel; In-line remaining kernels; In-line field copies
 font=Helvetica
 fontsz=12
 # stretch the graph vertically
@@ -12,17 +12,11 @@ xticshift=-0.5,-0.5
 #xlabelshift=0,-0.5
 # Increase the size of the computed bounding box so that the
 # legend fits inside its bounding rectangle
-bbfudge=2.4
+bbfudge=2.8
 #=norotate
 =table;
-# Performance as % of original version so 100% means it as fast as original.
-#ylabel=Performance relative to original (%)
 ylabel=Performance (M points per second)
-#Gnu, Ivy Bridge; 7.92E+01; 7.92E+01; 1.11E+02; 1.11E+02; 1.11E+02; 1.25E+02; 1.52E+02; 1.53E+02
-#Intel, Ivy Bridge; 5.36E+01; 5.36E+01; 8.72E+01; 8.72E+01; 9.21E+01; 9.65E+01; 9.78E+01; 1.02E+02
-#Cray, Ivy Bridge; 9.86E+01; 1.02E+02; 1.01E+02; 1.73E+02; 1.72E+02; 1.70E+02; 1.68E+02; 1.67E+02
-#
-Gnu, Ivy Bridge; 3.87;  3.07;  3.07;  4.31; 4.31; 4.31;  4.83;  5.89;  5.92
-Intel, Ivy Bridge; 12.2; 6.55; 6.55; 10.7; 10.7; 11.3; 11.8; 12.0; 12.5
-Cray, Ivy Bridge; 6.83; 6.73; 6.95; 6.93; 11.8; 11.8; 11.6; 11.5; 11.4
+Gnu, Ivy Bridge; 3.87;  2.59; 3.07;  3.07;  4.31; 4.31; 4.31;  4.83;  5.89;  5.92
+Intel, Ivy Bridge; 12.2; 6.27; 6.55; 6.55; 10.7; 10.7; 11.3; 11.8; 12.0; 12.5
+Cray, Ivy Bridge; 6.83; 6.35; 6.73; 6.95; 6.93; 11.8; 11.8; 11.6; 11.5; 11.4
 
