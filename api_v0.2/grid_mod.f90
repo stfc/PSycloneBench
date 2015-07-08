@@ -238,6 +238,7 @@ contains
     grid%dx = dxarg
     grid%dy = dyarg
 
+    ierr = 0
     allocate(grid%dx_t(grid%nx,grid%ny), grid%dy_t(grid%nx,grid%ny), &
              grid%dx_u(grid%nx,grid%ny), grid%dy_u(grid%nx,grid%ny), &
              stat=ierr(1))
