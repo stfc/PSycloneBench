@@ -32,7 +32,6 @@ CONTAINS
     di = TPI/pfld%internal%nx
     dj = TPI/pfld%internal%ny
 
-
   END SUBROUTINE init_initial_condition_params
 
   !===================================================
@@ -54,8 +53,6 @@ CONTAINS
     ! Loop over 'columns'
     DO J=1, idim2
       DO I=1, idim1
-    !DO J=psifld%internal%ystart, psifld%internal%ystop
-    !   DO I=psifld%internal%xstart, psifld%internal%xstop
 
         CALL init_stream_fn_code(i, j, &
                                  psifld%internal%xstart, & 
@@ -106,10 +103,8 @@ CONTAINS
     idim1 = SIZE(pfld%data, 1)
     idim2 = SIZE(pfld%data, 2)
 
-    ! di = 2Pi/(Extent of mesh in x)
-    ! dj = 2Pi/(Extent of mesh in y)
-!    DO J=pfld%internal%ystart, pfld%internal%ystop
-!       DO I=pfld%internal%xstart, pfld%internal%xstop
+    ! di = 2Pi/(Extent of mesh in x) where extent is from namelist
+    ! dj = 2Pi/(Extent of mesh in y)   "     "     "   "     "
     DO J=1,idim2
        DO I=1, idim1
           P(I,J) = PCF*(COS(2.0d0*(I-pfld%internal%xstart)*DI)   & 
@@ -129,7 +124,7 @@ CONTAINS
     type(r2d_field), intent(in),    target :: psifld
     ! Locals
     real(kind=wp), pointer, dimension(:,:) :: u, psi
-    integer  :: i, j, ipsi
+    integer  :: i, j, ipsi, jpsi
     real(wp) :: dy
 
     u => ufld%data
@@ -141,13 +136,22 @@ CONTAINS
     do J=ufld%internal%ystart,ufld%internal%ystop
        do I=ufld%internal%xstart,ufld%internal%xstop
 
+          ! Psi is on F pts and thus starts at (2,2) while U is on U pts
+          ! and thus starts at (2,1).
+          ! In original code:
+          !      DO J=1,N
+          !         DO I=1,M
+          !            U(I+1,J) = -(PSI(I+1,J+1)-PSI(I+1,J))/DY
+          !      or U(2,1) = -(psi(2,2) - psi(2,1))/dy
+          !      so U(BL) = F( psi(BL) - psi(B-1L) )
           ! Have to shift i right by one because psi is defined on f points
           ! which have xstart=2. This means it is shifted right relative
           ! to U points in original shallow which already had a halo at
           ! x=1. This ensures initial conditions are identical to those
           ! in original 'shallow.'
           ipsi = i - ufld%internal%xstart + psifld%internal%xstart
-          U(I,J) = -(PSI(ipsi,j+1)-PSI(ipsi,j))/dy
+          jpsi = j - ufld%internal%ystart + psifld%internal%ystart
+          U(I,J) = -(PSI(ipsi,jpsi)-PSI(ipsi,jpsi-1))/dy
        end do
     end do
 
@@ -162,40 +166,31 @@ CONTAINS
     ! The stream function used in the initialisation
     type(r2d_field), intent(in),    target :: psifld
     ! Locals
-    real(kind=wp), pointer, dimension(:,:) :: v, psi
     integer  :: I, J
+    integer  :: ipsi, jpsi
     real(wp) :: dx
 
-    v => vfld%data
-    psi => psifld%data
     dx = vfld%grid%dx
 
     DO J=vfld%internal%ystart, vfld%internal%ystop
        DO I=vfld%internal%xstart, vfld%internal%xstop
-          call init_velocity_v_code(i,j,dx,v,psi)
+
+          ! We must ensure that initial conditions are identical to those
+          ! in original 'shallow.'
+          ! Have to shift j up by one because psi is defined on f points
+          ! which start at (2,2) in the orig. Shallow. V is on v points
+          ! which start at (1,2) in the orig. Shallow.
+          !      DO J=1,N
+          !         DO I=1,M
+          !            V(I,J+1) = (PSI(I+1,J+1)-PSI(I,J+1))/DX
+          !     V(1,2) = (psi(2,2) - psi(1,2))/dx
+          !  or V(B,L) = F( PSI(B,L) - PSI(B,L-1) )
+          ! ipsi == psi%start WHEN i == ufld%start
+          ipsi = i - vfld%internal%xstart + psifld%internal%xstart
+          jpsi = j - vfld%internal%ystart + psifld%internal%ystart
+          vfld%data(I,J) = (psifld%data(ipsi,jpsi)-psifld%data(ipsi-1,jpsi))/dx
        END DO
     END DO
-
-  CONTAINS
-
-    subroutine init_velocity_v_code(i, j, dx, v, psi)
-      implicit none
-      integer, intent(in) :: i, j
-      real(kind=wp),                 intent(in)  :: dx
-      real(kind=wp), dimension(:,:), intent(out) :: v
-      real(kind=wp), dimension(:,:), intent(in)  :: psi
-      ! Locals
-      integer :: jpsi
-
-      ! Have to shift j up by one because psi is defined on f points
-      ! which have ystart=2. This means it is shifted upwards relative
-      ! to V points in original shallow which already had a halo at
-      ! y=1. This ensures initial conditions are identical to those
-      ! in original 'shallow.'
-      jpsi = j + 1 !- ufld%internal%ystart + psifld%internal%ystart
-      V(I,J) = (PSI(I+1,jpsi)-PSI(I,jpsi))/DX
-
-    end subroutine init_velocity_v_code
 
   end subroutine init_velocity_v
 
