@@ -173,17 +173,21 @@
                 " TIME FILTER PARAMETER              ",F8.3)
          MNMIN = MIN0(M,N)
          !WRITE(6,391) (P(I,I),I=1,MNMIN)
- 391     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF P ' //,(8E15.6))
+! 391     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF P ' //,(8E15.6))
          !WRITE(6,392) (U(I,I),I=1,MNMIN)
- 392     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF U ' //,(8E15.6))
+! 392     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF U ' //,(8E15.6))
          !WRITE(6,393) (V(I,I),I=1,MNMIN)
- 393     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF V ' //,(8E15.6))
+! 393     FORMAT(/' INITIAL DIAGONAL ELEMENTS OF V ' //,(8E15.6))
 
          ! Generate and output checksums of initial fields
-         write(*,"('psi initial CHECKSUM = ',E24.16)")  sum(psi(2:m+1,2:n+1))
-         write(*,"('P initial CHECKSUM = ',E24.16)")    sum(p(1:m,1:n))
-         write(*,"('U initial CHECKSUM = ',E24.16)")    sum(u(2:M+1,1:N))
-         write(*,"('V initial CHECKSUM = ',E24.16)")    sum(v(1:m,2:N+1))
+         write(*,"('psi initial CHECKSUM = ',E24.16)") &
+              sum( abs(psi(2:m+1,2:n+1)) )
+         write(*,"('P initial CHECKSUM = ',E24.16)")   &
+              sum( abs(p(1:m,1:n)) )
+         write(*,"('U initial CHECKSUM = ',E24.16)")   &
+              sum( abs(u(2:M+1,1:N)) )
+         write(*,"('V initial CHECKSUM = ',E24.16)")   &
+              sum( abs(v(1:m,2:N+1)) )
 
 !        Write intial values of p, u, and v into a netCDF file   
          t_val = 0   
@@ -305,11 +309,11 @@
             WRITE(6,350) NCYCLE,PTIME
  350        FORMAT(//' CYCLE NUMBER',I5,' MODEL TIME IN  HOURS', F6.2)
             !WRITE(6,355) (PNEW(I,I),I=1,MNMIN)
- 355        FORMAT(/' DIAGONAL ELEMENTS OF P ' //(8E15.6))
+! 355        FORMAT(/' DIAGONAL ELEMENTS OF P ' //(8E15.6))
             !WRITE(6,360) (UNEW(I,I),I=1,MNMIN)
- 360        FORMAT(/' DIAGONAL ELEMENTS OF U ' //(8E15.6))
+! 360        FORMAT(/' DIAGONAL ELEMENTS OF U ' //(8E15.6))
             !WRITE(6,365) (VNEW(I,I),I=1,MNMIN)
- 365        FORMAT(/' DIAGONAL ELEMENTS OF V ' //(8E15.6))
+! 365        FORMAT(/' DIAGONAL ELEMENTS OF V ' //(8E15.6))
 
 !           jr added MFS310--don't know what actual mult factor should be
 !           jr changed divide by 1 million to divide by 100K since system_clock
@@ -433,11 +437,11 @@
       CALL timer_stop(idxt0)
 
       WRITE(6,"('P CHECKSUM after ',I6,' steps = ',E24.16)") &
-           itmax, SUM(PNEW(1:m,1:n))
+           itmax, SUM( ABS(PNEW(1:m,1:n)) )
       WRITE(6,"('U CHECKSUM after ',I6,' steps = ',E24.16)") &
-           itmax,SUM(UNEW(2:M+1,1:N))
+           itmax, SUM( ABS(UNEW(2:M+1,1:N)) )
       WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E24.16)") &
-           itmax,SUM(VNEW(1:m,2:N+1))
+           itmax, SUM( ABS(VNEW(1:m,2:N+1)) )
 
  !     Close the netCDF file
 
