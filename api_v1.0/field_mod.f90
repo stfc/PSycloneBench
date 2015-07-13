@@ -164,7 +164,7 @@ contains
     write(*,"('Allocating ',(A),' field with bounds: (',I1,':',I3, ',',I1,':',I3,')')") &
                TRIM(ADJUSTL(fld_type)), &
                1, upper_x_bound, 1, upper_y_bound
-    write(*,"('T-mask has bounds:  (',I1,':',I3, ',',I1,':',I3,')')") &
+    write(*,"('Grid has bounds:  (',I1,':',I3, ',',I1,':',I3,')')") &
          1, self%grid%nx, 1, self%grid%ny
 
     ! Allocating with a lower bound != 1 causes problems whenever
@@ -903,7 +903,6 @@ contains
     !> \todo Could add an OpenMP implementation
     val = SUM( ABS(field%data(field%internal%xstart:field%internal%xstop, &
                               field%internal%ystart:field%internal%ystop)) )
-
   end function fld_checksum
 
   !===================================================
