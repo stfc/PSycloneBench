@@ -240,7 +240,13 @@ contains
        ! E/W halos and one of the N/S halos are required. However,
        ! that is an optimisation and this framework must be developed
        ! in such a way that that optimisation is supported.
-       grid%nx = m + 2*HALO_WIDTH_X
+       mlocal = m + 2*HALO_WIDTH_X
+       if( mod(mlocal, ALIGNMENT) > 0 )then
+          grid%nx = (mlocal/ALIGNMENT + 1)*ALIGNMENT
+       else
+          grid%nx = mlocal
+       end if
+
        grid%ny = n + 2*HALO_WIDTH_Y
     end if
 
@@ -429,12 +435,15 @@ contains
 
        ! We don't have a T mask so we must have PBCs in both x and y
        ! dimensions. In this case, the grid dimensions stored in grid%{nx,ny}
-       ! have already been adjusted in grid_init() such that they
-       ! include the halos required to implement the PBCs.
+       ! may have been padded for alignment and so we use morig,norig from
+       ! the namelist file. These are taken to specify the dimension of the
+       ! *simulated* domain, excluding halos.
        grid%simulation_domain%xstart = 2
-       grid%simulation_domain%xstop  = grid%nx - 1
+       grid%simulation_domain%xstop  = grid%simulation_domain%xstart + &
+                                         morig - 1
        grid%simulation_domain%ystart = 2
-       grid%simulation_domain%ystop  = grid%ny - 1
+       grid%simulation_domain%ystop  = grid%simulation_domain%ystart + &
+                                         norig - 1
 
     end if
 
