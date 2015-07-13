@@ -734,7 +734,7 @@ contains
     !  o  b  b  b  b
     !  o  o  o  o  o   j=1
     if(fld%grid%boundary_conditions(1) == BC_PERIODIC)then
-       fld%internal%xstart = fld%grid%simulation_domain%xstart + 1
+       fld%internal%xstart = fld%grid%simulation_domain%xstart
        fld%internal%xstop  = fld%internal%xstart + fld%grid%simulation_domain%nx - 1
     else
        fld%internal%xstart = fld%grid%simulation_domain%xstart + 1
@@ -745,7 +745,7 @@ contains
     end if
 
     if(fld%grid%boundary_conditions(2) == BC_PERIODIC)then
-       fld%internal%ystart = fld%grid%simulation_domain%ystart + 1
+       fld%internal%ystart = fld%grid%simulation_domain%ystart
        fld%internal%ystop  = fld%internal%ystart + fld%grid%simulation_domain%ny - 1
     else
        fld%internal%ystart = fld%grid%simulation_domain%ystart + 1
