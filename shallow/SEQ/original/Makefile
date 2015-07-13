@@ -13,10 +13,13 @@ EXECS = shallow_base
 
 all: $(EXECS)
 
-shallow_base.o: ${API_LIB}
+shallow_base.o: ${API_LIB} ../shallow_io_mod.o
+
+../shallow_io_mod.o:
+	${MAKE} -C ../
 
 %: %.o 
-	$(F90) $(F90FLAGS) -o $@ $^ $(LDFLAGS)
+	$(F90) $(F90FLAGS) -o $@ $^ ../shallow_io_mod.o  $(LDFLAGS)
 
 %.o: %.f90
 	$(F90) $(F90FLAGS) -c $<

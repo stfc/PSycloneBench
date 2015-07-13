@@ -34,6 +34,7 @@
 
 
       USE timing_mod
+      use shallow_io_mod, only: ascii_write
       IMPLICIT NONE
 
       INCLUDE 'netcdf.inc'
@@ -189,10 +190,10 @@
          call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
          call my_ncwrite(ncid,u_id,istart,icount,u(2:m+1,1:n),m,n,t_id,t_val)
          call my_ncwrite(ncid,v_id,istart,icount,v(1:m,2:n+1),m,n,t_id,t_val)
-         call ascii_write(0,m+1,n+1,2,1,u,'u_array.dat')
-         call ascii_write(0,m+1,n+1,1,2,v,'v_array.dat')
-         call ascii_write(0,m+1,n+1,1,1,p,'p_array.dat')
-         call ascii_write(0,m+1,n+1,2,2,psi,'psi_array.dat')
+         call ascii_write(0,m,n,2,1,u,'u_array.dat')
+         call ascii_write(0,m,n,1,2,v,'v_array.dat')
+         call ascii_write(0,m,n,1,1,p,'p_array.dat')
+         call ascii_write(0,m,n,2,2,psi,'psi_array.dat')
       ENDIF
 
 !     Start timer
@@ -341,11 +342,11 @@
             call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
             call my_ncwrite(ncid,u_id,istart,icount,u(2:m+1,1:n),m,n,t_id,t_val)
             call my_ncwrite(ncid,v_id,istart,icount,v(1:m,2:n+1),m,n,t_id,t_val)
-            call ascii_write(ncycle,m+1,n+1,2,1,u,'u_array.dat')
-            call ascii_write(ncycle,m+1,n+1,2,1,cu,'cu_array.dat')
-            call ascii_write(ncycle,m+1,n+1,1,2,v,'v_array.dat')
-            call ascii_write(ncycle,m+1,n+1,1,1,p,'p_array.dat')
-            call ascii_write(ncycle,m+1,n+1,2,2,z,'z_array.dat')
+            call ascii_write(ncycle,m,n,2,1,u,'u_array.dat')
+            call ascii_write(ncycle,m,n,2,1,cu,'cu_array.dat')
+            call ascii_write(ncycle,m,n,1,2,v,'v_array.dat')
+            call ascii_write(ncycle,m,n,1,1,p,'p_array.dat')
+            call ascii_write(ncycle,m,n,2,2,z,'z_array.dat')
 
          endif
 
@@ -583,36 +584,3 @@
       call check_err(iret)
 
       end subroutine my_ncwrite
-
-    subroutine ascii_write(tag, m, n, xstart, ystart, var, fname)
-      implicit none
-      integer, intent(in) :: tag, m, n
-      integer, intent(in) :: xstart, ystart
-      real(8), dimension(m,n), intent(in) :: var
-      character(len=*), intent(in) :: fname
-      ! Locals
-      integer :: ji, jj
-      integer, parameter :: iounit = 24
-      character(len=100) :: fname_full
-      character(len=10) :: tag_str
-
-      write(tag_str, fmt="(I10)") tag
-      write(fname_full, fmt="((A),'.',(A))") TRIM(ADJUSTL(fname)),&
-                                             TRIM(ADJUSTL(tag_str))
-      open(unit=iounit, file=TRIM(fname_full), status='unknown', &
-           action='write', iostat=ji)
-      if( ji /= 0 )then
-         write (*,*) 'ascii_write: ERROR: failed to open file'
-         return
-      end if
-
-      do jj=1, n, 1
-         do ji=1, m, 1
-            write(iounit,*) ji-xstart+1, jj-ystart+1, var(ji,jj)
-         end do
-         write(iounit,*)
-      end do
-
-      close(unit=iounit)
-
-    end subroutine ascii_write
