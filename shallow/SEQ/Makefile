@@ -4,7 +4,7 @@ include Makefile.include
 
 # Location of the psyclone source files (for doing the code
 # generation)
-PSYCLONE_DIR = ../../../PSyclone/src
+PSYCLONE = ${PSYCLONE_DIR}/src
 
 # Location of the code defining the GOcean API
 API_VERSION=1.0
@@ -35,7 +35,7 @@ all: $(EXECS)
 
 # Targets involving the code-generation framework
 shallow_gen.f90: infrastructure_mod.f90 shallow_alg.f90
-	python ${PSYCLONE_DIR}/generator.py -api gocean1.0 shallow_alg.f90 -oalg shallow_gen.f90 -opsy psy.f90
+	python ${PSYCLONE}/generator.py -api gocean1.0 shallow_alg.f90 -oalg shallow_gen.f90 -opsy psy.f90
 
 # psy.f90 is generated at the same time as shallow_gen.f90
 psy.f90: shallow_gen.f90
