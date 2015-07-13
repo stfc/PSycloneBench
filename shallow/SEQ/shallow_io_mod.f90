@@ -352,8 +352,8 @@ contains
          return
       end if
 
-      do jj=ystart-1, ystart+n, 1
-         do ji=xstart-1, xstart+m, 1
+      do jj=ystart, ystart+n-1, 1
+         do ji=xstart, xstart+m-1, 1
             write(iounit,*) ji-xstart+1, jj-ystart+1, var(ji,jj)
          end do
          write(iounit,*)
