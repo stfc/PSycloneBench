@@ -7,6 +7,9 @@ API_LIB = ${API_DIR}/gocean_api.a
 # For timing module in new version of code
 F90FLAGS += -I${API_DIR}
 
+# For IO module
+F90FLAGS += -I../
+
 LDFLAGS += ${API_LIB} -lnetcdf -lnetcdff
 
 EXECS = shallow_base
