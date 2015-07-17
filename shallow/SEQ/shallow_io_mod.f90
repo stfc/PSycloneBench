@@ -354,7 +354,8 @@ contains
 
       do jj=ystart, ystart+n-1, 1
          do ji=xstart, xstart+m-1, 1
-            write(iounit,*) ji-xstart+1, jj-ystart+1, var(ji,jj)
+            write(iounit,"(I5,1x,I5,1x,E24.16)") &
+                 ji-xstart+1, jj-ystart+1, var(ji,jj)
          end do
          write(iounit,*)
       end do
