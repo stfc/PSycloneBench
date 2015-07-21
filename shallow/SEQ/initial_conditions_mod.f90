@@ -74,8 +74,12 @@ CONTAINS
 
       ! di = 2Pi/(Extent of mesh in x)
       ! dj = 2Pi/(Extent of mesh in y)
+      ! Original code:
+      !      PSI(I,J) = A*SIN((I-.5d0)*DI)*SIN((J-.5d0)*DJ)
 
-      PSI(I,J) = A*SIN((I-istart+1.5d0)*DI)*SIN((J-jstart+1.5d0)*DJ)
+      !PSI(I,J) = A*SIN((I-istart+1.5d0)*DI)*SIN((J-jstart+1.5d0)*DJ)
+      PSI(I,J) = A*SIN((I-1.5d0)*DI)*SIN((J-1.5d0)*DJ)
+      !PSI(I,J) = A*SIN((I-0.5d0)*DI)*SIN((J-0.5d0)*DJ)
 
     END SUBROUTINE init_stream_fn_code
 
@@ -99,7 +103,7 @@ CONTAINS
 
     EL = pfld%internal%nx * pfld%grid%dx
     PCF = PI*PI*A*A/(EL*EL)
-
+     
     idim1 = SIZE(pfld%data, 1)
     idim2 = SIZE(pfld%data, 2)
 
@@ -107,8 +111,12 @@ CONTAINS
     ! dj = 2Pi/(Extent of mesh in y)   "     "     "   "     "
     DO J=1,idim2
        DO I=1, idim1
-          P(I,J) = PCF*(COS(2.0d0*(I-pfld%internal%xstart)*DI)   & 
-               +COS(2.0d0*(J-pfld%internal%ystart)*DJ))+50000.d0
+!          P(I,J) = PCF*(COS(2.0d0*(I-pfld%internal%xstart)*DI)   & 
+!               +COS(2.0d0*(J-pfld%internal%ystart)*DJ))+50000.d0
+          P(I,J) = PCF*(COS(2.0d0*(I-2)*DI)   & 
+               +COS(2.0d0*(J-2)*DJ))+50000.d0
+!          P(I,J) = PCF*(COS(2.0d0*(I-1)*DI)   & 
+!               +COS(2.0d0*(J-1)*DJ))+50000.d0
        END DO
     END DO
 
@@ -133,26 +141,12 @@ CONTAINS
     ! dy is a property of the mesh
     dy = ufld%grid%dy
 
-    do J=ufld%internal%ystart,ufld%internal%ystop
-       do I=ufld%internal%xstart,ufld%internal%xstop
-
-          ! Psi is on F pts and thus starts at (2,2) while U is on U pts
-          ! and thus starts at (2,1).
-          ! In original code:
-          !      DO J=1,N
-          !         DO I=1,M
-          !            U(I+1,J) = -(PSI(I+1,J+1)-PSI(I+1,J))/DY
-          !      or U(2,1) = -(psi(2,2) - psi(2,1))/dy
-          !      so U(BL) = F( psi(BL) - psi(B-1L) )
-          ! Have to shift i right by one because psi is defined on f points
-          ! which have xstart=2. This means it is shifted right relative
-          ! to U points in original shallow which already had a halo at
-          ! x=1. This ensures initial conditions are identical to those
-          ! in original 'shallow.'
-          ipsi = i - ufld%internal%xstart + psifld%internal%xstart
-          jpsi = j - ufld%internal%ystart + psifld%internal%ystart
-          U(I,J) = -(PSI(ipsi,jpsi)-PSI(ipsi,jpsi-1))/dy
-       end do
+    !do J=ufld%internal%ystart,ufld%internal%ystop
+    do J=1,ufld%internal%ystop
+       !do I=ufld%internal%xstart,ufld%internal%xstop
+       !do I= 1, ufld%internal%xstop
+          U(:,J) = -(PSI(:,j+1) - PSI(:,j))/dy
+       !end do
     end do
 
   end subroutine init_velocity_u
@@ -166,31 +160,23 @@ CONTAINS
     ! The stream function used in the initialisation
     type(r2d_field), intent(in),    target :: psifld
     ! Locals
+    real(kind=wp), pointer, dimension(:,:) :: v, psi
     integer  :: I, J
     integer  :: ipsi, jpsi
     real(wp) :: dx
 
+    v => vfld%data
+    psi => psifld%data
+
     dx = vfld%grid%dx
 
-    DO J=vfld%internal%ystart, vfld%internal%ystop
-       DO I=vfld%internal%xstart, vfld%internal%xstop
-
-          ! We must ensure that initial conditions are identical to those
-          ! in original 'shallow.'
-          ! Have to shift j up by one because psi is defined on f points
-          ! which start at (2,2) in the orig. Shallow. V is on v points
-          ! which start at (1,2) in the orig. Shallow.
-          !      DO J=1,N
-          !         DO I=1,M
-          !            V(I,J+1) = (PSI(I+1,J+1)-PSI(I,J+1))/DX
-          !     V(1,2) = (psi(2,2) - psi(1,2))/dx
-          !  or V(B,L) = F( PSI(B,L) - PSI(B,L-1) )
-          ! ipsi == psi%start WHEN i == ufld%start
-          ipsi = i - vfld%internal%xstart + psifld%internal%xstart
-          jpsi = j - vfld%internal%ystart + psifld%internal%ystart
-          vfld%data(I,J) = (psifld%data(ipsi,jpsi)-psifld%data(ipsi-1,jpsi))/dx
+    !DO J=vfld%internal%ystart, vfld%internal%ystop
+    !   DO I=vfld%internal%xstart, vfld%internal%xstop
+    !DO J= 1, vfld%internal%ystop
+       DO I=1, vfld%internal%xstop
+          v(I,:) = (psi(i+1,:) - psi(i,:))/dx
        END DO
-    END DO
+    !END DO
 
   end subroutine init_velocity_v
 
