@@ -86,8 +86,14 @@ contains
     real(wp), intent(inout), dimension(:,:) :: z
     real(wp), intent(in),  dimension(:,:) :: p, u, v
 
-    Z(I,J) =( (4.0d0/dx)*( V(I,J-1)-V(I-1,J-1))-    &
-              (4.0d0/dy)*( U(I-1,J)-U(I-1,J-1)) ) / &
+    ! Original code looked like:
+    ! DO J=1,N
+    !    DO I=1,M
+    !       Z(I+1,J+1) =(FSDX*(V(I+1,J+1)-V(I,J+1))-FSDY*(U(I+1,J+1) & 
+    !                    -U(I+1,J)))/(P(I,J)+P(I+1,J)+P(I+1,J+1)+P(I,J+1))
+
+    Z(I,J) =( (4.0d0/dx)*( V(I,J)-V(I-1,J))-    &
+              (4.0d0/dy)*( U(I,J)-U(I,J-1)) ) / &
             (P(I-1,J-1)+P(I,J-1)+ P(I,J)+P(I-1,J))
 
   end subroutine compute_z_code

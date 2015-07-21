@@ -132,9 +132,9 @@ CONTAINS
     tdtsdy = tdt/dy
 
     VNEW(I,J) = VOLD(I,J)- &
-                TDTS8*(Z(I+1,J+1)+Z(I,J+1)) & 
-                *(CU(I,J+1)+CU(I-1,J+1)+CU(I-1,J)+CU(I,J)) & 
-                 -TDTSDY*(H(I,J+1)-H(I,J))
+                TDTS8*(Z(I+1,J)+Z(I,J)) & 
+                *(CU(I+1,J)+CU(I,J)+CU(I,J-1)+CU(I+1,J-1)) & 
+                 -TDTSDY*(H(I,J)-H(I,J-1))
 
   END SUBROUTINE compute_vnew_code
 

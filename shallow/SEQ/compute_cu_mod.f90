@@ -109,7 +109,11 @@ contains
     real(wp), intent(out), dimension(:,:) :: cu
     real(wp), intent(in),  dimension(:,:) :: p, u
 
-    CU(I,J) = 0.5d0*(P(i+1,J)+P(I,J))*U(I,J)
+
+    CU(I,J) = 0.5d0*(P(i,J)+P(I-1,J))*U(I,J)
+    
+    !write (*,"('CU calc: ',I3,1x,I3,3(1x,E24.16))") &
+    !     i, j, p(i,j), p(i-1,j), u(i,j)
 
   end subroutine compute_cu_code
 

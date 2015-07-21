@@ -120,9 +120,9 @@ contains
     tdtsdx = tdt/dx
 
     UNEW(I,J) = UOLD(I,J) +                     &
-                TDTS8*(Z(I+1,J+1) + Z(I+1,J)) * &
-                (CV(I+1,J)+CV(I,J)+CV(I,J-1)+CV(I+1,J-1)) -   &
-                TDTSDX*(H(I+1,J)-H(I,J))
+                TDTS8*(Z(I,J+1) + Z(I,J)) * &
+                (CV(I,J+1)+CV(I-1,J+1)+CV(I-1,J)+CV(I,J)) -   &
+                TDTSDX*(H(I,J)-H(I-1,J))
 
   end subroutine compute_unew_code
 

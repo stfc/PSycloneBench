@@ -128,8 +128,8 @@ contains
     tdtsdx = tdt/dx
     tdtsdy = tdt/dy
 
-    PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I,J)-CU(I-1,J))   & 
-                         -TDTSDY*(CV(I,J)-CV(I,J-1))
+    PNEW(I,J) = POLD(I,J)-TDTSDX*(CU(I+1,J)-CU(I,J))   & 
+                         -TDTSDY*(CV(I,J+1)-CV(I,J))
 
   END SUBROUTINE compute_pnew_code
 

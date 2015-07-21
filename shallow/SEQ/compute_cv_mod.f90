@@ -109,7 +109,7 @@ contains
     real(wp), intent(out), dimension(:,:) :: cv
     real(wp), intent(in),  dimension(:,:) :: p, v
 
-    CV(I,J) = .5d0*(P(I,J+1)+P(I,J))*V(I,J)
+    CV(I,J) = .5d0*(P(I,J)+P(I,J-1))*V(I,J)
 
   end subroutine compute_cv_code
 

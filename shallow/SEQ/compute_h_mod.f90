@@ -109,8 +109,8 @@ contains
     REAL(wp), INTENT(out), DIMENSION(:,:) :: h
     REAL(wp), INTENT(in),  DIMENSION(:,:) :: p, u, v
 
-    H(I,J) = P(I,J)+.25d0*(U(I,J)*U(I,J)+U(I-1,J)*U(I-1,J) + & 
-                           V(I,J)*V(I,J)+V(I,J-1)*V(I,J-1))
+    H(I,J) = P(I,J)+.25d0*(U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J) + & 
+                           V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
 
   END SUBROUTINE compute_h_code
 
