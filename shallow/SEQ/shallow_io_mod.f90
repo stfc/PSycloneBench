@@ -137,15 +137,39 @@ contains
 
     IF( l_out .AND. (MOD(NCYCLE,MPRINT) .EQ. 0) ) then
 
-       call ascii_write(ncycle, ufld%internal%nx, ufld%internal%ny, &
-                        ufld%internal%xstart, ufld%internal%ystart, &
-                        ufld%data, 'ufld.dat')
-       call ascii_write(ncycle, vfld%internal%nx, vfld%internal%ny, &
-                        vfld%internal%xstart, vfld%internal%ystart, &
-                        vfld%data, 'vfld.dat')
-       call ascii_write(ncycle, pfld%internal%nx, pfld%internal%ny, &
-                        pfld%internal%xstart, pfld%internal%ystart, &
-                        pfld%data, 'pfld.dat')
+       call ascii_write(ncycle, 'ufld.dat', ufld%data, &
+                        ufld%internal%nx, ufld%internal%ny, &
+                        ! We output data as though first internal
+                        ! U pt is at (3,2). This is equivalent to
+                        ! (2,1) on the mesh arrangement in the
+                        ! original version of shallow. We only have
+                        ! to do this so that the output can be
+                        ! compared with the original in a straightforward
+                        ! fashion.
+                        3, 2 )!ufld%internal%xstart, ufld%internal%ystart)
+
+       call ascii_write(ncycle, 'vfld.dat', vfld%data,      &
+                        vfld%internal%nx, vfld%internal%ny, &
+                        ! We output data as though first internal
+                        ! V pt is at (2,3). This is equivalent to
+                        ! (1,2) on the mesh arrangement in the
+                        ! original version of shallow. We only have
+                        ! to do this so that the output can be
+                        ! compared with the original in a straightforward
+                        ! fashion.
+                        2, 3 )!vfld%internal%xstart, vfld%internal%ystart)
+
+       call ascii_write(ncycle, 'pfld.dat', pfld%data,      &
+                        pfld%internal%nx, pfld%internal%ny, &
+                        ! We output data as though first internal
+                        ! T pt is at (2,2) (which, unlike all the other
+                        ! grid-pt types, it is). This is equivalent to
+                        ! (1,1) on the mesh arrangement in the
+                        ! original version of shallow. We only have
+                        ! to do this so that the output can be
+                        ! compared with the original in a straightforward
+                        ! fashion.
+                        2, 2 )!pfld%internal%xstart, pfld%internal%ystart)
 
        !CALL print_diagonals(p, u, v)
     
@@ -330,10 +354,10 @@ contains
     !! @param[in] ystart Grid loc of start of INTERNAL region
     !! @param[in] var 2D double-precision array of data to write out
     !! @param[in] fname Base of filename that will have tag appended
-    subroutine ascii_write(tag, m, n, xstart, ystart, var, fname)
+    subroutine ascii_write(tag, fname, var, m, n, xstart, ystart)
       implicit none
-      integer, intent(in) :: tag, m, n
-      integer, intent(in) :: xstart, ystart
+      integer,                 intent(in) :: tag, m, n
+      integer, optional,       intent(in) :: xstart, ystart
       real(8), dimension(:,:), intent(in) :: var
       character(len=*), intent(in) :: fname
       ! Locals
@@ -352,13 +376,23 @@ contains
          return
       end if
 
-      do jj=ystart, ystart+n-1, 1
-         do ji=xstart, xstart+m-1, 1
-            write(iounit,"(I5,1x,I5,1x,E24.16)") &
-                 ji-xstart+1, jj-ystart+1, var(ji,jj)
+      if(present(xstart) .AND. present(ystart))then
+         do jj=ystart, ystart+n-1, 1
+            do ji=xstart, xstart+m-1, 1
+               write(iounit,"(I5,1x,I5,1x,E24.16)") &
+                    ji-xstart+1, jj-ystart+1, var(ji,jj)
+            end do
+            write(iounit,*)
          end do
-         write(iounit,*)
-      end do
+      else
+         do jj = 1, size(var, 2)
+            do ji = 1, size(var, 1)
+               write(iounit,"(I5,1x,I5,1x,E24.16)") &
+                    ji, jj, var(ji,jj)
+            end do
+            write(iounit,*)
+         end do
+      end if
 
       close(unit=iounit)
 
