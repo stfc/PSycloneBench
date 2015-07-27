@@ -145,9 +145,15 @@ program shallow
   CALL copy_field(p_fld, pold_fld)
      
   ! Write intial values of p, u, and v into a netCDF file   
-  call ascii_write(0, psi_fld%internal%nx, psi_fld%internal%ny, &
-                   psi_fld%internal%xstart, psi_fld%internal%ystart, &
-                   psi_fld%data, 'psifld.dat')
+  call ascii_write(0, 'psifld.dat', psi_fld%data,  &
+                   psi_fld%internal%nx, psi_fld%internal%ny, &
+                   psi_fld%internal%xstart, psi_fld%internal%ystart )
+  call ascii_write(0,'zfld.dat'  ,z_fld%data, &
+                   z_fld%internal%nx, z_fld%internal%ny, &
+                   z_fld%internal%xstart, z_fld%internal%ystart)
+  call ascii_write(0,'hfld.dat'  ,h_fld%data, &
+                   h_fld%internal%nx, h_fld%internal%ny, &
+                   h_fld%internal%xstart, h_fld%internal%ystart)
   CALL model_write(0, p_fld, u_fld, v_fld)
 
   !     Start timer
@@ -155,6 +161,7 @@ program shallow
 
   !====================================
   ! Perform the first time step
+  ncycle = 1
   CALL invoke_compute_cu(CU_fld, P_fld, U_fld)
   CALL invoke_compute_cv(CV_fld, P_fld, V_fld)
   CALL invoke_compute_z(z_fld, P_fld, U_fld, V_fld)
@@ -182,6 +189,8 @@ program shallow
   CALL copy_field(UNEW_fld, U_fld)
   CALL copy_field(VNEW_fld, V_fld)
   CALL copy_field(PNEW_fld, P_fld)
+
+  call model_write(ncycle, p_fld, u_fld, v_fld)
 
   !====================================
   !  ** Start of time-stepping loop proper ** 
