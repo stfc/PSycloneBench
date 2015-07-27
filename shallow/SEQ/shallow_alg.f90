@@ -134,11 +134,11 @@ program shallow
   ! Generate and output checksums of initial fields
   CALL model_write_log("('psi initial CHECKSUM = ',E24.16)", &
                        field_checksum(psi_fld))
-  CALL model_write_log("('P initial CHECKSUM = ',E24.16)", &
+  CALL model_write_log("('P initial CHECKSUM = ',E24.16)",   &
                          field_checksum(p_fld))
-  CALL model_write_log("('U initial CHECKSUM = ',E24.16)",  &
+  CALL model_write_log("('U initial CHECKSUM = ',E24.16)",   &
                        field_checksum(u_fld))
-  CALL model_write_log("('V initial CHECKSUM = ',E24.16)", &
+  CALL model_write_log("('V initial CHECKSUM = ',E24.16)",   &
                        field_checksum(v_fld))
 
   ! Initialise fields that will hold data at previous time step
@@ -147,9 +147,9 @@ program shallow
   CALL copy_field(p_fld, pold_fld)
      
   ! Write intial values of p, u, and v into a netCDF file   
-  call ascii_write(0, psi_fld%internal%nx, psi_fld%internal%ny, &
-                   psi_fld%internal%xstart, psi_fld%internal%ystart, &
-                   psi_fld%data, 'psifld.dat')
+  call ascii_write(0, 'psifld.dat', psi_fld%data,            &
+                   psi_fld%internal%nx, psi_fld%internal%ny, &
+                   psi_fld%internal%xstart, psi_fld%internal%ystart)
   CALL model_write(0, p_fld, u_fld, v_fld)
 
   !     Start timer
