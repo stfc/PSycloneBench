@@ -46,10 +46,6 @@ CONTAINS
     idim1 = SIZE(psifld%data, 1)
     idim2 = SIZE(psifld%data, 2)
 
-    write(*,*) 'psi field, internal region: (',psifld%internal%xstart, ':', &
-                                               psifld%internal%xstop,  ',', &
-                                               psifld%internal%ystart, ':', &
-                                               psifld%internal%ystop,  ')'
     ! Loop over 'columns'
     DO J=1, idim2
       DO I=1, idim1
