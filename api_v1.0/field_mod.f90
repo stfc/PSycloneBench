@@ -164,6 +164,9 @@ contains
     write(*,"('Allocating ',(A),' field with bounds: (',I1,':',I3, ',',I1,':',I3,')')") &
                TRIM(ADJUSTL(fld_type)), &
                1, upper_x_bound, 1, upper_y_bound
+    write(*,"('Internal region is:(',I1,':',I3, ',',I1,':',I3,')' )") &
+         self%internal%xstart, self%internal%xstop, &
+         self%internal%ystart, self%internal%ystop
     write(*,"('Grid has bounds:  (',I1,':',I3, ',',I1,':',I3,')')") &
          1, self%grid%nx, 1, self%grid%ny
 
