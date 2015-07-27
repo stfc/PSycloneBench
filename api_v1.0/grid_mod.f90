@@ -258,7 +258,7 @@ contains
           call gocean_stop('grid_init: failed to allocate array for T mask')
        end if
 !$OMP PARALLEL DO schedule(runtime), default(none), private(ji,jj), &
-!$OMP shared(grid, tmask)
+!$OMP shared(m, n, grid, tmask)
        do jj = 1, n
           grid%tmask(1:m,jj) = tmask(1:m,jj)
           ! Our saved mask is padded for alignment purposes so set
@@ -267,6 +267,7 @@ contains
              grid%tmask(ji,jj) = tmask(m,jj)
           end do
        end do
+!$OMP END PARALLEL DO
        ! Additional rows
        do jj = n+1, grid%ny
           do ji = 1, m
@@ -279,7 +280,6 @@ contains
              grid%tmask(ji,jj) = tmask(m,n)
           end do
        end do
-!$OMP END PARALLEL DO
     else
        ! No T-mask supplied. Check that grid has PBCs in both
        ! x and y dimensions otherwise we won't know what to do.
