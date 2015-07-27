@@ -348,18 +348,18 @@ contains
     !> Dump the supplied 2D field in ASCII form suitable for
     !! gnuplot splot.
     !! @param[in] tag Tag to incorporate in filename - usually time-step
+    !! @param[in] fname Base of filename that will have tag appended
+    !! @param[in] var 2D double-precision array of data to write out
     !! @param[in] m Extent in x dimension of INTERNAL region of field
     !! @param[in] n Extent in y dimension of INTERNAL region of field
     !! @param[in] xstart Grid loc of start of INTERNAL region
     !! @param[in] ystart Grid loc of start of INTERNAL region
-    !! @param[in] var 2D double-precision array of data to write out
-    !! @param[in] fname Base of filename that will have tag appended
     subroutine ascii_write(tag, fname, var, m, n, xstart, ystart)
       implicit none
       integer,                 intent(in) :: tag, m, n
       integer, optional,       intent(in) :: xstart, ystart
       real(8), dimension(:,:), intent(in) :: var
-      character(len=*), intent(in) :: fname
+      character(len=*),        intent(in) :: fname
       ! Locals
       integer :: ji, jj
       integer, parameter :: iounit = 24
