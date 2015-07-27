@@ -11,7 +11,7 @@ module shallow_io_mod
   ! NetCDF variables
   include 'netcdf.inc'
 
-  integer :: ncid, t_id, p_id, u_id, v_id, iret, t_val
+  integer :: ncid, t_id, p_id, u_id, v_id, t_val
   integer, dimension(3) :: istart, icount 
   character (len=13) :: ncfile = "shallowdat.nc"
 
