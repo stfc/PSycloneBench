@@ -50,21 +50,17 @@ CONTAINS
     DO J=1, idim2
       DO I=1, idim1
 
-        CALL init_stream_fn_code(i, j, &
-                                 psifld%internal%xstart, & 
-                                 psifld%internal%ystart, &
-                                 psifld%data)
+        CALL init_stream_fn_code(i, j, psifld%data)
 
       END DO
     END DO
 
   CONTAINS
 
-    SUBROUTINE init_stream_fn_code(i, j, istart, jstart, psi)
+    SUBROUTINE init_stream_fn_code(i, j, psi)
       IMPLICIT none
       !> The grid point (column) to act on
       INTEGER,      INTENT(in)                  :: i, j
-      INTEGER,      INTENT(in)                  :: istart, jstart
       !> Array holding the stream function values
       REAL(KIND=8), INTENT(out), DIMENSION(:,:) :: psi
 
@@ -72,10 +68,9 @@ CONTAINS
       ! dj = 2Pi/(Extent of mesh in y)
       ! Original code:
       !      PSI(I,J) = A*SIN((I-.5d0)*DI)*SIN((J-.5d0)*DJ)
-
-      !PSI(I,J) = A*SIN((I-istart+1.5d0)*DI)*SIN((J-jstart+1.5d0)*DJ)
+      ! Psi is on F points. Our first internal F point is at 3,3
+      ! rather than 2,2 so shift appropriately.
       PSI(I,J) = A*SIN((I-1.5d0)*DI)*SIN((J-1.5d0)*DJ)
-      !PSI(I,J) = A*SIN((I-0.5d0)*DI)*SIN((J-0.5d0)*DJ)
 
     END SUBROUTINE init_stream_fn_code
 
@@ -107,12 +102,13 @@ CONTAINS
     ! dj = 2Pi/(Extent of mesh in y)   "     "     "   "     "
     DO J=1,idim2
        DO I=1, idim1
-!          P(I,J) = PCF*(COS(2.0d0*(I-pfld%internal%xstart)*DI)   & 
-!               +COS(2.0d0*(J-pfld%internal%ystart)*DJ))+50000.d0
-          P(I,J) = PCF*(COS(2.0d0*(I-2)*DI)   & 
-               +COS(2.0d0*(J-2)*DJ))+50000.d0
+! Original code:
 !          P(I,J) = PCF*(COS(2.0d0*(I-1)*DI)   & 
 !               +COS(2.0d0*(J-1)*DJ))+50000.d0
+! Our first internal T pt is at 2,2 rather than 1,1 so we shift
+! the expression appropriately:
+          P(I,J) = PCF*(COS(2.0d0*(I-2)*DI)   & 
+               +COS(2.0d0*(J-2)*DJ))+50000.d0
        END DO
     END DO
 
@@ -128,7 +124,7 @@ CONTAINS
     type(r2d_field), intent(in),    target :: psifld
     ! Locals
     real(kind=wp), pointer, dimension(:,:) :: u, psi
-    integer  :: i, j, ipsi, jpsi
+    integer  :: j
     real(wp) :: dy
 
     u => ufld%data
@@ -137,12 +133,8 @@ CONTAINS
     ! dy is a property of the mesh
     dy = ufld%grid%dy
 
-    !do J=ufld%internal%ystart,ufld%internal%ystop
     do J=1,ufld%internal%ystop
-       !do I=ufld%internal%xstart,ufld%internal%xstop
-       !do I= 1, ufld%internal%xstop
-          U(:,J) = -(PSI(:,j+1) - PSI(:,j))/dy
-       !end do
+       U(:,J) = -(PSI(:,j+1) - PSI(:,j))/dy
     end do
 
   end subroutine init_velocity_u
@@ -157,8 +149,7 @@ CONTAINS
     type(r2d_field), intent(in),    target :: psifld
     ! Locals
     real(kind=wp), pointer, dimension(:,:) :: v, psi
-    integer  :: I, J
-    integer  :: ipsi, jpsi
+    integer  :: I
     real(wp) :: dx
 
     v => vfld%data
@@ -166,14 +157,10 @@ CONTAINS
 
     dx = vfld%grid%dx
 
-    !DO J=vfld%internal%ystart, vfld%internal%ystop
-    !   DO I=vfld%internal%xstart, vfld%internal%xstop
-    !DO J= 1, vfld%internal%ystop
-       DO I=1, vfld%internal%xstop
-          v(I,:) = (psi(i+1,:) - psi(i,:))/dx
-       END DO
-    !END DO
+    do I=1, vfld%internal%xstop
+       v(I,:) = (psi(i+1,:) - psi(i,:))/dx
+    end do
 
   end subroutine init_velocity_v
 
-END MODULE initial_conditions_mod
+end module initial_conditions_mod
