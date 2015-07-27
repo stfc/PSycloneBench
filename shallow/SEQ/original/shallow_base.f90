@@ -194,10 +194,12 @@
          call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
          call my_ncwrite(ncid,u_id,istart,icount,u(2:m+1,1:n),m,n,t_id,t_val)
          call my_ncwrite(ncid,v_id,istart,icount,v(1:m,2:n+1),m,n,t_id,t_val)
-         call ascii_write(0,m,n,2,1,u,'u_array.dat')
-         call ascii_write(0,m,n,1,2,v,'v_array.dat')
-         call ascii_write(0,m,n,1,1,p,'p_array.dat')
-         call ascii_write(0,m,n,2,2,psi,'psi_array.dat')
+         call ascii_write(0,'u_array.dat'  ,u  ,m,n,2,1)
+         call ascii_write(0,'cu_array.dat' ,cu ,m,n,2,1)
+         call ascii_write(0,'v_array.dat'  ,v  ,m,n,1,2)
+         call ascii_write(0,'p_array.dat'  ,p  ,m,n,1,1)
+         call ascii_write(0,'psi_array.dat',psi,m,n,2,2)
+         call ascii_write(0,'cv_array.dat' ,cv ,m,n,1,2)
       ENDIF
 
 !     Start timer
@@ -346,11 +348,14 @@
             call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
             call my_ncwrite(ncid,u_id,istart,icount,u(2:m+1,1:n),m,n,t_id,t_val)
             call my_ncwrite(ncid,v_id,istart,icount,v(1:m,2:n+1),m,n,t_id,t_val)
-            call ascii_write(ncycle,m,n,2,1,u,'u_array.dat')
-            call ascii_write(ncycle,m,n,2,1,cu,'cu_array.dat')
-            call ascii_write(ncycle,m,n,1,2,v,'v_array.dat')
-            call ascii_write(ncycle,m,n,1,1,p,'p_array.dat')
-            call ascii_write(ncycle,m,n,2,2,z,'z_array.dat')
+
+            call ascii_write(ncycle,'u_array.dat'  ,u  ,m,n,2,1)
+            call ascii_write(ncycle,'cu_array.dat' ,cu ,m,n,2,1)
+            call ascii_write(ncycle,'cv_array.dat' ,cv ,m,n,1,2)
+            call ascii_write(ncycle,'v_array.dat'  ,v  ,m,n,1,2)
+            call ascii_write(ncycle,'p_array.dat'  ,p  ,m,n,1,1)
+            call ascii_write(ncycle,'z_array.dat'  ,z  ,m,n,2,2)
+            call ascii_write(ncycle,'h_array.dat'  ,h  ,m,n,1,1)
 
          endif
 
