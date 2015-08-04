@@ -221,7 +221,7 @@
 \author{R.~W.~Ford, M.~Modani, G.~D.~Riley and A.~R.~Porter% <-this % stops a space
 \thanks{A.~R.~Porter and R.~Ford are with the Science and Technology Facilities Council, UK.}% <-this % stops a space
 \thanks{G.~Riley is with the University of Manchester, Manchester, UK.}% <-this % stops a space
-\thanks{M.~Modani is with IBM.}
+\thanks{M.~Modani is with IBM India.}
 }
 
 % note the % following the last \IEEEmembership and also \thanks - 
@@ -356,7 +356,7 @@ it can often come with a performance penalty. In this work we
 investigate in detail the hardware and compiler dependencies of this
 penalty and the steps required to remove it.
 
-\subsection{The `shallow' Program}
+\subsection{The `Shallow' Program}
 For this work we have used a benchmarking program that solves the
 shallow-water equations on a bi-periodic plane following the
 finite-difference scheme introduced by Sadourny~\cite{sadourny75}.
@@ -375,7 +375,7 @@ optimise. Its performance is thus quite a demanding target for our
 modified versions of the code to reproduce.
 
 Since any real oceanographic computational model must output results,
-we ensure that any \psykal version of shallow retains the Input/Output
+we ensure that any \psykal version of Shallow retains the Input/Output
 capability of the original. This aids in limiting the optimisations
 that can be performed on the \psykal version to those that should also
 be applicable to full oceanographic models. Note that although we
@@ -384,7 +384,7 @@ carefully exclude the effects of I/O since it is compute performance
 that interests us here.
 
 In order to maximise the flexibility (and thus potential for
-optimisation) of the \psykal version of shallow, we made the kernels
+optimisation) of the \psykal version of Shallow, we made the kernels
 as fine-grained as possible. In this case, this resulted in eight
 distinct kernels, each of which operated on a single field at a single
 point (since we have chosen to use point-wise kernels). With a little
@@ -401,7 +401,7 @@ pseudo-code in Figure~\ref{FIG_psykal_shallow_structure}.
 \begin{figure}
 \centering
 \includegraphics[width=85mm]{psykal_shallow}
-\caption{A schematic of the vanilla \psykal version of the shallow code.}
+\caption{A schematic of the vanilla \psykal version of the Shallow code.}
 \label{FIG_psykal_shallow_structure}
 \end{figure}
 
@@ -428,9 +428,12 @@ piece of hardware, the version number used in this work is specified.
 The Intel Haswell-based system (Xeon E5-1620 v2) has a clock speed of
 3.7~GHz and 10~MB of last-level cache. The Intel Ivy Bridge-based
 system (Xeon E5-2697) has a clock speed of 2.7~GHz and a last-level
-cache of 30~MB. The CPU in the IBM Power-8 system is built around the
-PowerPC xxx core with a clock speed of 4.1~GHz. The chip has xxx~MB of
-last-level cache.
+cache of 30~MB. The CPU in the IBM Power-8 system is built around 12
+'chiplets'. Each chiplet has a single core with 64~KB of L1 cache,
+512~KB of L2 cache and 8~MB of L3 cache. The L3 cache of each chiplet
+is shared with all other chiplets so that there is a total of 96~MB of
+last-level cache. The cores on the system we used had a clock speed of
+2~GHz.
 
 % An example of a floating table. Note that, for IEEE style tables, the 
 % \caption command should come BEFORE the table. Table text will default to
@@ -454,7 +457,7 @@ last-level cache.
 \hline
 Intel Haswell    & 4.8.2 & 14.0.0      &         &          \\
 Intel Ivy Bridge & 4.9.1 & 14.0.1.106  & 8.3.3   &          \\
-IBM Power 8      &       &             &         & 14.1     \\
+IBM Power 8      &       &             &         & 15.1.2     \\
 \hline
 \end{tabular}
 \end{table}
@@ -472,14 +475,14 @@ containing effectively a single routine (excluding those for I/O).
 \caption{The compiler flags used in this work.}
 \label{TABLE_compiler_flags}
 \centering
-\begin{tabular}{l|c}
+\begin{tabular}{l|l}
 \hline
 Compiler  &  Flags \\
 \hline
 Gnu       & -Ofast -mtune=native -finline-limit=50000    \\
 Intel     & -O3 -fast -fno-inline-factor    \\
 Cray      & -O3 -O ipa5 -h wp               \\
-IBM       & \bf{CHECK} -O5 -qinline=auto:level=10      \\
+IBM       & \parbox{5cm}{-O5 -qinline=auto:level=10\\ -qinline=auto:level=10 -qaltivec=be\\ -qdebug=NSIMDUBTHRESHOLD -qprefetch=dscr=0x1D7} \\
 \hline
 \end{tabular}
 \end{table}
@@ -541,7 +544,7 @@ different compilers make when optimising the code.
 \section{Results}
 
 In Figure~\ref{FIG_orig_perf_summary} we plot the performance of the
-original version of the shallow code for the range of compilers and
+original version of the Shallow code for the range of compilers and
 hardware considered here. This summary demonstrates the effect of the
 larger last-level cache of the Intel Ivy Bridge system compared to
 that of the Haswell system; note the significant drop in performance
@@ -551,29 +554,31 @@ Bridge system with the Cray or Intel compiler (red and purple bars)
 only drops to this level when the domain size is increased to
 $1024^{2}$. At this point, the working set no longer fits within cache
 and performance is dominated by the bandwidth to main memory, making
-it relatively insensitive to the choice of compiler.
+it relatively insensitive to the choice of compiler. The IBM Fortran
+compiler for Linux on Power 8 is relatively immature and failed to
+SIMD-vectorise two of the three major loop nests in the time-stepping
+loop. Figure~\ref{FIG_orig_perf_summary} therefore also includes the
+performance results obtained after the source had been modified to
+work-around this limitation (we fissioned one loop nest and manually
+unrolled another). Work is currently underway on updating the compiler
+so that these modifications will be unecessary with a future release.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=2.8in]{orig_summary}
-\caption{Summary of the performance of the original shallow code on 
-the range of compilers and hardware under consideration.}
+\caption{Summary of the performance of the original Shallow code on
+  the range of compilers and hardware under consideration. *After code
+  modifications to encourage SIMD vectorisation (see text).}
 \label{FIG_orig_perf_summary}
 \end{figure}
 
 For this compiler-friendly form of the code, there is little
 performance difference between the executables produced by the Gnu and
 Intel compilers. However, the executable produced by the Cray compiler
-generally performs significantly better. {\bf Why is this; can we work
-out what it's doing that the others aren't?}
+generally performs significantly better for all but the largest domain
+size.
 
-Note that the results for the Gnu compiler on Ivy Bridge show the same
-drop-off (as problem size is increased) as those on the Haswell
-system. This may be because Archer's login nodes seem to be running on
-older hardware (E5-2650 with 20MB LLC) during the Archer upgrade. {\bf
-  Need to re-run these cases once Archer is back up.}
-
-Moving now the to the \psykal version of shallow,
+Moving now the to the \psykal version of Shallow,
 Figure~\ref{FIG_best_psykal_perf_summary} plots the performance of the
 fastest \psykal version for each of the compiler/CPU combinations. The
 only significant difference between this and the plot of the
@@ -582,7 +587,7 @@ Figure~\ref{FIG_orig_perf_summary} is that the difference between the
 Gnu- and Intel-compiled executables is slightly more marked. This is
 clarified in Figure~\ref{FIG_slowdown_summary} which plots the
 percentage difference between the performance of the original and the
-(best) \psykal versions of shallow for each compiler/CPU combination.
+(best) \psykal versions of Shallow for each compiler/CPU combination.
 It is clear from this plot that the difference in the performance of
 the Gnu- and Intel-compiled excutables on the Haswell system is due to
 the Gnu compiler being unable to recover the performance achieved by
@@ -595,7 +600,7 @@ opposed to 4.8.2).
 \centering
 \includegraphics[width=7.5cm]{best_psykal_summary}
 \caption{Summary of the best performance achieved by any \psykal 
-version of shallow with each of the compilers and CPUs under 
+version of Shallow with each of the compilers and CPUs under 
 consideration.}
 \label{FIG_best_psykal_perf_summary}
 \end{figure}
@@ -610,22 +615,28 @@ indicates that the \psykal version is faster than the original.}
 \end{figure}
 
 In fact, for the Gnu and Cray compilers on the Ivy Bridge system, the
-\psykal version of shallow is never more than 2\% slower than the
+\psykal version of Shallow is never more than 2\% slower than the
 original and in some cases is faster.  This demonstrates that we can
 reliably recover the performance of the original version of the code,
 despite the significant restructuring required by the \psykal
 approach.
 
-Having show that, in general, we can recover and occasionally improve
-upon the performance of the original version of shallow, the next
+The most striking feature of Figure~\ref{FIG_slowdown_summary} is the
+fact that the best \psykal version of Shallow is consistently faster
+than the original on the Power 8. This confirms that this early
+version of the IBM compiler struggled with the original form of the
+Shallow source code.
+
+Having shown that, in general, we can recover and occasionally improve
+upon the performance of the original version of Shallow, the next
 logical step is to examine the necessary code transformations.  We do
-this for the $256^{2}$ case since this fits within cache on both the
-Haswell and Ivy Bridge CPUs we are using here.
-Table~\ref{TABLE_opt_breakdown} shows detailed timings for this case
-after each transformation has been applied to the code. The same data
-is visualised in Figure~\ref{FIG_opt_stages_256} where the performance
-of the \psykal version for a given compiler/CPU is given relative to
-the performance of the original with the same compiler/CPU. 
+this for the $256^{2}$ case since this fits within last-level cache on
+all of the CPUs we are using here.  Table~\ref{TABLE_opt_breakdown}
+shows detailed timings for this case after each transformation has
+been applied to the code. The same data is visualised in
+Figure~\ref{FIG_opt_stages_256} where the performance of the \psykal
+version for a given compiler/CPU is given relative to the performance
+of the original with the same compiler/CPU.
 
 \begin{table*}[!t]
 % increase table row spacing, adjust to taste
@@ -652,55 +663,36 @@ Fused field-copy                       &  1.09E-03 & 9.25E-04 &	1.02E-03 & 1.04E
 In-line all kernels                    &  8.20E-04 & 7.14E-04 &	9.32E-04 & 8.52E-04 & 6.50E-04 &  1.07E-03  \\
 Fully fuse 1st loop nest               &  8.10E-04 & 7.18E-04 &	7.76E-04 & 7.92E-04 & 6.23E-04 &  1.07E-03  \\
 Explicit, constant array/loop bounds   &  8.05E-04 & 7.12E-04 &	7.81E-04 & 7.91E-04 & 6.13E-04 &  1.07E-03  \\
+Fission new-field update loops         &           &          &          &          &          &            \\
+Un-roll time-smoothing                 &           &          &          &          &          &            \\
 \hline
 \parbox{2.5cm}{\%-slow-down of best {\it c.f.} original} & 7.8 & 0.8 & 0.8 & 1.8 & 0.03 & -9.0    \\
 \hline
 \end{tabular}
 \end{table*}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 With the Gnu compiler (first and third clusters in
 Figure~\ref{FIG_opt_stages_256}), the vanilla \psykal version of
-shallow only achieves ~5-6\% of the performance of the
+Shallow only achieves ~5-6\% of the performance of the
 original. Simply copying the code for each of the kernel subroutines
-into the module from which they are called has the most dramatic
-effect on the performance of the compiled code; it now achieves almost
-80\% of the performance of the original. The next most significant
-transformation is that of (manually) in-lining the kernel code itself
-into the bodies of the loops from which they are called. This gets the
-\psykal version to within 8\% of the performance of the original.  The
-dramatic performance improvement obtained from the first
-transformation demonstrates that the Gnu compiler is unable to
-optimise over separate files. Therefore, the fact that the
-time-stepping loop in the \psykal version still retains a call to an
-I/O routine and a call to the middle-layer, both of which are in
-different files, is likely to account for this remaining performance
-penalty of 8\%.
+into the module from which they are called ('module in-lining') has
+the most dramatic effect on the performance of the compiled code; it
+now achieves almost 80\% of the performance of the original. The next
+most significant transformation is that of manually in-lining the
+kernel code itself into the bodies of the loops from which they are
+called ('kernel in-lining'). This gets the \psykal version to within
+8\% of the performance of the original.  The dramatic performance
+improvement obtained from the first transformation demonstrates that
+the Gnu compiler is unable to optimise over separate files. Therefore,
+the fact that the time-stepping loop in the \psykal version still
+retains a call to an I/O routine and a call to the middle-layer, both
+of which are in different files, is likely to account for this
+remaining performance penalty of 8\%.
 
 With the Intel compiler, the key transformations to recover
 performance are different (second and fourth clusters in
 Figure~\ref{FIG_opt_stages_256}).  Table~\ref{TABLE_opt_breakdown}
-shows that even the vanilla \psykal version of shallow achieves some
+shows that even the vanilla \psykal version of Shallow achieves some
 80\% of the performance of the original version. Only two code
 transformations were required to increase this to 100\%. The first of
 these was the fusion of the computational loops. However, we found
@@ -711,12 +703,12 @@ slow-down revealed that the compiler was unable to SIMD vectorise the
 newly-fused loop after it had in-lined the body of the kernel called
 from within it. Once this in-lining was done by hand (dark-blue bar),
 the compiler was able to vectorise the loop and the performance of the
-original version of shallow was recovered.
+original version of Shallow was recovered.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=95mm]{opt_stages_256}
-\caption{The performance of the \psykal version of shallow for the
+\caption{The performance of the \psykal version of Shallow for the
   $256^{2}$ domain at each stage of optimisation. Results are given as
   a percentage of the performance of the original code for each
   compiler/CPU combination. A figure greater than 100\% indicates that
@@ -744,13 +736,13 @@ END DO
 \end{verbatim}
 \caption{Example of the coding structure that required manual
   in-lining of the kernel body (as indicated by commented-out lines)
-  to retrieve the performance of the original version of shallow with
+  to retrieve the performance of the original version of Shallow with
   the Intel compiler.}
 \label{FIG_time_smooth_code}
 \end{figure}
 
 The fifth cluster in Figure~\ref{FIG_opt_stages_256} shows the
-evolution of the performance of the \psykal version of shallow with
+evolution of the performance of the \psykal version of Shallow with
 the Cray compiler. Again, this has significant differences from the
 behaviour seen with the Gnu and Intel compilers. As with the Intel
 compiler, the performance of the Vanilla \psykal version is fairly
@@ -774,41 +766,19 @@ are passed as an argument to the middle layer. This is done in order
 to specify to the compiler that these bounds remain constant for the
 duration of the time-stepping loop.
 
-% An example of a double column floating figure using two subfigures.
-% (The subfig.sty package must be loaded for this to work.)
-% The subfigure \label commands are set within each subfloat command,
-% and the \label for the overall figure must come after \caption.
-% \hfil is used as a separator to get equal spacing.
-% Watch out that the combined width of all the subfigures on a 
-% line do not exceed the text width or a line break will occur.
+As with the Gnu compiler, it is module in-lining and kernel in-lining
+that are important for the IBM compiler (sixth cluster in
+Figure~\ref{FIG_opt_stages_256}). Fusing loop nests actually harms
+performance, just as it did for the Cray compiler.
 
-%
-%\begin{figure*}[!t]
-%\centering
-%\subfloat[Case I]{\includegraphics[width=2.5in]{box}%
-%\label{fig_first_case}}
-%\hfil
-%\subfloat[Case II]{\includegraphics[width=2.5in]{box}%
-%\label{fig_second_case}}
-%\caption{Simulation results.}
-%\label{fig_sim}
-%\end{figure*}
-%
-% Note that often IEEE papers with subfigures do not employ subfigure
-% captions (using the optional argument to \subfloat[]), but instead will
-% reference/describe all of them (a), (b), etc., within the main caption.
-
-
-
-
-% Note that IEEE does not put floats in the very first column - or typically
-% anywhere on the first page for that matter. Also, in-text middle ("here")
-% positioning is not used. Most IEEE journals use top floats exclusively.
-% Note that, LaTeX2e, unlike IEEE journals, places footnotes above bottom
-% floats. This can be corrected via the \fnbelowfloat command of the
-% stfloats package.
-
-
+The take-home message of all this is that while we can employ a
+separation of concerns and recover performance, doing so is not
+straightforward. Determining how best to optimise even a simple code
+such as Shallow is highly compiler- and CPU-dependent. Decisions that
+are good on one platform may be bad for another and if these are
+written into the source code then they will accumulate over time and
+will almost certainly result in a code that does not perform optimally
+on any system.
 
 \section{Conclusions}
 
@@ -823,8 +793,8 @@ to improve code structure/maintainability.
 The application of code transformations to the middle/PSy layer is key
 to the performance of the \psykal version of a code.
 
-
-
+Some of our findings have been sent to the IBM compiler team and will
+serve to improve future releases of the compiler.
 
 % use section* for acknowledgement
 \section*{Acknowledgments}
