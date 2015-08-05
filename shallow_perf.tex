@@ -210,7 +210,7 @@
 %
 % paper title
 % can use linebreaks \\ within to get better formatting as desired
-\title{Towards Compiler-Agnostic Performance in Finite-Difference Codes. (TBC)}
+\title{Towards Compiler-Agnostic Performance in Finite-Difference Codes}
 %
 % author names and IEEE memberships
 % use \thanks{} to gain access to the first footnote area
@@ -218,10 +218,9 @@
 % was not built to handle multiple paragraphs
 %
 
-\author{R.~W.~Ford, M.~Modani, G.~D.~Riley and A.~R.~Porter% <-this % stops a space
-\thanks{A.~R.~Porter and R.~Ford are with the Science and Technology Facilities Council, UK.}% <-this % stops a space
-\thanks{G.~Riley is with the University of Manchester, Manchester, UK.}% <-this % stops a space
-\thanks{M.~Modani is with IBM India.}
+\author{ A.~R.~Porter, M.~Ashworth, R.~W.~Ford, M.~Modani, G.~D.~Riley% <-this % stops a space
+\thanks{A.~R.~Porter, M.~Ashworth, R.~W.~Ford and M.~Modani work in the Science and Technology Facilities Council's Daresbury Laboratory, UK.}% <-this % stops a space
+\thanks{G.~D.~Riley works in the School of Computer Science at the University of Manchester, Manchester, UK.}
 }
 
 % note the % following the last \IEEEmembership and also \thanks - 
@@ -270,14 +269,53 @@
 % As a general rule, do not put math, special symbols or citations
 % in the abstract or keywords.
 \begin{abstract}
-The abstract goes here.
+In this paper we evaluate the performance implications of applying a
+technique called \psykal to the finite difference domain. 
+%
+In \psykal, the code related to the underlying science is formally
+separated from code related to parallelisation and single core
+optimisations. This separation of concerns allows scientists to code
+their science independently of the underlying hardware architecture
+(thereby keeping a single code base) and for optimisation specialists
+to be able to tailor the code for a particular machine independently
+of the science code.
+%
+A finite difference shallow water benchmark optimised for cache based
+architectures is taken as the starting point. A vanilla \psykal version
+is written and the performance of the two compared. The optimisations
+that were applied to the original benchmark (loop fusion etc) are then
+applied to the \psykal version as a set of code modifications to the
+optimisation layer. Performance results are presented for the Cray,
+Intel and GNU compilers on Intel Ivybridge and Haswell processors and
+for the IBM compiler on Power8.
+%
+Results show that the combined set of code modifications obtain
+performance that is within a few percent of the original code for all
+compiler and architecture combinations on all tested problem sizes
+apart from GNU on Haswell and IBM on Power8.
+%
+As the GNU compiler performs well on Ivybridge the reduction in
+performance for the \psykal version was not analysed further.
+%
+In the case of the IBM compiler, the \psykal performance is
+significantly better than the original hand optimised code. Analysing
+the performance of the IBM compiler shows that a different structure
+for the original optimised code produces much improved performance and
+this performance is also reproduced using the \psykal version using
+appropriate transformations.
+%
+Therefore the \psykal approach can be used with negligable performance
+loss compared to the original optimised code, there is not a single
+best implementation of the code for all compilers tested, and the
+flexibility in applying code modifications to the optimisation layer
+allows for a significant performance improvement for the IBM Power8
+compared with the original code.
 \end{abstract}
 
 % Note that keywords are not normally used for peerreview papers.
 \begin{IEEEkeywords}
 Performance, Code-generation, Finite-difference
 \end{IEEEkeywords}
-
 
 
 % For peer review papers, you can put extra information on the cover
