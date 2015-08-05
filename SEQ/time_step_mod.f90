@@ -1,6 +1,5 @@
 module time_step_mod
   use kind_params_mod
-!  use topology_mod, only: M, N
   use timing_mod
   implicit none
 
@@ -93,16 +92,16 @@ contains
 
           !CALL compute_unew_code(i+1, j, unew, uold, &
           !                       zfld, cvfld, hfld, tdt)
-          UNEW(I,J) = UOLD(I,J) +                                 &
-                      TDTS8*(Zfld(I,J+1)+Zfld(I,J)) *                   &
-                      (CVfld(I,J+1)+CVfld(I-1,J+1)+CVfld(I-1,J)+CVfld(I,J)) - &
-                       TDTSDX*(Hfld(I,J)-Hfld(I-1,J))
+          UNEW(I+1,J) = UOLD(I+1,J) +                                         &
+                      TDTS8*(Zfld(I+1,J+1)+Zfld(I+1,J)) *                     &
+                      (CVfld(I+1,J+1)+CVfld(I,J+1)+CVfld(I,J)+CVfld(I+1,J)) - &
+                       TDTSDX*(Hfld(I+1,J)-Hfld(I,J))
 
           !CALL compute_vnew_code(i, j+1, vnew, vold, &
           !                       zfld, cufld, hfld, tdt)
-          VNEW(I,J) = VOLD(I,J)-TDTS8*(Zfld(I+1,J)+Zfld(I,J))           &
-                      *(CUfld(I+1,J)+CUfld(I,J)+CUfld(I,J-1)+CUfld(I+1,J-1)) &
-                      -TDTSDY*(Hfld(I,J)-Hfld(I,J-1))
+          VNEW(I,J+1) = VOLD(I,J+1)-TDTS8*(Zfld(I+1,J+1)+Zfld(I,J+1))        &
+                      *(CUfld(I+1,J+1)+CUfld(I,J+1)+CUfld(I,J)+CUfld(I+1,J)) &
+                      -TDTSDY*(Hfld(I,J+1)-Hfld(I,J))
 
           !CALL compute_pnew_code(i, j, pnew, pold, &
           !                       cufld, cvfld, tdt)
@@ -135,8 +134,62 @@ contains
     ! The time-smoothing is applied to a field at *every* grid point
     call timer_start('Time smooth',idxt)
 
-    ! Loop over 'columns'
-    DO J=1,N+1
+    DO J=1,N+1-MOD(N+1,4),4
+      DO I=1,M+1
+        uold(i,j) = ufld(i,j) + &
+             alpha*(unew(i,j) - 2.*ufld(i,j) + uold(i,j))
+
+        vold(i,j) = vfld(i,j) + &
+             alpha*(vnew(i,j) - 2.*vfld(i,j) + vold(i,j))
+
+        pold(i,j) = pfld(i,j) + &
+             alpha*(pnew(i,j) - 2.*pfld(i,j) + pold(i,j))
+
+        Ufld(I,J) = UNEW(I,J)
+        Vfld(I,J) = VNEW(I,J)
+        Pfld(I,J) = PNEW(I,J)
+
+        uold(i,j+1) = ufld(i,j+1) + &
+               alpha*(unew(i,j+1) - 2.*ufld(i,j+1) + uold(i,j+1))
+
+        vold(i,j+1) = vfld(i,j+1) + &
+               alpha*(vnew(i,j+1) - 2.*vfld(i,j+1) + vold(i,j+1))
+
+        pold(i,j+1) = pfld(i,j+1) + &
+               alpha*(pnew(i,j+1) - 2.*pfld(i,j+1) + pold(i,j+1))
+
+        Ufld(I,J+1) = UNEW(I,J+1)
+        Vfld(I,J+1) = VNEW(I,J+1)
+        Pfld(I,J+1) = PNEW(I,J+1)
+
+        uold(i,j+2) = ufld(i,j+2) + &
+               alpha*(unew(i,j+2) - 2.*ufld(i,j+2) + uold(i,j+2))
+
+        vold(i,j+2) = vfld(i,j+2) + &
+               alpha*(vnew(i,j+2) - 2.*vfld(i,j+2) + vold(i,j+2))
+
+        pold(i,j+2) = pfld(i,j+2) + &
+               alpha*(pnew(i,j+2) - 2.*pfld(i,j+2) + pold(i,j+2))
+
+        Ufld(I,J+2) = UNEW(I,J+2)
+        Vfld(I,J+2) = VNEW(I,J+2)
+        Pfld(I,J+2) = PNEW(I,J+2)
+
+        uold(i,j+3) = ufld(i,j+3) + &
+               alpha*(unew(i,j+3) - 2.*ufld(i,j+3) + uold(i,j+3))
+
+        vold(i,j+3) = vfld(i,j+3) + &
+               alpha*(vnew(i,j+3) - 2.*vfld(i,j+3) + vold(i,j+3))
+
+        pold(i,j+3) = pfld(i,j+3) + &
+               alpha*(pnew(i,j+3) - 2.*pfld(i,j+3) + pold(i,j+3))
+
+        Ufld(I,J+3) = UNEW(I,J+3)
+        Vfld(I,J+3) = VNEW(I,J+3)
+        Pfld(I,J+3) = PNEW(I,J+3)
+      END DO
+    END DO
+    DO J=N+1-MOD(N+1,4)+1,N+1
       DO I=1,M+1
         uold(i,j) = ufld(i,j) + &
               alpha*(unew(i,j) - 2.*ufld(i,j) + uold(i,j))
