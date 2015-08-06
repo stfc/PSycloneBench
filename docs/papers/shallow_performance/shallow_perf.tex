@@ -270,7 +270,7 @@
 % in the abstract or keywords.
 \begin{abstract}
 In this paper we evaluate the performance implications of applying a
-technique called \psykal to the finite difference domain. 
+technique called \psykal to finite difference Ocean models. 
 %
 In \psykal, the code related to the underlying science is formally
 separated from code related to parallelisation and single core
@@ -292,24 +292,30 @@ for the IBM compiler on Power8.
 Results show that the combined set of code modifications obtain
 performance that is within a few percent of the original code for all
 compiler and architecture combinations on all tested problem sizes
-apart from GNU on Haswell and IBM on Power8.
+apart from GNU on Haswell, one problem size for Intel on Haswell and
+IBM on Power8.
 %
 As the GNU compiler performs well on Ivybridge the reduction in
-performance for the \psykal version was not analysed further.
+performance for the \psykal version was not analysed further. As the
+Intel performance on Haswell was better for the \psykal version than
+the original version, it was not analysed further.
 %
 In the case of the IBM compiler, the \psykal performance is
-significantly better than the original hand optimised code. Analysing
-the performance of the IBM compiler shows that a different structure
-for the original optimised code produces much improved performance and
-this performance is also reproduced using the \psykal version using
-appropriate transformations.
+significantly better than the original hand optimised code on all
+problem sizes. Analysing the performance of the IBM compiler shows
+that a different structure for the original optimised code produces
+much improved performance. Replicating this different structure using
+appropriate transformations in the \psykal version provides the
+same performance improvements.
 %
-Therefore the \psykal approach can be used with negligable performance
-loss compared to the original optimised code, there is not a single
-best implementation of the code for all compilers tested, and the
+Therefore, the \psykal approach can be used with negligable
+performance loss and sometimes small performance gains compared to the
+original optimised code, there is no single best hand optimised
+implementation of the code for all the compilers tested, and the
 flexibility in applying code modifications to the optimisation layer
-allows for a significant performance improvement for the IBM Power8
-compared with the original code.
+in the PSyKAl version allows for a significant performance improvement
+on the IBM Power8 compared with the original code.
+
 \end{abstract}
 
 % Note that keywords are not normally used for peerreview papers.
@@ -376,26 +382,72 @@ require different programming approaches.
 %\IEEEpubidadjcol
 
 \subsection{The \psykal Approach}
-Proliferation of lightweight cores is resulting in increased
-complexity in the programming models required to achieve performance.
-Combine with the complexity of e.g. a model simulating circulation in
-the global ocean. Significant challenge in software engineering.
-Propose an approach for meeting this challenge by separating the
-computational science demands from the {\it e.g.} oceanographic
-demands.
 
-\begin{figure}
-\centering
-\caption{The \psykal Approach.}
-\end{figure}
+%Proliferation of lightweight cores is resulting in increased
+%complexity in the programming models required to achieve performance.
+%Combine with the complexity of e.g. a model simulating circulation in
+%the global ocean. Significant challenge in software engineering.
+%Propose an approach for meeting this challenge by separating the
+%computational science demands from the {\it e.g.} oceanographic
+%demands.
 
-While encapsulation makes it easier to produce more robust software,
-it can often come with a performance penalty. In this work we
-investigate in detail the hardware and compiler dependencies of this
-penalty and the steps required to remove it.
+%\begin{figure}
+%\centering
+%\caption{The \psykal Approach.}
+%\end{figure}
+
+The \psykal approach separates code into three layers; the Algorithm
+layer, the PSy layer and the Kernel layer. While this approach is
+general, we are currently applying it to Atmosphere and Ocean models
+written in Fortran where domain decomposition is typically performed
+in the latitude-longitude direction, leaving columns of elements on
+each domain-decomposed partition.
+
+The top layer, in terms of calling hierarchy, is the Algorithm
+layer. This layer specifies the algorithm that the scientist would like
+to perform (in terms of calls to kernel and infrastructure routines)
+and logically operates on full fields. We say logically here as the
+fields may be domain decomposed, however the algorithm layer is not
+aware of this. It is the scientist's responsibility to write this
+algorithm layer.
+
+The bottom layer, in terms of calling hierarchy, is the Kernel
+layer. The Kernel layer implements the science that the Algorithm
+layer calls, as a set of subroutines. These kernels operate on local
+fields (a set of elements, a single column of elements, or a set of
+columns, depending on the kernel). Again the scientist is responsible
+for writing this layer and there is no parallelism specified here,
+but, depending on the complexity of the Kernels, there may be input
+from an HPC expert and/or some coding rules to help ensure the kernels
+compile into efficient code.
+
+The PSy layer sits in-between the Algorithm and Kernel layers and its
+functional role is to link the algorithm calls to the associated
+kernel subroutines. As the Algorithm layer works on logically global
+fields and Kernel layer works on local fields, the PSy layer is
+responsible for iterating over columns. It is also responsible for
+including any required distributed-memory operations, such as halo
+swaps and reductions.
+
+As the PSy layer iterates over columns, the single core performance
+can be optimised by applying transformations such as loop fusion and
+loop blocking. Additionally, the potential parallelism within this
+iteration space can also be optimised and parallelised. The PSy layer
+can therefore be tailored for a particular hardware (such as
+multi-core, many-core, GPGPUs, or some combination thereof) and
+software (such as compiler, operating system, MPI implementation)
+configuration with no change to the algorithm or kernel layer
+code. This approach therefore offers the potential for portable
+performance.
+
+Clearly the separation of code into distinct layers may have an effect
+on performance. This overhead, and how to get back to the performance
+of a hand optimised code, and potentially improve on it, will be
+discussed in the remainder of this paper.
 
 \subsection{The `Shallow' Program}
-For this work we have used a benchmarking program that solves the
+
+For this work we use a benchmark called Shallow which solves the
 shallow-water equations on a bi-periodic plane following the
 finite-difference scheme introduced by Sadourny~\cite{sadourny75}.
 This software was originally written in 1984 by Paul Swarztrauber of
@@ -453,16 +505,20 @@ copying data from the corresponding row/column on the opposite side of
 the domain. In the current work, the lines of code to do these copies
 is manually inserted in the PSy-layer routine as required.
 
-{\bf Auto-generated BC code by reasoning about meta-data. But then,
-  that brings us on to meta-data...}
+%{\bf Auto-generated BC code by reasoning about meta-data. But then,
+%  that brings us on to meta-data...}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methodology(?)}
 
-Our aim in this work is to achieve portable performance. Consequently,
-we have performed tests with the hardware and compilers listed in
-Table~\ref{TABLE_compilers}. Where a compiler is available on a given
-piece of hardware, the version number used in this work is specified.
+The primary aim of this work is to determine whether any performance
+loss due to the \psykal separation of concerns can be negated by
+optimising the PSy layer. To evaluate this we perform tests on a range
+of hardware and a range of compilers. The hardware and compilers are
+listed in Table~\ref{TABLE_compilers}. Where a compiler is available
+on a given piece of hardware, the version number used in this work is
+specified.
+%
 The Intel Haswell-based system (Xeon E5-1620 v2) has a clock speed of
 3.7~GHz and 10~MB of last-level cache. The Intel Ivy Bridge-based
 system (Xeon E5-2697) has a clock speed of 2.7~GHz and a last-level
@@ -525,6 +581,8 @@ version of the code. We also benchmark the vanilla, unoptimised
 version after it has been re-structured following the \psykal
 approach. These two versions of the code effectively provide upper and
 lower bounds, respectively, on the performance we expect to achieve.
+
+{\bf RF: Explain that we gradually apply transformations which restructure the psykal code to end up with the same optimised structure as the original code. Explain the reason behind the ordering and what each does - I think you said it was the order that you thought would make the biggest difference. If you can base it on performance analysis then all the better but I don't think that is required.}
 
 {\bf Performance analysis as motivation for the code
   tranformations. More detail on each transformation.}
@@ -804,7 +862,7 @@ that are important for the IBM compiler (sixth cluster in
 Figure~\ref{FIG_opt_stages_256}). Fusing loop nests actually harms
 performance, just as it did for the Cray compiler.
 
-The take-home message of all this is that while we can employ a
+The main conclusion of all this analysis is that while we can employ a
 separation of concerns and recover performance, doing so is not
 straightforward. Determining how best to optimise even a simple code
 such as Shallow is highly compiler- and CPU-dependent. Decisions that
@@ -813,28 +871,59 @@ written into the source code then they will accumulate over time and
 will almost certainly result in a code that does not perform optimally
 on any system.
 
+{\bf RF: IBM compiler an example of the above point}
+
 \section{Conclusions}
 
 We have investigated the application of the \psykal separation of
 concerns approach to the domain of finite-difference ocean
 models. This approach enables the computational science (performance)
 related aspects of a computer model to be kept separate from the
-natural (oceanographic) science aspects. In this work we have shown
-that the \psykal approach has the potential to improve performance and
-to improve code structure/maintainability.
+natural (oceanographic) science aspects.
 
-The application of code transformations to the middle/PSy layer is key
-to the performance of the \psykal version of a code.
+As expected, applying this separation of concerns does reduce
+performance significantly when comparing with an existing optimised
+code. However, the application of code transformations to the
+performance/PSy layer and the use of appropriate compiler flags can
+recover any performance losses to within a few percent and in some
+cases, despite limiting ourselves to transformations which replicate
+the structure of the optimised code, result in slightly improved
+performance.
 
-Some of our findings have been sent to the IBM compiler team and will
-serve to improve future releases of the compiler.
+The IBM results demonstrate two key points.
+%
+Firstly, even for a relatively simple
+benchmark code, the code structure required to obtain good performance
+between different architecture and/or compiler combinations may
+differ. For hand optimised codes this implies the need to support
+multiple code bases in order to achieve portable performance.
+%
+Secondly, the \psykal approach directly addresses the problem of
+requiring different optimisations for different architectures and/or
+compilers by limiting these differences to a separate performance
+layer, thereby allowing the natural science code base to remain
+unchanged.
+
+In future work we will extend our performance portability analysis of
+the \psykal approach to shared memory parallelisation optimisations on
+different architectures using different parallalisation techniques (in
+particular OpenMP on multi/many-core and OpenACC on GPU's).
+%
+We will then analyse the performance of a domain specific compiler
+that is currently under development. This compiler will generate
+optimised PSy-layer code using a user-provided recipe of
+transformations, thereby removing the need for optimisation experts to
+manually write the PSy layer.
+
+% \bf{Perhaps we don't want to give too much away here so I've removed the optimisation space search plans even though it is mentioned in the text}
+% Finally we plan to use this compiler to allow us to search the optimisation sp%ace of transformations to automatically optimise a code for a particular compil%er/architecture combination or to determine whether we can find improved perfor%mance over existing hand optimised solutions and to automatically 
+
 
 % use section* for acknowledgement
 \section*{Acknowledgments}
 
-
 This work made use of the ARCHER UK National Supercomputing Service
-(\url{http://www.archer.ac.uk}).
+(\url{http://www.archer.ac.uk}). This work was funded by NERC project {\bf xxx}
 
 % http://www.ctan.org/tex-archive/biblio/bibtex/contrib/doc/
 % The IEEEtran BibTeX style support page is at:
@@ -859,8 +948,12 @@ This work made use of the ARCHER UK National Supercomputing Service
 Biography text here.
 \end{IEEEbiographynophoto}
 
+\begin{IEEEbiographynophoto}{M.~Ashworth}
+Biography text here.
+\end{IEEEbiographynophoto}
+
 % if you will not have a photo at all:
-\begin{IEEEbiographynophoto}{R.~Ford}
+\begin{IEEEbiographynophoto}{R.~W~Ford}
 Biography text here.
 \end{IEEEbiographynophoto}
 
@@ -868,7 +961,11 @@ Biography text here.
 % biographies
 %\newpage
 
-\begin{IEEEbiographynophoto}{G.~Riley}
+\begin{IEEEbiographynophoto}{M.~Modani}
+Biography text here.
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{G.~D.~Riley}
 Biography text here.
 \end{IEEEbiographynophoto}
 
