@@ -96,13 +96,21 @@ contains
                       TDTS8*(Zfld(I+1,J+1)+Zfld(I+1,J)) *                     &
                       (CVfld(I+1,J+1)+CVfld(I,J+1)+CVfld(I,J)+CVfld(I+1,J)) - &
                        TDTSDX*(Hfld(I+1,J)-Hfld(I,J))
+       END DO
+    END DO
 
+    DO J=1, N, 1
+       DO I= 1, M, 1
           !CALL compute_vnew_code(i, j+1, vnew, vold, &
           !                       zfld, cufld, hfld, tdt)
           VNEW(I,J+1) = VOLD(I,J+1)-TDTS8*(Zfld(I+1,J+1)+Zfld(I,J+1))        &
                       *(CUfld(I+1,J+1)+CUfld(I,J+1)+CUfld(I,J)+CUfld(I+1,J)) &
                       -TDTSDY*(Hfld(I,J+1)-Hfld(I,J))
+       END DO
+    END DO
 
+    DO J=1, N, 1
+       DO I= 1, M, 1
           !CALL compute_pnew_code(i, j, pnew, pold, &
           !                       cufld, cvfld, tdt)
           PNEW(I,J) = POLD(I,J)-TDTSDX*(CUfld(I+1,J)-CUfld(I,J))   & 
