@@ -24,7 +24,6 @@
 
 \begin{frontmatter}              % The preamble begins here.
 %
-% paper title
 % can use linebreaks \\ within to get better formatting as desired
 \title{Towards Compiler-Agnostic Performance in Finite-Difference Codes}
 
@@ -43,7 +42,7 @@ and
 
 \begin{abstract}
 In this paper we evaluate the performance implications of applying a
-technique called \psykal to finite difference Ocean models. 
+technique which we call \psykal to finite difference Ocean models. 
 %
 In \psykal, the code related to the underlying science is formally
 separated from code related to parallelisation and single core
@@ -56,7 +55,7 @@ of the science code.
 A finite difference shallow water benchmark optimised for cache based
 architectures is taken as the starting point. A vanilla \psykal version
 is written and the performance of the two compared. The optimisations
-that were applied to the original benchmark (loop fusion etc) are then
+that were applied to the original benchmark (loop fusion {\it etc.}) are then
 applied to the \psykal version as a set of code modifications to the
 optimisation layer. Performance results are presented for the Cray,
 Intel and GNU compilers on Intel Ivybridge and Haswell processors and
@@ -64,23 +63,13 @@ for the IBM compiler on Power8.
 %
 Results show that the combined set of code modifications obtain
 performance that is within a few percent of the original code for all
-compiler and architecture combinations on all tested problem sizes
-apart from GNU on Haswell, one problem size for Intel on Haswell and
-IBM on Power8.
-%
-As the GNU compiler performs well on Ivybridge the reduction in
-performance for the \psykal version was not analysed further. As the
-Intel performance on Haswell was better for the \psykal version than
-the original version, it was not analysed further.
-%
-In the case of the IBM compiler, the \psykal performance is
-significantly better than the original hand optimised code on all
-problem sizes. Analysing the performance of the IBM compiler shows
-that a different structure for the original optimised code produces
-much improved performance. Replicating this different structure using
-appropriate transformations in the \psykal version provides the
-same performance improvements.
-%
+compiler and architecture combinations on all tested problem
+sizes. The only exception to this (other than where we see significant
+speed-ups) is the Gnu compiler on Haswell for one problem size. Our
+tests indicate that this may be due to immature support for that
+architecture in the Gnu compiler -- no such problem is seen on the Ivy
+Bridge system.
+%%
 Therefore, the \psykal approach can be used with negligable
 performance loss and sometimes small performance gains compared to the
 original optimised code, there is no single best hand optimised
@@ -492,7 +481,7 @@ size is also the only one where the Power 8 out-performs the Haswell
 system (see Figure~\ref{FIG_orig_perf_summary}) for the original
 version.  The results in Figure~\ref{FIG_orig_perf_summary} indicate
 that the $512^2$ case marks a transition from the working set being in
-cache (sizes $\leq 256$) to spilling out of cache (size 1024). We
+cache (sizes $\leq 256^2$) to spilling out of cache (size $1024^2$). We
 therefore suggest that cache is being used more efficiently on the
 Power 8 system and this is further enhanced by the IBM-supplied
 transformations in the \psykal version.
@@ -536,15 +525,17 @@ performance are different (second and fourth clusters in
 Figure~\ref{FIG_opt_stages_256}).  Even the vanilla \psykal version of
 Shallow achieves some 80\% of the performance of the original
 version. Only two code transformations were required to increase this
-to 100\%. The first of these was the fusion of the computational
-loops. However, we found that performance suffered (purple bar) when
-this was extended to include the loop required for field copies at the
-end of a time-step (Figure~\ref{FIG_time_smooth_code}). Further
+to $\sim$100\%. The first of these was the fusion of the computational
+loops. However, we found that performance suffered (bar 5) when this
+was extended to include the loop required for field copies at the end
+of a time-step (Figure~\ref{FIG_time_smooth_code}). Further
 investigation of this slow-down revealed that the compiler was unable
 to SIMD vectorise the newly-fused loop after it had in-lined the body
 of the kernel called from within it. Once this in-lining was done by
-hand (dark-blue bar), the compiler was able to vectorise the loop and
-the performance of the original version of Shallow was recovered.
+hand (bar 6), the compiler was able to vectorise the loop and the
+performance of the original version of Shallow was recovered on the
+Haswell system. On Ivy Bridge the first loop nest also had to be fully
+fused (bar 7) to recover $\sim100\%$ of the performance.
 
 \begin{figure}
 \begin{verbatim}
@@ -593,13 +584,25 @@ with the preceeding loop. The resulting \psykal version now achieves
 match the latter. First, the first loop nest has to be fully fused
 (both inner and outer loops fused) and second, the array/loop bounds
 are passed as an argument to the middle layer. This is done in order
-to specify to the compiler that these bounds remain constant for the
-duration of the time-stepping loop.
+to indicate to the compiler that these bounds remain constant for the
+duration of each trip of the time-stepping loop.
 
-As with the Gnu compiler, it is module in-lining and kernel in-lining
-that are important for the IBM compiler (sixth cluster in
-Figure~\ref{FIG_opt_stages_256}). Fusing loop nests actually harms
-performance, just as it did for the Cray compiler.
+Moving to the IBM compiler on the Power 8 system (sixth cluster in
+Figure~\ref{FIG_opt_stages_256}) we see that performance of the
+vanilla \psykal version is only 5\% of the original and several
+transformations are required to achieve comparable performance. As
+with the Cray compiler, specifying array bounds explicitly improves
+performance. Module-inlining also has a significant effect; doubling
+the performance from 10 to 20\% of the original. However, fusing loop
+nests actually harms performance, just as it did for the Cray
+compiler. Kernel inlining takes performance to over 50\% and it is the
+IBM-supplied transformations of loop unrolling and fissioning the
+first loop ({\it i.e.} undoing some of transformations three and
+seven) that finally recovers 96\% of the performance of the
+original. We note that this final pair of transformations significantly
+reduce the performance obtained with the Intel and Gnu compilers
+although they do not much perturb that obtained by the Cray
+compiler.
 
 The main conclusion of all this analysis is that while we can employ a
 separation of concerns and recover performance, doing so is not
@@ -608,9 +611,9 @@ such as Shallow is highly compiler- and CPU-dependent. Decisions that
 are good on one platform may be bad for another and if these are
 written into the source code then they will accumulate over time and
 will almost certainly result in a code that does not perform optimally
-on any system.
-
-{\bf RF: IBM compiler an example of the above point}
+on any system. For instance, loop fusion benefits performance for the
+Gnu and Intel compilers and yet hurts performance with the Cray and
+IBM compilers.
 
 \section{Conclusions}
 
@@ -621,7 +624,7 @@ related aspects of a computer model to be kept separate from the
 natural (oceanographic) science aspects.
 
 As expected, applying this separation of concerns does reduce
-performance significantly when comparing with an existing optimised
+performance significantly when compared with an existing, optimised
 code. However, the application of code transformations to the
 performance/PSy layer and the use of appropriate compiler flags can
 recover any performance losses to within a few percent and in some
@@ -629,15 +632,15 @@ cases, despite limiting ourselves to transformations which replicate
 the structure of the optimised code, result in slightly improved
 performance.
 
-The IBM results demonstrate two key points.
+The IBM results in particular demonstrate two key points.
 %
-Firstly, even for a relatively simple
+First, even for a relatively simple
 benchmark code, the code structure required to obtain good performance
 between different architecture and/or compiler combinations may
 differ. For hand optimised codes this implies the need to support
 multiple code bases in order to achieve portable performance.
 %
-Secondly, the \psykal approach directly addresses the problem of
+Second, the \psykal approach directly addresses the problem of
 requiring different optimisations for different architectures and/or
 compilers by limiting these differences to a separate performance
 layer, thereby allowing the natural science code base to remain
@@ -645,10 +648,10 @@ unchanged.
 
 In future work we will extend our performance portability analysis of
 the \psykal approach to shared memory parallelisation optimisations on
-different architectures using different parallalisation techniques (in
+different architectures using different parallelisation techniques (in
 particular OpenMP on multi/many-core and OpenACC on GPU's).
 %
-We will then analyse the performance of a domain specific compiler
+We will then analyse the performance of a domain-specific compiler
 that is currently under development. This compiler will generate
 optimised PSy-layer code using a user-provided recipe of
 transformations, thereby removing the need for optimisation experts to
