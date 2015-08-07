@@ -405,10 +405,10 @@ In Figure~\ref{FIG_orig_perf_summary} we plot the performance of the
 original version of the Shallow code for the range of compilers and
 hardware considered here. This summary demonstrates the effect of the
 larger last-level cache of the Intel Ivy Bridge system compared to
-that of the Haswell system; note the significant drop in performance
+that of the Haswell system; note the drop in performance
 in going from a problem size of $256^{2}$ to a problem size of
-$512^{2}$ for the black and green bars. The performance of the Ivy
-Bridge system with the Cray or Intel compiler (red and purple bars)
+$512^{2}$ for the first two bars. The performance of the Ivy
+Bridge system with the Cray or Intel compiler (penultimate two bars)
 only drops to this level when the domain size is increased to
 $1024^{2}$. At this point, the working set no longer fits within cache
 and performance is dominated by the bandwidth to main memory, making
@@ -431,38 +431,38 @@ it relatively insensitive to the choice of compiler.
 \label{FIG_orig_perf_summary}
 \end{figure}
 
-For this compiler-friendly form of the code, there is little
+For this compiler-friendly form of the code, there is generally little
 performance difference between the executables produced by the Gnu and
-Intel compilers. However, the executable produced by the Cray compiler
-generally performs significantly better for all but the largest domain
-size.
+Intel compilers on both the Haswell and Ivy Bridge CPUs. However, the
+executable produced by the Cray compiler generally performs
+significantly better for all but the largest domain size. Analysis of
+the optimisation reports produced by the Cray and Intel compilers did
+not give any clues as to the cause of this difference and an in-depth
+investigation is outside the scope of this paper.
 
-Moving now the to the \psykal version of Shallow,
-Figure~\ref{FIG_best_psykal_perf_summary} plots the performance of the
-fastest \psykal version for each of the compiler/CPU combinations. The
-only significant difference between this and the plot of the
-performance of the original version of the code in
-Figure~\ref{FIG_orig_perf_summary} is that the difference between the
-Gnu- and Intel-compiled executables is slightly more marked. This is
-clarified in Figure~\ref{FIG_slowdown_summary} which plots the
-percentage difference between the performance of the original and the
-(best) \psykal versions of Shallow for each compiler/CPU combination.
-It is clear from this plot that the difference in the performance of
-the Gnu- and Intel-compiled excutables on the Haswell system is due to
-the Gnu compiler being unable to recover the performance achieved by
-the original code. In contrast there is no such problem for the
-Gnu-compiled executable on the Ivy Bridge system. We attribute this to
-the more recent version of the compiler on the latter system (4.9.1 as
-opposed to 4.8.2).
+Moving now the to the \psykal version of Shallow, it turns out that a
+plot of the performance of the best performing \psykal version for
+each of the compiler/CPU combinations is very similar to
+Figure~\ref{FIG_orig_perf_summary}. Therefore, in
+Figure~\ref{FIG_slowdown_summary} we plot the percentage {\em
+  difference} between the performance of the original and the (best)
+\psykal versions of Shallow for each compiler/CPU combination. The
+most important feature of this plot is that the performance penalty
+incurred by the \psykal version is less than four percent with only
+one exception where it is 6.6\%.  In fact, for the Intel and Cray
+compilers, the \psykal version of Shallow is never more than 2\%
+slower than the original and in some cases is faster.  This
+demonstrates that we can reliably recover the performance of the
+original version of the code, despite the significant restructuring
+required by the \psykal approach.
 
-\begin{figure}[!t]
-\centering
-\includegraphics[width=120mm]{best_psykal_summary}
-\caption{Summary of the best performance achieved by any \psykal 
-version of Shallow with each of the compilers and CPUs under 
-consideration.}
-\label{FIG_best_psykal_perf_summary}
-\end{figure}
+The exceptional case is that of the Gnu-compiled binary on the Haswell
+CPU for a problem size of $256^2$.  This is strange since the
+performance difference for the same case on the Ivy Bridge CPU is just
+0.8\%. {\bf installing 4.9.1 on desktop so can try running this case
+  with it. In fact there are considerable difference between
+  slow-downs seen with 4.8.2 and 4.9.3 on desktop -things are much
+  better with more recent compiler.}
 
 \begin{figure}[!t]
 \centering
@@ -473,18 +473,27 @@ indicates that the \psykal version is faster than the original.}
 \label{FIG_slowdown_summary}
 \end{figure}
 
-In fact, for the Gnu and Cray compilers on the Ivy Bridge system, the
-\psykal version of Shallow is never more than 2\% slower than the
-original and in some cases is faster.  This demonstrates that we can
-reliably recover the performance of the original version of the code,
-despite the significant restructuring required by the \psykal
-approach.
+Turning to the cases where the \psykal version is significantly
+{\em faster} than the original, we see from
+Figure~\ref{FIG_slowdown_summary} that, with the exception of Power 8,
+this only occurs for the smallest domain size. This is no doubt due in
+part to the fact that the problem executes very quickly and therefore
+a small reduction in run-time will show as a large precentage. Since
+this problem is well contained in L2 cache, its performance will also
+be more sensitive to small differences, {\it e.g.} in the way that CPU
+registers are used. 
 
-The most striking feature of Figure~\ref{FIG_slowdown_summary} is the
-fact that the best \psykal version of Shallow is consistently faster
-than the original on the Power 8. This confirms that this early
-version of the IBM compiler struggled with the original form of the
-Shallow source code.
+The performance of the Power 8 system with the $512^2$ domain size is
+somewhat anomolous: the \psykal version of the code performs
+significantly better than the original and in addition, this problem
+size is also the only one where the Power 8 out-performs the Haswell
+system (see Figure~\ref{FIG_orig_perf_summary}) for the original
+version.  The results in Figure~\ref{FIG_orig_perf_summary} indicate
+that the $512^2$ case marks a transition from the working set being in
+cache (sizes $\leq 256$) to spilling out of cache (size 1024). We
+therefore suggest that cache is being used more efficiently on the
+Power 8 system and this is further enhanced by the IBM-supplied
+transformations in the \psykal version.
 
 Having shown that, in general, we can recover and occasionally improve
 upon the performance of the original version of Shallow, the next
