@@ -128,12 +128,18 @@ require different programming approaches.
 
 \subsection{The \psykal Approach}
 
-The \psykal approach separates code into three layers; the Algorithm
-layer, the PSy layer and the Kernel layer. While this approach is
-general, we are currently applying it to Atmosphere and Ocean models
-written in Fortran where domain decomposition is typically performed
-in the latitude-longitude direction, leaving columns of elements on
-each domain-decomposed partition.
+The \psykal approach attempts to address the problems described in the
+previous section. It separates code into three layers; the Algorithm
+layer, the PSy layer and the Kernel layer. The approach has been
+developed in the GungHo project~\cite{GungHo}, which is creating a new
+Dynamical core for the Met Office, and its design has been influenced
+by earlier work on OP2~\cite{OP2,PYOP2}.
+
+While this approach is general, we are currently applying it to
+Atmosphere and Ocean models written in Fortran where domain
+decomposition is typically performed in the latitude-longitude
+direction, leaving columns of elements on each domain-decomposed
+partition.
 
 The top layer, in terms of calling hierarchy, is the Algorithm
 layer. This layer specifies the algorithm that the scientist would like
