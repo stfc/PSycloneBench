@@ -10,7 +10,7 @@ shallow_perf.aux: shallow_perf.tex
 	pdflatex $<
 
 # List of figures that are GENERATED from .dat files of the same name
-FIG_FILES = best_psykal_summary.pdf orig_summary.pdf slowdown_summary.pdf opt_stages_256.pdf
+FIG_FILES = orig_summary.pdf slowdown_summary.pdf opt_stages_256.pdf
 
 figs: ${FIG_FILES}
 
