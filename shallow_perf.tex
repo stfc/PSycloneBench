@@ -352,13 +352,13 @@ The transformations we have performed are as follows:
   (rather than using assumed-size array arguments);
 
 \item Move all kernel subroutines into the same module as as that
-  containing the middle/PSy layer (module inlining);
+  containing the middle/PSy layer (`module inlining');
 
 \item Loop fusion: all neighbouring loop nests were fully fused (where
   possible) with the exception of the first loop nest where it was
   found that fusing only the outer loop was more performant.
 
-\item Manually in-line (kernel inline) the three field-copy operations
+\item Manually in-line (`kernel inline') the three field-copy operations
   performed as part of the time-update section;
 
 \item Loop fuse the three field-copy operations with the
@@ -459,10 +459,12 @@ required by the \psykal approach.
 The exceptional case is that of the Gnu-compiled binary on the Haswell
 CPU for a problem size of $256^2$.  This is strange since the
 performance difference for the same case on the Ivy Bridge CPU is just
-0.8\%. {\bf installing 4.9.1 on desktop so can try running this case
-  with it. In fact there are considerable difference between
-  slow-downs seen with 4.8.2 and 4.9.3 on desktop -things are much
-  better with more recent compiler.}
+0.8\%. We investigated this further by compiling and running this case
+with versions 4.8.3, 4.9.1 and 4.9.3 of the Gnu compiler on the
+Haswell system. These gave slow-downs of 7.8\%, 7.3\% and 6.6\%,
+respectively. From these results we conclude that the Gnu compiler's
+support for/ability to exploit the newer Haswell architecture is still
+maturing.
 
 \begin{figure}[!t]
 \centering
@@ -507,7 +509,7 @@ version of Shallow with the same compiler/CPU.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=120mm]{opt_stages_256}
+\includegraphics[width=123mm]{opt_stages_256}
 \caption{The performance of the \psykal version of Shallow for the
   $256^{2}$ domain at each stage of optimisation. Results are given as
   a percentage of the performance of the original code for each
@@ -519,19 +521,15 @@ With the Gnu compiler (first and third clusters in
 Figure~\ref{FIG_opt_stages_256}), the vanilla \psykal version of
 Shallow only achieves ~5-6\% of the performance of the
 original. Simply copying the code for each of the kernel subroutines
-into the module from which they are called (`module in-lining') has
-the most dramatic effect on the performance of the compiled code; it
-now achieves almost 80\% of the performance of the original. The next
-most significant transformation is that of manually in-lining the
-kernel code itself into the bodies of the loops from which they are
-called (`kernel in-lining'). This gets the \psykal version to within
-8\% of the performance of the original.  The dramatic performance
-improvement obtained from the first transformation demonstrates that
-the Gnu compiler is unable to optimise over separate files. Therefore,
-the fact that the time-stepping loop in the \psykal version still
-retains a call to an I/O routine and a call to the middle-layer, both
-of which are in different files, is likely to account for this
-remaining performance penalty of 8\%.
+into the module from which they are called (module in-lining) has the
+most dramatic effect on the performance of the compiled code; it now
+achieves more than 80\% of the performance of the original. The
+transformations required to get beyond this level then become
+architecture dependent: on Haswell loop fusion achieves more than 90\%
+while on Ivy Bridge it is fully-fusing the first loop nest. The
+dramatic performance improvement obtained from the module-inlining
+transformation demonstrates that the Gnu compiler is unable to
+optimise over separate files.
 
 With the Intel compiler, the key transformations to recover
 performance are different (second and fourth clusters in
