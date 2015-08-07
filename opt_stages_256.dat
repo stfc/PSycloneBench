@@ -1,4 +1,4 @@
-=cluster; Vanilla; Explicit bounds for array args; Single file; Loop fused; In-lined copy operator; Fused copy operator; In-line all kernels; Fully fuse 1st loop nest; Explicit, constant array/loop bounds; Unroll time-smooth; Fission new update
+=cluster; 0. Vanilla; 1. Explicit bounds for array args; 2. Single file; 3. Loop fused; 4. In-lined copy operator; 5. Fused copy operator; 6. In-line all kernels; 7. Fully fuse 1st loop nest; 8. Explicit, constant array/loop bounds; 9. Unroll time-smooth; 10. Fission 1st loop nest
 font=Helvetica
 fontsz=12
 # stretch the graph vertically
@@ -9,6 +9,7 @@ xticshift=-3.0,-0.7
 #legendx=right
 #legendy=center
 =patterns
+#extraops=set grid back
 =table;
 # Performance as % of original version
 ylabel=Performance relative to original (%)
