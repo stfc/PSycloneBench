@@ -243,8 +243,13 @@ copying data from the corresponding row/column on the opposite side of
 the domain. In the current work, the lines of code to do these copies
 are manually inserted in the PSy-layer routine as required.
 
-%{\bf Auto-generated BC code by reasoning about meta-data. But then,
-%  that brings us on to meta-data...}
+Excluding the application of boundary conditions, the code has three
+main sections: computation of mass fluxes, vorticity and sea-surface
+height; computation of the pressure and velocity components; and
+finally, smoothing of the fields in time and copying of the field
+values at the next time-step to be those at the current
+time-step. Profiling of the original code showed that these three
+sections each account for approximately one third of the run-time.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methodology}
@@ -326,39 +331,57 @@ version after it has been re-structured following the \psykal
 approach. These two versions of the code effectively provide upper and
 lower bounds, respectively, on the performance we expect to achieve.
 
-{\bf RF: Explain that we gradually apply transformations which restructure the psykal code to end up with the same optimised structure as the original code. Explain the reason behind the ordering and what each does - I think you said it was the order that you thought would make the biggest difference. If you can base it on performance analysis then all the better but I don't think that is required.}
-
-{\bf Performance analysis as motivation for the code
-  tranformations. More detail on each transformation.}
-
 Beginning with the vanilla \psykal version, we then apply a series of
-code transformations while obeying the \psykal separation of concerns,
-{\it i.e.} optimisation is restricted to the middle, {PS}y layer and leaves
-the kernel and algorithm layers unchanged. The aim of these
-optimisations is to recover, as much as is possible, the structure and
-thus performance of the original version of the code. The
-transformations we have performed are as follows:
+(cumulative) code transformations while obeying the \psykal separation
+of concerns, {\it i.e.} optimisation is restricted to the middle,
+{PS}y layer and leaves the kernel and algorithm layers unchanged. The
+aim of these optimisations is to recover, as much as is possible, the
+structure and thus performance of the original version of the code. We
+began with two transformations that affect all of the kernels. After
+this, we determined the transformations to perform by comparing the
+timing profiles of the \psykal and original versions of the code. We
+then tackled the sections resposible for the largest slowdowns and
+iterated this process. While doing this we also made heavy use of the
+optimisation reports produced by the compilers and how these changed
+when moving from the original to the \psykal version of the code.
+
+The transformations we have performed are as follows:
 \begin{enumerate}
 
-\item Pass explicit array bounds to middle layer (rather than using
-  assumed-size array arguments)
+\item Specify array bounds in the middle layer using module variables
+  (rather than using assumed-size array arguments);
 
-\item Move kernel routines into same module as middle layer
+\item Move all kernel subroutines into the same module as as that
+  containing the middle/PSy layer (module inlining);
 
-\item Loop fusion
+\item Loop fusion: all neighbouring loop nests were fully fused (where
+  possible) with the exception of the first loop nest where it was
+  found that fusing only the outer loop was more performant.
 
-\item In-lined field-copy operation
+\item Manually in-line (kernel inline) the three field-copy operations
+  performed as part of the time-update section;
 
-\item Fused field-copy operation
+\item Loop fuse the three field-copy operations with the
+  time-smoothing loop nest;
 
-\item Manually in-line kernel bodies into middle-layer code
+\item Manually in-line all kernel bodies into the middle-layer
+  subroutine (kernel inlining);
 
-\item Fully fuse first loop (only the outer loop of this loop nest was
-  fused in the first pass)
+\item Fully fuse the first loop nest (only the outer loop of this loop
+  nest was fused in the first pass);
 
-\item Make the array/loop bounds explicitly constant for the
-      duration of the time-stepping loop.
+\item Make the array/loop bounds explicitly constant for the duration
+  of the time-stepping loop (pass as arguments to the middle layer
+  rather than using module variables).
+
 \end{enumerate}
+
+In addition to these transformations we also applied two
+transformations that were suggested by the IBM compiler team. The
+first of these manually blocked the outer loop of the time-smoothing
+loop nest using a factor of four. The second effectively undoes our 3rd
+transformation by fissioning the first loop nest back into three
+separate loop nests.
 
 We shall see that these transformations do not always result in improved
 performance. Whether or not they do so depends both on the compiler
