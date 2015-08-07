@@ -115,7 +115,7 @@ GPU, Xeon Phi, traditional CPU, FPGA or something else entirely. This
 is a problem because, generally speaking, these different technologies
 require different programming approaches.
 
-\subsection{The \psykal Approach}
+\subsection*{The \psykal Approach}
 
 The \psykal approach attempts to address the problems described in the
 previous section. It separates code into three layers; the Algorithm
@@ -172,7 +172,7 @@ on performance. This overhead, how to get back to the performance
 of a hand-optimised code, and potentially improve on it, will be
 discussed in the remainder of this paper.
 
-\subsection{The `Shallow' Program}
+\subsection*{The `Shallow' Program}
 
 For this work we use a benchmark called Shallow which solves the
 shallow-water equations on a bi-periodic plane following the
@@ -217,7 +217,7 @@ pseudo-code in Figure~\ref{FIG_psykal_shallow_structure}.
 
 \begin{figure}
 \centering
-\includegraphics[width=85mm]{psykal_shallow}
+\includegraphics[width=100mm]{psykal_shallow}
 \caption{A schematic of the vanilla \psykal version of the Shallow code.}
 \label{FIG_psykal_shallow_structure}
 \end{figure}
@@ -255,7 +255,7 @@ The Intel Haswell-based system (Xeon E5-1620 v2) has a clock speed of
 3.7~GHz and 10~MB of last-level cache. The Intel Ivy Bridge-based
 system (Xeon E5-2697) has a clock speed of 2.7~GHz and a last-level
 cache of 30~MB. The CPU in the IBM Power-8 system is built around 12
-'chiplets'. Each chiplet has a single core with 64~KB of L1 cache,
+`chiplets'. Each chiplet has a single core with 64~KB of L1 cache,
 512~KB of L2 cache and 8~MB of L3 cache. The L3 cache of each chiplet
 is shared with all other chiplets so that there is a total of 96~MB of
 last-level cache. The cores on the system we used had a clock speed of
@@ -361,21 +361,25 @@ The transformations we have performed are as follows:
 
 \item Make the array/loop bounds explicitly constant for the duration
   of the time-stepping loop (pass as arguments to the middle layer
-  rather than using module variables).
+  rather than using module variables);
+
+\item Un-roll the outer loop of the time-smoothing loop nest using a
+blocking factor of four (IBM supplied);
+
+\item Fission the first loop nest back into three separate loop nests
+  (IBM supplied).
 
 \end{enumerate}
 
-In addition to these transformations we also applied two
-transformations that were suggested by the IBM compiler team. The
-first of these manually blocked the outer loop of the time-smoothing
-loop nest using a factor of four. The second effectively undoes our 3rd
-transformation by fissioning the first loop nest back into three
-separate loop nests.
+As indicated above, the last two of these transformations were
+suggested by the IBM compiler team. The second of these effectively
+undoes our 3rd transformation by fissioning the first loop nest back
+into three separate loop nests.
 
 We shall see that these transformations do not always result in improved
 performance. Whether or not they do so depends both on the compiler
 and the problem size. We also emphasise that the aim of these
-optimisations is to recover, as far as is possible, the structure of
+optimisations is typically to recover, as far as is possible, the structure of
 the original version of the code. It may well be that transforming the
 code into some other structure would result in better performance on a
 particular architecture. However, exploring this optimisation space is
@@ -402,15 +406,6 @@ only drops to this level when the domain size is increased to
 $1024^{2}$. At this point, the working set no longer fits within cache
 and performance is dominated by the bandwidth to main memory, making
 it relatively insensitive to the choice of compiler.
-
-% The IBM Fortran
-%compiler for Linux on Power 8 is relatively immature and failed to
-%SIMD-vectorise two of the three major loop nests in the time-stepping
-%loop. Figure~\ref{FIG_orig_perf_summary} therefore also includes the
-%performance results obtained after the source had been modified to
-%work-around this limitation (we fissioned one loop nest and manually
-%unrolled another). Work is currently underway on updating the compiler
-%so that these modifications will be unecessary with a future release.
 
 \begin{figure}[!t]
 \centering
@@ -676,5 +671,3 @@ grant number NE/L012111/1.
 \bibliography{shallow_perf}
 %
 \end{document}
-
-
