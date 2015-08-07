@@ -128,14 +128,6 @@ require different programming approaches.
 
 \subsection{The \psykal Approach}
 
-%Proliferation of lightweight cores is resulting in increased
-%complexity in the programming models required to achieve performance.
-%Combine with the complexity of e.g. a model simulating circulation in
-%the global ocean. Significant challenge in software engineering.
-%Propose an approach for meeting this challenge by separating the
-%computational science demands from the {\it e.g.} oceanographic
-%demands.
-
 The \psykal approach separates code into three layers; the Algorithm
 layer, the PSy layer and the Kernel layer. While this approach is
 general, we are currently applying it to Atmosphere and Ocean models
@@ -181,8 +173,8 @@ code. This approach therefore offers the potential for portable
 performance.
 
 Clearly the separation of code into distinct layers may have an effect
-on performance. This overhead, and how to get back to the performance
-of a hand optimised code, and potentially improve on it, will be
+on performance. This overhead, how to get back to the performance
+of a hand-optimised code, and potentially improve on it, will be
 discussed in the remainder of this paper.
 
 \subsection{The `Shallow' Program}
@@ -243,13 +235,13 @@ rows/columns at the edges of the domain and ensuring the data in them
 is up-to-date before it is read. These rows/columns are updated by
 copying data from the corresponding row/column on the opposite side of
 the domain. In the current work, the lines of code to do these copies
-is manually inserted in the PSy-layer routine as required.
+are manually inserted in the PSy-layer routine as required.
 
 %{\bf Auto-generated BC code by reasoning about meta-data. But then,
 %  that brings us on to meta-data...}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Methodology(?)}
+\section{Methodology}
 
 The primary aim of this work is to determine whether any performance
 loss due to the \psykal separation of concerns can be negated by
@@ -297,6 +289,12 @@ the \psykal versions of the code. The performance of the original
 version of the code is much less sensitive to the compiler
 options. This is because it consists of a single source file
 containing effectively a single routine (excluding those for I/O).
+For all compilers apart from Cray it was important to use flags that
+encourage in-lining. With the Cray compiler some benefit was obtained
+by increasing the level of Inter-Procedural Analysis and using
+'whole-program optimisation'. In order to get performant code from the
+IBM compiler it was found essential to make the pre-fetching
+considerably more aggressive than the default.
  
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
@@ -630,7 +628,7 @@ research collaboratory in association with IBM providing High
 Performance Computing platforms funded by the UK's investment in
 e-Infrastructure. The Centre aims to develop and demonstrate next
 generation software, optimised to take advantage of the move towards
-exa-scale computing. This work was funded by the NERC GOcean project,
+exa-scale computing. This work was funded by the NERC `GOcean' project,
 grant number NE/L012111/1.
 
 % http://www.ctan.org/tex-archive/biblio/bibtex/contrib/doc/
