@@ -282,7 +282,7 @@ last-level cache. The cores on the system we used had a clock speed of
 \hline
                  & Gnu   & Intel       & Cray    & IBM     \\
 \hline
-Intel Haswell    & 4.8.2 & 14.0.0      &         &          \\
+Intel Haswell    & 4.9.3 & 14.0.0      &         &          \\
 Intel Ivy Bridge & 4.9.1 & 14.0.1.106  & 8.3.3   &          \\
 IBM Power 8      &       &             &         & 15.1.2     \\
 \hline
@@ -309,7 +309,7 @@ Compiler  &  Flags \\
 Gnu       & -Ofast -mtune=native -finline-limit=50000    \\
 Intel     & -O3 -fast -fno-inline-factor    \\
 Cray      & -O3 -O ipa5 -h wp               \\
-IBM       & \parbox{5cm}{-O5 -qinline=auto:level=10\\ -qinline=auto:level=10 -qaltivec=be\\ -qdebug=NSIMDUBTHRESHOLD -qprefetch=dscr=0x1D7} \\
+IBM       & \parbox{5cm}{-O5 -qinline=auto:level=10\\ -qprefetch=dscr=0x1D7} \\
 \hline
 \end{tabular}
 \end{table}
@@ -383,21 +383,22 @@ Bridge system with the Cray or Intel compiler (red and purple bars)
 only drops to this level when the domain size is increased to
 $1024^{2}$. At this point, the working set no longer fits within cache
 and performance is dominated by the bandwidth to main memory, making
-it relatively insensitive to the choice of compiler. The IBM Fortran
-compiler for Linux on Power 8 is relatively immature and failed to
-SIMD-vectorise two of the three major loop nests in the time-stepping
-loop. Figure~\ref{FIG_orig_perf_summary} therefore also includes the
-performance results obtained after the source had been modified to
-work-around this limitation (we fissioned one loop nest and manually
-unrolled another). Work is currently underway on updating the compiler
-so that these modifications will be unecessary with a future release.
+it relatively insensitive to the choice of compiler.
+
+% The IBM Fortran
+%compiler for Linux on Power 8 is relatively immature and failed to
+%SIMD-vectorise two of the three major loop nests in the time-stepping
+%loop. Figure~\ref{FIG_orig_perf_summary} therefore also includes the
+%performance results obtained after the source had been modified to
+%work-around this limitation (we fissioned one loop nest and manually
+%unrolled another). Work is currently underway on updating the compiler
+%so that these modifications will be unecessary with a future release.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=2.8in]{orig_summary}
+\includegraphics[width=120mm]{orig_summary}
 \caption{Summary of the performance of the original Shallow code on
-  the range of compilers and hardware under consideration. *After code
-  modifications to encourage SIMD vectorisation (see text).}
+  the range of compilers and hardware under consideration.}
 \label{FIG_orig_perf_summary}
 \end{figure}
 
@@ -427,7 +428,7 @@ opposed to 4.8.2).
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=7.5cm]{best_psykal_summary}
+\includegraphics[width=120mm]{best_psykal_summary}
 \caption{Summary of the best performance achieved by any \psykal 
 version of Shallow with each of the compilers and CPUs under 
 consideration.}
@@ -436,7 +437,7 @@ consideration.}
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=2.8in]{slowdown_summary}
+\includegraphics[width=120mm]{slowdown_summary}
 \caption{Comparison of the performance of the best \psykal
 version with that of the original version of the code. A negative value 
 indicates that the \psykal version is faster than the original.}
@@ -460,56 +461,32 @@ Having shown that, in general, we can recover and occasionally improve
 upon the performance of the original version of Shallow, the next
 logical step is to examine the necessary code transformations.  We do
 this for the $256^{2}$ case since this fits within last-level cache on
-all of the CPUs we are using here.  Table~\ref{TABLE_opt_breakdown}
-shows detailed timings for this case after each transformation has
-been applied to the code. The same data is visualised in
-Figure~\ref{FIG_opt_stages_256} where the performance of the \psykal
-version for a given compiler/CPU is given relative to the performance
-of the original with the same compiler/CPU.
+all of the CPUs we are using here.  The performance of the \psykal
+version after each transformation has been applied to the code is
+plotted in Figure~\ref{FIG_opt_stages_256}. Results for a given
+compiler/CPU are given relative to the performance of the original
+version of Shallow with the same compiler/CPU.
 
-\begin{table*}[!t]
-% increase table row spacing, adjust to taste
-\renewcommand{\arraystretch}{1.3}
-% if using array.sty, it might be a good idea to tweak the value of
-% \extrarowheight as needed to properly center the text within the cells
-\caption{The mean time-per-step (s) for the $256^2$ case after each 
-code transformation.}
-\label{TABLE_opt_breakdown}
+\begin{figure}[!t]
 \centering
-\begin{tabular}{l|c|c|c|c|c|c}
-\hline
-Compiler:          &  Gnu  & Intel   & Gnu & Intel & Cray & IBM \\
-\hline
-CPU:               & \multicolumn{2}{c|}{Haswell} & \multicolumn{3}{c|}{Ivy Bridge} & Power8 \\
-\hline
-Original                               &  7.47E-04 & 7.06E-04 &	7.70E-04 & 7.77E-04 & 6.13E-04 &  1.17E-03  \\
-Vanilla \psykal                        &  1.26E-02 & 8.64E-04 &	1.38E-02 & 9.82E-04 & 8.33E-04 &  7.87E-03  \\
-Explicitly-sized arrays                &  1.26E-02 & 8.62E-04 &	1.38E-02 & 9.65E-04 & 6.96E-04 &  6.74E-03  \\
-Kernels copied into module             &  1.10E-03 & 8.67E-04 &	9.42E-04 & 9.65E-04 & 7.10E-04 &  3.13E-03  \\
-Loops fused                            &  1.09E-03 & 7.89E-04 &	9.07E-04 & 8.80E-04 & 7.35E-04 &  3.60E-03  \\
-In-lined field-copy                    &  1.09E-03 & 7.90E-04 &	9.07E-04 & 8.73E-04 & 7.31E-04 &  3.62E-03  \\
-Fused field-copy                       &  1.09E-03 & 9.25E-04 &	1.02E-03 & 1.04E-03 & 6.50E-04 &  4.11E-03  \\
-In-line all kernels                    &  8.20E-04 & 7.14E-04 &	9.32E-04 & 8.52E-04 & 6.50E-04 &  1.07E-03  \\
-Fully fuse 1st loop nest               &  8.10E-04 & 7.18E-04 &	7.76E-04 & 7.92E-04 & 6.23E-04 &  1.07E-03  \\
-Explicit, constant array/loop bounds   &  8.05E-04 & 7.12E-04 &	7.81E-04 & 7.91E-04 & 6.13E-04 &  1.07E-03  \\
-Fission new-field update loops         &           &          &          &          &          &            \\
-Un-roll time-smoothing                 &           &          &          &          &          &            \\
-\hline
-\parbox{2.5cm}{\%-slow-down of best {\it c.f.} original} & 7.8 & 0.8 & 0.8 & 1.8 & 0.03 & -9.0    \\
-\hline
-\end{tabular}
-\end{table*}
+\includegraphics[width=120mm]{opt_stages_256}
+\caption{The performance of the \psykal version of Shallow for the
+  $256^{2}$ domain at each stage of optimisation. Results are given as
+  a percentage of the performance of the original code for each
+  compiler/CPU combination.}
+\label{FIG_opt_stages_256}
+\end{figure}
 
 With the Gnu compiler (first and third clusters in
 Figure~\ref{FIG_opt_stages_256}), the vanilla \psykal version of
 Shallow only achieves ~5-6\% of the performance of the
 original. Simply copying the code for each of the kernel subroutines
-into the module from which they are called ('module in-lining') has
+into the module from which they are called (`module in-lining') has
 the most dramatic effect on the performance of the compiled code; it
 now achieves almost 80\% of the performance of the original. The next
 most significant transformation is that of manually in-lining the
 kernel code itself into the bodies of the loops from which they are
-called ('kernel in-lining'). This gets the \psykal version to within
+called (`kernel in-lining'). This gets the \psykal version to within
 8\% of the performance of the original.  The dramatic performance
 improvement obtained from the first transformation demonstrates that
 the Gnu compiler is unable to optimise over separate files. Therefore,
@@ -520,30 +497,18 @@ remaining performance penalty of 8\%.
 
 With the Intel compiler, the key transformations to recover
 performance are different (second and fourth clusters in
-Figure~\ref{FIG_opt_stages_256}).  Table~\ref{TABLE_opt_breakdown}
-shows that even the vanilla \psykal version of Shallow achieves some
-80\% of the performance of the original version. Only two code
-transformations were required to increase this to 100\%. The first of
-these was the fusion of the computational loops. However, we found
-that performance suffered (purple bar) when this was extended to
-include the loop required for field copies at the end of a time-step
-(Figure~\ref{FIG_time_smooth_code}). Further investigation of this
-slow-down revealed that the compiler was unable to SIMD vectorise the
-newly-fused loop after it had in-lined the body of the kernel called
-from within it. Once this in-lining was done by hand (dark-blue bar),
-the compiler was able to vectorise the loop and the performance of the
-original version of Shallow was recovered.
-
-\begin{figure}[!t]
-\centering
-\includegraphics[width=95mm]{opt_stages_256}
-\caption{The performance of the \psykal version of Shallow for the
-  $256^{2}$ domain at each stage of optimisation. Results are given as
-  a percentage of the performance of the original code for each
-  compiler/CPU combination. A figure greater than 100\% indicates that
-  the \psykal version performs better than the original.}
-\label{FIG_opt_stages_256}
-\end{figure}
+Figure~\ref{FIG_opt_stages_256}).  Even the vanilla \psykal version of
+Shallow achieves some 80\% of the performance of the original
+version. Only two code transformations were required to increase this
+to 100\%. The first of these was the fusion of the computational
+loops. However, we found that performance suffered (purple bar) when
+this was extended to include the loop required for field copies at the
+end of a time-step (Figure~\ref{FIG_time_smooth_code}). Further
+investigation of this slow-down revealed that the compiler was unable
+to SIMD vectorise the newly-fused loop after it had in-lined the body
+of the kernel called from within it. Once this in-lining was done by
+hand (dark-blue bar), the compiler was able to vectorise the loop and
+the performance of the original version of Shallow was recovered.
 
 \begin{figure}
 \begin{verbatim}
