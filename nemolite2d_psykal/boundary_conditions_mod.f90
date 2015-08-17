@@ -26,10 +26,9 @@ module boundary_conditions_mod
              arg(READ,      GRID_MASK_T)           &
            /)
 
-     !> This is a boundary-conditions kernel and therefore
-     !! acts on all points of the domain rather than just
-     !! those that are internal
-     integer :: ITERATES_OVER = ALL_PTS
+     !> Although this is a boundary-conditions kernel, it only
+     !! acts on the internal points of the domain
+     integer :: ITERATES_OVER = INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
