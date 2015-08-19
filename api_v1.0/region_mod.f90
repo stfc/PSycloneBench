@@ -10,7 +10,7 @@ module region_mod
   end type region_type
 
   interface region_type
-     module procedure :: region_constructor
+     module procedure region_constructor
   end interface region_type
 
 contains
