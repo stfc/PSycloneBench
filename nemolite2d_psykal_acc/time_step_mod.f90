@@ -123,6 +123,9 @@ contains
 
 !    call timer_start('Momentum',idxt)
 
+!$acc parallel private(ji,jj,cor) copyout(ua) &
+!$acc copyin(un,vn,hu,hv,ht,ssha_u,sshn_t,sshn_u,sshn_v, tmask, &
+!$acc        dx_u, dx_v, dx_t, dy_u, dy_t, area_u, gphiu)
 !dir$ safe_address
     do jj = 2, N, 1
 !dir$ vector always
@@ -230,6 +233,7 @@ contains
 
       end do
     end do
+!$acc end parallel
 ! This loop writes to ua and subsequent (momentum in v) loop doesn't
 ! use this field (or ssha from the preceeding loop) so we do not 
 ! have to block here.
