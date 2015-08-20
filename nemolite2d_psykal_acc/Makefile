@@ -49,7 +49,7 @@ boundary_conditions_mod.o: physical_params_mod.o ${API_LIB} model_mod.o
 gocean2d_io_mod.o: ${API_LIB}
 infrastructure_mod.o: ${API_LIB}
 model_mod.o: ${API_LIB} gocean2d_io_mod.o
-time_step_mod.o: ${API_LIB}
+time_step_mod.o: ${API_LIB} physical_params_mod.o
 # boundary_conditions_mod.o
 time_update_mod.o: model_mod.o ${API_LIB}
 

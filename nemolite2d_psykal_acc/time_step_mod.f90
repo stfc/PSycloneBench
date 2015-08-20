@@ -1,4 +1,5 @@
 module time_step_mod
+  use kind_params_mod
   implicit none
 
   private
@@ -10,21 +11,75 @@ contains
   subroutine invoke_time_step(istp, ssha, ssha_u, ssha_v, &
                               sshn_t, sshn_u, sshn_v, &
                               hu, hv, ht, ua, va, un, vn)
-    use kind_params_mod
-    use timing_mod
+    !> This routine is purely a wrapper that converts references to
+    !! data arrays within derived types to straightforward data
+    !! arrays in the called routine. This is to stop compilers
+    !! from panicking at the sight of a '%' symbol!
     use field_mod
     use grid_mod
-    use model_mod,       only: rdt, cbfr, visc
-    use physical_params_mod, only: g, omega, d2r
-!    use boundary_conditions_mod
     implicit none
     integer,         intent(in)    :: istp
     type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
     type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
     type(r2d_field), intent(in)    :: hu, hv, ht
+
+    call invoke_time_step_arrays(istp,                                  &
+                                 ua%grid%nx, ua%grid%ny,                &
+                                 ua%grid%simulation_domain%xstop,       &
+                                 ua%grid%simulation_domain%ystop,       &
+                                 ua%grid%area_t,                        &
+                                 ua%grid%area_u,                        &
+                                 ua%grid%area_v,                        &
+                                 ua%grid%dx_u,                          &
+                                 ua%grid%dx_v,                          &
+                                 ua%grid%dx_t,                          &
+                                 ua%grid%dy_u,                          &
+                                 ua%grid%dy_v,                          &
+                                 ua%grid%dy_t,                          &
+                                 ua%grid%gphiu,                         &
+                                 ua%grid%gphiv,                         &
+                                 ua%grid%tmask,                         &
+                                 ssha%data, ssha_u%data, ssha_v%data,   &
+                                 sshn_t%data, sshn_u%data, sshn_v%data, &
+                                 hu%data, hv%data, ht%data,             &
+                                 ua%data, va%data, un%data, vn%data)
+
+  end subroutine invoke_time_step
+
+  !===============================================
+
+  subroutine invoke_time_step_arrays(istp, nx, ny, M, N,         &
+                                     area_t, area_u, area_v,     &
+                                     dx_u, dx_v, dx_t,           &
+                                     dy_u, dy_v, dy_t,           &
+                                     gphiu, gphiv,               &
+                                     tmask,                      &
+                                     ssha, ssha_u, ssha_v,       &
+                                     sshn_t, sshn_u, sshn_v,     &
+                                     hu, hv, ht, ua, va, un, vn)
+    use timing_mod
+    use model_mod,       only: rdt, cbfr, visc
+    use physical_params_mod, only: g, omega, d2r
+!    use continuity_mod, only: continuity_code
+!    use boundary_conditions_mod
+    implicit none
+    !> The current time step
+    integer,         intent(in) :: istp
+    !> The allocated dimensions of all fields
+    integer,         intent(in) :: nx, ny
+    !> The loop bounds for the simulated domain
+    integer,         intent(in) :: M, N
+    real(wp), dimension(nx,ny), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
+    real(wp), dimension(nx,ny), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
+    real(wp), dimension(nx,ny), intent(in)    :: hu, hv, ht
+    real(wp), dimension(nx,ny), intent(in)    :: area_t, area_u, area_v
+    real(wp), dimension(nx,ny), intent(in)    :: dx_t, dx_u, dx_v
+    real(wp), dimension(nx,ny), intent(in)    :: dy_t, dy_u, dy_v
+    real(wp), dimension(nx,ny), intent(in)    :: gphiu, gphiv
+    integer,  dimension(nx,ny), intent(in)    :: tmask
     ! Locals
     integer :: it, ji, jj, jiu, jiv
-    integer :: M, N, idxt
+    integer :: idxt
     ! Locals for momentum
     REAL(wp) :: u_e, u_w, v_n, v_s
     real(wp) :: v_nc, v_sc
@@ -39,52 +94,10 @@ contains
     ! Locals for BCs
     real(wp) :: amp_tide, omega_tide, rtime
 
-    M  = ssha%grid%simulation_domain%xstop
-    N  = ssha%grid%simulation_domain%ystop
+    call timer_start('Continuity',idxt)
 
-!$OMP PARALLEL default(none), shared(istp, sshn_u, sshn_v, sshn_t, &
-!$OMP          un, vn, ua, va, ssha, ssha_u, ssha_v, hu, hv, ht,   &
-!$OMP          cbfr, visc, M, N, rdt), &
-!$OMP          private(idxt, it,ji,jj,jiu,jiv,rtmp1,rtmp2,rtmp3,rtmp4, &
-!$OMP                  adv, hpg, depn, cor, rtime, amp_tide, omega_tide, &
-!$OMP                  uu_w, uu_e, uu_n, uu_s, u_wc, u_ec, u_e, u_w, &
-!$OMP                  vv_s, vv_n, vv_w, vv_e, v_n, v_nc, v_s, v_sc, &
-!$OMP                  dudx_e, dudx_w, dudy_s, dudy_n, dvdx_w, &
-!$OMP                  dvdx_e, dvdy_s, dvdy_n, vis, deps, depe, depw)
-
-    ! In the general case we have to reason about whether or not the
-    ! domain has PBCs and what sort of offset convention the kernels
-    ! use. However, this is a middle layer specific to NEMOLite2D and
-    ! therefore we know that we have no periodic BCs and are using a
-    ! NE stagger
-    !txstart = 2 ! grid%simulation_domain%xstart
-    !tystart = 2 ! grid%simulation_domain%ystart
-
-    !uxstart = 2 ! grid%simulation_domain%xstart
-    !uxstop  = M - 1
-    !uystart = 2 ! grid%simulation_domain%ystart
-    !uystop  = N
-
-    !vxstart = 2 ! grid%simulation_domain%xstart
-    !vxstop  = M
-    !vystart = 2 ! grid%simulation_domain%ystart
-    !vystop  = N - 1
-
-    !uwhole_xstart = 1 ! uxstart - NBOUNDARY
-    !uwhole_xstop  = M ! uxstop  + NBOUNDARY
-    !uwhole_ystart = 1 ! uystart - NBOUNDARY
-    !uwhole_ystop  = N+1 ! uystop  + NBOUNDARY
-
-    !vwhole_xstart = 1 ! vxstart - NBOUNDARY
-    !vwhole_xstop  = M+1 ! vxstop  + NBOUNDARY
-    !vwhole_ystart = 1 ! vystart - NBOUNDARY
-    !vwhole_ystop  = N ! vystop  + NBOUNDARY
-
-!    call timer_start('Continuity',idxt)
-
-!    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
-!      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
-!$OMP DO SCHEDULE(RUNTIME)
+!$acc parallel private(ji,jj) copyin(sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt) &
+!$acc copyout(ssha)
     do jj = 2, N, 1
       do ji = 2, M, 1
 
@@ -92,41 +105,33 @@ contains
 !!$                             ssha%data, sshn_t%data,             &
 !!$                             sshn_u%data, sshn_v%data,           &
 !!$                             hu%data, hv%data, un%data, vn%data, &
-!!$                             rdt, sshn_t%grid%area_t)
-         rtmp1 = (sshn_u%data(ji  ,jj ) + hu%data(ji  ,jj  ))*un%data(ji  ,jj)
-         rtmp2 = (sshn_u%data(ji-1,jj ) + hu%data(ji-1,jj  ))*un%data(ji-1,jj)
-         rtmp3 = (sshn_v%data(ji ,jj ) + hv%data(ji  ,jj  ))*vn%data(ji ,jj)
-         rtmp4 = (sshn_v%data(ji ,jj-1) + hv%data(ji  ,jj-1))*vn%data(ji,jj-1)
+!!$                             rdt, area_t)
+         rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
+         rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
+         rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
+         rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
 
-         ssha%data(ji,jj) = sshn_t%data(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
-                       rdt / sshn_t%grid%area_t(ji,jj)
+         ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+                       rdt / area_t(ji,jj)
       end do
     end do
+!$acc end parallel
 ! This loop writes to ssha and following momentum loop doesn't use that
 ! field. Therefore, we do not need to block.
-!$OMP END DO NOWAIT
-!    call timer_stop(idxt)
+
+    call timer_stop(idxt)
 
 !    call timer_start('Momentum',idxt)
 
-!    do jj = ua%internal%ystart, ua%internal%ystop, 1
-!      do ji = ua%internal%xstart, ua%internal%xstop, 1
 !dir$ safe_address
-!$OMP DO SCHEDULE(RUNTIME)
     do jj = 2, N, 1
-! SIMD
 !dir$ vector always
       do ji = 2, M-1, 1
-!OMP DO SCHEDULE(RUNTIME)
-!    do it = 1, ntiles, 1
-!       do jj= tile(it)%internal%jstart, tile(it)%internal%jstop, 1
-!          do ji = tile(it)%internal%istart, tile(it)%internal%istop, 1
-
 !!$        call momentum_u_code(ji, jj, &
-!!$                             ua%data, un%data, vn%data, &
-!!$                             hu%data, hv%data, ht%data, &
-!!$                             ssha_u%data, sshn_t%data,  &
-!!$                             sshn_u%data, sshn_v%data,  &
+!!$                             ua, un, vn, &
+!!$                             hu, hv, ht, &
+!!$                             ssha_u, sshn_t,  &
+!!$                             sshn_u, sshn_v,  &
 !!$                             un%grid%tmask,  &
 !!$                             un%grid%dx_u,   &
 !!$                             un%grid%dx_v,   &
@@ -136,43 +141,43 @@ contains
 !!$                             un%grid%area_u, &
 !!$                             un%grid%gphiu)
 
-    IF(un%grid%tmask(ji,jj) + un%grid%tmask(ji+1,jj) <= 0)  CYCLE   !jump over non-computational domain
-    IF(un%grid%tmask(ji,jj) <= 0 .OR. un%grid%tmask(ji+1,jj) <= 0)  CYCLE !jump over boundary u
+    IF(tmask(ji,jj) + tmask(ji+1,jj) <= 0)  CYCLE   !jump over non-computational domain
+    IF(tmask(ji,jj) <= 0 .OR. tmask(ji+1,jj) <= 0)  CYCLE !jump over boundary u
 
-    u_e  = 0.5 * (un%data(ji,jj) + un%data(ji+1,jj)) * un%grid%dy_t(ji+1,jj)   !add length scale.
-    depe = ht%data(ji+1,jj) + sshn_t%data(ji+1,jj)
+    u_e  = 0.5 * (un(ji,jj) + un(ji+1,jj)) * dy_t(ji+1,jj)   !add length scale.
+    depe = ht(ji+1,jj) + sshn_t(ji+1,jj)
 
-    u_w  = 0.5 * (un%data(ji,jj) + un%data(ji-1,jj)) * un%grid%dy_t(ji,jj)     !add length scale
-    depw = ht%data(ji,jj) + sshn_t%data(ji,jj)
+    u_w  = 0.5 * (un(ji,jj) + un(ji-1,jj)) * dy_t(ji,jj)     !add length scale
+    depw = ht(ji,jj) + sshn_t(ji,jj)
 
-    v_sc = 0.5_wp * (vn%data(ji,jj-1) + vn%data(ji+1,jj-1))
-    v_s  = 0.5_wp * v_sc * (un%grid%dx_v(ji,jj-1) + un%grid%dx_v(ji+1,jj-1))
-    deps = 0.5_wp * (hv%data(ji,jj-1) + sshn_v%data(ji,jj-1) + hv%data(ji+1,jj-1) + &
-                     sshn_v%data(ji+1,jj-1))
+    v_sc = 0.5_wp * (vn(ji,jj-1) + vn(ji+1,jj-1))
+    v_s  = 0.5_wp * v_sc * (dx_v(ji,jj-1) + dx_v(ji+1,jj-1))
+    deps = 0.5_wp * (hv(ji,jj-1) + sshn_v(ji,jj-1) + hv(ji+1,jj-1) + &
+                     sshn_v(ji+1,jj-1))
 
-    v_nc = 0.5_wp * (vn%data(ji,jj) + vn%data(ji+1,jj))
-    v_n  = 0.5_wp * v_nc * (un%grid%dx_v(ji,jj) + un%grid%dx_v(ji+1,jj))
-    depn = 0.5_wp * (hv%data(ji,jj) + sshn_v%data(ji,jj) + hv%data(ji+1,jj) + &
-                     sshn_v%data(ji+1,jj))
+    v_nc = 0.5_wp * (vn(ji,jj) + vn(ji+1,jj))
+    v_n  = 0.5_wp * v_nc * (dx_v(ji,jj) + dx_v(ji+1,jj))
+    depn = 0.5_wp * (hv(ji,jj) + sshn_v(ji,jj) + hv(ji+1,jj) + &
+                     sshn_v(ji+1,jj))
 
     ! -advection (currently first order upwind)
-    uu_w = (0.5_wp - SIGN(0.5_wp, u_w)) * un%data(ji,jj)              + & 
-         & (0.5_wp + SIGN(0.5_wp, u_w)) * un%data(ji-1,jj) 
-    uu_e = (0.5_wp + SIGN(0.5_wp, u_e)) * un%data(ji,jj)              + & 
-         & (0.5_wp - SIGN(0.5_wp, u_e)) * un%data(ji+1,jj) 
+    uu_w = (0.5_wp - SIGN(0.5_wp, u_w)) * un(ji,jj)              + & 
+         & (0.5_wp + SIGN(0.5_wp, u_w)) * un(ji-1,jj) 
+    uu_e = (0.5_wp + SIGN(0.5_wp, u_e)) * un(ji,jj)              + & 
+         & (0.5_wp - SIGN(0.5_wp, u_e)) * un(ji+1,jj) 
 
-    IF(un%grid%tmask(ji,jj-1) <=0 .OR. un%grid%tmask(ji+1,jj-1) <= 0) THEN   
-       uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un%data(ji,jj)   
+    IF(tmask(ji,jj-1) <=0 .OR. tmask(ji+1,jj-1) <= 0) THEN   
+       uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji,jj)   
     ELSE
-       uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un%data(ji,jj)              + & 
-            & (0.5_wp + SIGN(0.5_wp, v_s)) * un%data(ji,jj-1) 
+       uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji,jj)              + & 
+            & (0.5_wp + SIGN(0.5_wp, v_s)) * un(ji,jj-1) 
     END If
 
-    IF(un%grid%tmask(ji,jj+1) <=0 .OR. un%grid%tmask(ji+1,jj+1) <= 0) THEN   
-       uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un%data(ji,jj)
+    IF(tmask(ji,jj+1) <=0 .OR. tmask(ji+1,jj+1) <= 0) THEN   
+       uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un(ji,jj)
     ELSE
-       uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un%data(ji,jj)              + & 
-            & (0.5_wp - SIGN(0.5_wp, v_n)) * un%data(ji,jj+1)
+       uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un(ji,jj)              + & 
+            & (0.5_wp - SIGN(0.5_wp, v_n)) * un(ji,jj+1)
     END IF
 
     adv = uu_w * u_w * depw - uu_e * u_e * depe + &
@@ -182,66 +187,64 @@ contains
     ! -viscosity
 
     !kernel  u vis 
-    dudx_e = (un%data(ji+1,jj) - un%data(ji,  jj)) / un%grid%dx_t(ji+1,jj) * &
-             (ht%data(ji+1,jj) + sshn_t%data(ji+1,jj))
-    dudx_w = (un%data(ji,  jj) - un%data(ji-1,jj)) / un%grid%dx_t(ji,  jj) * &
-             (ht%data(ji,  jj) + sshn_t%data(ji,  jj))
-    IF(un%grid%tmask(ji,jj-1) <=0 .OR. un%grid%tmask(ji+1,jj-1) <= 0) THEN   
+    dudx_e = (un(ji+1,jj) - un(ji,  jj)) / dx_t(ji+1,jj) * &
+             (ht(ji+1,jj) + sshn_t(ji+1,jj))
+    dudx_w = (un(ji,  jj) - un(ji-1,jj)) / dx_t(ji,  jj) * &
+             (ht(ji,  jj) + sshn_t(ji,  jj))
+    IF(tmask(ji,jj-1) <=0 .OR. tmask(ji+1,jj-1) <= 0) THEN   
        dudy_s = 0.0_wp !slip boundary
     ELSE
-       dudy_s = (un%data(ji,jj) - un%data(ji,jj-1)) / (un%grid%dy_u(ji,jj) + un%grid%dy_u(ji,jj-1)) * &
-            & (hu%data(ji,jj) + sshn_u%data(ji,jj) + hu%data(ji,jj-1) + sshn_u%data(ji,jj-1))
+       dudy_s = (un(ji,jj) - un(ji,jj-1)) / (dy_u(ji,jj) + dy_u(ji,jj-1)) * &
+            & (hu(ji,jj) + sshn_u(ji,jj) + hu(ji,jj-1) + sshn_u(ji,jj-1))
     END IF
 
-    IF(un%grid%tmask(ji,jj+1) <= 0 .OR. un%grid%tmask(ji+1,jj+1) <= 0) THEN   
+    IF(tmask(ji,jj+1) <= 0 .OR. tmask(ji+1,jj+1) <= 0) THEN   
        dudy_n = 0.0_wp ! slip boundary
     ELSE
-       dudy_n = (un%data(ji,jj+1) - un%data(ji,jj)) / (un%grid%dy_u(ji,jj) + un%grid%dy_u(ji,jj+1)) * &
-            & (hu%data(ji,jj) + sshn_u%data(ji,jj) + hu%data(ji,jj+1) + sshn_u%data(ji,jj+1))
+       dudy_n = (un(ji,jj+1) - un(ji,jj)) / (dy_u(ji,jj) + dy_u(ji,jj+1)) * &
+            & (hu(ji,jj) + sshn_u(ji,jj) + hu(ji,jj+1) + sshn_u(ji,jj+1))
     END If
 
-    vis = (dudx_e - dudx_w ) * un%grid%dy_u(ji,jj)  + &
-         & (dudy_n - dudy_s ) * un%grid%dx_u(ji,jj) * 0.5_wp  
+    vis = (dudx_e - dudx_w ) * dy_u(ji,jj)  + &
+         & (dudy_n - dudy_s ) * dx_u(ji,jj) * 0.5_wp  
     vis = visc * vis   !visc will be an array visc(1:jpijglou) 
     !for variable viscosity, such as turbulent viscosity
     !End  kernel u vis 
 
     ! -Coriolis' force (can be implemented implicitly)
     !kernel cor 
-    cor = 0.5_wp * (2._wp * omega * SIN(un%grid%gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * &
-         & un%grid%area_u(ji,jj) * (hu%data(ji,jj) + sshn_u%data(ji,jj))
+    cor = 0.5_wp * (2._wp * omega * SIN(gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * &
+         & area_u(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj))
     !end kernel cor 
 
     ! -pressure gradient
     !start kernel hpg 
-    hpg = -g * (hu%data(ji,jj) + sshn_u%data(ji,jj)) * un%grid%dy_u(ji,jj) * &
-           (sshn_t%data(ji+1,jj) - sshn_t%data(ji,jj))
+    hpg = -g * (hu(ji,jj) + sshn_u(ji,jj)) * dy_u(ji,jj) * &
+           (sshn_t(ji+1,jj) - sshn_t(ji,jj))
     !end kernel hpg 
     ! -linear bottom friction (implemented implicitly.
     !kernel ua calculation 
-    ua%data(ji,jj) = (un%data(ji,jj) * (hu%data(ji,jj) + sshn_u%data(ji,jj)) + rdt * &
-                 (adv + vis + cor + hpg) / un%grid%area_u(ji,jj)) / &
-                (hu%data(ji,jj) + ssha_u%data(ji,jj)) / (1.0_wp + cbfr * rdt) 
+    ua(ji,jj) = (un(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj)) + rdt * &
+                 (adv + vis + cor + hpg) / area_u(ji,jj)) / &
+                (hu(ji,jj) + ssha_u(ji,jj)) / (1.0_wp + cbfr * rdt) 
 
       end do
     end do
 ! This loop writes to ua and subsequent (momentum in v) loop doesn't
 ! use this field (or ssha from the preceeding loop) so we do not 
 ! have to block here.
-!$OMP END DO NOWAIT
 
 !dir$ safe_address
-!$OMP DO SCHEDULE(RUNTIME)
     do jj = 2, N-1, 1
 ! SIMD
 !dir$ vector always
       do ji = 2, M, 1
 
 !!$        call momentum_v_code(ji, jj, &
-!!$                             va%data, un%data, vn%data, &
-!!$                             hu%data, hv%data, ht%data, &
-!!$                             ssha_v%data, sshn_t%data,  &
-!!$                             sshn_u%data, sshn_v%data,  &
+!!$                             va, un, vn, &
+!!$                             hu, hv, ht, &
+!!$                             ssha_v, sshn_t,  &
+!!$                             sshn_u, sshn_v,  &
 !!$                             vn%grid%tmask,    &
 !!$                             vn%grid%dx_v,     &
 !!$                             vn%grid%dx_t,     &
@@ -251,44 +254,44 @@ contains
 !!$                             vn%grid%area_v,   &
 !!$                             vn%grid%gphiv)
 
-    IF(vn%grid%tmask(ji,jj) + vn%grid%tmask(ji+1,jj) <= 0)  cycle !jump over non-computatinal domain
-    IF(vn%grid%tmask(ji,jj) <= 0 .OR. vn%grid%tmask(ji,jj+1) <= 0) cycle !jump over v boundary cells
+    IF(tmask(ji,jj) + tmask(ji+1,jj) <= 0)  cycle !jump over non-computatinal domain
+    IF(tmask(ji,jj) <= 0 .OR. tmask(ji,jj+1) <= 0) cycle !jump over v boundary cells
 
     ! kernel v adv 
-    v_n  = 0.5 * (vn%data(ji,jj) + vn%data(ji,jj+1)) * vn%grid%dx_t(ji,jj+1)  !add length scale.
-    depn = ht%data(ji,jj+1) + sshn_t%data(ji,jj+1)
+    v_n  = 0.5 * (vn(ji,jj) + vn(ji,jj+1)) * dx_t(ji,jj+1)  !add length scale.
+    depn = ht(ji,jj+1) + sshn_t(ji,jj+1)
 
-    v_s  = 0.5 * (vn%data(ji,jj) + vn%data(ji,jj-1)) * vn%grid%dx_t(ji,jj)    !add length scale
-    deps = ht%data(ji,jj) + sshn_t%data(ji,jj)
+    v_s  = 0.5 * (vn(ji,jj) + vn(ji,jj-1)) * dx_t(ji,jj)    !add length scale
+    deps = ht(ji,jj) + sshn_t(ji,jj)
 
-    u_wc = 0.5_wp * (un%data(ji-1,jj) + un%data(ji-1,jj+1))
-    u_w  = 0.5_wp * u_wc * (vn%grid%dy_u(ji-1,jj) + vn%grid%dy_u(ji-1,jj+1))
-    depw = 0.50_wp * (hu%data(ji-1,jj) + sshn_u%data(ji-1,jj) + &
-                      hu%data(ji-1,jj+1) + sshn_u%data(ji-1,jj+1))
+    u_wc = 0.5_wp * (un(ji-1,jj) + un(ji-1,jj+1))
+    u_w  = 0.5_wp * u_wc * (dy_u(ji-1,jj) + dy_u(ji-1,jj+1))
+    depw = 0.50_wp * (hu(ji-1,jj) + sshn_u(ji-1,jj) + &
+                      hu(ji-1,jj+1) + sshn_u(ji-1,jj+1))
 
-    u_ec = 0.5_wp * (un%data(ji,jj) + un%data(ji,jj+1))
-    u_e  = 0.5_wp * u_ec * (vn%grid%dy_u(ji,jj) + vn%grid%dy_u(ji,jj+1))
-    depe = 0.50_wp * (hu%data(ji,jj) + sshn_u%data(ji,jj) + &
-                      hu%data(ji,jj+1) + sshn_u%data(ji,jj+1))
+    u_ec = 0.5_wp * (un(ji,jj) + un(ji,jj+1))
+    u_e  = 0.5_wp * u_ec * (dy_u(ji,jj) + dy_u(ji,jj+1))
+    depe = 0.50_wp * (hu(ji,jj) + sshn_u(ji,jj) + &
+                      hu(ji,jj+1) + sshn_u(ji,jj+1))
 
     ! -advection (currently first order upwind)
-    vv_s = (0.5_wp - SIGN(0.5_wp, v_s)) * vn%data(ji,jj)     + & 
-         & (0.5_wp + SIGN(0.5_wp, v_s)) * vn%data(ji,jj-1) 
-    vv_n = (0.5_wp + SIGN(0.5_wp, v_n)) * vn%data(ji,jj)     + & 
-         & (0.5_wp - SIGN(0.5_wp, v_n)) * vn%data(ji,jj+1) 
+    vv_s = (0.5_wp - SIGN(0.5_wp, v_s)) * vn(ji,jj)     + & 
+         & (0.5_wp + SIGN(0.5_wp, v_s)) * vn(ji,jj-1) 
+    vv_n = (0.5_wp + SIGN(0.5_wp, v_n)) * vn(ji,jj)     + & 
+         & (0.5_wp - SIGN(0.5_wp, v_n)) * vn(ji,jj+1) 
 
-    IF(vn%grid%tmask(ji-1,jj) <= 0 .OR. vn%grid%tmask(ji-1,jj+1) <= 0) THEN   
-       vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn%data(ji,jj)  
+    IF(tmask(ji-1,jj) <= 0 .OR. tmask(ji-1,jj+1) <= 0) THEN   
+       vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn(ji,jj)  
     ELSE
-       vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn%data(ji,jj)    + & 
-            & (0.5_wp + SIGN(0.5_wp, u_w)) * vn%data(ji-1,jj) 
+       vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn(ji,jj)    + & 
+            & (0.5_wp + SIGN(0.5_wp, u_w)) * vn(ji-1,jj) 
     END If
 
-    IF(vn%grid%tmask(ji+1,jj) <= 0 .OR. vn%grid%tmask(ji+1,jj+1) <= 0) THEN
-       vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn%data(ji,jj)
+    IF(tmask(ji+1,jj) <= 0 .OR. tmask(ji+1,jj+1) <= 0) THEN
+       vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn(ji,jj)
     ELSE
-       vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn%data(ji,jj)  + & 
-              (0.5_wp - SIGN(0.5_wp, u_e)) * vn%data(ji+1,jj)
+       vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn(ji,jj)  + & 
+              (0.5_wp - SIGN(0.5_wp, u_e)) * vn(ji+1,jj)
     END IF
 
     adv = vv_w * u_w * depw - vv_e * u_e * depe + &
@@ -300,28 +303,28 @@ contains
 
     
     !kernel v dis 
-    dvdy_n = (vn%data(ji,jj+1) - vn%data(ji,  jj)) / vn%grid%dy_t(ji,jj+1) * &
-                          (ht%data(ji,jj+1) + sshn_t%data(ji,jj+1))
-    dvdy_s = (vn%data(ji,  jj) - vn%data(ji,jj-1)) / vn%grid%dy_t(ji,  jj) * &
-                          (ht%data(ji,  jj) + sshn_t%data(ji,  jj))
+    dvdy_n = (vn(ji,jj+1) - vn(ji,  jj)) / dy_t(ji,jj+1) * &
+                          (ht(ji,jj+1) + sshn_t(ji,jj+1))
+    dvdy_s = (vn(ji,  jj) - vn(ji,jj-1)) / dy_t(ji,  jj) * &
+                          (ht(ji,  jj) + sshn_t(ji,  jj))
 
-    IF(vn%grid%tmask(ji-1,jj) <= 0 .OR. vn%grid%tmask(ji-1,jj+1) <= 0) THEN
+    IF(tmask(ji-1,jj) <= 0 .OR. tmask(ji-1,jj+1) <= 0) THEN
        dvdx_w = 0.0_wp !slip boundary
     ELSE
-       dvdx_w = (vn%data(ji,jj) - vn%data(ji-1,jj)) / &
-                (vn%grid%dx_v(ji,jj) + vn%grid%dx_v(ji-1,jj)) * &
-                (hv%data(ji,jj) + sshn_v%data(ji,jj) + hv%data(ji-1,jj) + sshn_v%data(ji-1,jj))
+       dvdx_w = (vn(ji,jj) - vn(ji-1,jj)) / &
+                (dx_v(ji,jj) + dx_v(ji-1,jj)) * &
+                (hv(ji,jj) + sshn_v(ji,jj) + hv(ji-1,jj) + sshn_v(ji-1,jj))
     END IF
 
-    IF(vn%grid%tmask(ji+1,jj) <= 0 .OR. vn%grid%tmask(ji+1,jj+1) <= 0) THEN
+    IF(tmask(ji+1,jj) <= 0 .OR. tmask(ji+1,jj+1) <= 0) THEN
        dvdx_e = 0.0_wp ! slip boundary
     ELSE
-       dvdx_e = (vn%data(ji+1,jj) - vn%data(ji,jj)) / (vn%grid%dx_v(ji,jj) + vn%grid%dx_v(ji+1,jj)) * &
-                  (hv%data(ji,jj) + sshn_v%data(ji,jj) + hv%data(ji+1,jj) + sshn_v%data(ji+1,jj))
+       dvdx_e = (vn(ji+1,jj) - vn(ji,jj)) / (dx_v(ji,jj) + dx_v(ji+1,jj)) * &
+                  (hv(ji,jj) + sshn_v(ji,jj) + hv(ji+1,jj) + sshn_v(ji+1,jj))
     END If
 
-    vis = (dvdy_n - dvdy_s ) * vn%grid%dx_v(ji,jj)  + &
-          (dvdx_e - dvdx_w ) * vn%grid%dy_v(ji,jj) * 0.5_wp  
+    vis = (dvdy_n - dvdy_s ) * dx_v(ji,jj)  + &
+          (dvdx_e - dvdx_w ) * dy_v(ji,jj) * 0.5_wp  
 
     vis = visc * vis   !visc will be a array visc(1:jpijglou) 
     !for variable viscosity, such as turbulent viscosity
@@ -329,172 +332,153 @@ contains
 
     ! -Coriolis' force (can be implemented implicitly)
     !kernel v cor 
-    cor = -0.5_wp*(2._wp * omega * SIN(vn%grid%gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * &
-               vn%grid%area_v(ji,jj) * (hv%data(ji,jj) + sshn_v%data(ji,jj))
+    cor = -0.5_wp*(2._wp * omega * SIN(gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * &
+               area_v(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj))
     !end kernel v cor 
 
     ! -pressure gradient
     !kernel v hpg 
-    hpg = -g * (hv%data(ji,jj) + sshn_v%data(ji,jj)) * vn%grid%dx_v(ji,jj) * &
-           (sshn_t%data(ji,jj+1) - sshn_t%data(ji,jj))
+    hpg = -g * (hv(ji,jj) + sshn_v(ji,jj)) * dx_v(ji,jj) * &
+           (sshn_t(ji,jj+1) - sshn_t(ji,jj))
     !kernel v hpg 
 
     ! -linear bottom friction (implemented implicitly.
     !kernel ua calculation 
-    va%data(ji,jj) = (vn%data(ji,jj) * (hv%data(ji,jj) + sshn_v%data(ji,jj)) + &
-                 rdt * (adv + vis + cor + hpg) / vn%grid%area_v(ji,jj) ) / &
-                 ((hv%data(ji,jj) + ssha_v%data(ji,jj))) / (1.0_wp + cbfr * rdt) 
+    va(ji,jj) = (vn(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj)) + &
+                 rdt * (adv + vis + cor + hpg) / area_v(ji,jj) ) / &
+                 ((hv(ji,jj) + ssha_v(ji,jj))) / (1.0_wp + cbfr * rdt) 
 
       end do
     end do
-!$OMP END DO NOWAIT
 
 !    call timer_stop(idxt)
 
 ! We block here as, strictly speaking, a thread could enter the loop
 ! below and begin writing to ssha while another is still in the very
 ! first loop and is also writing to ssha.
-!$OMP BARRIER
 
     ! Apply open and solid boundary conditions
 
 !    call timer_start('BCs', idxt)
 
-!    DO jj = ssha%internal%ystart, ssha%internal%ystop 
-!       DO ji = ssha%internal%xstart, ssha%internal%xstop 
-!$OMP DO SCHEDULE(RUNTIME)
     DO jj = 2, N
 ! SIMD
        DO ji = 2, M
 !          call bc_ssh_code(ji, jj, &
-!                           istp, ssha%data, sshn_t%grid%tmask)
+!                           istp, ssha, sshn_t%grid%tmask)
 
           amp_tide   = 0.2_wp
           omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
           rtime = real(istp, wp) * rdt
 
-          if(sshn_t%grid%tmask(ji,jj) <= 0) cycle
+          if(tmask(ji,jj) <= 0) cycle
 
-          IF     (sshn_t%grid%tmask(ji,jj-1) < 0) THEN
-             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
-          ELSE IF(sshn_t%grid%tmask(ji,jj+1) < 0) THEN
-             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
-          ELSE IF(sshn_t%grid%tmask(ji+1,jj) < 0) THEN
-             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
-          ELSE IF(sshn_t%grid%tmask(ji-1,jj) < 0) THEN
-             ssha%data(ji,jj) = amp_tide * sin(omega_tide * rtime)
+          IF     (tmask(ji,jj-1) < 0) THEN
+             ssha(ji,jj) = amp_tide * sin(omega_tide * rtime)
+          ELSE IF(tmask(ji,jj+1) < 0) THEN
+             ssha(ji,jj) = amp_tide * sin(omega_tide * rtime)
+          ELSE IF(tmask(ji+1,jj) < 0) THEN
+             ssha(ji,jj) = amp_tide * sin(omega_tide * rtime)
+          ELSE IF(tmask(ji-1,jj) < 0) THEN
+             ssha(ji,jj) = amp_tide * sin(omega_tide * rtime)
           END IF
 
        END DO
     END DO
 ! This loop only writes to ssha and subsequent loop does not use
 ! this field therefore we need not block.
-!$OMP END DO NOWAIT
 
 
 !    do jj = uwhole_ystart, uwhole_ystop, 1
 !       do ji = uwhole_xstart, uwhole_xstop, 1
 !dir$ safe_address
-!$OMP DO SCHEDULE(RUNTIME)
     do jj = 1, N+1, 1
        do ji = 1, M, 1
 !          call bc_solid_u_code(ji, jj, &
-!                               ua%data, va%grid%tmask)
+!                               ua, va%grid%tmask)
 
 !> \todo It's more compiler-friendly to separately compare these two
 !! integer masks with zero but that's a kernel-level optimisation.
-          if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) == 0)then
-             ua%data(ji,jj) = 0._wp
+          if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
+             ua(ji,jj) = 0._wp
           end if
 
        end do
     end do
 ! This loop only writes to ua and subsequent loop does not use this field
 ! or the preceeding ssha so no need to block.
-!$OMP END DO NOWAIT
 
 !    DO jj = va%whole%ystart, va%whole%ystop, 1 
 !       DO ji = va%whole%xstart, va%whole%xstop, 1
 !    do jj = vwhole_ystart, vwhole_ystop, 1
 !       do ji = vwhole_xstart, vwhole_xstop, 1
 !dir$ safe_address
-!$OMP DO SCHEDULE(RUNTIME)
     do jj = 1, N, 1
        do ji = 1, M+1, 1
 !          call bc_solid_v_code(ji,jj, &
-!                               va%data, ua%grid%tmask)
-    if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) == 0)then
-       va%data(ji,jj) = 0._wp
+!                               va, ua%grid%tmask)
+    if(tmask(ji,jj) * tmask(ji,jj+1) == 0)then
+       va(ji,jj) = 0._wp
     end if
 
       end do
     end do
 ! We must block here as next loop reads and writes ua.
-!$OMP END DO
 
 
-!    DO jj = va%whole%ystart, va%whole%ystop, 1 
-!       DO ji = va%whole%xstart, va%whole%xstop, 1
-!     DO jj = vwhole_ystart, vwhole_ystop, 1
-!       DO ji = vwhole_xstart, vwhole_xstop, 1
 !dir$ safe_address
 ! We cannot execute this loop in (OpenMP) parallel because of the 
 ! loop-carried dependency in j.
-!$OMP SINGLE
      DO jj = 1, N, 1
        DO ji = 1, M+1, 1
 !          call bc_flather_v_code(ji,jj, &
-!                                 va%data, hv%data, sshn_v%data, &
+!                                 va, hv, sshn_v, &
 !                                 sshn_v%grid%tmask)
-          IF(sshn_t%grid%tmask(ji,jj) + sshn_t%grid%tmask(ji,jj+1) <= -1) cycle
+          IF(tmask(ji,jj) + tmask(ji,jj+1) <= -1) cycle
     
-          IF(sshn_t%grid%tmask(ji,jj) < 0) THEN
+          IF(tmask(ji,jj) < 0) THEN
              jiv = jj + 1
-             va%data(ji,jj) = va%data(ji,jiv) + SQRT(g/hv%data(ji,jj)) * &
-                  (sshn_v%data(ji,jj) - sshn_v%data(ji,jiv))
-          ELSE IF(sshn_t%grid%tmask(ji,jj+1) < 0) THEN
+             va(ji,jj) = va(ji,jiv) + SQRT(g/hv(ji,jj)) * &
+                  (sshn_v(ji,jj) - sshn_v(ji,jiv))
+          ELSE IF(tmask(ji,jj+1) < 0) THEN
              jiv = jj - 1 
-             va%data(ji,jj) = va%data(ji,jiv) + SQRT(g/hv%data(ji,jj)) * &
-                  (sshn_v%data(ji,jj) - sshn_v%data(ji,jiv))
+             va(ji,jj) = va(ji,jiv) + SQRT(g/hv(ji,jj)) * &
+                  (sshn_v(ji,jj) - sshn_v(ji,jiv))
           END IF
 
        END DO
     END DO
-!$OMP END SINGLE NOWAIT
 
 !    DO jj = uwhole_ystart, uwhole_ystop, 1
 !       DO ji = uwhole_xstart, uwhole_xstop, 1
 !dir$ safe_address
-!$OMP DO SCHEDULE(RUNTIME)
     DO jj = 1, N+1, 1
        DO ji = 1, M, 1
 !          call bc_flather_u_code(ji,jj, &
-!                                 ua%data, hu%data, sshn_u%data, &
+!                                 ua, hu, sshn_u, &
 !                                 sshn_u%grid%tmask)
           ! Check whether this point lies within the domain
-          if(sshn_t%grid%tmask(ji,jj) + sshn_t%grid%tmask(ji+1,jj) <= -1) cycle
+          if(tmask(ji,jj) + tmask(ji+1,jj) <= -1) cycle
 
-          if(sshn_t%grid%tmask(ji,jj) < 0) then
+          if(tmask(ji,jj) < 0) then
              ! Read from column to the right (East) of us
              jiu = ji + 1
-             ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj))* &
-                  (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
-          else if(sshn_t%grid%tmask(ji+1,jj )< 0) then
+             ua(ji,jj) = ua(jiu,jj) + sqrt(g/hu(ji,jj))* &
+                  (sshn_u(ji,jj) - sshn_u(jiu,jj))
+          else if(tmask(ji+1,jj )< 0) then
              ! Read from column to the left of us
              jiu = ji - 1 
-             ua%data(ji,jj) = ua%data(jiu,jj) + sqrt(g/hu%data(ji,jj)) * &
-                  (sshn_u%data(ji,jj) - sshn_u%data(jiu,jj))
+             ua(ji,jj) = ua(jiu,jj) + sqrt(g/hu(ji,jj)) * &
+                  (sshn_u(ji,jj) - sshn_u(jiu,jj))
           end if
        END DO
     END DO
 ! This loop only writes to ua and following loop does not use that field
 ! so no need to block here.
-!$OMP END DO NOWAIT
 
 !    call timer_stop(idxt)
 
 ! We must block here since following loop reads from ua and va.
-!$OMP BARRIER
 
     ! Time update of fields
 
@@ -505,78 +489,70 @@ contains
 !    call copy_field(ua, un)
 !    call copy_field(va, vn)
 !    call copy_field(ssha, sshn_t)
-!$OMP DO SCHEDULE(RUNTIME)
      do jj = 1, N+1, 1
        do ji = 1, M+1, 1
-          un%data(ji,jj) = ua%data(ji,jj)
-          vn%data(ji,jj) = va%data(ji,jj)
-          sshn_t%data(ji,jj) = ssha%data(ji,jj)
+          un(ji,jj) = ua(ji,jj)
+          vn(ji,jj) = va(ji,jj)
+          sshn_t(ji,jj) = ssha(ji,jj)
        end do
     end do
 ! We have to block here since sshn_t is used in the following loop.
 ! We could avoid this by altering the following two loop nests to read from
-! ssha%data instead of sshn_t%data.
-!$OMP END DO
+! ssha instead of sshn_t.
 
 !dir$ safe_address
-!$OMP DO SCHEDULE(RUNTIME)
     do jj = 2, N, 1
 !dir$ vector always
       do ji = 2, M-1, 1
 
-!         call next_sshu_code(ji, jj, sshn_u%data, sshn_t%data, &
+!         call next_sshu_code(ji, jj, sshn_u, sshn_t, &
 !                            sshn_t%grid%tmask,                 &
 !                            sshn_t%grid%area_t, sshn_t%grid%area_u)
 
-         if(sshn_t%grid%tmask(ji,jj) + &
-            sshn_t%grid%tmask(ji+1,jj) <= 0) cycle !jump over non-computational domain
+         if(tmask(ji,jj) + &
+            tmask(ji+1,jj) <= 0) cycle !jump over non-computational domain
 
-         IF(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) > 0) THEN
-            rtmp1 = sshn_t%grid%area_t(ji,jj) * sshn_t%data(ji,jj) + &
-                 sshn_t%grid%area_t(ji+1,jj) * sshn_t%data(ji+1,jj)
-            sshn_u%data(ji,jj) = 0.5_wp * rtmp1 / sshn_t%grid%area_u(ji,jj) 
-         ELSE IF(sshn_t%grid%tmask(ji,jj) <= 0) THEN
-            sshn_u%data(ji,jj) = sshn_t%data(ji+1,jj)
-         ELSE IF(sshn_t%grid%tmask(ji+1,jj) <= 0) THEN
-            sshn_u%data(ji,jj) = sshn_t%data(ji,jj)
+         IF(tmask(ji,jj) * tmask(ji+1,jj) > 0) THEN
+            rtmp1 = area_t(ji,jj) * sshn_t(ji,jj) + &
+                 area_t(ji+1,jj) * sshn_t(ji+1,jj)
+            sshn_u(ji,jj) = 0.5_wp * rtmp1 / area_u(ji,jj) 
+         ELSE IF(tmask(ji,jj) <= 0) THEN
+            sshn_u(ji,jj) = sshn_t(ji+1,jj)
+         ELSE IF(tmask(ji+1,jj) <= 0) THEN
+            sshn_u(ji,jj) = sshn_t(ji,jj)
          END IF
 
       end do
     end do
-! No need to block here since sshn_u is not used in the next loop
-!$OMP END DO NOWAIT
 
 !dir$ safe_address
-!$OMP DO SCHEDULE(RUNTIME)
     do jj = 2, N-1, 1
 !dir$ vector always
       do ji = 2, M, 1
 
 !        call next_sshv_code(ji, jj,                   &
-!                            sshn_v%data, sshn_t%data, &
+!                            sshn_v, sshn_t, &
 !                            sshn_t%grid%tmask,        &
 !                            sshn_t%grid%area_t, sshn_t%grid%area_v)
  
-         if(sshn_t%grid%tmask(ji,jj) + &
-            sshn_t%grid%tmask(ji,jj+1) <= 0)  cycle !jump over non-computational domain
-         if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) > 0) then
-            rtmp1 = sshn_t%grid%area_t(ji,jj)*sshn_t%data(ji,jj) + &
-                 sshn_t%grid%area_t(ji,jj+1) * sshn_t%data(ji,jj+1)
-            sshn_v%data(ji,jj) = 0.5_wp * rtmp1 / sshn_t%grid%area_v(ji,jj) 
-         else if(sshn_t%grid%tmask(ji,jj) <= 0) then
-            sshn_v%data(ji,jj) = sshn_t%data(ji,jj+1)
-         else if(sshn_t%grid%tmask(ji,jj+1) <= 0) then
-            sshn_v%data(ji,jj) = sshn_t%data(ji,jj)
+         if(tmask(ji,jj) + &
+            tmask(ji,jj+1) <= 0)  cycle !jump over non-computational domain
+         if(tmask(ji,jj) * tmask(ji,jj+1) > 0) then
+            rtmp1 = area_t(ji,jj)*sshn_t(ji,jj) + &
+                 area_t(ji,jj+1) * sshn_t(ji,jj+1)
+            sshn_v(ji,jj) = 0.5_wp * rtmp1 / area_v(ji,jj) 
+         else if(tmask(ji,jj) <= 0) then
+            sshn_v(ji,jj) = sshn_t(ji,jj+1)
+         else if(tmask(ji,jj+1) <= 0) then
+            sshn_v(ji,jj) = sshn_t(ji,jj)
          end if
       end do
     end do
-!$OMP END DO NOWAIT
 
 !    call timer_stop(idxt)
 
-!$OMP END PARALLEL
 
-  end subroutine invoke_time_step
+  end subroutine invoke_time_step_arrays
 
   !===================================================
 
