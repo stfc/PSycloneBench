@@ -104,6 +104,8 @@ program gocean2d
   !                     field_checksum(ua_fld))
   !call model_write_log("('va checksum = ',E16.8)", &
   !                     field_checksum(va_fld))
+  write(*,"('ua checksum = ',E16.8)") field_checksum(ua_fld)
+  write(*,"('va checksum = ',E16.8)") field_checksum(va_fld)
 
   !! finalise the model run
   call model_finalise()
