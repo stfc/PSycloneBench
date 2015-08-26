@@ -25,6 +25,7 @@ CONTAINS
 
   subroutine model_init(grid)
     use gocean2d_io_mod
+    use gocean_mod, only: gocean_init
     implicit none
     type(grid_type), intent(inout) :: grid
 
@@ -58,6 +59,9 @@ CONTAINS
 
     ! Clean-up. T-mask is now a part of the grid object.
     deallocate(tmask)
+
+    ! Any other GOcean initialisation
+    call gocean_init()
 
   end subroutine model_init
 
