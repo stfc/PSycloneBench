@@ -10,14 +10,8 @@ module gocean2d_io_mod
   !> Extents of arrays to write \todo Carry with field object.
   integer, save :: jpi, jpj 
 
-  !> Interface to logging routines
-  interface model_write_log
-     module procedure write_log_ir, write_log_r
-  end interface
-
   public read_namelist
   public model_write_init, model_write, model_write_finalise
-  public model_write_log
 
 contains
 
@@ -141,31 +135,6 @@ contains
     end if ! we're doing output
 
   end subroutine model_write
-
-  !===================================================
-
-  !> Write log entry with one integer and one real arg
-  SUBROUTINE write_log_ir(fmtstr, istep, fvar)
-    IMPLICIT none
-    CHARACTER(LEN=*), INTENT(in) :: fmtstr
-    INTEGER,          INTENT(in) :: istep
-    REAL(wp),         INTENT(in) :: fvar
-
-    WRITE(6,FMT=fmtstr) istep, fvar
-
-  END SUBROUTINE write_log_ir
-
-  !===================================================
-
-  !> Write log entry with one real arg
-  SUBROUTINE write_log_r(fmtstr, fvar)
-    IMPLICIT none
-    CHARACTER(LEN=*), INTENT(in) :: fmtstr
-    REAL(wp),         INTENT(in) :: fvar
-
-    WRITE(6,FMT=fmtstr) fvar
-
-  END SUBROUTINE write_log_r
 
   !===================================================
 
