@@ -4,7 +4,6 @@ program gocean2d
   use field_mod
   use initialisation_mod, only: initialisation
   use model_mod
-  !use boundary_conditions_mod
   use gocean2d_io_mod, only: model_write
   use gocean_mod,      only: model_write_log
 
