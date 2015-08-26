@@ -13,6 +13,20 @@ contains
 
   !===================================================
 
+  !> Initialise the GOcean environment
+  subroutine gocean_init()
+#if _OPENACC
+    use openacc
+#endif
+    implicit none
+
+#if _OPENACC
+    call acc_init(acc_device_nvidia)
+#endif
+  end subroutine gocean_init
+
+  !===================================================
+
   !> Stop the model run. Currently simply does
   !! a Fortran STOP.
   !! @param[in] msg Message to print - reason we're stopping
