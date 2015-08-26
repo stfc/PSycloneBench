@@ -96,8 +96,19 @@ contains
 
     call timer_start('Continuity',idxt)
 
-!$acc parallel private(ji,jj) copyin(sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt) &
-!$acc copyout(ssha)
+! Copy data to GPU if this is the first time-step
+!$acc enter data if(istp==1)                 &
+!$acc copyin(tmask, area_t, area_u, area_v,  &
+!$acc        dx_t, dx_u, dx_v,               &
+!$acc        dy_t, dy_u, dy_v, gphiu, gphiv, &
+!$acc        sshn_t, sshn_u, sshn_v,         &
+!$acc        ssha_u, ssha_v,                 &
+!$acc        ht, hu, hv, un, vn, rdt)        &
+!$acc copyin(ua, va, ssha)
+
+!$acc parallel private(ji,jj)                        &
+!$acc          present(ssha, sshn_t, sshn_u, sshn_v, &
+!$acc                  hu, hv, un, vn, area_t)
     do jj = 2, N, 1
       do ji = 2, M, 1
 
@@ -123,9 +134,12 @@ contains
 
 !    call timer_start('Momentum',idxt)
 
-!$acc parallel private(ji,jj,cor) copyout(ua) &
-!$acc copyin(un,vn,hu,hv,ht,ssha_u,sshn_t,sshn_u,sshn_v, tmask, &
-!$acc        dx_u, dx_v, dx_t, dy_u, dy_t, area_u, gphiu)
+!$acc parallel private(ji,jj,cor) &
+!$acc          present(ua, un, vn, hu, hv, ht,         &
+!$acc                  ssha_u, sshn_t, sshn_u, sshn_v, &
+!$acc                  tmask, area_u, gphiu,           &
+!$acc                  dx_u, dx_v, dx_t,               &
+!$acc                  dy_u, dy_t)
 !dir$ safe_address
     do jj = 2, N, 1
 !dir$ vector always
@@ -234,9 +248,14 @@ contains
       end do
     end do
 !$acc end parallel
+
 ! This loop writes to ua and subsequent (momentum in v) loop doesn't
 ! use this field (or ssha from the preceeding loop) so we do not 
 ! have to block here.
+
+!$acc parallel private(ji,jj,cor,hpg) &
+!$acc          present(tmask, va, ssha_v,area_v,gphiv,dy_v,hv,sshn_v,dx_v, &
+!$acc                  dy_t,vn,sshn_u,hu,dy_u,un,ht,sshn_t,dx_t)
 
 !dir$ safe_address
     do jj = 2, N-1, 1
@@ -354,6 +373,7 @@ contains
 
       end do
     end do
+!$acc end parallel
 
 !    call timer_stop(idxt)
 
