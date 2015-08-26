@@ -109,6 +109,7 @@ contains
 !$acc parallel private(ji,jj)                        &
 !$acc          present(ssha, sshn_t, sshn_u, sshn_v, &
 !$acc                  hu, hv, un, vn, area_t)
+!$acc loop collapse(2)
     do jj = 2, N, 1
       do ji = 2, M, 1
 
@@ -384,7 +385,9 @@ contains
     ! Apply open and solid boundary conditions
 
 !    call timer_start('BCs', idxt)
-
+!$acc parallel private (ji, jj) &
+!$acc          present(tmask, ssha)
+!$acc loop collapse(2)
     DO jj = 2, N
 ! SIMD
        DO ji = 2, M
@@ -409,13 +412,14 @@ contains
 
        END DO
     END DO
+!$acc end parallel
 ! This loop only writes to ssha and subsequent loop does not use
 ! this field therefore we need not block.
 
 
-!    do jj = uwhole_ystart, uwhole_ystop, 1
-!       do ji = uwhole_xstart, uwhole_xstop, 1
-!dir$ safe_address
+!$acc parallel private(ji, jj) &
+!$acc          present(tmask, ua)
+!$acc loop collapse(2)
     do jj = 1, N+1, 1
        do ji = 1, M, 1
 !          call bc_solid_u_code(ji, jj, &
@@ -429,14 +433,13 @@ contains
 
        end do
     end do
+!$acc end parallel
 ! This loop only writes to ua and subsequent loop does not use this field
 ! or the preceeding ssha so no need to block.
 
-!    DO jj = va%whole%ystart, va%whole%ystop, 1 
-!       DO ji = va%whole%xstart, va%whole%xstop, 1
-!    do jj = vwhole_ystart, vwhole_ystop, 1
-!       do ji = vwhole_xstart, vwhole_xstop, 1
-!dir$ safe_address
+!$acc parallel private(ji,jj) &
+!$acc          present(tmask, va)
+!$acc loop collapse(2)
     do jj = 1, N, 1
        do ji = 1, M+1, 1
 !          call bc_solid_v_code(ji,jj, &
@@ -447,12 +450,17 @@ contains
 
       end do
     end do
+!$acc end parallel
 ! We must block here as next loop reads and writes ua.
 
 
 !dir$ safe_address
-! We cannot execute this loop in (OpenMP) parallel because of the 
-! loop-carried dependency in j.
+! Although there is an apparent loop-carried dependency in j in this
+! loop, the tmask is always set-up such that each trip *will* be
+! independent
+!$acc parallel private(ji,jj) &
+!$acc          present(tmask, va, hv, sshn_v)
+!$acc loop collapse(2) independent
      DO jj = 1, N, 1
        DO ji = 1, M+1, 1
 !          call bc_flather_v_code(ji,jj, &
@@ -472,10 +480,11 @@ contains
 
        END DO
     END DO
+!$acc end parallel
 
-!    DO jj = uwhole_ystart, uwhole_ystop, 1
-!       DO ji = uwhole_xstart, uwhole_xstop, 1
-!dir$ safe_address
+!$acc parallel private(ji,jj) &
+!$acc          present(tmask, ua, hu, sshn_u)
+!$acc loop collapse(2) independent
     DO jj = 1, N+1, 1
        DO ji = 1, M, 1
 !          call bc_flather_u_code(ji,jj, &
@@ -497,6 +506,7 @@ contains
           end if
        END DO
     END DO
+!$acc end parallel
 ! This loop only writes to ua and following loop does not use that field
 ! so no need to block here.
 
@@ -513,6 +523,9 @@ contains
 !    call copy_field(ua, un)
 !    call copy_field(va, vn)
 !    call copy_field(ssha, sshn_t)
+!$acc parallel private(ji,jj) &
+!$acc          present(un,vn,ua,va,ssha,sshn_t)
+!$acc loop collapse(2)
      do jj = 1, N+1, 1
        do ji = 1, M+1, 1
           un(ji,jj) = ua(ji,jj)
@@ -520,13 +533,15 @@ contains
           sshn_t(ji,jj) = ssha(ji,jj)
        end do
     end do
+!$acc end parallel
 ! We have to block here since sshn_t is used in the following loop.
 ! We could avoid this by altering the following two loop nests to read from
 ! ssha instead of sshn_t.
 
-!dir$ safe_address
+!$acc parallel private(ji,jj) &
+!$acc          present(tmask, sshn_u, sshn_t, area_u, area_t)
+!$acc loop collapse(2)
     do jj = 2, N, 1
-!dir$ vector always
       do ji = 2, M-1, 1
 
 !         call next_sshu_code(ji, jj, sshn_u, sshn_t, &
@@ -548,10 +563,12 @@ contains
 
       end do
     end do
+!$acc end parallel
 
-!dir$ safe_address
+!$acc parallel private(ji,jj) &
+!$acc          present(tmask, area_t, area_v, sshn_t, sshn_v)
+!$acc loop collapse(2)
     do jj = 2, N-1, 1
-!dir$ vector always
       do ji = 2, M, 1
 
 !        call next_sshv_code(ji, jj,                   &
@@ -572,6 +589,7 @@ contains
          end if
       end do
     end do
+!$acc end parallel
 
 !    call timer_stop(idxt)
 
