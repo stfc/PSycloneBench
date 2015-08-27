@@ -47,6 +47,9 @@ module field_mod
      integer :: num_halos
      !> Array of objects describing the halos belonging to this field.
      type(halo_type), dimension(:), allocatable :: halo
+     !> Whether the data for this field lives in a remote memory space
+     !! (e.g. on a GPU)
+     logical :: data_on_device
   end type field_type
 
   !> A real, 2D field.
@@ -122,8 +125,6 @@ module field_mod
   !> Whether or not to 'tile' (sub-divide) field arrays
   logical, public, parameter :: TILED_FIELDS = .TRUE.
 
-  logical, public, save :: data_on_device
-
 contains
 
   !===================================================
@@ -149,11 +150,9 @@ contains
     ! by the supplied grid_ptr argument
     self%grid => grid
 
-    !> \TODO work out a more robust way of flagging that data is
-    !! not yet moved to a device (e.g. a GPU)
-    ! We ASSUME that if we're still creating fields then we haven't
-    ! yet copied data over to any remove device
-    data_on_device = .FALSE.
+    !> The data associated with this device is currently local
+    !! to where we're executing
+    self%data_on_device = .FALSE.
 
     ! Set-up the limits of the 'internal' region of this field
     !
@@ -913,7 +912,7 @@ contains
 
     ! If we're using OpenACC then make sure we get the data back from
     ! the GPU
-    if(data_on_device)then
+    if(field%data_on_device)then
 !$acc update host(field%data)
     end if
 
@@ -929,12 +928,6 @@ contains
     implicit none
     real(wp), dimension(:,:), intent(in) :: field
     real(wp) :: val
-
-    ! If we're using OpenACC then make sure we get the data back from
-    ! the GPU
-    if(data_on_device)then
-!$acc update host(field)
-    end if
 
     val = SUM( ABS(field(:,:) ) )
 

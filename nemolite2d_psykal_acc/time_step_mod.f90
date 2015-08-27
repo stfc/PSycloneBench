@@ -22,7 +22,7 @@ contains
     type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
     type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
     type(r2d_field), intent(in)    :: hu, hv, ht
-
+                     
     call invoke_time_step_arrays(istp,                                  &
                                  ua%grid%nx, ua%grid%ny,                &
                                  ua%grid%simulation_domain%xstop,       &
@@ -44,6 +44,20 @@ contains
                                  hu%data, hv%data, ht%data,             &
                                  ua%data, va%data, un%data, vn%data)
 
+    ua%data_on_device     = .TRUE.
+    va%data_on_device     = .TRUE.
+    un%data_on_device     = .TRUE.
+    vn%data_on_device     = .TRUE.
+    ssha%data_on_device   = .TRUE.
+    ssha_u%data_on_device = .TRUE.
+    ssha_v%data_on_device = .TRUE.
+    sshn_t%data_on_device = .TRUE.
+    sshn_u%data_on_device = .TRUE.
+    sshn_v%data_on_device = .TRUE.
+    hu%data_on_device     = .TRUE.
+    hv%data_on_device     = .TRUE.
+    ht%data_on_device     = .TRUE.
+
   end subroutine invoke_time_step
 
   !===============================================
@@ -60,7 +74,6 @@ contains
     use timing_mod
     use model_mod,           only: rdt, cbfr, visc
     use physical_params_mod, only: g, omega, d2r
-    use field_mod,           only: data_on_device
 !    use continuity_mod,      only: continuity_code
 !    use boundary_conditions_mod
     implicit none
@@ -97,17 +110,15 @@ contains
 
 !    call timer_start('Continuity',idxt)
 
-! Copy data to GPU if this is the first time-step
-    if(.not. data_on_device)then
+! Copy data to GPU. We use pcopyin so that if the data is already
+! on the GPU then that copy is used.
 !$acc enter data                             &
-!$acc copyin(tmask, area_t, area_u, area_v,  &
+!$acc pcopyin(tmask, area_t, area_u, area_v, &
 !$acc        dx_t, dx_u, dx_v,               &
 !$acc        dy_t, dy_u, dy_v, gphiu, gphiv, &
 !$acc        sshn_t, sshn_u, sshn_v,         &
 !$acc        ssha, ssha_u, ssha_v,           &
 !$acc        ht, hu, hv, ua, va, un, vn, rdt)
-       data_on_device = .TRUE.
-    end if
 
 !$acc parallel present(ssha, sshn_t, sshn_u, sshn_v, &
 !$acc                  hu, hv, un, vn, area_t, rdt)

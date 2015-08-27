@@ -106,7 +106,7 @@ contains
     
     if( l_out .and. (mod(istp, mprint) .eq. 0) ) then
 
-       if( data_on_device )then
+       if( ht%data_on_device )then
 !$acc update host(un%data, vn%data, sshn%data, ht%data)
        end if
 
