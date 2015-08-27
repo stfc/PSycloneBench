@@ -97,14 +97,10 @@ program gocean2d
   call timer_stop(itimer0)
 
   ! Compute and output some checksums for error checking
-  ! ARPDBG - the PGI compiler can't work-out which logging
-  ! routine to call so commented-out for now.
-  !call model_write_log("('ua checksum = ',E16.8)", &
-  !                     field_checksum(ua_fld))
-  !call model_write_log("('va checksum = ',E16.8)", &
-  !                     field_checksum(va_fld))
-  write(*,"('ua checksum = ',E16.8)") field_checksum(ua_fld)
-  write(*,"('va checksum = ',E16.8)") field_checksum(va_fld)
+  call model_write_log("('ua checksum = ',E16.8)", &
+                       field_checksum(ua_fld))
+  call model_write_log("('va checksum = ',E16.8)", &
+                       field_checksum(va_fld))
 
   !! finalise the model run
   call model_finalise()
