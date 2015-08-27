@@ -58,8 +58,9 @@ contains
                                      sshn_t, sshn_u, sshn_v,     &
                                      hu, hv, ht, ua, va, un, vn)
     use timing_mod
-    use model_mod,       only: rdt, cbfr, visc
+    use model_mod,           only: rdt, cbfr, visc
     use physical_params_mod, only: g, omega, d2r
+    use field_mod,           only: data_on_device
 !    use continuity_mod, only: continuity_code
 !    use boundary_conditions_mod
     implicit none
@@ -97,14 +98,16 @@ contains
     call timer_start('Continuity',idxt)
 
 ! Copy data to GPU if this is the first time-step
-!$acc enter data if(istp==1)                 &
+    if(.not. data_on_device)then
+!$acc enter data                             &
 !$acc copyin(tmask, area_t, area_u, area_v,  &
 !$acc        dx_t, dx_u, dx_v,               &
 !$acc        dy_t, dy_u, dy_v, gphiu, gphiv, &
 !$acc        sshn_t, sshn_u, sshn_v,         &
-!$acc        ssha_u, ssha_v,                 &
-!$acc        ht, hu, hv, un, vn, rdt)        &
-!$acc copyin(ua, va, ssha)
+!$acc        ssha, ssha_u, ssha_v,           &
+!$acc        ht, hu, hv, ua, va, un, vn, rdt)
+       data_on_device = .TRUE.
+    end if
 
 !$acc parallel private(ji,jj)                        &
 !$acc          present(ssha, sshn_t, sshn_u, sshn_v, &
@@ -592,7 +595,6 @@ contains
 !$acc end parallel
 
 !    call timer_stop(idxt)
-
 
   end subroutine invoke_time_step_arrays
 
