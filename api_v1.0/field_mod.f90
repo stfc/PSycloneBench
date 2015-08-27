@@ -122,6 +122,8 @@ module field_mod
   !> Whether or not to 'tile' (sub-divide) field arrays
   logical, public, parameter :: TILED_FIELDS = .TRUE.
 
+  logical, public, save :: data_on_device
+
 contains
 
   !===================================================
@@ -146,6 +148,12 @@ contains
     ! Set this field's grid pointer to point to the grid pointed to
     ! by the supplied grid_ptr argument
     self%grid => grid
+
+    !> \TODO work out a more robust way of flagging that data is
+    !! not yet moved to a device (e.g. a GPU)
+    ! We ASSUME that if we're still creating fields then we haven't
+    ! yet copied data over to any remove device
+    data_on_device = .FALSE.
 
     ! Set-up the limits of the 'internal' region of this field
     !
@@ -903,6 +911,12 @@ contains
     type(r2d_field), intent(in) :: field
     real(wp) :: val
 
+    ! If we're using OpenACC then make sure we get the data back from
+    ! the GPU
+    if(data_on_device)then
+!$acc update host(field%data)
+    end if
+
     !> \todo Could add an OpenMP implementation
     val = SUM( ABS(field%data(field%internal%xstart:field%internal%xstop, &
                               field%internal%ystart:field%internal%ystop)) )
@@ -915,6 +929,12 @@ contains
     implicit none
     real(wp), dimension(:,:), intent(in) :: field
     real(wp) :: val
+
+    ! If we're using OpenACC then make sure we get the data back from
+    ! the GPU
+    if(data_on_device)then
+!$acc update host(field)
+    end if
 
     val = SUM( ABS(field(:,:) ) )
 
