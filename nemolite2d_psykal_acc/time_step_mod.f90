@@ -61,7 +61,7 @@ contains
     use model_mod,           only: rdt, cbfr, visc
     use physical_params_mod, only: g, omega, d2r
     use field_mod,           only: data_on_device
-!    use continuity_mod, only: continuity_code
+!    use continuity_mod,      only: continuity_code
 !    use boundary_conditions_mod
     implicit none
     !> The current time step
@@ -95,7 +95,7 @@ contains
     ! Locals for BCs
     real(wp) :: amp_tide, omega_tide, rtime
 
-    call timer_start('Continuity',idxt)
+!    call timer_start('Continuity',idxt)
 
 ! Copy data to GPU if this is the first time-step
     if(.not. data_on_device)then
@@ -109,44 +109,39 @@ contains
        data_on_device = .TRUE.
     end if
 
-!$acc parallel private(ji,jj)                        &
-!$acc          present(ssha, sshn_t, sshn_u, sshn_v, &
-!$acc                  hu, hv, un, vn, area_t)
+!$acc parallel present(ssha, sshn_t, sshn_u, sshn_v, &
+!$acc                  hu, hv, un, vn, area_t, rdt)
 !$acc loop collapse(2)
     do jj = 2, N, 1
       do ji = 2, M, 1
 
-!!$        call continuity_code(ji, jj,                             &
-!!$                             ssha%data, sshn_t%data,             &
-!!$                             sshn_u%data, sshn_v%data,           &
-!!$                             hu%data, hv%data, un%data, vn%data, &
-!!$                             rdt, area_t)
-         rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
-         rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
-         rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
-         rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
-
-         ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
-                       rdt / area_t(ji,jj)
+        call continuity_code(ji, jj,                   &
+                             ssha, sshn_t,             &
+                             sshn_u, sshn_v,           &
+                             hu, hv, un, vn,           &
+                             rdt, area_t)
+!!$         rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
+!!$         rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
+!!$         rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
+!!$         rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
+!!$
+!!$         ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+!!$                       rdt / area_t(ji,jj)
       end do
     end do
 !$acc end parallel
-! This loop writes to ssha and following momentum loop doesn't use that
-! field. Therefore, we do not need to block.
 
-    call timer_stop(idxt)
+!    call timer_stop(idxt)
 
 !    call timer_start('Momentum',idxt)
 
-!$acc parallel private(ji,jj,cor) &
-!$acc          present(ua, un, vn, hu, hv, ht,         &
+!$acc parallel present(ua, un, vn, hu, hv, ht,         &
 !$acc                  ssha_u, sshn_t, sshn_u, sshn_v, &
 !$acc                  tmask, area_u, gphiu,           &
 !$acc                  dx_u, dx_v, dx_t,               &
 !$acc                  dy_u, dy_t)
-!dir$ safe_address
+!$acc loop collapse(2)
     do jj = 2, N, 1
-!dir$ vector always
       do ji = 2, M-1, 1
 !!$        call momentum_u_code(ji, jj, &
 !!$                             ua, un, vn, &
@@ -253,18 +248,11 @@ contains
     end do
 !$acc end parallel
 
-! This loop writes to ua and subsequent (momentum in v) loop doesn't
-! use this field (or ssha from the preceeding loop) so we do not 
-! have to block here.
 
-!$acc parallel private(ji,jj,cor,hpg) &
-!$acc          present(tmask, va, ssha_v,area_v,gphiv,dy_v,hv,sshn_v,dx_v, &
+!$acc parallel present(tmask, va, ssha_v,area_v,gphiv,dy_v,hv,sshn_v,dx_v, &
 !$acc                  dy_t,vn,sshn_u,hu,dy_u,un,ht,sshn_t,dx_t)
-
-!dir$ safe_address
+!$acc loop collapse(2)
     do jj = 2, N-1, 1
-! SIMD
-!dir$ vector always
       do ji = 2, M, 1
 
 !!$        call momentum_v_code(ji, jj, &
@@ -388,8 +376,7 @@ contains
     ! Apply open and solid boundary conditions
 
 !    call timer_start('BCs', idxt)
-!$acc parallel private (ji, jj) &
-!$acc          present(tmask, ssha)
+!$acc parallel present(tmask, ssha)
 !$acc loop collapse(2)
     DO jj = 2, N
 ! SIMD
@@ -420,8 +407,7 @@ contains
 ! this field therefore we need not block.
 
 
-!$acc parallel private(ji, jj) &
-!$acc          present(tmask, ua)
+!$acc parallel present(tmask, ua)
 !$acc loop collapse(2)
     do jj = 1, N+1, 1
        do ji = 1, M, 1
@@ -440,8 +426,7 @@ contains
 ! This loop only writes to ua and subsequent loop does not use this field
 ! or the preceeding ssha so no need to block.
 
-!$acc parallel private(ji,jj) &
-!$acc          present(tmask, va)
+!$acc parallel present(tmask, va)
 !$acc loop collapse(2)
     do jj = 1, N, 1
        do ji = 1, M+1, 1
@@ -461,8 +446,7 @@ contains
 ! Although there is an apparent loop-carried dependency in j in this
 ! loop, the tmask is always set-up such that each trip *will* be
 ! independent
-!$acc parallel private(ji,jj) &
-!$acc          present(tmask, va, hv, sshn_v)
+!$acc parallel present(tmask, va, hv, sshn_v)
 !$acc loop collapse(2) independent
      DO jj = 1, N, 1
        DO ji = 1, M+1, 1
@@ -485,8 +469,7 @@ contains
     END DO
 !$acc end parallel
 
-!$acc parallel private(ji,jj) &
-!$acc          present(tmask, ua, hu, sshn_u)
+!$acc parallel present(tmask, ua, hu, sshn_u)
 !$acc loop collapse(2) independent
     DO jj = 1, N+1, 1
        DO ji = 1, M, 1
@@ -526,8 +509,7 @@ contains
 !    call copy_field(ua, un)
 !    call copy_field(va, vn)
 !    call copy_field(ssha, sshn_t)
-!$acc parallel private(ji,jj) &
-!$acc          present(un,vn,ua,va,ssha,sshn_t)
+!$acc parallel present(un,vn,ua,va,ssha,sshn_t)
 !$acc loop collapse(2)
      do jj = 1, N+1, 1
        do ji = 1, M+1, 1
@@ -541,8 +523,7 @@ contains
 ! We could avoid this by altering the following two loop nests to read from
 ! ssha instead of sshn_t.
 
-!$acc parallel private(ji,jj) &
-!$acc          present(tmask, sshn_u, sshn_t, area_u, area_t)
+!$acc parallel present(tmask, sshn_u, sshn_t, area_u, area_t)
 !$acc loop collapse(2)
     do jj = 2, N, 1
       do ji = 2, M-1, 1
@@ -568,8 +549,7 @@ contains
     end do
 !$acc end parallel
 
-!$acc parallel private(ji,jj) &
-!$acc          present(tmask, area_t, area_v, sshn_t, sshn_v)
+!$acc parallel present(tmask, area_t, area_v, sshn_t, sshn_v)
 !$acc loop collapse(2)
     do jj = 2, N-1, 1
       do ji = 2, M, 1
@@ -599,5 +579,32 @@ contains
   end subroutine invoke_time_step_arrays
 
   !===================================================
+
+  ! This routine has been 'module in-lined' to check that PGI compiler
+  ! can cope with a !$acc routine so long as it's within the same
+  ! module as the call site.
+  subroutine continuity_code(ji, jj,                     &
+                             ssha, sshn, sshn_u, sshn_v, &
+                             hu, hv, un, vn, rdt, e12t)
+    implicit none
+!$acc routine seq
+    integer,                  intent(in)  :: ji, jj
+    real(wp),                 intent(in)  :: rdt
+    real(wp), dimension(:,:), intent(in)  :: e12t
+    real(wp), dimension(:,:), intent(out) :: ssha
+    real(wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, &
+                                             hu, hv, un, vn
+    ! Locals
+    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+
+    rtmp1 = (sshn_u(ji  ,jj  ) + hu(ji  ,jj  )) * un(ji  ,jj  )
+    rtmp2 = (sshn_u(ji-1,jj  ) + hu(ji-1,jj  )) * un(ji-1,jj  )
+    rtmp3 = (sshn_v(ji  ,jj  ) + hv(ji  ,jj  )) * vn(ji  ,jj  )
+    rtmp4 = (sshn_v(ji  ,jj-1) + hv(ji  ,jj-1)) * vn(ji  ,jj-1)
+
+    ssha(ji,jj) = sshn(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+                    rdt / e12t(ji,jj)
+
+  end subroutine continuity_code
 
 end module time_step_mod
