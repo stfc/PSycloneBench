@@ -140,9 +140,10 @@ algorithm layer.
 
 The bottom layer, in terms of calling hierarchy, is the Kernel
 layer. The Kernel layer implements the science that the Algorithm
-layer calls, as a set of subroutines. These kernels operate on local
-fields (a set of elements, a single column of elements, or a set of
-columns, depending on the kernel). Again the scientist is responsible
+layer calls, as a set of subroutines. These kernels operate on fields
+that are local to the process doing the computation. (Depending on the
+type of kernel, these may be a set of elements, a single column of
+elements, or a set of columns.). Again the scientist is responsible
 for writing this layer and there is no parallelism specified here,
 but, depending on the complexity of the Kernels, there may be input
 from an HPC expert and/or some coding rules to help ensure the kernels
@@ -153,8 +154,9 @@ functional role is to link the algorithm calls to the associated
 kernel subroutines. As the Algorithm layer works on logically global
 fields and Kernel layer works on local fields, the PSy layer is
 responsible for iterating over columns. It is also responsible for
-including any required distributed-memory operations, such as halo
-swaps and reductions.
+including any distributed-memory operations resulting from the
+decomposition of the simulation domain, such as halo swaps and
+reductions.
 
 As the PSy layer iterates over columns, the single core performance
 can be optimised by applying transformations such as loop fusion and
@@ -181,9 +183,11 @@ This software was originally written in 1984 by Paul Swarztrauber of
 the National Center for Atmospheric Research, US.  However, in common
 with many scientific codes, it has subsequently undergone some sort of
 evolutionary development with subsequent people making various changes
-and optimising it for previous generations of hardware.  In describing
-our work, we term the version of the Shallow program obtained at the
-beginning of this project the `original' version.
+and optimising it for previous generations of hardware.  There is no
+complete record of the people involved and the precise hardware they
+were targetting. In describing our work, we term the version of the
+Shallow program obtained at the beginning of this project the
+`original' version.
 
 Shallow is a very good test case for our purposes since the original
 version is short (some 600 lines) and contained within a single source
@@ -193,12 +197,14 @@ modified versions of the code to reproduce.
 
 Since any real oceanographic computational model must output results,
 we ensure that any \psykal version of Shallow retains the Input/Output
-capability of the original. This aids in limiting the optimisations
-that can be performed on the \psykal version to those that should also
-be applicable to full oceanographic models. Note that although we
-retain the I/O functionality, all of the results presented in this work
-carefully exclude the effects of I/O since it is compute performance
-that interests us here.
+capability of the original (it reads the problem specification from a
+namelist and outputs the solution fields every $n$ timesteps). This
+aids in limiting the optimisations that can be performed on the
+\psykal version to those that should also be applicable to full
+oceanographic models. Note that although we retain the I/O
+functionality, all of the results presented in this work carefully
+exclude the effects of I/O since it is compute performance that
+interests us here.
 
 In order to maximise the flexibility (and thus potential for
 optimisation) of the \psykal version of Shallow, we made the kernels
@@ -245,8 +251,9 @@ sections each account for approximately one third of the run-time.
 
 The primary aim of this work is to determine whether any performance
 loss due to the \psykal separation of concerns can be negated by
-optimising the PSy layer. To evaluate this we perform tests on a range
-of hardware and a range of compilers. The hardware and compilers are
+optimising the PSy layer and if so, what the key transformations are
+(for a given system). To evaluate this we perform tests on a range of
+hardware and a range of compilers. The hardware and compilers are
 listed in Table~\ref{TABLE_compilers}. Where a compiler is available
 on a given piece of hardware, the version number used in this work is
 specified.
@@ -320,19 +327,20 @@ version after it has been re-structured following the \psykal
 approach. These two versions of the code effectively provide upper and
 lower bounds, respectively, on the performance we expect to achieve.
 
-Beginning with the vanilla \psykal version, we then apply a series of
-(cumulative) code transformations while obeying the \psykal separation
-of concerns, {\it i.e.} optimisation is restricted to the middle,
-{PS}y layer and leaves the kernel and algorithm layers unchanged. The
-aim of these optimisations is to recover, as much as is possible, the
-structure and thus performance of the original version of the code. We
-began with two transformations that affect all of the kernels. After
-this, we determined the transformations to perform by comparing the
-timing profiles of the \psykal and original versions of the code. We
-then tackled the sections resposible for the largest slowdowns and
-iterated this process. While doing this we also made heavy use of the
-optimisation reports produced by the compilers and how these changed
-when moving from the original to the \psykal version of the code.
+Beginning with the vanilla \psykal version, we then manually apply a
+series of (cumulative) code transformations while obeying the \psykal
+separation of concerns, {\it i.e.} optimisation is restricted to the
+middle, {PS}y layer and leaves the kernel and algorithm layers
+unchanged. The aim of these optimisations is to recover, as much as is
+possible, the structure and thus performance of the original version
+of the code. We began with two transformations that affect all of the
+kernels. After this, we determined the transformations to perform by
+comparing the timing profiles of the \psykal and original versions of
+the code. We then tackled the sections resposible for the largest
+slowdowns and iterated this process. While doing this we also made
+heavy use of the optimisation reports produced by the compilers and
+how these changed when moving from the original to the \psykal version
+of the code.
 
 The transformations we have performed are as follows:
 \begin{enumerate}
@@ -394,6 +402,15 @@ different compilers make when optimising the code.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 
+In this section we first discuss the performance of the original
+version of the code with the various compiler/CPU combinations. We
+then investigate the different code transformations that are required
+to recover good performance from the \psykal version of Shallow. Finally,
+we compare the most performant \psykal version  with the original
+version of Shallow for each compiler/CPU combination.
+
+\subsection{Performance of the Original Version of Shallow}
+
 In Figure~\ref{FIG_orig_perf_summary} we plot the performance of the
 original version of the Shallow code for the range of compilers and
 hardware considered here. This summary demonstrates the effect of the
@@ -424,72 +441,17 @@ the optimisation reports produced by the Cray and Intel compilers did
 not give any clues as to the cause of this difference and an in-depth
 investigation is outside the scope of this paper.
 
-Moving now the to the \psykal version of Shallow, it turns out that a
-plot of the performance of the best performing \psykal version for
-each of the compiler/CPU combinations is very similar to
-Figure~\ref{FIG_orig_perf_summary}. Therefore, in
-Figure~\ref{FIG_slowdown_summary} we plot the percentage {\em
-  difference} between the performance of the original and the (best)
-\psykal versions of Shallow for each compiler/CPU combination. The
-most important feature of this plot is that the performance penalty
-incurred by the \psykal version is less than four percent with only
-one exception where it is 6.6\%.  In fact, for the Intel and Cray
-compilers, the \psykal version of Shallow is never more than 2\%
-slower than the original and in some cases is faster.  This
-demonstrates that we can reliably recover the performance of the
-original version of the code, despite the significant restructuring
-required by the \psykal approach.
+\subsection{Optimisations of the \psykal Version to Recover Performance}
 
-The exceptional case is that of the Gnu-compiled binary on the Haswell
-CPU for a problem size of $256^2$.  This is strange since the
-performance difference for the same case on the Ivy Bridge CPU is just
-0.8\%. We investigated this further by compiling and running this case
-with versions 4.8.3, 4.9.1 and 4.9.3 of the Gnu compiler on the
-Haswell system. These gave slow-downs of 7.8\%, 7.3\% and 6.6\%,
-respectively. From these results we conclude that the Gnu compiler's
-support for/ability to exploit the newer Haswell architecture is still
-maturing.
-
-\begin{figure}[!t]
-\centering
-\includegraphics[width=120mm]{slowdown_summary}
-\caption{Comparison of the performance of the best \psykal
-version with that of the original version of the code. A negative value 
-indicates that the \psykal version is faster than the original.}
-\label{FIG_slowdown_summary}
-\end{figure}
-
-Turning to the cases where the \psykal version is significantly
-{\em faster} than the original, we see from
-Figure~\ref{FIG_slowdown_summary} that, with the exception of Power 8,
-this only occurs for the smallest domain size. This is no doubt due in
-part to the fact that the problem executes very quickly and therefore
-a small reduction in run-time will show as a large precentage. Since
-this problem is well contained in L2 cache, its performance will also
-be more sensitive to small differences, {\it e.g.} in the way that CPU
-registers are used. 
-
-The performance of the Power 8 system with the $512^2$ domain size is
-somewhat anomolous: the \psykal version of the code performs
-significantly better than the original and in addition, this problem
-size is also the only one where the Power 8 out-performs the Haswell
-system (see Figure~\ref{FIG_orig_perf_summary}) for the original
-version.  The results in Figure~\ref{FIG_orig_perf_summary} indicate
-that the $512^2$ case marks a transition from the working set being in
-cache (sizes $\leq 256^2$) to spilling out of cache (size $1024^2$). We
-therefore suggest that cache is being used more efficiently on the
-Power 8 system and this is further enhanced by the IBM-supplied
-transformations in the \psykal version.
-
-Having shown that, in general, we can recover and occasionally improve
-upon the performance of the original version of Shallow, the next
-logical step is to examine the necessary code transformations.  We do
-this for the $256^{2}$ case since this fits within last-level cache on
-all of the CPUs we are using here.  The performance of the \psykal
-version after each transformation has been applied to the code is
-plotted in Figure~\ref{FIG_opt_stages_256}. Results for a given
-compiler/CPU are given relative to the performance of the original
-version of Shallow with the same compiler/CPU.
+We now examine the performance of the \psykal version of Shallow and
+the code transformations that are required to reach the levels obtained
+by the original.  We do this for the $256^{2}$ problem size since this
+fits within last-level cache on all of the CPUs we are using here.
+The performance of the \psykal version after each transformation has
+been applied to the code is plotted in
+Figure~\ref{FIG_opt_stages_256}. Results for a given compiler/CPU are
+given relative to the performance of the original version of Shallow
+with the same compiler/CPU.
 
 \begin{figure}[!t]
 \centering
@@ -598,6 +560,63 @@ original. We note that this final pair of transformations significantly
 reduce the performance obtained with the Intel and Gnu compilers
 although they do not much perturb that obtained by the Cray
 compiler.
+
+\subsection{Performance Comparison of the Original and \psykal Versions}
+
+Finally, we compare the performance of the best \psykal version of
+Shallow with that of the original. In
+Figure~\ref{FIG_slowdown_summary} we plot the percentage {\em
+  difference} between the performance of the original and the (best)
+\psykal versions of Shallow for each compiler/CPU combination. The
+most important feature of this plot is that the performance penalty
+incurred by the \psykal version is less than four percent with only
+one exception where it is 6.6\%.  In fact, for the Intel and Cray
+compilers, the \psykal version of Shallow is never more than 2\%
+slower than the original and in some cases is faster.  This
+demonstrates that we can reliably recover the performance of the
+original version of the code, despite the significant restructuring
+required by the \psykal approach.
+
+The exceptional case is that of the Gnu-compiled binary on the Haswell
+CPU for a problem size of $256^2$.  This is strange since the
+performance difference for the same case on the Ivy Bridge CPU is just
+0.8\%. We investigated this further by compiling and running this case
+with versions 4.8.3, 4.9.1 and 4.9.3 of the Gnu compiler on the
+Haswell system. These gave slow-downs of 7.8\%, 7.3\% and 6.6\%,
+respectively. From these results we conclude that the Gnu compiler's
+support for/ability to exploit the newer Haswell architecture is still
+maturing.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=120mm]{slowdown_summary}
+\caption{Comparison of the performance of the best \psykal
+version with that of the original version of the code. A negative value 
+indicates that the \psykal version is faster than the original.}
+\label{FIG_slowdown_summary}
+\end{figure}
+
+Turning to the cases where the \psykal version is significantly
+{\em faster} than the original, we see from
+Figure~\ref{FIG_slowdown_summary} that, with the exception of Power 8,
+this only occurs for the smallest domain size. This is no doubt due in
+part to the fact that the problem executes very quickly and therefore
+a small reduction in run-time will show as a large precentage. Since
+this problem is well contained in L2 cache, its performance will also
+be more sensitive to small differences, {\it e.g.} in the way that CPU
+registers are used. 
+
+The performance of the Power 8 system with the $512^2$ domain size is
+somewhat anomolous: the \psykal version of the code performs
+significantly better than the original and in addition, this problem
+size is also the only one where the Power 8 out-performs the Haswell
+system (see Figure~\ref{FIG_orig_perf_summary}) for the original
+version.  The results in Figure~\ref{FIG_orig_perf_summary} indicate
+that the $512^2$ case marks a transition from the working set being in
+cache (sizes $\leq 256^2$) to spilling out of cache (size $1024^2$). We
+therefore suggest that cache is being used more efficiently on the
+Power 8 system and this is further enhanced by the IBM-supplied
+transformations in the \psykal version.
 
 The main conclusion of all this analysis is that while we can employ a
 separation of concerns and recover performance, doing so is not
