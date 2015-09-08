@@ -2,7 +2,7 @@
 =cluster; Gnu, Haswell; Intel, Haswell; Gnu, Ivy Bridge; Intel, Ivy Bridge; Cray, Ivy Bridge; IBM, Power 8
 #min=-5.0
 legendx=inside
-xlabel=Problem size
+xlabel=Problem size (domain edge length)
 ylabel=Slowdown c.f. original (%)
 font=Helvetica
 fontsz=12

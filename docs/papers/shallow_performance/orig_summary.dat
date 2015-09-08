@@ -5,14 +5,14 @@
 # (http://www.burningcutlery.com/derek/bargraph)
 =cluster; Gnu, Haswell; Intel, Haswell; Gnu, Ivy Bridge; Intel, Ivy Bridge; Cray, Ivy Bridge; IBM, Power8
 =table
-max=170
+max=150
 =norotate
 legendx=inside
 #legendy=center
 #=nolegoutline
 =nocommas
 #legendfill=
-xlabel=Problem size
+xlabel=Problem size (domain edge length)
 ylabel=Points updated per second (millions)
 font=Helvetica
 fontsz=12
