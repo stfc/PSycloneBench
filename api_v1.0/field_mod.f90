@@ -859,6 +859,25 @@ contains
     IMPLICIT none
     type(r2d_field), intent(in)    :: field_in
     type(r2d_field), intent(inout) :: field_out
+    integer :: ji, jj
+
+!$OMP PARALLEL DO SCHEDULE(RUNTIME) default(none) &
+!$OMP private(ji,jj) shared(field_out)
+    do jj= field_out%whole%ystart, field_out%whole%ystop
+       do ji = field_out%whole%xstart, field_out%whole%xstop
+          field_out%data(ji,jj) = field_in%data(ji,jj)
+       end do
+    end do
+!$OMP END PARALLEL DO
+        
+  end subroutine copy_2dfield
+
+  !===================================================
+
+  SUBROUTINE copy_2dfield_tiled(field_in, field_out)
+    IMPLICIT none
+    type(r2d_field), intent(in)    :: field_in
+    type(r2d_field), intent(inout) :: field_out
     integer :: it, ji, jj
 
 !$OMP DO SCHEDULE(RUNTIME)
@@ -871,7 +890,7 @@ contains
     end do
 !$OMP END DO
         
-  end subroutine copy_2dfield
+  end subroutine copy_2dfield_tiled
 
   !===================================================
 
