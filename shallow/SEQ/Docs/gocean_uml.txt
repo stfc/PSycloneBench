@@ -1,0 +1,73 @@
+@startuml
+
+enum grid_name
+grid_name : ARAKAWA_B
+grid_name : ARAKAWA_C
+
+enum grid_point_type
+grid_point_type : CU
+grid_point_type : CV
+grid_point_type : CT
+grid_point_type : CF
+
+enum BCType
+BCType : PERIODIC
+BCType : EXTERNAL
+
+class region_type {
+  int xstart
+  int xstop
+  int ystart
+  int ystop
+}
+
+class grid_type {
+  grid_name name
+  int nx
+  int ny
+  float dx
+  float dy
+ +grid_type grid_constructor()
+}
+
+class halo_type {
+  -int needs_update
+  region_type source
+  region_type dest
+  +void set_dirty()
+  +logical is_dirty()
+}
+
+class field_type {
+  grid_point_type DefinedOn
+  grid_type grid
+  BCType BoundaryConditions
+  Region internal
+  int num_halos
+  halo_type halo[num_halos]
+ +field_type field_constructor()
+ -cu_field_init()
+ -cv_field_init()
+ -cf_field_init()
+ -ct_field_init()
+}
+
+class scalar_field_type {
+  float data
+}
+
+class r2d_field_type {
+  float data[]
+}
+
+halo_type "1" *-- "2" region_type
+grid_type o-- grid_name
+field_type "*" *-- "1" grid_type : contains
+field_type "1" *-- "1..num_halos" halo_type: contains
+field_type "1" *-- "1" region_type: contains
+field_type o-- BCType
+field_type o-- grid_point_type
+scalar_field_type <|-- field_type
+r2d_field_type <|-- field_type
+
+@enduml

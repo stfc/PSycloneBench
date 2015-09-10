@@ -1,0 +1,27 @@
+# Original performance of nemolite2d: Millions of pts updated per s  
+#  
+# This data is formatted to be run through bargraph.pl in order to
+# generate a clustered bar chart 
+# (http://www.burningcutlery.com/derek/bargraph)
+=cluster; Gnu, Ivy Bridge; Intel, Ivy Bridge; Cray, Ivy Bridge
+=table
+max=15
+=norotate
+legendx=inside
+#legendy=center
+#=nolegoutline
+=nocommas
+#legendfill=
+xlabel=Problem size
+ylabel=Points updated per second (millions)
+font=Helvetica
+fontsz=12
+xlabelshift=0,-0.5
+# stretch the graph vertically
+yscale=1.2
+xscale=1.1
+64      5.14E+00 1.21E+01 6.66E+00   
+128     4.86E+00 1.18E+01 6.68E+00
+256	3.87E+00 1.22E+01 6.83E+00
+512     4.47E+00 1.08E+01 6.77E+00
+1024    4.69E+00 9.98E+00 6.48E+00

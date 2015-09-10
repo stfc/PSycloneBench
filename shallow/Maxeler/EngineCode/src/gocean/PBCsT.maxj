@@ -1,0 +1,40 @@
+package gocean;
+
+import com.maxeler.maxcompiler.v2.kernelcompiler.Kernel;
+import com.maxeler.maxcompiler.v2.kernelcompiler.KernelParameters;
+import com.maxeler.maxcompiler.v2.kernelcompiler.stdlib.core.CounterChain;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEType;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEVar;
+
+class PBCsT extends Kernel {
+
+	// 64-bit floating point
+	private static final DFEType type = dfeFloat(11,53);
+
+	protected PBCsT(KernelParameters parameters) {
+		super(parameters);
+
+		int width = 256;
+		DFEVar tfld = io.input("tfld", type);
+
+		// Make a counter chain to count in same way as
+		// for(j=0; j<width; j++){
+		//   for(i=0; i<width; i++){
+		CounterChain chain = control.count.makeCounterChain();
+		DFEVar j = chain.addCounter(width, 1);
+		DFEVar i = chain.addCounter(width, 1);
+
+	    // Last col = first col
+	    // field(MP1,1:N) = field(1,  1:N)
+	    // Last row = first row
+	    // field(1:MP1,NP1) = field(1:MP1,1)
+
+        // Last col = first col
+        DFEVar ttmp = i < (width-2) ? tfld : stream.offset(tfld,-width);
+        // Last row = first row
+        DFEVar tfldout = j > width-2 ? stream.offset(ttmp, -(width-1)*width) : ttmp;
+
+		io.output("tfldout", tfldout, type);
+	}
+
+}

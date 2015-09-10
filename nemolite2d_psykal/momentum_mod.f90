@@ -2,7 +2,6 @@ module momentum_mod
   use kind_params_mod
   use kernel_mod
   use argument_mod
-  use physical_params_mod
   use grid_mod
   use field_mod
   implicit none
@@ -10,6 +9,7 @@ module momentum_mod
   private
 
   public invoke_momentum_u, invoke_momentum_v
+  public momentum_u, momentum_v
   public momentum_u_code, momentum_v_code
 
   !=======================================
@@ -36,9 +36,9 @@ module momentum_mod
              arg(READ,      GRID_LAT_U)      &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> We update only those points within the internal region
+     !! of the simulated domain.
+     integer :: ITERATES_OVER = INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -77,9 +77,9 @@ module momentum_mod
              arg(READ,      GRID_LAT_V)      &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> We update only those points within the internal region
+     !! of the simulated domain.
+     integer :: ITERATES_OVER = INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -140,6 +140,7 @@ contains
                              hu, hv, ht, ssha_u, &
                              sshn, sshn_u, sshn_v, &
                              tmask, e1u, e1v, e1t, e2u, e2t, e12u, gphiu)
+    use physical_params_mod
     use model_mod, only: rdt, cbfr, visc
     implicit none
     integer, intent(in) :: ji, jj
@@ -288,6 +289,7 @@ contains
                              sshn, sshn_u, sshn_v, &
                              tmask, e1v, e1t, e2u, e2v, e2t, e12v, gphiv)
 
+    use physical_params_mod
     use model_mod, only: rdt, cbfr, visc
     implicit none
     integer, intent(in) :: ji, jj

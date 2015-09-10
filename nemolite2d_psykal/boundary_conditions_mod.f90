@@ -12,21 +12,23 @@ module boundary_conditions_mod
   public invoke_bc_solid_u,   invoke_bc_solid_v
   public invoke_bc_flather_u, invoke_bc_flather_v
   public invoke_bc_ssh
+  public bc_ssh, bc_solid_u, bc_solid_v
+  public bc_flather_u, bc_flather_v
   public bc_ssh_code, bc_solid_u_code, bc_solid_v_code
   public bc_flather_u_code, bc_flather_v_code
 
   !=======================================
 
   type, extends(kernel_type) :: bc_ssh
-     type(arg), dimension(3) :: meta_args =  &
-          (/ arg(READ,       R, POINTWISE),  &
-             arg(READWRITE, CT, POINTWISE),  &
-             arg(READ,      GRID_MASK_T)     &
+     type(arg), dimension(3) :: meta_args =        &
+          (/ arg(READ,      I_SCALAR, POINTWISE),  &
+             arg(READWRITE, CT,       POINTWISE),  &
+             arg(READ,      GRID_MASK_T)           &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> Although this is a boundary-conditions kernel, it only
+     !! acts on the internal points of the domain
+     integer :: ITERATES_OVER = INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -49,9 +51,10 @@ module boundary_conditions_mod
              arg(READ,      GRID_MASK_T)     &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> This is a boundary-conditions kernel and therefore
+     !! acts on all points of the domain rather than just
+     !! those that are internal
+     integer :: ITERATES_OVER = ALL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -74,9 +77,10 @@ module boundary_conditions_mod
              arg(READ,      GRID_MASK_T)     &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> This is a boundary-conditions kernel and therefore
+     !! acts on all points of the domain rather than just
+     !! those that are internal
+     integer :: ITERATES_OVER = ALL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -101,9 +105,10 @@ module boundary_conditions_mod
              arg(READ,      GRID_MASK_T)     &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> This is a boundary-conditions kernel and therefore
+     !! acts on all points of the domain rather than just
+     !! those that are internal
+     integer :: ITERATES_OVER = ALL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -128,9 +133,10 @@ module boundary_conditions_mod
              arg(READ,      GRID_MASK_T)     &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> This is a boundary-conditions kernel and therefore
+     !! acts on all points of the domain rather than just
+     !! those that are internal
+     integer :: ITERATES_OVER = ALL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -179,7 +185,7 @@ contains
 
     amp_tide   = 0.2_wp
     omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
-    rtime = real(istep, wp) * rdt
+    rtime = real(istep,wp) * rdt
 
     if(tmask(ji,jj) <= 0) return
     IF     (tmask(ji,jj-1) < 0) THEN
@@ -362,6 +368,9 @@ contains
     integer  :: jiv
 
     ! Check whether this point is inside the simulated domain
+    !\todo I could set-up a V-mask using exactly the same code structure
+    !! as below. Could then apply the BC and multiply by V-mask and thus
+    !! remove conditionals => get vectorisation.
     IF(tmask(ji,jj) + tmask(ji,jj+1) <= -1) return
     
     IF(tmask(ji,jj) < 0) THEN
@@ -375,6 +384,28 @@ contains
     END IF
 
   end subroutine bc_flather_v_code
+
+  !================================================
+
+  subroutine setup_vmask_code(ji, jj, vmask, tmask)
+    integer, intent(in) :: ji, jj
+    integer,  dimension(:,:), intent(inout) :: vmask
+    integer,  dimension(:,:), intent(in) :: tmask
+    integer :: jiv
+
+    vmask(ji,jj) = 0
+
+    IF(tmask(ji,jj) + tmask(ji,jj+1) <= -1) return
+    
+    IF(tmask(ji,jj) < 0) THEN
+       jiv = jj + 1
+    ELSE IF(tmask(ji,jj+1) < 0) THEN
+       jiv = jj - 1 
+    END IF
+
+    vmask(ji,jiv) = 1
+
+  end subroutine setup_vmask_code
 
   !================================================
 

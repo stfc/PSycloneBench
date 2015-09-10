@@ -68,7 +68,8 @@ PROGRAM nemolite2d
          istp = 0
          CALL output
 
-         call timer_start('Time-stepping', idxt, (nitend-nit000+1))
+         call timer_start('Time-stepping',idxt, &
+                          nitend-nit000+1)
 
          !! time stepping 
          DO istp = nit000, nitend, 1
@@ -402,6 +403,11 @@ CONTAINS
 !+++++++++++++++++++++++++++++++++++
 
         SUBROUTINE continuity
+          implicit none
+          integer :: idxt
+
+          call timer_start('Continuity', idxt)
+
 !kernel continuity
           DO jj = 1, jpj
             DO ji = 1, jpi
@@ -413,11 +419,15 @@ CONTAINS
             END DO
           END DO
 !end kernel continuity
+
+          call timer_stop(idxt)
+
         END SUBROUTINE continuity
 
 !+++++++++++++++++++++++++++++++++++
  
         SUBROUTINE momentum
+          implicit none
           REAL(wp) :: u_e, u_w
           REAL(wp) :: v_s, v_n
           REAL(wp) :: v_sc, v_nc, u_ec, u_wc
@@ -428,6 +438,9 @@ CONTAINS
           REAL(wp) :: dudx_w, dudy_s, dvdx_w, dvdy_s
 
           REAL(wp) :: adv, vis, hpg, cor
+          integer :: idxt
+
+          call timer_start('Momentum', idxt)
 
           ! u equation
           DO jj = 1, jpj
@@ -610,14 +623,21 @@ CONTAINS
 !end kernel ua calculation 
           END DO
           END DO
+
+          call timer_stop(idxt)
+
         END SUBROUTINE momentum
 
 !+++++++++++++++++++++++++++++++++++
 
         SUBROUTINE bc(rtime)
+          implicit none
           REAL(wp), INTENT(IN) :: rtime
           REAL(wp) :: amp_tide, omega_tide
           INTEGER :: jiu, jiv
+          integer :: idxt
+
+          call timer_start('BCs',idxt)
 
           !open boundary condition of clamped ssh
 
@@ -693,15 +713,20 @@ CONTAINS
             END DO
 !end kernel flather v .
 
+            call timer_stop(idxt)
+
         END SUBROUTINE bc
 
 !+++++++++++++++++++++++++++++++++++
 
 
         SUBROUTINE next
+          implicit none
+          integer :: idxt
           ! update the now-velocity and ssh
 
-  
+          call timer_start('Next',idxt)
+
 ! kernel  un updating
           DO jj = 1, jpj
             DO ji = 0, jpi
@@ -758,6 +783,8 @@ CONTAINS
           END DO
 ! end kernel sshn_v updating.
             
+          call timer_stop(idxt)
+
         END SUBROUTINE next
 
 !+++++++++++++++++++++++++++++++++++

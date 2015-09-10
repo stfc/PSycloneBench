@@ -1,0 +1,87 @@
+GOcean on Maxeler
+-----------------
+
+The recently completed Next Generation Ocean Dynamical Core Road Map
+project identified three key drivers for change in ocean hydrodynamic
+modelling: Improved subgrid scale mixing, ocean-shelf coupling and
+effective use of next generation computer architectures. While all
+three are important, the last is unavoidable if the UK is to maintain
+a world-leading position in ocean science.
+
+Increases in computational power are now occurring almost exclusively
+through increased parallelism, but with concurrent decrease in memory
+amount and bandwidth per computational core; a trend that is set to
+continue until there is a radical change in how computers are built.
+Hence all ocean models will have to adapt to this change, with those
+that adapt faster having a substantial competitive advantage over
+those that are slow to adapt.  Meeting this challenge requires
+introducing as much concurrency as possible into the ocean model, from
+coarse-grained domain decomposition (with MPI), through multithreading
+(e.g. with OpenMP or OpenACC), to loop level vectorisation.
+
+To achieve this, incremental evolution of existing ocean models (such
+as NEMO 2, the ocean model system most widely used in Europe,
+including the UK Met Office and NOC) is an option, but the effort
+involved would be so extensive and intensive that this would really
+constitute a complete re-write of the code. Moreover, in the current
+code structures computational and natural science codes are mixed. So
+after this optimisation effort, the resulting code would be very
+difficult to develop by anyone who was not both a numerical modelling
+and computational science expert (an unreasonable expectation). *Hence
+a new approach is required*.
+
+A similar issue has been identified in the atmospheric modelling
+community and NERC, Met Office and STFC have made a substantial
+investment (~£7.7M over 5 years) into the GungHo project to design a
+new atmospheric dynamical core for climate and weather operational and
+research use, with the specific goal of producing a model that is at
+least as accurate as the current system, but scales effectively on
+10^5-10^6 cores.
+
+A central principle behind the GungHo computational framework is the
+division of the code into layers to separate the natural science and
+computer science aspects. The identification of these layers enables a
+separation of concerns between largely independent components which
+have different requirements and require developers with very different
+skill sets. Three layers are identified for a single model: the
+Algorithm layer, the Kernel layer and the Parallelisation System (PSy)
+layer. Together this separation is termed PSyKAl.
+
+The Algorithm layer specifies the algorithm that the scientist would
+like to run (in terms of calls to kernel and infrastructure routines)
+and logically operates on full fields.
+
+The Kernel layer provides the implementation of the code kernels as
+subroutines. These subroutines operate on local fields (a set of
+elements, a vertical column, or a set of vertical columns, depending
+on the kernel).
+
+The PSy layer sits in-between the algorithm and kernel layers and its
+primary role is to provide node-based parallel performance for the target
+architecture. The PSy layer can be optimised for a particular hardware
+architecture, such as multi-core, many-core, GPGPUs, or some
+combination thereof with no change to the algorithm or kernel layer
+code. This approach therefore offers the potential for portable
+performance.
+
+The GOcean project is extending the PSyKAl approach for use by the
+Ocean community. Oceans and atmospheres share the same equations of
+motion and so it is natural to consider developing a new ocean model
+that builds on this ongoing GungHo work and which addresses the
+identified issues thereby giving substantial added value to the
+investments.
+
+The GOcean project has two benchmarks which are being evaluated on
+Power, Intel and NVIDIA based parallel architectures to test the
+benefits and limitations of the PSyKAl approach.
+
+The PSyKAl separation of concerns also appears to fit well with the
+Maxeler programming style. Therefore, in this work we would like to
+take one of the benchmarks written in GOcean and port it to the Maxeler
+system. If this task were not too time consuming we would also port
+and run the other benchmark.
+
+This work would both test the PSyKAl separation of concerns on
+a novel class of architecture and also provide an interesting
+performance/energy comparison between the Maxeler and competing
+technologies for an important class of application.

@@ -7,21 +7,21 @@ module continuity_mod
   implicit none
 
   type, extends(kernel_type) :: continuity
-     type(arg), dimension(10) :: meta_args =    &
-          (/ arg(WRITE, CT, POINTWISE),        & ! ssha
-             arg(READ,  CT, POINTWISE),        & ! sshn
-             arg(READ,  CU, POINTWISE),        & ! sshn_u
-             arg(READ,  CV, POINTWISE),        & ! sshn_v
-             arg(READ,  CU, POINTWISE),        & ! hu
-             arg(READ,  CV, POINTWISE),        & ! hv
-             arg(READ,  CU, POINTWISE),        & ! un
-             arg(READ,  CV, POINTWISE),        & ! vn
-             arg(READ,  TIME_STEP),            &
-             arg(READ,  GRID_AREA_T)           &
+     type(arg), dimension(10) :: meta_args =         &
+          (/ arg(WRITE, CT,       POINTWISE),        & ! ssha
+             arg(READ,  CT,       POINTWISE),        & ! sshn
+             arg(READ,  CU,       POINTWISE),        & ! sshn_u
+             arg(READ,  CV,       POINTWISE),        & ! sshn_v
+             arg(READ,  CU,       POINTWISE),        & ! hu
+             arg(READ,  CV,       POINTWISE),        & ! hv
+             arg(READ,  CU,       POINTWISE),        & ! un
+             arg(READ,  CV,       POINTWISE),        & ! vn
+             arg(READ,  R_SCALAR, POINTWISE),        & ! Time-step
+             arg(READ,  GRID_AREA_T)                 &
            /)
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+     !> This kernel updates only internal points of the simulation
+     !! domain
+     integer :: ITERATES_OVER = INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is

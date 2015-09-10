@@ -1,0 +1,35 @@
+# Best PSyKAl performance
+#
+# This data is formatted to be run through bargraph.pl in order to
+# generate a clustered bar chart 
+# (http://www.burningcutlery.com/derek/bargraph)
+=cluster; Gnu, Ivy Bridge; Intel,  Ivy Bridge; Cray, Ivy Bridge
+=table
+max=15
+=norotate
+legendx=inside
+#legendy=top
+#=nolegoutline
+=nocommas
+#legendfill=
+xlabel=Problem size
+ylabel=Points updated per second (millions)
+font=Helvetica
+fontsz=12
+xlabelshift=0,-0.5
+# stretch the graph vertically
+yscale=1.2
+xscale=1.1
+#=table
+64	5.88E+00	1.17E+01	1.12E+01
+128	5.71E+00	1.18E+01	1.14E+01
+256	5.92E+00	1.25E+01	1.18E+01
+512	5.62E+00	1.14E+01	1.10E+01
+1024	5.45E+00	1.05E+01	9.99E+00
+
+
+
+
+
+
+
