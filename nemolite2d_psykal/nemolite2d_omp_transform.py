@@ -10,8 +10,7 @@ psy=PSyFactory(api).create(invokeInfo)
 
 from psyGen import TransInfo
 t=TransInfo()
-ltrans = t.get_trans_name('GOceanOMPLoopTrans')
-rtrans = t.get_trans_name('OMPParallelTrans')
+ltrans = t.get_trans_name('GOceanOMPParallelLoopTrans')
 
 schedule=psy.invokes.get('invoke_0').schedule
 #schedule.view()
@@ -22,10 +21,6 @@ new_schedule=schedule
 for child in schedule.children:
     newschedule,memento=ltrans.apply(child)
     schedule = newschedule
-
-# Enclose all of these loops within a single OpenMP
-# PARALLEL region
-newschedule,memento = rtrans.apply(schedule.children)
 
 psy.invokes.get('invoke_0')._schedule=schedule
 print psy.gen
