@@ -14,7 +14,7 @@ contains
     use timing_mod
     use field_mod
     use grid_mod
-    use model_mod,       only: rdt, cbfr, visc
+    use model_mod,       only: rdt
     use physical_params_mod, only: g, omega, d2r
     use momentum_mod,    only: momentum_v_code
     use momentum_mod,    only: momentum_u_code
@@ -27,21 +27,7 @@ contains
     type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
     type(r2d_field), intent(in)    :: hu, hv, ht
     ! Locals
-    integer :: ji, jj, jiu, jiv
-    integer :: idxt
-    ! Locals for momentum
-    REAL(wp) :: u_e, u_w, v_n, v_s
-    real(wp) :: v_nc, v_sc
-    real(wp) :: depe, depw, deps, depn
-    real(wp) :: hpg, adv, cor, vis
-    real(wp) :: dudx_e, dudx_w, dudy_s, dudy_n
-    real(wp) :: uu_e, uu_n, uu_s, uu_w
-    real(wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
-    real(wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
-    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
-    ! end locals for momentum
-    ! Locals for BCs
-    real(wp) :: amp_tide, omega_tide, rtime
+    integer :: ji, jj
 
     !M  = ssha%grid%simulation_domain%xstop
     !N  = ssha%grid%simulation_domain%ystop
