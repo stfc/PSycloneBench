@@ -30,7 +30,6 @@ program gocean2d
 
   ! time stepping index
   integer :: istp  
-  real(wp) :: rstp 
   integer :: itimer0
 
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
@@ -83,9 +82,8 @@ program gocean2d
   do istp = nit000, nitend, 1
 
      !call model_write_log("('istp == ',I6)",istp)
-     rstp = real(istp, wp)
 
-     call step(rstp,                               &
+     call step(istp,                               &
                ua_fld, va_fld, un_fld, vn_fld,     &
                sshn_t_fld, sshn_u_fld, sshn_v_fld, &
                ssha_t_fld, ssha_u_fld, ssha_v_fld, &
@@ -125,7 +123,7 @@ subroutine step(istp,           &
   use gocean2d_io_mod, only: model_write
   implicit none
   !> The current time step
-  real(wp),           intent(in) :: istp
+  integer,            intent(in) :: istp
   type(r2d_field), intent(inout) :: un, vn, sshn, sshn_u, sshn_v
   type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
   type(r2d_field), intent(in) :: hu, hv, ht
@@ -133,28 +131,6 @@ subroutine step(istp,           &
   call invoke_time_step(istp, ssha, ssha_u, ssha_v, &
                         sshn, sshn_u, sshn_v, &
                         hu, hv, ht, ua, va, un, vn)
-
-!  call invoke(                                               &
-!              continuity(istp, ssha, sshn_t, sshn_u, sshn_v, &
-!                         hu, hv, un, vn),                    &
-!              momentum_u(ua, un, vn,                         &
-!                         ssha_u, sshn_t, sshn_u, sshn_v),    &
-!              momentum_v(va, un, vn, hu, hv, ht,             &
-!                         ssha_v, sshn_t, sshn_u, sshn_v),    &
-!              bc_ssh(istp, ssha),                            &
-!              bc_solid_u(ua),                                &
-!              bc_solid_v(va),                                &
-!              bc_flather_u(ua, hu, sshn_u),                  &
-!              bc_flather_v(va, hv, sshn_v),                  &
-!              copy_field(ua, un),                            &
-!              copy_field(va, vn),                            &
-!              copy_field(ssha, sshn_t),                      &
-!              next_sshu(sshn_u, sshn_t),                     &
-!              next_sshv(sshn_v, sshn_t)                      &
-!             )
-
-
-!  call model_write(grid, istp, ht, sshn, un, vn)
 
 end subroutine step
 
