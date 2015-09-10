@@ -13,14 +13,15 @@ F90FLAGS += -O3 -O ipa5 -rd
 #-h loop_trips=medium
 # Have to explicitly turn OpenMP off if building 
 # with optimising flags
-F90FLAGS += -h noomp
+#F90FLAGS += -h noomp
 
 # Display compiler options in effect and generate annotated
 # listing
 F90FLAGS += -h display_opt -rm
-F90FLAGS += -h profile_generate
 
-LDFLAGS = -h profile_generate
+#F90FLAGS += -h profile_generate
+LDFLAGS = 
+#LDFLAGS = -h profile_generate
 
 # Flags for whole-program optimisation
 F90FLAGS += -hpl=${PWD}/nemolite2d_wpl_dir -h wp
