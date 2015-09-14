@@ -482,12 +482,13 @@ original. Simply copying the code for each of the kernel subroutines
 into the module from which they are called (module in-lining) has the
 most dramatic effect on the performance of the compiled code; it now
 achieves more than 80\% of the performance of the original. The
-transformations required to get beyond this level then become
-architecture dependent: on Haswell loop fusion achieves more than 90\%
-while on Ivy Bridge it is fully-fusing the first loop nest. The
-dramatic performance improvement obtained from the module-inlining
-transformation demonstrates that the Gnu compiler is unable to
-optimise over separate files.
+transformation(s) required to get more than 90\% then become
+architecture dependent: on Haswell it is just loop fusion while on Ivy
+Bridge we do not exceed 90\% until we have done all of the steps up to
+and including fully-fusing (fusing the inner loops of) the first loop
+nest. The dramatic performance improvement obtained from the
+module-inlining transformation demonstrates that the Gnu compiler is
+unable to optimise over separate files.
 
 With the Intel compiler, the key transformations to recover
 performance are different (second and fourth clusters in
