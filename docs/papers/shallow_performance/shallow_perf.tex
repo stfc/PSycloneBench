@@ -259,14 +259,13 @@ on a given piece of hardware, the version number used in this work is
 specified.
 %
 The Intel Haswell-based system (Xeon E5-1620 v2) has a clock speed of
-3.7~GHz and 10~MB of last-level cache. The Intel Ivy Bridge-based
-system (Xeon E5-2697) has a clock speed of 2.7~GHz and a last-level
-cache of 30~MB. The CPU in the IBM Power-8 system is built around 12
+3.7~GHz and 10~MB of last-level cache (LLC). The Intel Ivy
+Bridge-based system (Xeon E5-2697) has a clock speed of 2.7~GHz and a
+LLC of 30~MB. The CPU in the IBM Power-8 system is built around 12
 `chiplets'. Each chiplet has a single core with 64~KB of L1 cache,
 512~KB of L2 cache and 8~MB of L3 cache. The L3 cache of each chiplet
 is shared with all other chiplets so that there is a total of 96~MB of
-last-level cache. The cores on the system we used had a clock speed of
-3.3~GHz.
+LLC. The cores on the system we used had a clock speed of 3.3~GHz.
 
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
@@ -414,7 +413,7 @@ version of Shallow for each compiler/CPU combination.
 In Figure~\ref{FIG_orig_perf_summary} we plot the performance of the
 original version of the Shallow code for the range of compilers and
 hardware considered here. This summary demonstrates the effect of the
-larger last-level cache of the Intel Ivy Bridge system compared to
+larger LLC of the Intel Ivy Bridge system compared to
 that of the Haswell system; note the drop in performance
 in going from a problem size of $256^{2}$ to a problem size of
 $512^{2}$ for the first two bars. The performance of the Ivy
@@ -435,18 +434,14 @@ it relatively insensitive to the choice of compiler.
 Strangely, the third bar (Gnu compiler) in
 Figure~\ref{FIG_orig_perf_summary} shows the same drop in performance
 in moving from the $256^2$ case to the $512^2$ case, despite the
-larger last-level cache of the Ivy Bridge system. In order to
-investigate this further, we profiled the application to obtain
-hardware performance counter data. This revealed that the drop in
-performance is due to a XXX
-
- With the
-Intel compiler this drop in efficiency only occurs when going to
-$512^2$. We therefore conclude that the drop in performance is due to
-the Gnu compiler generating code that YYY
-compared to that produced by the Intel and Cray
-compilers.
-
+larger LLC of the Ivy Bridge system. In order to investigate this
+further, we profiled the application to obtain hardware performance
+counter data for the Gnu- and Intel-compiled executables. This
+revealed that the Gnu-compiled executable made more references to
+memory and had a higher LLC miss-rate compared with the Intel binary.
+We conclude that the Gnu compiler is not utilising registers as
+efficiently as the Intel compiler and that this results in greater
+memory traffic.
 
 For this compiler-friendly form of the code, there is generally little
 performance difference between the executables produced by the Gnu and
@@ -582,8 +577,8 @@ compiler.
 
 Finally, we compare the performance of the best \psykal\ version of
 Shallow with that of the original. In
-Figure~\ref{FIG_slowdown_summary} we plot the percentage {\em
-  difference} between the performance of the original and the (best)
+Figure~\ref{FIG_slowdown_summary} we plot the percentage
+  difference between the performance of the original and the (best)
 \psykal\ versions of Shallow for each compiler/CPU combination. The
 most important feature of this plot is that the performance penalty
 incurred by the \psykal\ version is less than four percent with only
