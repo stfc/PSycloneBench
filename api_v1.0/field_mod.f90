@@ -861,15 +861,14 @@ contains
     type(r2d_field), intent(inout) :: field_out
     integer :: ji, jj
 
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) default(none) &
-!$OMP private(ji ,jj) shared(field_out, field_in)
+!$OMP DO SCHEDULE(RUNTIME)
     do jj= field_out%whole%ystart, field_out%whole%ystop
        do ji = field_out%whole%xstart, field_out%whole%xstop
           field_out%data(ji,jj) = field_in%data(ji,jj)
        end do
     end do
-!$OMP END PARALLEL DO
-        
+!$OMP END DO
+
   end subroutine copy_2dfield
 
   !===================================================

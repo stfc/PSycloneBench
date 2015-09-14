@@ -34,8 +34,9 @@ contains
 
     !call timer_start('Continuity',idxt)
 
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none), &
-!$OMP private(ji,jj) shared(ssha, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt)
+!$OMP PARALLEL default(shared), private(ji,jj)
+
+!$OMP DO SCHEDULE(RUNTIME)
     do jj = ssha%internal%ystart, ssha%internal%ystop, 1
       do ji = ssha%internal%xstart, ssha%internal%xstop, 1
 !    do jj = 2, N, 1
@@ -48,14 +49,13 @@ contains
                              rdt, sshn_t%grid%area_t)
       end do
     end do
-!$OMP END PARALLEL DO
+!$OMP END DO
 
     !call timer_stop(idxt)
 
     !call timer_start('Momentum',idxt)
 
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none) private(ji,jj) &
-!$OMP shared(ua, un, vn, hu, hv, ht, ssha_u, sshn_t, sshn_u, sshn_v)
+!$OMP DO SCHEDULE(RUNTIME)
     do jj = ua%internal%ystart, ua%internal%ystop, 1
       do ji = ua%internal%xstart, ua%internal%xstop, 1
 !    do jj = 2, N, 1
@@ -77,12 +77,11 @@ contains
 
       end do
     end do
-!$OMP END PARALLEL DO
+!$OMP END DO
 
 !    do jj = 2, N-1, 1
 !      do ji = 2, M, 1
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none) private(ji,jj) &
-!$OMP shared(va, un, vn, hu, hv, ht, ssha_v, sshn_t, sshn_u, sshn_v)
+!$OMP DO SCHEDULE(RUNTIME)
     do jj = va%internal%ystart, va%internal%ystop, 1
       do ji = va%internal%xstart, va%internal%xstop, 1
 
@@ -102,7 +101,7 @@ contains
 
       end do
     end do
-!$OMP END PARALLEL DO
+!$OMP END DO
 
     !call timer_stop(idxt)
 
@@ -110,8 +109,7 @@ contains
 
     !call timer_start('BCs', idxt)
 
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none) private(ji,jj) &
-!$OMP shared(istp, ssha, sshn_t)
+!$OMP DO SCHEDULE(RUNTIME)
     DO jj = ssha%internal%ystart, ssha%internal%ystop 
        DO ji = ssha%internal%xstart, ssha%internal%xstop 
 !    DO jj = 2, N
@@ -120,11 +118,10 @@ contains
                            istp, ssha%data, sshn_t%grid%tmask)
        END DO
     END DO
-!$OMP END PARALLEL DO
+!$OMP END DO
 
 
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none) private(ji,jj) &
-!$OMP shared(ua)
+!$OMP DO SCHEDULE(RUNTIME)
     do jj = ua%whole%ystart, ua%whole%ystop, 1
        do ji = ua%whole%xstart, ua%whole%xstop, 1
 !    do jj = 1, N+1, 1
@@ -133,10 +130,9 @@ contains
                                ua%data, ua%grid%tmask)
        end do
     end do
-!$OMP END PARALLEL DO
+!$OMP END DO
 
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none) private(ji,jj) &
-!$OMP shared(va)
+!$OMP DO SCHEDULE(RUNTIME)
     DO jj = va%whole%ystart, va%whole%ystop, 1 
        DO ji = va%whole%xstart, va%whole%xstop, 1
 !    do jj = 1, N, 1
@@ -145,10 +141,9 @@ contains
                                va%data, va%grid%tmask)
       end do
     end do
-!$OMP END PARALLEL DO
+!$OMP END DO
 
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none) private(ji,jj) &
-!$OMP shared(ua, hu, sshn_u)
+!$OMP DO SCHEDULE(RUNTIME)
     DO jj = ua%whole%ystart, ua%whole%ystop, 1
        DO ji = ua%whole%xstart, ua%whole%xstop, 1
 !    DO jj = 1, N+1, 1
@@ -158,10 +153,9 @@ contains
                                  sshn_u%grid%tmask)
        END DO
     END DO
-!$OMP END PARALLEL DO
+!$OMP END DO
 
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none) private(ji,jj) &
-!$OMP shared(va, hv, sshn_v)
+!$OMP DO SCHEDULE(RUNTIME)
     DO jj = va%whole%ystart, va%whole%ystop, 1 
        DO ji = va%whole%xstart, va%whole%xstop, 1
 !     DO jj = 1, N, 1
@@ -171,7 +165,7 @@ contains
                                  sshn_v%grid%tmask)
        END DO
     END DO
-!$OMP END PARALLEL DO
+!$OMP END DO
 
     !call timer_stop(idxt)
 
@@ -183,8 +177,7 @@ contains
     call copy_field(va, vn)
     call copy_field(ssha, sshn_t)
 
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none) private(ji,jj) &
-!$OMP shared(sshn_u, sshn_t)
+!$OMP DO SCHEDULE(RUNTIME)
     DO jj = sshn_u%internal%ystart, sshn_u%internal%ystop 
        DO ji = sshn_u%internal%xstart, sshn_u%internal%xstop 
 !    do jj = 2, N, 1
@@ -195,10 +188,9 @@ contains
                              sshn_t%grid%area_t, sshn_t%grid%area_u)
       end do
     end do
-!$OMP END PARALLEL DO
+!$OMP END DO
 
-!$OMP PARALLEL DO SCHEDULE(RUNTIME), default(none) private(ji,jj) &
-!$OMP shared(sshn_v, sshn_t)
+!$OMP DO SCHEDULE(RUNTIME)
     DO jj = sshn_v%internal%ystart, sshn_v%internal%ystop 
        DO ji = sshn_v%internal%xstart, sshn_v%internal%xstop 
 !    do jj = 2, N-1, 1
@@ -210,9 +202,10 @@ contains
                             sshn_t%grid%area_t, sshn_t%grid%area_v)
       end do
     end do
-!$OMP END PARALLEL DO
+!$OMP END DO
 
     !call timer_stop(idxt)
+!$OMP END PARALLEL
 
   end subroutine invoke_time_step
 
