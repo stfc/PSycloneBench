@@ -75,7 +75,7 @@ performance loss and sometimes small performance gains compared to the
 original optimised code, there is no single best hand optimised
 implementation of the code for all the compilers tested, and the
 flexibility in applying code modifications to the optimisation layer
-in the PSyKAl version allows for a significant performance improvement
+in the \psykal\ version allows for a significant performance improvement
 on the IBM Power8 compared with the original code.
 
 \end{abstract}
@@ -322,7 +322,7 @@ IBM       & \parbox{5cm}{-O5 -qinline=auto:level=10\\ -qprefetch=dscr=0x1D7} \\
 
 Before applying any code transformations, we benchmark the original
 version of the code. We also benchmark the vanilla, unoptimised
-version after it has been re-structured following the \psykal
+version after it has been re-structured following the \psykal\
 approach. These two versions of the code effectively provide upper and
 lower bounds, respectively, on the performance we expect to achieve.
 
@@ -339,10 +339,11 @@ the code. We then tackled the sections resposible for the largest
 slowdowns and iterated this process. While doing this we also made
 heavy use of the optimisation reports produced by the compilers and
 how these changed when moving from the original to the \psykal\ version
-of the code.
+of the code. The transformations we have performed are as follows:
 
-The transformations we have performed are as follows:
-\begin{enumerate}
+\newcounter{tnum}
+
+\begin{list}{T\arabic{tnum}.}{\usecounter{tnum}\setlength{\rightmargin}{\leftmargin}}
 
 \item No optimisation: the vanilla \psykal\ version of the code;
 
@@ -378,9 +379,9 @@ blocking factor of four (IBM supplied);
 \item Fission the first loop nest back into three separate loop nests
   (IBM supplied).
 
-\end{enumerate}
+\end{list}
 
-As indicated above, transformations 10 and 11 were
+As indicated above, transformations T10 and T11 were
 suggested by the IBM compiler team. The second of these effectively
 undoes transformation four by fissioning the first loop nest back
 into three separate loop nests.
@@ -458,11 +459,11 @@ is outside the scope of this paper.
 \subsection{Optimisations of the \psykal\ Version to Recover Performance}
 
 We now examine the performance of the \psykal\ version of Shallow and
-the code transformations that are required to reach the levels obtained
-by the original.  We do this for the $256^{2}$ problem size since this
-fits within last-level cache on all of the CPUs we are using here.
-The performance of the \psykal\ version after each transformation has
-been applied to the code is plotted in
+the code transformations that are required to reach the levels
+obtained by the original.  We do this for the $256^{2}$ problem size
+since this fits within LLC on all of the CPUs we are using here.  The
+performance of the \psykal\ version after each transformation has been
+manually applied to the code is plotted in
 Figure~\ref{FIG_opt_stages_256}. Results for a given compiler/CPU are
 given relative to the performance of the original version of Shallow
 with the same compiler/CPU.
@@ -483,33 +484,33 @@ With the Gnu compiler (first and third clusters in
 Figure~\ref{FIG_opt_stages_256}), the vanilla \psykal\ version of
 Shallow only achieves ~5-6\% of the performance of the
 original. Simply copying the code for each of the kernel subroutines
-into the module from which they are called (module in-lining) has the
+into the module from which they are called (module in-lining, T3) has the
 most dramatic effect on the performance of the compiled code; it now
 achieves more than 80\% of the performance of the original. The
 transformation(s) required to get more than 90\% then become
-architecture dependent: on Haswell it is just loop fusion while on Ivy
+architecture dependent: on Haswell it is just loop fusion (T4) while on Ivy
 Bridge we do not exceed 90\% until we have done all of the steps up to
-and including fully-fusing (fusing the inner loops of) the first loop
-nest. The dramatic performance improvement obtained from the
-module-inlining transformation demonstrates that the Gnu compiler is
-unable to optimise over separate files.
+and including T8; fully fusing (fusing the inner loops of)
+the first loop nest. The dramatic performance improvement obtained
+from the module-inlining (T3) demonstrates that the Gnu
+compiler is unable to optimise over separate source files.
 
 With the Intel compiler, the key transformations to recover
 performance are different (second and fourth clusters in
 Figure~\ref{FIG_opt_stages_256}).  Even the vanilla \psykal\ version of
 Shallow achieves some 80\% of the performance of the original
 version. Only two code transformations were required to increase this
-to $\sim$100\%. The first of these was the fusion of the computational
-loops. However, we found that performance suffered (bar 5) when this
+to $\sim$100\%. The first of these was T4, the fusion of the computational
+loops. However, we found that performance suffered (T6) when this
 was extended to include the loop required for field copies at the end
 of a time-step (Figure~\ref{FIG_time_smooth_code}). Further
 investigation of this slow-down revealed that the compiler was unable
 to SIMD vectorise the newly-fused loop after it had in-lined the body
 of the kernel called from within it. Once this in-lining was done by
-hand (bar 6), the compiler was able to vectorise the loop and the
+hand (T7), the compiler was able to vectorise the loop and the
 performance of the original version of Shallow was recovered on the
 Haswell system. On Ivy Bridge the first loop nest also had to be fully
-fused (bar 7) to recover $\sim100\%$ of the performance.
+fused (T8) to recover $\sim$100\% of the performance.
 
 \begin{figure}
 \begin{verbatim}
@@ -540,7 +541,7 @@ The fifth cluster in Figure~\ref{FIG_opt_stages_256} shows the
 evolution of the performance of the \psykal\ version of Shallow with
 the Cray compiler. Again, this has significant differences from the
 behaviour seen with the Gnu and Intel compilers. As with the Intel
-compiler, the performance of the Vanilla \psykal\ version is fairly
+compiler, the performance of the Vanilla \psykal\ version, T1,  is fairly
 good at 74\% of that of the original. In contrast to the other
 compilers consisdered so far, the first significant transformation is
 simply to specify the bounds of the arrays being used within the
@@ -551,29 +552,30 @@ computational loops are over almost all elements of these arrays. This
 simple change gives a \psykal\ version that achieves 88\% of the
 performance of the original.
 
-Subsequent transformations actually harm performance until the
-field-copy operation of Figure~\ref{FIG_time_smooth_code} is fused
-with the preceeding loop. The resulting \psykal\ version now achieves
-94\% of the original performance. Two further steps are required to
-match the latter. First, the first loop nest has to be fully fused
-(both inner and outer loops fused) and second, the array/loop bounds
-are passed as an argument to the middle layer. This is done in order
-to indicate to the compiler that these bounds remain constant for the
-duration of each trip of the time-stepping loop.
+Subsequent transformations actually harm performance until T6 where
+the field-copy operation (lower loop in
+Figure~\ref{FIG_time_smooth_code}) is fused with the preceeding
+loop. The resulting \psykal\ version now achieves 94\% of the original
+performance. Two further steps are required to match the latter: the
+first loop nest is fully fused (T8 - both inner and outer loops fused)
+and second, the array/loop bounds are passed as an argument to the
+middle layer (T9). This is done in order to indicate to the compiler
+that these bounds remain constant for the duration of each iteration
+of the time-stepping loop.
 
 Moving to the IBM compiler on the Power 8 system (sixth cluster in
 Figure~\ref{FIG_opt_stages_256}) we see that performance of the
 vanilla \psykal\ version is only 5\% of the original and several
 transformations are required to achieve comparable performance. As
-with the Cray compiler, specifying array bounds explicitly improves
-performance. Module-inlining also has a significant effect; doubling
+with the Cray compiler, specifying array bounds explicitly, T2, improves
+performance. Module-inlining, T3, also has a significant effect; doubling
 the performance from 10 to 20\% of the original. However, fusing loop
 nests actually harms performance, just as it did for the Cray
-compiler. Kernel inlining takes performance to over 50\% and it is the
-IBM-supplied transformations of loop unrolling and fissioning the
-first loop ({\it i.e.} undoing some of transformations three and
-seven) that finally recovers 96\% of the performance of the
-original. We note that this final pair of transformations significantly
+compiler. Kernel inlining (T7) takes performance to over 50\% and it is the
+IBM-supplied transformations of T10 (loop unrolling) and T11 (fissioning of the
+first loop) that finally recovers 96\% of the performance of the
+original. (\textit{i.e.} we must undo some of transformations three and
+seven). We note that this final pair of transformations significantly
 reduce the performance obtained with the Intel and Gnu compilers
 although they do not much perturb that obtained by the Cray
 compiler.
@@ -607,7 +609,7 @@ maturing.
 \begin{figure}[!t]
 \centering
 \includegraphics[width=120mm]{slowdown_summary}
-\caption{Comparison of the performance of the best \psykal
+\caption{Comparison of the performance of the best \psykal\
 version with that of the original version of the code. A negative value 
 indicates that the \psykal\ version is faster than the original.}
 \label{FIG_slowdown_summary}

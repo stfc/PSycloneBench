@@ -1,4 +1,4 @@
-=cluster; 1. Vanilla; 2. Explicit bounds for array args; 3. Single file; 4. Loop fused; 5. In-lined copy operator; 6. Fused copy operator; 7. In-line all kernels; 8. Fully fuse 1st loop nest; 9. Explicit, constant array/loop bounds; 10. Unroll time-smooth; 11. Fission 1st loop nest
+=cluster; T1. Vanilla; T2. Explicit bounds for array args; T3. Single file; T4. Loop fused; T5. In-lined copy operator; T6. Fused copy operator; T7. In-line all kernels; T8. Fully fuse 1st loop nest; T9. Explicit, constant array/loop bounds; T10. Unroll time-smooth; T11. Fission 1st loop nest
 font=Helvetica
 fontsz=12
 # stretch the graph vertically

@@ -1,5 +1,4 @@
 
-> Main:
 
 > 1. The results can be broadly separated into i) comparison with the
 > original 'shallow' benchmark and ii) Optimisation of the Psy
@@ -63,21 +62,27 @@ Re-worded.
   transformation 6 but bar 7... I understand why its been laid out
   this way but I think the transformations/vanilla could be labeled
   1-11?
+We agree and have re-numbered the transformations from 1-11. We have
+also added labels to the key optimisation steps in the Figure and
+refer to the transformations by number in the text.
 
 > 14. para 3, page 9: potentially change "operation of Figure 5 is
   fused" to "operation (lower loop in Figure 5) is fused."
+Re-worded.
 
 > 15. pare 1, page 10: in the sentence; "remain constant for the
 > duration of each trip of the time-stepping loop" I've never heard
 > that terminology before, is that standard? I would expect to hear
 > something like "remain constant for the duration of each iteration
 > of the time-stepping loop"
+Re-worded.
 
 > 16. the introduction of Figure 5 help to explain a bit more the
 > detail of the applied transformations. This was good and it would
 > have been nice to have had a bit more detail on the transformations
 > from the start rather than disbursed through the text.
 
+DOES SPACE PERMIT ANY MORE DETAIL?
 
 ----------------------- REVIEW 2 ---------------------
 
