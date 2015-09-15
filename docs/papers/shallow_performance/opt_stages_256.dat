@@ -1,4 +1,4 @@
-=cluster; 0. Vanilla; 1. Explicit bounds for array args; 2. Single file; 3. Loop fused; 4. In-lined copy operator; 5. Fused copy operator; 6. In-line all kernels; 7. Fully fuse 1st loop nest; 8. Explicit, constant array/loop bounds; 9. Unroll time-smooth; 10. Fission 1st loop nest
+=cluster; 1. Vanilla; 2. Explicit bounds for array args; 3. Single file; 4. Loop fused; 5. In-lined copy operator; 6. Fused copy operator; 7. In-line all kernels; 8. Fully fuse 1st loop nest; 9. Explicit, constant array/loop bounds; 10. Unroll time-smooth; 11. Fission 1st loop nest
 font=Helvetica
 fontsz=12
 # stretch the graph vertically
@@ -6,10 +6,33 @@ yscale=1.2
 xscale=1.3
 rotateby=-20
 xticshift=-3.0,-0.7
-#legendx=right
-#legendy=center
 =patterns
 #extraops=set grid back
+# Labels on Gnu, Haswell cluster
+extraops=set label "3" at 0.42,88.0 right
+extraops=set label "4" at 0.5,93.0 right
+extraops=set label "8" at 0.78,94.7 right
+# Labels on Intel, Haswell cluster
+extraops=set label "4" at 1.37,91.5 right
+extraops=set label "7" at 1.52,97.0 right
+# Labels on Gnu, Ivy Bridge cluster
+extraops=set label "3" at 2.15,84.0 right
+extraops=set label "4" at 2.25,86.8 right
+extraops=set label "8" at 2.47,97.0 right
+# Labels on Intel, Ivy Bridge cluster
+extraops=set label "4" at 3.1,90.7 right
+extraops=set label "8" at 3.36,97.0 right
+# Labels on Cray, Ivy Bridge cluster
+extraops=set label "2" at 3.85,89 right
+extraops=set label "6" at 4.1,95 right
+extraops=set label "8" at 4.25,97 right
+# Labels on IBM P8 cluster
+extraops=set label "2" at 4.75,13 right
+extraops=set label "3" at 4.81,22 right
+extraops=set label "7" at 5.05,53 right
+extraops=set label "10" at 5.25,84.5 right
+extraops=set label "11" at 5.35,97 right
+
 =table;
 # Performance as % of original version
 ylabel=Performance relative to original (%)
