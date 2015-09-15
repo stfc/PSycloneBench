@@ -147,6 +147,11 @@ reproducibility is not a requirement.
 > is the case, how can PSyKAI determine which kernels to call, in which
 > order, which parameters to pass etc.?
 
+PSyKAl is a design approach, not a tool. Figure 1 illustrates the
+structure of the Shallow code after it has been re-structured
+following PSyKAl principles. How the code in the different layers
+is produced is not the subject of this paper.
+
 > Methodology
 
 > 7) p5: Some of the transformations (3, 4, 5, 7, 9, 10) seem to be very
@@ -198,11 +203,16 @@ General comments / suggestions
 
 > 1) There seems to be no preprint available yet for reference [2]
 
+RUPERT/GRAHAM
+
 > 2) Figure 2/3: A better visual grouping of the bars by platform and
 > compiler e.g. by using colour to differentiate compilers and hatching
 > to different platforms would help with interpretation of the plots
-
-We would love to use colour but the formatting guidlines say we can't.
-
 > 3) Figure 4: The bars per cluster are quite hard to tell apart visually
+
+We would love to use colour but the formatting guidlines say we
+can't. However, we have added additional labelling to what was Figure
+3 in order to aid interpretation.
+
+
 
