@@ -44,13 +44,15 @@ Fixed.
 > 9. para 4, page 6: in the statement 'for the first two bars...' I
   would say that this is also true for the third bar also. This is gnu
   on the IvyBridge. Is that understood?
+Text has been added to explain this.
 
-> 10. para6, page 6: remove the before to.
 > 11. para6, page 6: difference seems to be in italics.
+Fixed.
 
 > 12. para 2, page 8: could you reword this; "on Haswell loop fusion
  achieves more than 90% while on Ivy Bridge it is fully-fusing the
  first loop nest", I found it difficult to follow.
+Re-worded.
 
 > 13. Figure 4 and labeling the transformations: The fact that you
   have labeled the run instances 0-10 means its difficult to compare
