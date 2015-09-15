@@ -28,7 +28,7 @@ figs: ${FIG_FILES} ${GRACE_PLOTS}
 %.pdf: %.dat
 	./bargraph.pl $< > $*.eps
 	epstopdf $*.eps
-	rm $*.eps
+	#rm $*.eps
 
 %.pdf: %.agr
 	gracebat -hdevice EPS -printfile $*.eps $<
