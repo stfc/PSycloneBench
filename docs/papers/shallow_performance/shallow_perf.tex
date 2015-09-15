@@ -327,7 +327,7 @@ approach. These two versions of the code effectively provide upper and
 lower bounds, respectively, on the performance we expect to achieve.
 
 Beginning with the vanilla \psykal\ version, we then manually apply a
-series of (cumulative) code transformations while obeying the \psykal
+series of (cumulative) code transformations while obeying the \psykal\ 
 separation of concerns, {\it i.e.} optimisation is restricted to the
 middle, {PS}y layer and leaves the kernel and algorithm layers
 unchanged. The aim of these optimisations is to recover, as much as is
@@ -343,6 +343,8 @@ of the code.
 
 The transformations we have performed are as follows:
 \begin{enumerate}
+
+\item No optimisation: the vanilla \psykal\ version of the code;
 
 \item Specify array bounds in the middle layer using module variables
   (rather than using assumed-size array arguments);
@@ -378,9 +380,9 @@ blocking factor of four (IBM supplied);
 
 \end{enumerate}
 
-As indicated above, the last two of these transformations were
+As indicated above, transformations 10 and 11 were
 suggested by the IBM compiler team. The second of these effectively
-undoes our 3rd transformation by fissioning the first loop nest back
+undoes transformation four by fissioning the first loop nest back
 into three separate loop nests.
 
 We shall see that these transformations do not always result in
