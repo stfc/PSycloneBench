@@ -203,7 +203,9 @@ General comments / suggestions
 
 > 1) There seems to be no preprint available yet for reference [2]
 
-RUPERT/GRAHAM
+This is correct. The paper referred to has been accepted for publication
+but we are awaiting notification from the publisher as to when
+it will actually appear.
 
 > 2) Figure 2/3: A better visual grouping of the bars by platform and
 > compiler e.g. by using colour to differentiate compilers and hatching
