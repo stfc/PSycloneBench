@@ -41,6 +41,11 @@ psy.f90: nemolite2d_gen.f90
 psy_omp.f90: nemolite2d_alg.f90 nemolite2d_omp_transform.py
 	python nemolite2d_omp_transform.py > psy_omp.f90
 
+# psy_acc.f90 is the same PSy layer but with OpenACC transformations
+# applied to it.
+psy_acc.f90: nemolite2d_alg.f90 nemolite2d_acc_transform.py
+	python ${PSYCLONE}/src/generator.py -api gocean1.0 nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 -opsy psy_acc.f90 -s nemolite2d_acc_transform.py
+
 # The generated code depends on the generated Psy middle-layer
 nemolite2d_gen:
 	${MAKE} MODULE_LIST="nemolite2d_gen.o psy.o infrastructure_mod.o ${COMMON_MODULES}" nemolite2d_gen.exe
@@ -50,7 +55,12 @@ nemolite2d_gen_omp:
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_omp.exe
 
-# Out module providing fake infrastructure kernels is in the API directory
+nemolite2d_gen_acc:
+	${MAKE} MODULE_LIST="nemolite2d_gen.o psy_acc.o infrastructure_mod.o ${COMMON_MODULES}" \
+             F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_acc.exe
+
+# Our module providing fake infrastructure kernels is in the API directory
 # but we need it to be in the same directory as all of the other kernel
 # files.
 infrastructure_mod.f90:
