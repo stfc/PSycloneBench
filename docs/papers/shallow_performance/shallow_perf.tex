@@ -64,13 +64,15 @@ for the IBM compiler on Power8.
 Results show that the combined set of code modifications obtain
 performance that is within a few percent of the original code for all
 compiler and architecture combinations on all tested problem
-sizes. The only exception to this (other than where we see significant
-speed-ups) is the Gnu compiler on Haswell for one problem size. Our
+sizes. The only exception to this (other than where we see performance
+improvement) is the Gnu compiler on Haswell for one problem size. Our
 tests indicate that this may be due to immature support for that
 architecture in the Gnu compiler -- no such problem is seen on the Ivy
-Bridge system.
+Bridge system. Further, the original code performed poorly using the
+IBM compiler on Power8 and needed to be modified to obtain performant
+code.
 %%
-Therefore, the \psykal\ approach can be used with negligable
+Therefore, the \psykal\ approach can be used with negligible
 performance loss and sometimes small performance gains compared to the
 original optimised code, there is no single best hand optimised
 implementation of the code for all the compilers tested, and the
@@ -124,7 +126,17 @@ developed in the GungHo project~\cite{GungHo}, which is creating a new
 Dynamical core for the Met Office, and its design has been influenced
 by earlier work on OP2~\cite{OP2,PYOP2}.
 
-While this approach is general, we are currently applying it to
+In common with OP2, the \psykal approach separates out the science
+code and the performance related code and does this via a separate
+layer. The calls that specify parallelism in both approaches are
+similar in terms of where they are placed in the code and in their
+semantics but the \psykal approach supports the specification of more
+than one Kernel in a parallel region of code, compared with one for
+OP2, giving more scope for optimisation. Another difference is that
+the description metadata is provided with the Kernel in the \psykal
+approach whereas it is provided as part of the Kernel call in OP2.
+
+While the \psykal approach is general, we are currently applying it to
 Atmosphere and Ocean models written in Fortran where domain
 decomposition is typically performed in the latitude-longitude
 direction, leaving columns of elements on each domain-decomposed
@@ -134,9 +146,9 @@ The top layer, in terms of calling hierarchy, is the Algorithm
 layer. This layer specifies the algorithm that the scientist would like
 to perform (in terms of calls to kernel and infrastructure routines)
 and logically operates on full fields. We say logically here as the
-fields may be domain decomposed, however the algorithm layer is not
+fields may be domain decomposed, however the Algorithm layer is not
 aware of this. It is the scientist's responsibility to write this
-algorithm layer.
+Algorithm layer.
 
 The bottom layer, in terms of calling hierarchy, is the Kernel
 layer. The Kernel layer implements the science that the Algorithm
@@ -165,7 +177,7 @@ iteration space can also be optimised and parallelised. The PSy layer
 can therefore be tailored for a particular hardware (such as
 multi-core, many-core, GPGPUs, or some combination thereof) and
 software (such as compiler, operating system, MPI implementation)
-configuration with no change to the algorithm or kernel layer
+configuration with no change to the Algorithm or Kernel layer
 code. This approach therefore offers the potential for portable
 performance.
 
@@ -185,7 +197,7 @@ with many scientific codes, it has subsequently undergone some sort of
 evolutionary development with subsequent people making various changes
 and optimising it for previous generations of hardware.  There is no
 complete record of the people involved and the precise hardware they
-were targetting. In describing our work, we term the version of the
+were targeting. In describing our work, we term the version of the
 Shallow program obtained at the beginning of this project the
 `original' version.
 
@@ -214,10 +226,10 @@ point (since we have chosen to use point-wise kernels). With a little
 bit of tidying/re-structuring, we found it was possible to express the
 contents of the main time-stepping loop as a single invoke (a call to
 the PSy layer) and a call to the I/O system
-(Figure~\ref{FIG_psykal_shallow_structure}). The single PSy-layer
+(Figure~\ref{FIG_psykal_shallow_structure}). The single PSy layer
 routine then consists of applying each of the kernels to all of the
 points on the model mesh requiring an update. In its basic,
-unoptimised (`vanilla') form, this PSy-layer routine then contains a
+unoptimised (`vanilla') form, this PSy layer routine then contains a
 doubly-nested loop around each kernel call, as indicated by the
 pseudo-code in Figure~\ref{FIG_psykal_shallow_structure}.
 
@@ -236,7 +248,7 @@ rows/columns at the edges of the domain and ensuring the data in them
 is up-to-date before it is read. These rows/columns are updated by
 copying data from the corresponding row/column on the opposite side of
 the domain. In the current work, the lines of code to do these copies
-are manually inserted in the PSy-layer routine as required.
+are manually inserted in the PSy layer routine as required.
 
 Excluding the application of boundary conditions, the code has three
 main sections: computation of mass fluxes, vorticity and sea-surface
@@ -272,7 +284,7 @@ LLC. The cores on the system we used had a clock speed of 3.3~GHz.
 \renewcommand{\arraystretch}{1.3}
 \caption{The matrix of compilers and CPUs used in this work. The use
   of a compiler on a given CPU is indicated by the specification of
-  the version of the compiler in the relevent element. No entry
+  the version of the compiler in the relevant element. No entry
   indicates that a compiler was not available/used on that CPU.}
 \label{TABLE_compilers}
 \centering
@@ -329,13 +341,13 @@ lower bounds, respectively, on the performance we expect to achieve.
 Beginning with the vanilla \psykal\ version, we then manually apply a
 series of (cumulative) code transformations while obeying the \psykal\ 
 separation of concerns, {\it i.e.} optimisation is restricted to the
-middle, {PS}y layer and leaves the kernel and algorithm layers
+middle, {PS}y layer and leaves the Kernel and Algorithm layers
 unchanged. The aim of these optimisations is to recover, as much as is
 possible, the structure and thus performance of the original version
 of the code. We began with two transformations that affect all of the
 kernels. After this, we determined the transformations to perform by
 comparing the timing profiles of the \psykal\ and original versions of
-the code. We then tackled the sections resposible for the largest
+the code. We then tackled the sections responsible for the largest
 slowdowns and iterated this process. While doing this we also made
 heavy use of the optimisation reports produced by the compilers and
 how these changed when moving from the original to the \psykal\ version
@@ -363,7 +375,7 @@ of the code. The transformations we have performed are as follows:
 \item Loop fuse the three field-copy operations with the
   time-smoothing loop nest;
 
-\item Manually in-line all kernel bodies into the middle-layer
+\item Manually in-line all kernel bodies into the middle layer
   subroutine (kernel inlining);
 
 \item Fully fuse the first loop nest (only the outer loop of this loop
@@ -465,7 +477,7 @@ since this fits within LLC on all of the CPUs we are using here.  The
 performance of the \psykal\ version after each transformation has been
 manually applied to the code is plotted in
 Figure~\ref{FIG_opt_stages_256}. Results for a given compiler/CPU are
-given relative to the performance of the original version of Shallow
+presented relative to the performance of the original version of Shallow
 with the same compiler/CPU.
 
 \begin{figure}[!t]
@@ -489,7 +501,7 @@ most dramatic effect on the performance of the compiled code; it now
 achieves more than 80\% of the performance of the original. The
 transformation(s) required to get more than 90\% then become
 architecture dependent: on Haswell it is just loop fusion (T4) while on Ivy
-Bridge we do not exceed 90\% until we have done all of the steps up to
+Bridge we do not exceed 90\% until we have applied all of the steps up to
 and including T8; fully fusing (fusing the inner loops of)
 the first loop nest. The dramatic performance improvement obtained
 from the module-inlining (T3) demonstrates that the Gnu
@@ -543,7 +555,7 @@ the Cray compiler. Again, this has significant differences from the
 behaviour seen with the Gnu and Intel compilers. As with the Intel
 compiler, the performance of the Vanilla \psykal\ version, T1,  is fairly
 good at 74\% of that of the original. In contrast to the other
-compilers consisdered so far, the first significant transformation is
+compilers considered so far, the first significant transformation is
 simply to specify the bounds of the arrays being used within the
 middle layer using module variables (as opposed to specifying them as
 assumed size). This tells the compiler that all of the arrays used in
@@ -554,7 +566,7 @@ performance of the original.
 
 Subsequent transformations actually harm performance until T6 where
 the field-copy operation (lower loop in
-Figure~\ref{FIG_time_smooth_code}) is fused with the preceeding
+Figure~\ref{FIG_time_smooth_code}) is fused with the preceding
 loop. The resulting \psykal\ version now achieves 94\% of the original
 performance. Two further steps are required to match the latter: the
 first loop nest is fully fused (T8 - both inner and outer loops fused)
@@ -583,7 +595,7 @@ compiler.
 \subsection{Performance Comparison of the Original and \psykal\ Versions}
 
 Finally, we compare the performance of the best \psykal\ version of
-Shallow with that of the original. In
+Shallow with that of the original for different problem sizes. In
 Figure~\ref{FIG_slowdown_summary} we plot the percentage
   difference between the performance of the original and the (best)
 \psykal\ versions of Shallow for each compiler/CPU combination. The
@@ -620,13 +632,13 @@ Turning to the cases where the \psykal\ version is significantly
 Figure~\ref{FIG_slowdown_summary} that, with the exception of Power 8,
 this only occurs for the smallest domain size. This is no doubt due in
 part to the fact that the problem executes very quickly and therefore
-a small reduction in run-time will show as a large precentage. Since
+a small reduction in run-time will show as a large percentage. Since
 this problem is well contained in L2 cache, its performance will also
 be more sensitive to small differences, {\it e.g.} in the way that CPU
 registers are used. 
 
 The performance of the Power 8 system with the $512^2$ domain size is
-somewhat anomolous: the \psykal\ version of the code performs
+somewhat anomalous: the \psykal\ version of the code performs
 significantly better than the original and in addition, this problem
 size is also the only one where the Power 8 out-performs the Haswell
 system (see Figure~\ref{FIG_orig_perf_summary}) for the original
@@ -665,19 +677,16 @@ cases, despite limiting ourselves to transformations which replicate
 the structure of the optimised code, result in slightly improved
 performance.
 
-In particular, the results on the IBM system demonstrate two key points.
+More unpredictably, the code structure required to obtain good
+performance for different architecture and/or compiler combinations
+differs, even for this relatively simple benchmark code. For hand
+optimised codes this implies the need to support multiple code bases
+in order to achieve portable performance.
 %
-First, even for a relatively simple
-benchmark code, the code structure required to obtain good performance
-between different architecture and/or compiler combinations may
-differ. For hand optimised codes this implies the need to support
-multiple code bases in order to achieve portable performance.
-%
-Second, the \psykal\ approach directly addresses the problem of
-requiring different optimisations for different architectures and/or
-compilers by limiting these differences to a separate performance
-layer, thereby allowing the natural science code base to remain
-unchanged.
+The \psykal\ approach directly addresses the problem of requiring
+different optimisations for different architectures and/or compilers
+by limiting these differences to a separate performance layer, thereby
+allowing the natural science code base to remain unchanged.
 
 In future work we will extend our performance portability analysis of
 the \psykal\ approach to shared memory parallelisation optimisations on
@@ -686,12 +695,12 @@ particular OpenMP on multi/many-core and OpenACC on GPU's).
 %
 We will then analyse the performance of a domain-specific compiler
 that is currently under development. This compiler will generate
-optimised PSy-layer code using a user-provided recipe of
+optimised PSy layer code using a user-provided recipe of
 transformations, thereby removing the need for optimisation experts to
 manually write the PSy layer.
 
 % use section* for acknowledgement
-\section*{Acknowledgments}
+\section*{Acknowledgements}
 
 This work made use of the ARCHER UK National Supercomputing Service
 (\url{http://www.archer.ac.uk}). We acknowledge use of the Hartree
