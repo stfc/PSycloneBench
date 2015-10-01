@@ -127,14 +127,14 @@ Dynamical core for the Met Office, and its design has been influenced
 by earlier work on OP2~\cite{OP2,PYOP2}.
 
 In common with OP2, the \psykal\ approach separates out the science
-code and the performance related code and does this via a separate
-layer. The calls that specify parallelism in both approaches are
-similar in terms of where they are placed in the code and in their
-semantics but the \psykal\ approach supports the specification of more
-than one Kernel in a parallel region of code, compared with one for
-OP2, giving more scope for optimisation. Another difference is that
-the description metadata is provided with the Kernel in the \psykal\
-approach whereas it is provided as part of the Kernel call in OP2.
+code and the performance related code via separate layers. The calls
+that specify parallelism in both approaches are similar in terms of
+where they are placed in the code and in their semantics but the
+\psykal\ approach supports the specification of more than one kernel
+in a parallel region of code, compared with one for OP2, giving more
+scope for optimisation. Another difference is that the description
+metadata is provided with a kernel in the \psykal\ approach whereas it
+is provided as part of the kernel call in OP2.
 
 While the \psykal\ approach is general, we are currently applying it to
 Atmosphere and Ocean models written in Fortran where domain
