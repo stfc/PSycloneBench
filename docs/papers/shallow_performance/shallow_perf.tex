@@ -52,7 +52,7 @@ their science independently of the underlying hardware architecture
 to be able to tailor the code for a particular machine independently
 of the science code.
 %
-A finite difference shallow water benchmark optimised for cache based
+A finite difference shallow water benchmark optimised for cache-based
 architectures is taken as the starting point. A vanilla \psykal\ version
 is written and the performance of the two compared. The optimisations
 that were applied to the original benchmark (loop fusion {\it etc.}) are then
@@ -74,11 +74,9 @@ code.
 %%
 Therefore, the \psykal\ approach can be used with negligible
 performance loss and sometimes small performance gains compared to the
-original optimised code, there is no single best hand optimised
-implementation of the code for all the compilers tested, and the
-flexibility in applying code modifications to the optimisation layer
-in the \psykal\ version allows for a significant performance improvement
-on the IBM Power8 compared with the original code.
+original optimised code. We also find that there is no single best
+hand-optimised implementation of the code for all of the compilers
+tested.
 
 \end{abstract}
 
@@ -111,7 +109,7 @@ maintenance and code development, in part because two specialisms are
 required: that of the scientific domain which a code is modelling
 ({\it e.g.} oceanography) and that of computational science. The
 situation is currently complicated still further by the existence of
-competing hardware technology; if one was to begin writing a major
+competing hardware technology; if one were to begin writing a major
 scientific application today it is unclear whether one would target
 GPU, Xeon Phi, traditional CPU, FPGA or something else entirely. This
 is a problem because, generally speaking, these different technologies
@@ -127,9 +125,9 @@ Dynamical core for the Met Office, and its design has been influenced
 by earlier work on OP2~\cite{OP2,PYOP2}.
 
 In common with OP2, the \psykal\ approach separates out the science
-code and the performance related code via separate layers. The calls
+code and the performance-related code into distinct layers. The calls
 that specify parallelism in both approaches are similar in terms of
-where they are placed in the code and in their semantics but the
+where they are placed in the code and in their semantics. However, the
 \psykal\ approach supports the specification of more than one kernel
 in a parallel region of code, compared with one for OP2, giving more
 scope for optimisation. Another difference is that the description
@@ -173,7 +171,7 @@ reductions.
 As the PSy layer iterates over columns, the single core performance
 can be optimised by applying transformations such as loop fusion and
 loop blocking. Additionally, the potential parallelism within this
-iteration space can also be optimised and parallelised. The PSy layer
+iteration space can also be exploited and optimised. The PSy layer
 can therefore be tailored for a particular hardware (such as
 multi-core, many-core, GPGPUs, or some combination thereof) and
 software (such as compiler, operating system, MPI implementation)
@@ -199,7 +197,8 @@ and optimising it for previous generations of hardware.  There is no
 complete record of the people involved and the precise hardware they
 were targeting. In describing our work, we term the version of the
 Shallow program obtained at the beginning of this project the
-`original' version.
+`original' version. This code is available as part of version 1.0 of
+the GOcean benchmark (\url{https://puma.nerc.ac.uk/trac/GOcean}).
 
 Shallow is a very good test case for our purposes since the original
 version is short (some 600 lines) and contained within a single source
@@ -695,7 +694,7 @@ particular OpenMP on multi/many-core and OpenACC on GPU's).
 %
 We will then analyse the performance of a domain-specific compiler
 that is currently under development. This compiler will generate
-optimised PSy layer code using a user-provided recipe of
+optimised PSy layer code by following a user-provided recipe of
 transformations, thereby removing the need for optimisation experts to
 manually write the PSy layer.
 
@@ -712,9 +711,7 @@ generation software, optimised to take advantage of the move towards
 exa-scale computing. This work was funded by the NERC `GOcean' project,
 grant number NE/L012111/1.
 
-% http://www.ctan.org/tex-archive/biblio/bibtex/contrib/doc/
 \bibliographystyle{unsrt}
-% argument is your BibTeX string definitions and bibliography database(s)
 \bibliography{shallow_perf}
 %
 \end{document}
