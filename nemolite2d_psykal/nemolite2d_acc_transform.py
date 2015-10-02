@@ -2,8 +2,10 @@
 # before generating the PSy layer Fortran code.
 
 def trans(psy):
-    from transformations import OpenACCParallelTrans
+    from transformations import OpenACCParallelTrans, \
+        OpenACCDataTrans
     atrans = OpenACCParallelTrans()
+    dtrans = OpenACCDataTrans()
 
     invoke = psy.invokes.get('invoke_0')
     schedule = invoke.schedule
@@ -12,9 +14,13 @@ def trans(psy):
 
     # Apply the OpenMP Loop transformation to *every* loop 
     # in the schedule
+    from psyGen import Loop
     for child in schedule.children:
-        newschedule,memento=atrans.apply(child)
-        schedule = newschedule
+        if isinstance(child, Loop):
+            newschedule, memento = atrans.apply(child)
+            schedule = newschedule
+
+    newschedule, memento = dtrans.apply(schedule)
 
     invoke.schedule = newschedule
     newschedule.view()
