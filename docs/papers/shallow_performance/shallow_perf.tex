@@ -53,13 +53,14 @@ to be able to tailor the code for a particular machine independently
 of the science code.
 %
 A finite difference shallow water benchmark optimised for cache-based
-architectures is taken as the starting point. A vanilla \psykal\ version
-is written and the performance of the two compared. The optimisations
-that were applied to the original benchmark (loop fusion {\it etc.}) are then
-applied to the \psykal\ version as a set of code modifications to the
-optimisation layer. Performance results are presented for the Cray,
-Intel and GNU compilers on Intel Ivybridge and Haswell processors and
-for the IBM compiler on Power8.
+architectures is taken as the starting point. A vanilla
+\psykal\ version is written and the performance of the two
+compared. The optimisations that were applied to the original
+benchmark (loop fusion {\it etc.}) are then manually applied to the
+\psykal\ version as a set of code modifications to the optimisation
+layer. Performance results are presented for the Cray, Intel and GNU
+compilers on Intel Ivybridge and Haswell processors and for the IBM
+compiler on Power8.
 %
 Results show that the combined set of code modifications obtain
 performance that is within a few percent of the original code for all
@@ -157,7 +158,9 @@ elements, or a set of columns.). Again the scientist is responsible
 for writing this layer and there is no parallelism specified here,
 but, depending on the complexity of the Kernels, there may be input
 from an HPC expert and/or some coding rules to help ensure the kernels
-compile into efficient code.
+compile into efficient code.  In an alternative approach, kernels are
+generated from a high-level specification~\cite{firedrake,fenics},
+potentially allowing them to be optimised automatically~\cite{coffee}.
 
 The PSy layer sits in-between the Algorithm and Kernel layers and its
 functional role is to link the algorithm calls to the associated
@@ -171,13 +174,14 @@ reductions.
 As the PSy layer iterates over columns, the single core performance
 can be optimised by applying transformations such as loop fusion and
 loop blocking. Additionally, the potential parallelism within this
-iteration space can also be exploited and optimised. The PSy layer
-can therefore be tailored for a particular hardware (such as
-multi-core, many-core, GPGPUs, or some combination thereof) and
-software (such as compiler, operating system, MPI implementation)
-configuration with no change to the Algorithm or Kernel layer
-code. This approach therefore offers the potential for portable
-performance.
+iteration space can also be exploited and optimised. The PSy layer can
+therefore be tailored for a particular hardware (such as multi-core,
+many-core, GPGPUs, or some combination thereof) and software (such as
+compiler, operating system, MPI implementation) configuration with no
+change to the Algorithm or Kernel layer code. This approach therefore
+offers the potential for portable performance. In this work we apply
+optimisations to the PSy layer manually. The development of a tool to
+automate this process will be the subject of a future paper.
 
 Clearly the separation of code into distinct layers may have an effect
 on performance. This overhead, how to get back to the performance
@@ -254,8 +258,8 @@ main sections: computation of mass fluxes, vorticity and sea-surface
 height; computation of the pressure and velocity components; and
 finally, smoothing of the fields in time and copying of the field
 values at the next time-step to be those at the current
-time-step. Profiling of the original code showed that these 
-sections each account for approximately one third of the run-time.
+time-step. Profiling the original code showed that these 
+sections each account for around one third of the run-time.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methodology}
@@ -392,19 +396,27 @@ blocking factor of four (IBM supplied);
 
 \end{list}
 
-As indicated above, transformations T10 and T11 were
-suggested by the IBM compiler team. The second of these effectively
-undoes transformation four by fissioning the first loop nest back
-into three separate loop nests.
+As indicated above, transformations T10 and T11 were suggested by the
+IBM compiler team. The second of these effectively undoes
+transformation four by fissioning the first loop nest back into three
+separate loop nests. Note that this sequence of transformations is
+specific to Shallow: we are currently working upon a code-generation
+system that will allow a user to choose from a menu of transformations
+when optimising a PSy layer and this will be the subject of a future
+paper.
 
-We shall see that these transformations do not always result in
+We shall see that the transformations T1--T11 do not always result in
 improved performance. Whether or not they do so depends both on the
 compiler and the problem size. We also emphasise that the aim of these
 optimisations is typically to recover, as far as is possible, the
-structure of the original version of the code. It may well be that
-transforming the code into some other structure would result in better
-performance on a particular architecture. However, exploring this
-optimisation space is beyond the scope of the present work.
+structure of the original version of the code.  Therefore this
+sequence of transformations is specific to Shallow. It may well be
+that transforming the code into some other structure would result in
+better performance on a particular architecture. However, exploring
+this optimisation space is beyond the scope of the present work.  We
+are currently developing a code-generation system that will allow a
+user to choose from a menu of transformations when optimising a PSy
+layer and this will be the subject of a future paper.
 
 We explore the extent to which performance depends upon the problem
 size by using square domains with side lengths of 64, 128, 256, 512 and
@@ -448,14 +460,13 @@ it relatively insensitive to the choice of compiler.
 Strangely, the third bar (Gnu compiler) in
 Figure~\ref{FIG_orig_perf_summary} shows the same drop in performance
 in moving from the $256^2$ case to the $512^2$ case, despite the
-larger LLC of the Ivy Bridge system. In order to investigate this
-further, we profiled the application to obtain hardware performance
-counter data for the Gnu- and Intel-compiled executables. This
-revealed that the Gnu-compiled executable made more references to
-memory and had a higher LLC miss-rate compared with the Intel binary.
-We conclude that the Gnu compiler is not utilising registers as
-efficiently as the Intel compiler and that this results in greater
-memory traffic.
+larger LLC of the Ivy Bridge system. In order to investigate this, we
+profiled the application to obtain hardware performance counter data
+for the Gnu- and Intel-compiled executables. This revealed that the
+Gnu-compiled executable made more references to memory and had a
+higher LLC miss-rate compared with the Intel binary.  We conclude that
+the Gnu compiler is not utilising registers as efficiently as the
+Intel compiler and that this results in greater memory traffic.
 
 For this compiler-friendly form of the code, there is generally little
 performance difference between the executables produced by the Gnu and
@@ -702,14 +713,13 @@ manually write the PSy layer.
 \section*{Acknowledgements}
 
 This work made use of the ARCHER UK National Supercomputing Service
-(\url{http://www.archer.ac.uk}). We acknowledge use of the Hartree
-Centre IBM Power 8 system in this work. The STFC Hartree Centre is a
-research collaboratory in association with IBM providing High
-Performance Computing platforms funded by the UK's investment in
-e-Infrastructure. The Centre aims to develop and demonstrate next
-generation software, optimised to take advantage of the move towards
-exa-scale computing. This work was funded by the NERC `GOcean' project,
-grant number NE/L012111/1.
+(\url{http://www.archer.ac.uk}) and the Hartree Centre IBM Power 8
+system. The STFC Hartree Centre is a research collaboratory in
+association with IBM providing HPC platforms funded by the UK's
+investment in e-Infrastructure. The Centre aims to develop and
+demonstrate next generation software, optimised for
+the move towards exa-scale computing. This work was funded by the NERC
+`GOcean' project, grant number NE/L012111/1.
 
 \bibliographystyle{unsrt}
 \bibliography{shallow_perf}
