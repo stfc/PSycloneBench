@@ -741,8 +741,8 @@ CONTAINS
           ! output model results
           CHARACTER(len=5) :: fname
           WRITE(fname, '(I5.5)') istp
-          OPEN(1, file='go2d_'//fname//'.dat', STATUS='UNKNOWN')
-          !OPEN(1, file='go2d_'//fname//'.csv', STATUS='UNKNOWN')
+          !OPEN(1, file='go2d_'//fname//'.dat', STATUS='UNKNOWN')
+          OPEN(1, file='go2d_'//fname//'.csv', STATUS='UNKNOWN')
           REWIND(1)
 
           DO jj = 1, jpj
@@ -753,8 +753,8 @@ CONTAINS
               ! write "x-coord, y-coord, depth, ssh, u-velocity, v-velocity" to ASCII files
 
               !WRITE(1,'(2f20.3, 2f15.4, 2e18.3)')  &            
-              !WRITE(1,'(f20.3,'','',f20.3,'','',f15.4,'','',f15.4,'','',f18.3,'','',f18.3)') &
-              write(1,*) &
+              WRITE(1,'(f20.3,'','',f20.3,'','',f15.4,'','',f15.4,'','',f18.3,'','',f18.3)') &
+              !write(1,*) &
                    & xt(ji,jj), yt(ji,jj), ht(ji,jj), sshn(ji,jj),rtmp1, rtmp2 
             END DO
             WRITE(1,*)
