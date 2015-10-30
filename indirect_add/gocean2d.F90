@@ -51,6 +51,9 @@
          INTEGER  :: itmp1, itmp2, itmp3, itmp4, itmp5, itmp6               !integer temporary variables
          REAL(wp) :: rtmp1, rtmp2, rtmp3, rtmp4, rtmp5, rtmp6               !real    temporary variables 
 
+         real ::  beg_cpu_time, end_cpu_time
+         call cpu_time (beg_cpu_time)
+         write (*, *) end_cpu_time - beg_cpu_time
 
          !! read in model parameters
          CALL setup
@@ -63,12 +66,15 @@
 
          !! time stepping 
          DO istp = nit000, nitend, 1
-           print*, 'istp == ', istp
+           IF(mod(istp, 3600)==0) print*, 'istp == ', istp
            CALL step
          END DO
 
          !! finalise the model run
          CALL finalisation
+
+         call cpu_time (end_cpu_time)
+         WRITE(*,*) 'cpu_time from: ', beg_cpu_time, '---->',end_cpu_time
 
          WRITE(*,*) 'Simulation finished!!'
 !-----------------------------------
@@ -708,7 +714,7 @@ CONTAINS
             itmp2 = vt_s(ji)
             IF(itmp1 * itmp2 > 0) THEN
               rtmp1 = e1e2t(itmp1) * sshn(itmp1) + e1e2t(itmp2) * sshn(itmp2)
-              sshn_v(ji) = 0.5_wp * rtmp1 / e1e2u(ji) 
+              sshn_v(ji) = 0.5_wp * rtmp1 / e1e2v(ji) 
             END IF
 
             IF(itmp1 <= 0) THEN
