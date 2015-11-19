@@ -1,7 +1,11 @@
-# Python script which uses PSyclone to apply transformations
-# before generating the PSy layer Fortran code.
+
+'''Python script intended to be passed to PSyclone's generate()
+funcation via the -s option. Performs OpenACC transformations. '''
+
 
 def trans(psy):
+    ''' Take the supplied psy object, apply OpenACC transformations
+    to the schedule of invoke_0 and return the new psy object '''
     from transformations import OpenACCParallelTrans, \
         OpenACCDataTrans
     atrans = OpenACCParallelTrans()
@@ -9,31 +13,34 @@ def trans(psy):
 
     invoke = psy.invokes.get('invoke_0')
     schedule = invoke.schedule
-    #schedule.view()
-    new_schedule=schedule
+    # schedule.view()
 
-    # Apply the OpenMP Loop transformation to *every* loop 
+    # Apply the OpenMP Loop transformation to *every* loop
     # in the schedule
     from psyGen import Loop
     for child in schedule.children:
         if isinstance(child, Loop):
-            newschedule, memento = atrans.apply(child)
+            newschedule, _ = atrans.apply(child)
             schedule = newschedule
 
-    newschedule, memento = dtrans.apply(schedule)
+    newschedule, _ = dtrans.apply(schedule)
 
     invoke.schedule = newschedule
     newschedule.view()
     return psy
 
-from parse import parse,ParseError
-from psyGen import PSyFactory,GenerationError
-api="gocean1.0"
-filename="nemolite2d_alg.f90"
-ast,invokeInfo=parse(filename,api=api,invoke_name="invoke")
-psy=PSyFactory(api).create(invokeInfo)
-#print psy.invokes.names
 
-new_psy = trans(psy)
+if __name__ == "__main__":
+    from parse import parse
+    from psyGen import PSyFactory
+    API = "gocean1.0"
+    FILENAME = "nemolite2d_alg.f90"
+    _, INVOKEINFO = parse(FILENAME,
+                          api=API,
+                          invoke_name="invoke")
+    PSY = PSyFactory(API).create(INVOKEINFO)
+    # print PSY.invokes.names
 
-print new_psy.gen
+    NEW_PSY = trans(PSY)
+
+    print NEW_PSY.gen
