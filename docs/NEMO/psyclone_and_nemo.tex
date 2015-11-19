@@ -1,10 +1,11 @@
 \documentclass{article}
 
 \newcommand{\psykal}{{PS}y{KA}l}
+\newcommand{\psyclone}{{PS}yclone}
 
 \begin{document}
 
-\title{Would NEMO benefit from using the PSyclone system?}
+\title{Would NEMO benefit from using the \psyclone\ system?}
 
 \author{A. R. Porter and R. W. Ford and T. Graham and M. Bell}
 
@@ -13,49 +14,96 @@
 \section{Introduction}
 
 This report describes the outcomes of an initial meeting looking at
-the possible use of the PSyclone code-generation system with the NEMO
+the possible use of the \psyclone\ code-generation system with the NEMO
 ocean model.
 
-Fundamental to the use of PSyclone is the \psykal\ (Parallel System,
+Fundamental to the use of \psyclone\ is the \psykal\ (Parallel System,
 Kernel, Algorithm) separation of concerns. In this approach a program
-is re-structured into three layers; the Algorithm, PSy and Kernel layers.
-The Algorithm and Kernel layers are the responsibility of the natural
- scientist while all code related to parallelism is contained within the
-PSy layer.
+is re-structured into three layers; the Algorithm, PSy and Kernel
+layers.  The Algorithm and Kernel layers are the responsibility of the
+natural scientist while all code related to parallelism is contained
+within the PSy layer. Thus the scientist does not need to concern
+themselves with optimisation issues, such as loop fusion, redundant
+computation in halos, etc. and parallelism issues, such as placement
+of directives and halo swap calls.
 
-PSyclone is currently being developed as part of the GungHo project
+
+The role of \psyclone\ is to generate the PSy layer (and modify the
+Algorithm layer). This role is split into two parts: correctness and
+performance. The correctness aspect of \psyclone\ is often underplayed
+but there are potentially significant maintenance benefits in this
+approach. For example, the horizontal iteration space, ji and jj (and
+potentially the vertical iteration space), is generated in the PSy
+layer which can help avoid indexing errors.
+
+\psyclone\ has been designed from the ground up with performance and
+performance portability in mind. Rather than automatically optimising
+code, as compilers do, \psyclone\ allows an optimisation expert to
+specify a set of optimisations in a script, which it then applies to
+the code. The \psykal separation of concerns can be considered a
+stripping back of many of the optimisations that have been hard coded
+into a program and \psyclone\ then allows such optimisations to be
+specified in a script via a set of transformations (a recipe of
+transformations if you like) to apply to the code. This hopefully
+means that there is no (or at least minimal) loss in performance
+compared to hand optimised code when using \psyclone.
+
+The advantage of a recipe is that it can be changed, {\bf with no
+  change to the science code}. Thus, for example, one recipe could
+target MPI and OpenMP using the Intel compiler on a Cray with a
+particular configuration of NEMO. Another recipe could target MPI and
+OpenACC using the PGI compiler on GPU's for a different NEMO
+configuration. One of the problems with performance portability is
+that optimisations for one architecture are not necessarily beneficial
+for another. It is difficult enough to get different versions of the
+same compiler on the same architecture to work well on a complex code
+without changes to source code. If such optimisations are hard coded
+then it is very difficult to change the code to work well on another
+architecture and almost impossible to have performance portability
+with a single code base. \psyclone\ aims to address this problem.
+
+\psyclone\ is currently being developed as part of the GungHo project
 and forms a component of the Dynamo (the prototype dynamical core)
-build system. Dynamo uses Finite Elements on a grid that is formally
+build system. \psyclone\ can currently generate correct sequential code
+for Dynamo and supports transformations such as loop colouring, loop
+fusion, OpenMP and module inlining. We are currently working
+on OpenACC transformations and are about to start work on MPI support.
+
+Dynamo uses Finite Elements on a grid that is formally
 unstructured in the horizontal but structured in the vertical.  In
 contrast, NEMO uses Finite Difference on a (tri-polar) regular,
 latitude-longitude grid.
 
 In the GOcean2D project we investigated the use of the \psykal\ and
-PSyclone approach for models using a finite-difference scheme on a
+\psyclone\ approach for models using a finite-difference scheme on a
 regular lat-lon grid. For this work we took two different
 shallow-water models, one of which was the 2D, free-surface component
-of NEMO. After restructuring these programs according to the \psykal\
-separation of concerns we were able to show that the performance of
-the original code could be recovered with optimisations restricted to
-the PSy layer.
+of NEMO. After restructuring these programs according to the
+\psykal\ separation of concerns we were able to show that the
+performance of the original code could be recovered with optimisations
+restricted to the PSy layer. We also demonstrated that this code could
+run efficiently on multi-core architectures using OpenMP directives
+and GPU architectures using OpenACC, again with optimisations
+restricted to the PSy layer.
 
-The question now is, would this approach be valuable for the full NEMO
-code?  Key to this is the fact that the full NEMO code is a
-combination of both 3D and 2D components and thus we have to decide
-how the loop over levels (the ``k-loop'') might fit within the PSyclone
-framework. In Dynamo this loop over levels is not managed by PSyclone
-but instead is performed within each kernel as a way of amortizing the
-cost of the indirection associated with the unstructured mesh.
+The question now is, would this approach be valuable and applicable
+for the full NEMO code?  Key to this is the fact that the full NEMO
+code is a combination of both 3D and 2D components and thus we have to
+decide how the loop over levels (the ``k-loop'') might fit within the
+\psyclone\ framework. In Dynamo this loop over levels is not managed by
+\psyclone\ but instead is performed within each kernel as a way of
+amortising the cost of the indirection associated with the
+unstructured mesh.
 
 We believe that there are three possible places in which to locate the
-k loop:
+k loop in NEMO:
 
 \begin{enumerate}
 
 \item the Algorithm Layer;
 
 \item the PSy Layer (i.e. make it part of the iteration space managed
-  by PSyclone);
+  by \psyclone);
 
 \item the Kernel Layer.
 
@@ -75,7 +123,7 @@ infer the value of the lower bound of the k-loop around a given kernel
 from a knowledge of the grid-point type of the field being updated by
 a kernel (plus other meta-data describing the kernel). The number of
 exceptions to this must be small if an effective Domain Specific
-Language is to be developed for PSyclone's application to NEMO.
+Language is to be developed for \psyclone\'s application to NEMO.
 
 However, NEMO has had several decades of development and optimisation
 and has thus evolved to make optimal use of the data layout associated
@@ -130,13 +178,13 @@ stride of $jpi*jpj$ resulting in extremely poor cache use and no SIMD
 vectorisation.
 
 We believe therefore that the least intrusive and most performant way
-to introduce PSyclone to NEMO would be option (2). This is dependent
+to introduce \psyclone\ to NEMO would be option (2). This is dependent
 on it being possible to construct a formal description of the majority
 of k loops (i.e. the values to use for the loop bounds) within NEMO.
 
-\section{Incremental introduction of PSyclone to NEMO}
+\section{Incremental introduction of \psyclone\ to NEMO}
 
-One of the key advantages of the PSyclone system is that it is
+One of the key advantages of the \psyclone\ system is that it is
 possible for it to co-exist with existing code structures including
 infrastructure that makes use of MPI.
 
@@ -155,7 +203,7 @@ re-structuring the code are:
   parallelism.
 \end{itemize}
 Initially the PSy layer may be written manually. This will then
-subsequently be used to inform the development of PSyclone to support
+subsequently be used to inform the development of \psyclone\ to support
 NEMO.
 
 \subsection{An example: ldf\_slp\_triad}
@@ -165,17 +213,17 @@ Rupert mocking this up.
 \section{Risks}
 
 Although initial discussions and a code walk through indicate that the
-\psykal/PSyclone approach could be both beneficial and effective for
+\psykal/\psyclone\ approach could be both beneficial and effective for
 NEMO there remain risks. We discuss those here.
 
 \subsection{Tri-diagonal Solves}
 
-If PSyclone is to control the iteration space in $k$ as well as in $i,
+If \psyclone\ is to control the iteration space in $k$ as well as in $i,
 j$ then this assumes that that space is parallelisable. A clear
 exception to this is those routines that perform an implicit solve in
 the vertical dimension (e.g. tra\_zdf\_imp). This results in the need
 to solve a problem with tri-diagonal form. Kernel meta-data will be
-required to identify such cases. Once PSyclone is able to identify
+required to identify such cases. Once \psyclone\ is able to identify
 such kernels we can envisage it generating calls to optimised solver
 routines.
 
@@ -185,7 +233,7 @@ The OBS (Observation) component of NEMO allows prognostic fields to be
 extracted from the model at user-specified geographical locations.  It
 is possible that the looping structure within these routines might be
 difficult to classify in a way that is suitable for treatment with
-PSyclone.
+\psyclone.
 
 \subsection{AGRIF}
 
@@ -196,20 +244,20 @@ source. In the resulting code field objects (Fortran derived types)
 are passed down from the AGRIF infrastructure into wrappers for the
 original NEMO routines.
 
-Since PSyclone too works by reading and modifying/generating Fortran
+Since \psyclone\ too works by reading and modifying/generating Fortran
 source files it is obviously questionable whether it could safely
-inter-operate with AGRIF. However, once PSyclone has generated the PSy
+inter-operate with AGRIF. However, once \psyclone\ has generated the PSy
 layer and re-written the Algorithm layer the resulting source code is
 standard Fortran. Since AGRIF directives
 (e.g. !\$AGRIF\_DO\_NOT\_TREAT) are comments they will remain unchanged
 in both the Algorithm and the Kernels.
 
 The most significant issue is then probably the underlying
-infrastructure.  Both AGRIF and PSyclone normally work with their own
+infrastructure.  Both AGRIF and \psyclone\ normally work with their own
 definitions of field objects rather than raw Fortran arrays. Although
-this is not essential for PSyclone per se (the GOcean 0.1 API for
+this is not essential for \psyclone\ per se (the GOcean 0.1 API for
 instance does not use these field objects) it does present problems
-for its support of MPI. This is because PSyclone requires some way of
+for its support of MPI. This is because \psyclone\ requires some way of
 keeping track of whether a field's halos are `clean' or `dirty' and it
 is natural to encapsulate this within a field object. It is however
 possible to envisage other ways of doing this, e.g. by using the ISO
@@ -220,7 +268,7 @@ and then using this to index into some internal data structure.
 
 NEMO currently makes use of CPP keys to configure the code at compile
 time. Options include e.g. whether to include MPI support and which
-ice model to use. It is likely that PSyclone can safely be applied to
+ice model to use. It is likely that \psyclone\ can safely be applied to
 the code after this pre-processing stage but this must be tested.
 
 \subsection{Tracers}
@@ -232,16 +280,29 @@ species, all of which may be treated independently. This has
 significant implications for both data structures and our ability to
 exploit the additional parallelism that is available.
 
+\section{Index re-reordering}
+
+\psyclone\ does not directly support the idea of re-ordering NEMO's data
+layout. This question has been asked of \psyclone\ before as it is
+thought that i,j,k may work best on some architectures and k,i,j on
+others. However, the separation of science code and optimisations and
+parallelism combined with the separation of the i,j,k looping
+structure from the Kernel science code should make it much more
+tractable to manually evaluate the benefits of data reordering. In
+future work we would be interested in exploring the possibility of
+supporting data re-ordering within \psyclone\ in cases where the PSy
+layer controls the full iteration space.
+
 \section{Suggested workplan - 1 Week}
 
-In this section we consider what might be accomplished by one person
-working intensively with NEMO and PSyclone over the course of one
-week. The aim here would be to address some of the risks identified in
-the previous section. We emphasise that there is no need for PSyclone
-to be able to generate code for NEMO at this stage; all that is
-required is a manual implementation of the \psykal\ separation of
-concerns for at least one routine. For the purposes of testing with
-AGRIF this routine need not be complex. 
+In this section we consider what might be accomplished by two people
+with the required skills working intensively with NEMO and \psyclone\
+over the course of one week. The aim here would be to address some of
+the risks identified in the previous section. We emphasise that there
+is no need for \psyclone\ to be able to generate code for NEMO at this
+stage; all that is required is a manual implementation of the
+\psykal\ separation of concerns for at least one routine. For the
+purposes of testing with AGRIF this routine need not be complex.
 
 The tasks that might be tackled are:
 \begin{enumerate}
@@ -257,22 +318,22 @@ The tasks that might be tackled are:
   to classify/manually re-structure them (1 day).
 
 \item If time allows, examine the use of tracers within NEMO and how
-  this might be supported by PSyclone infrastructure.
+  this might be supported by \psyclone\ infrastructure.
 
 \end{enumerate}
 The first two tasks require a person with both experience of NEMO and
 AGRIF with perhaps some additional support on \psykal\ concepts.  The
-latter tasks call for someone familar with \psykal\ and PSyclone
+latter tasks call for someone familiar with \psykal\ and \psyclone\
 concepts, with input from a NEMO expert.
 
 \section{Suggested workplan - 1 year}
 
 NEMO is a relatively large and complex code with an extensive user
-community. Introducing \psykal/PSyclone to such a code base is not to
+community. Introducing \psykal/\psyclone\ to such a code base is not to
 be undertaken lightly and therefore we suggest an initial project of
 one year duration that would enable a thorough investigation of all
 the issues. The primary aims of such a project would be: to establish
-that the use of PSyclone with NEMO (including AGRIF) is technically
+that the use of \psyclone\ with NEMO (including AGRIF) is technically
 feasible; that the natural scientists are happy with the resulting
 code and that it performs at least as well as the original.
 
@@ -298,7 +359,7 @@ requirement.
 \subsection{WP2: Classify the Types of Iteration Space}
 \label{wp2_classify}
 
-As described earlier, for PSyclone to be useful it must be possible to
+As described earlier, for \psyclone\ to be useful it must be possible to
 classify the types of loop structure in the vast majority of the NEMO
 code base. The routines involved in the selected configurations must
 therefore be identified (e.g. by performing tracing experiments with a
@@ -316,11 +377,11 @@ three-dimensional finite-difference scheme used in NEMO.
 Field objects or arrays?
 
 The existing NEMO code base is already MPI parallel and therefore any
-introduction of PSyclone must work within this framework.
+introduction of \psyclone\ must work within this framework.
 
 The NEMO source code is under almost constant scientific
 development. This must be allowed for in any strategy to introduce
-PSyclone.
+\psyclone.
 
 \subsection{WP4: Tracer Support}
 \label{wp4_tracers}
@@ -333,7 +394,7 @@ includes data structures, infrastructure support and Kernel meta-data.
 \label{wp5_perf}
 
 Performance is a key issue for NEMO and is one of the reasons for
-considering PSyclone -- the resulting code will no longer be
+considering \psyclone\ -- the resulting code will no longer be
 restricted to one particular architecture. However, a key first step
 is to ensure that the introduction of the \psykal\ separation of
 concerns does not harm performance on current machines. Or, if it
@@ -345,26 +406,26 @@ will inform the key routines used to examine this issue. Note that
 this benchmarking must be performed on processor counts typical of
 those used in production runs.
 
-\subsection{WP6: PSyclone support}
+\subsection{WP6: \psyclone\ support}
 \label{wp6_autogen}
 
-PSyclone already contains some support for finite difference in two
+\psyclone\ already contains some support for finite difference in two
 dimensions.  (One of the codes developed as part of the GOcean project
 is based upon the free-surface component of NEMO.) It is therefore
-natural to first introduce PSyclone code-generation to those parts of NEMO
+natural to first introduce \psyclone\ code-generation to those parts of NEMO
 that are two dimensional.
 
 While initial experiments may be performed by manually running
-PSyclone on individual NEMO routines, this process must ultimately be
+\psyclone\ on individual NEMO routines, this process must ultimately be
 made a part of the standard build system. Part of this build system
 involves running the C pre-processor (CPP) over the source since some
 NEMO functionality (e.g. which ice model to use) is chosen at compile
-time through CPP keys. We plan to introduce the PSyclone
+time through CPP keys. We plan to introduce the \psyclone\
 code-generation step after this pre-processing but before AGRIF
 transforms the source.
 
-Once PSyclone is incorporated into the NEMO build system, the next
-stage is to extend the PSyclone API to support 3D parts of NEMO.  This
+Once \psyclone\ is incorporated into the NEMO build system, the next
+stage is to extend the \psyclone\ API to support 3D parts of NEMO.  This
 will require the Kernel meta-data and rules developed under Work
 Package 2.
 
