@@ -40,7 +40,7 @@ layer which can help avoid indexing errors.
 performance portability in mind. Rather than automatically optimising
 code, as compilers do, \psyclone\ allows an optimisation expert to
 specify a set of optimisations in a script, which it then applies to
-the code. The \psykal separation of concerns can be considered a
+the code. The \psykal\ separation of concerns can be considered a
 stripping back of many of the optimisations that have been hard coded
 into a program and \psyclone\ then allows such optimisations to be
 specified in a script via a set of transformations (a recipe of
@@ -123,7 +123,7 @@ infer the value of the lower bound of the k-loop around a given kernel
 from a knowledge of the grid-point type of the field being updated by
 a kernel (plus other meta-data describing the kernel). The number of
 exceptions to this must be small if an effective Domain Specific
-Language is to be developed for \psyclone\'s application to NEMO.
+Language is to be developed for \psyclone's application to NEMO.
 
 However, NEMO has had several decades of development and optimisation
 and has thus evolved to make optimal use of the data layout associated
@@ -280,20 +280,20 @@ species, all of which may be treated independently. This has
 significant implications for both data structures and our ability to
 exploit the additional parallelism that is available.
 
-\section{Index re-reordering}
+\section{Index Re-ordering}
 
 \psyclone\ does not directly support the idea of re-ordering NEMO's data
 layout. This question has been asked of \psyclone\ before as it is
-thought that i,j,k may work best on some architectures and k,i,j on
+thought that $i,j,k$ may work best on some architectures and $k,i,j$ on
 others. However, the separation of science code and optimisations and
-parallelism combined with the separation of the i,j,k looping
+parallelism combined with the separation of the $i,j,k$ looping
 structure from the Kernel science code should make it much more
 tractable to manually evaluate the benefits of data reordering. In
 future work we would be interested in exploring the possibility of
 supporting data re-ordering within \psyclone\ in cases where the PSy
 layer controls the full iteration space.
 
-\section{Suggested workplan - 1 Week}
+\section{Suggested Workplan - 1 Week}
 
 In this section we consider what might be accomplished by two people
 with the required skills working intensively with NEMO and \psyclone\
@@ -326,7 +326,7 @@ AGRIF with perhaps some additional support on \psykal\ concepts.  The
 latter tasks call for someone familiar with \psykal\ and \psyclone\
 concepts, with input from a NEMO expert.
 
-\section{Suggested workplan - 1 year}
+\section{Suggested Workplan - 1 Year}
 
 NEMO is a relatively large and complex code with an extensive user
 community. Introducing \psykal/\psyclone\ to such a code base is not to
@@ -371,13 +371,21 @@ As a part of this package we will develop the extensions to the GOcean
 1.0 Kernel meta-data that are required to support the
 three-dimensional finite-difference scheme used in NEMO.
 
-\subsection{WP3: Infrastructure support}
+\subsection{WP3: Infrastructure Support}
 \label{wp3_infrastructure}
 
-Field objects or arrays?
+\psyclone\ must interface to some sort of infrastructure that provides
+support for manipulating fields - e.g. creating them and performing
+halo swaps. Obviously NEMO already contains support for performing
+domain decomposition and MPI operations. Any incremental introduction
+of \psyclone\ must therefore work within this framework.
 
-The existing NEMO code base is already MPI parallel and therefore any
-introduction of \psyclone\ must work within this framework.
+In the latest versions of GOcean and Dynamo the infrastructure is
+built around the concept of field objects. While these have benefits,
+such an approach would be a significant change to NEMO and may also
+conflict with the use of AGRIF. In the initial stages of this work it
+will therefore probably be necessary for the infrastructure to work
+with fields as Fortran arrays rather than derived types.
 
 The NEMO source code is under almost constant scientific
 development. This must be allowed for in any strategy to introduce
@@ -400,11 +408,11 @@ is to ensure that the introduction of the \psykal\ separation of
 concerns does not harm performance on current machines. Or, if it
 does, then that performance can be recovered through code
 transformations. We have shown that this is the case for two
-shallow-water models~\cite{XXX} but this work must be extended for the
-3D parts of NEMO. Benchmarking of the configurations chosen in WP1
-will inform the key routines used to examine this issue. Note that
-this benchmarking must be performed on processor counts typical of
-those used in production runs.
+shallow-water models~\cite{psykal_shallow} but this work must be
+extended for the 3D parts of NEMO. Benchmarking of the configurations
+chosen in WP1 will inform the key routines used to examine this
+issue. Note that this benchmarking must be performed on processor
+counts typical of those used in production runs.
 
 \subsection{WP6: \psyclone\ support}
 \label{wp6_autogen}
@@ -428,5 +436,11 @@ Once \psyclone\ is incorporated into the NEMO build system, the next
 stage is to extend the \psyclone\ API to support 3D parts of NEMO.  This
 will require the Kernel meta-data and rules developed under Work
 Package 2.
+
+\begin{thebibliography}{1}
+
+\bibitem{psykal_shallow} A.~R.~Porter, R.~W.~Ford, M.~Ashworth, G.~D.~Riley and M.~Modani, ``Towards Compiler-Agnostic Performance in Finite-Difference Codes'', to appear in the Proceedings of ParCo 2015.
+
+\end{thebibliography}
 
 \end{document}
