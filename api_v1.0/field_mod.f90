@@ -910,26 +910,48 @@ contains
     type(r2d_field), intent(in) :: field
     real(wp) :: val
 
+    val = array_checksum(field%data, field%data_on_device,           &
+                         field%internal%xstart, field%internal%xstop, &
+                         field%internal%ystart, field%internal%ystop)
+    return
+
+! The code below fails with the Cray compiler - the update host(field%data)
+! seems to get the wrong pointer.
+
     ! If we're using OpenACC then make sure we get the data back from
     ! the GPU
-    if(field%data_on_device)then
-!$acc update host(field%data)
-    end if
-
-    !> \todo Could add an OpenMP implementation
-    val = SUM( ABS(field%data(field%internal%xstart:field%internal%xstop, &
-                              field%internal%ystart:field%internal%ystop)) )
+!    if(field%data_on_device)then
+!!acc update host(field%data)
+!    end if
+!
+!    !> \todo Could add an OpenMP implementation
+!    val = SUM( ABS(field%data(field%internal%xstart:field%internal%xstop, &
+!                              field%internal%ystart:field%internal%ystop)) )
   end function fld_checksum
 
   !===================================================
 
   !> Compute the checksum of ALL of the elements of supplied array
-  function array_checksum(field) result(val)
+  function array_checksum(field, update, &
+                          xstart, xstop, &
+                          ystart, ystop) result(val)
     implicit none
     real(wp), dimension(:,:), intent(in) :: field
+    logical, optional, intent(in) :: update
+    integer, optional, intent(in) :: xstart, xstop, ystart, ystop
     real(wp) :: val
 
-    val = SUM( ABS(field(:,:) ) )
+    if( present(update) )then
+       if(update)then
+          !$acc update host(field)
+       end if
+    end if
+
+    if( present(xstart) )then
+       val = SUM( ABS(field(xstart:xstop,ystart:ystop) ) )
+    else
+       val = SUM( ABS(field(:,:)) )
+    end if
 
   end function array_checksum
 
