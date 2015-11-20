@@ -206,9 +206,28 @@ Initially the PSy layer may be written manually. This will then
 subsequently be used to inform the development of \psyclone\ to support
 NEMO.
 
-\subsection{An example: ldf\_slp\_triad}
+\subsection{An example: ldf\_slp}
 
-Rupert mocking this up.
+As an example, we have manually re-structured the {\it ldf\_slp}
+routine following the \psykal\ separation of concerns. The resulting
+code is too long to include here but may be obtained from the GOcean
+SVN repository on puma:
+\begin{verbatim}
+> svn list https://puma.nerc.ac.uk/svn/GOcean_svn/GOcean/trunk/\
+docs/NEMO/example
+horizontal_density_gradient_u_mod.f90
+horizontal_density_gradient_v_mod.f90
+ldf_slp_alg.f90
+ldf_slp_alg_processed.f90
+ldfslp.F90
+psy.f90
+\end{verbatim}
+
+Here, ldfslp.F90 is the original routine, ldf\_slp\_alg.f90 is the
+Algorithm layer, psy.f90 contains the (manually written) PSy layer and
+the horizontal\_density\_$\ast$.f90 files contain kernels.
+ldf\_slp\_alg\_processed.f90 contains the Algorithm layer as it would
+appear after processing by \psyclone.
 
 \section{Risks}
 
