@@ -21,7 +21,7 @@ contains
     integer,         intent(in)    :: istp
     type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
     type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
-    type(r2d_field), intent(in)    :: hu, hv, ht
+    type(r2d_field), intent(inout) :: hu, hv, ht
                      
     call invoke_time_step_arrays(istp,                                  &
                                  ua%grid%nx, ua%grid%ny,                &
