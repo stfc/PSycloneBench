@@ -25,7 +25,9 @@ natural scientist while all code related to parallelism is contained
 within the PSy layer. Thus the scientist does not need to concern
 themselves with optimisation issues, such as loop fusion, redundant
 computation in halos, etc. and parallelism issues, such as placement
-of directives and halo swap calls.
+of directives and halo swap calls. This separation also improves the
+readability and modularity of code and thus greatly aids with
+maintenance.
 
 
 The role of \psyclone\ is to generate the PSy layer (and modify the
@@ -60,7 +62,11 @@ same compiler on the same architecture to work well on a complex code
 without changes to source code. If such optimisations are hard coded
 then it is very difficult to change the code to work well on another
 architecture and almost impossible to have performance portability
-with a single code base. \psyclone\ aims to address this problem.
+with a single code base. The situation is even more complex if, as
+with NEMO, a single code base supports different model configurations
+that may themselves require different optimisations. \psyclone\ aims
+to address this problem by keeping the optimisation space fully
+separate from the science code.
 
 \psyclone\ is currently being developed as part of the GungHo project
 and forms a component of the Dynamo (the prototype dynamical core)
@@ -294,14 +300,83 @@ time. Options include e.g. whether to include MPI support and which
 ice model to use. It is likely that \psyclone\ can safely be applied to
 the code after this pre-processing stage but this must be tested.
 
+\subsection{Run-time Switches}
+
+In common with most simulation packages, NEMO makes use of run-time
+flags in order to enable and disable certain functionality. This
+becomes an issue for PSyclone when this functionality relates to
+choices in the specific Algorithm that is run. As an example, the
+ldf\_slp routine contains code that is only required if partial steps
+are in use:
+
+\begin{verbatim}
+DO jk = 1, jpk             !==   i- & j-gradient of density   ==!
+   DO jj = 1, jpjm1
+      DO ji = 1, fs_jpim1   ! vector opt.
+         zgru(ji,jj,jk) = umask(ji,jj,jk) * ( ... )
+      END DO
+   END DO
+END DO
+IF( ln_zps ) THEN    ! partial steps correction at  bottom ocean level
+   DO jj = 1, jpjm1
+      DO ji = 1, jpim1
+         zgru(ji,jj,mbku(ji,jj)) = ...
+      END DO
+   END DO
+ENDIF
+!
+zdzr(:,:,1) = 0._wp  !== Local vertical density gradient at T-point == !
+DO jk = 2, jpkm1
+   zdzr(:,:,jk) = ...
+END DO
+\end{verbatim}
+
+As PSyclone currently has no support for control-flow statements
+within an Invoke, the Algorithm Layer for this example would have to
+contain three separate Invokes and might look something like:
+
+\begin{verbatim}
+CALL invoke( density_igradient(...), &
+             density_jgradient(...) )
+IF( ln_zps ) THEN
+   CALL invoke( partial_steps_correction(...) )
+END IF
+CALL invoke( local_density_kgradient(...) )
+\end{verbatim}
+
+Since optimisation can only be performed within an Invoke, this
+structure might result in less performant code. If this proved to be
+the case then one might consider re-writing the Algorithm as:
+
+\begin{verbatim}
+IF( ln_zps ) THEN
+   CALL invoke( density_igradient(...),        &
+                density_jgradient(...),        &
+                partial_steps_correction(...), &
+                local_density_kgradient(...) )
+ELSE
+   CALL invoke( density_igradient(...),        &
+                density_jgradient(...),        &
+                local_density_kgradient(...) )
+END IF
+\end{verbatim}
+
+This issue is not NEMO specific and in fact is currently under
+discussion within the GungHo project. Any solution developed there
+will be immediately applicable to NEMO.
+
 \subsection{Tracers}
 
 Although the core of NEMO contains only two active tracers
 (Temperature and Salinity) it can be used with biogeochemical
 models. In those configurations there can be of order $\sim 50$ tracer
-species, all of which may be treated independently. This has
-significant implications for both data structures and our ability to
-exploit the additional parallelism that is available.
+species. Although these can be treated independently within the
+advection routines there are interactions between them in the
+biological routines. This has significant implications for both data
+structures and our ability to exploit the additional parallelism that
+is available. For the latter we would need additional meta-data to
+describe this parallelism and, crucially, indicate when it is not
+available.
 
 \section{Index Re-ordering}
 
