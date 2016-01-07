@@ -504,15 +504,15 @@ used with each compiler. {\bf Explanation of the compiler flags?}
 \caption{The compiler flags used in this work.}
 \label{TABLE_compiler_flags}
 \centering
-\begin{tabular}{l|c}
+\begin{tabular}{l|l|l}
 \hline
-Compiler  &  Flags \\
+Compiler  &  Flags                                    & Notes \\
 \hline
-Gnu       & -Ofast -mtune=native -finline-limit=50000    \\
-Intel     & -O3 -fast -fno-inline-factor -xHost   \\
-Cray      & -O3 -O ipa5 -h wp               \\
-IBM       & -O5 -qinline=auto:level=10      \\
-PGI       & {\bf Jeremy to supply} \\
+Gnu       & -Ofast -mtune=native -finline-limit=50000 &   \\
+Intel     & -O3 -fast -fno-inline-factor -xHost       &   \\
+Cray      & -O3 -O ipa5 -h wp                         &   \\
+IBM       & -O5 -qinline=auto:level=10                &   \\
+PGI       & {\bf Jeremy to supply}                    &   \\
 \hline
 \end{tabular}
 \end{table}
