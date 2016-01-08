@@ -21,8 +21,6 @@
 %
 \ifCLASSINFOpdf
   \usepackage[pdftex]{graphicx}
-  % declare the path(s) where your graphic files are
-  % \graphicspath{{../pdf/}{../jpeg/}}
   % and their extensions so you won't have to specify these with
   % every instance of \includegraphics
   \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
@@ -76,8 +74,6 @@
 % Also of interest may be the (relatively newer and more customizable)
 % algorithmicx.sty package by Szasz Janos:
 % http://www.ctan.org/tex-archive/macros/latex/contrib/algorithmicx/
-
-
 
 
 % *** ALIGNMENT PACKAGES ***
@@ -257,16 +253,11 @@
 % you desire.
 
 
-
-
 % If you want to put a publisher's ID mark on the page you can do it like
 % this:
 %\IEEEpubid{0000--0000/00\$00.00~\copyright~2012 IEEE}
 % Remember, if you use this you must call \IEEEpubidadjcol in the second
 % column for its text to clear the IEEEpubid mark.
-
-% use for special paper notices
-%\IEEEspecialpapernotice{(Invited Paper)}
 
 % make the title area
 \maketitle
@@ -279,10 +270,8 @@ The abstract goes here.
 
 % Note that keywords are not normally used for peerreview papers.
 \begin{IEEEkeywords}
-Performance, Code-generation, Finite-difference
+Performance, Code-generation, Finite-difference, NEMO, OpenMP, OpenACC
 \end{IEEEkeywords}
-
-
 
 % For peer review papers, you can put extra information on the cover
 % page as needed:
@@ -364,7 +353,7 @@ penalty and the steps required to remove it.
 
 For this work we have used a program "nemolite2d" developed by
 ourselves.  “nemolite2d” is a vertically-averaged version of NEMO
-(Nucleus for European Modelling of the Ocean), which only keeps its
+(Nucleus for European Modelling of the Ocean~\cite{nemo}), which only keeps its
 dynamical part. The whole model system is represented through one
 continuity equation (for the update of the sea-surface height) and two
 vertically-integrated momentum equations (for the two velocity
