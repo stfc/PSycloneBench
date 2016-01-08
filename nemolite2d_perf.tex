@@ -388,9 +388,9 @@ The order of the model computation is as follows:
 \begin{enumerate}
 \item Set the initial conditions (water depth, sea surface height, velocity)
 \item integrate the continuity equation for the new sea surface height
-\item update the different terms in the right hand side of the momentum equations (advection, Coriolis forcing(if set in explicit form), pressure gradient, and, horizontal viscosity
+\item update the different terms in the right hand side of the momentum equations; advection, Coriolis forcing (if set in explicit form), pressure gradient, and horizontal viscosity
 \item update the velocity vectors by summing up the values in 3), and implicitly with the bottom friction and Coriolis forcing (if set in implicit form)
-\item apply the boundary conditions on to the open boundary and solid boundary cells.
+\item apply the boundary conditions on the open-  and solid-boundary cells.
 \end{enumerate}
 
 Since any real oceanographic computational model must output results,
@@ -403,19 +403,20 @@ carefully exclude the effects of I/O since it is compute performance
 that interests us here.
 
 In order to maximise the flexibility (and thus potential for
-optimisation) of the \psykal version of nemolite2d, we made the kernels
-as fine-grained as possible. In this case, this resulted in eight
-distinct kernels, each of which operated on a single field at a single
-point (since we have chosen to use point-wise kernels). With a little
-bit of tidying/re-structuring, we found it was possible to express the
+optimisation) of the \psykal version of nemolite2d, we made the
+kernels as fine-grained as possible. This resulted in eight distinct
+kernels, each of which updates a single field at a single point (since
+we have chosen to use point-wise kernels). With a little bit of
+tidying/re-structuring, we found it was possible to express the
 contents of the main time-stepping loop as a single invoke (a call to
 the PSy layer) and a call to the I/O system
-(Figure~\ref{FIG_psykal_nemolite2d_structure}). The single PSy-layer
-routine then consists of applying each of the kernels to all of the
-points on the model mesh requiring an update. In its basic,
-unoptimised (`vanilla') form, this PSy-layer routine then contains a
-doubly-nested loop around each kernel call, as indicated by the
-pseudo-code in Figure~\ref{FIG_psykal_nemolite2d_structure}.
+(Figure~\ref{FIG_psykal_nemolite2d_structure}). The single invoke
+gives us a single PSy-layer routine which consists of applying each of
+the kernels to all of the points requiring an update on the model
+mesh. In its basic, unoptimised (`vanilla') form, this PSy-layer
+routine then contains a doubly-nested loop around each kernel call, as
+indicated by the pseudo-code in
+Figure~\ref{FIG_psykal_nemolite2d_structure}.
 
 \begin{figure}
 \centering
@@ -425,10 +426,11 @@ pseudo-code in Figure~\ref{FIG_psykal_nemolite2d_structure}.
 \end{figure}
 
 As with any full oceanographic model, boundary conditions must be
-applied at the edges of the model domain. 
+applied at the edges of the model domain. Since nemolite2d applies
+external boundary conditions (e.g. barotropic forcing), this is done
+via user-supplied kernels.
 
-{\bf Auto-generated BC code by reasoning about meta-data. But then,
-  that brings us on to meta-data...}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methodology(?)}
