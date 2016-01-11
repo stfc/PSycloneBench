@@ -203,7 +203,7 @@
 \newlength{\picwidth}
 \setlength{\picwidth}{85mm}
 
-\newcommand{\psykal}{{PS}y{KA}l\ }
+\newcommand{\psykal}{{PS}y{KA}l}
 
 \begin{document}
 %
@@ -330,7 +330,7 @@ require different programming approaches.
 % needed in second column of first page if using \IEEEpubid
 %\IEEEpubidadjcol
 
-\subsection{The \psykal Approach}
+\subsection{The \psykal\ Approach}
 Proliferation of lightweight cores is resulting in increased
 complexity in the programming models required to achieve performance.
 Combine with the complexity of e.g. a model simulating circulation in
@@ -341,7 +341,7 @@ demands.
 
 \begin{figure}
 \centering
-\caption{The \psykal Approach.}
+\caption{The \psykal\ Approach.}
 \end{figure}
 
 While encapsulation makes it easier to produce more robust software,
@@ -394,16 +394,16 @@ The order of the model computation is as follows:
 \end{enumerate}
 
 Since any real oceanographic computational model must output results,
-we ensure that any \psykal version of nemolite2d retains the Input/Output
+we ensure that any \psykal\ version of nemolite2d retains the Input/Output
 capability of the original. This aids in limiting the optimisations
-that can be performed on the \psykal version to those that should also
+that can be performed on the \psykal\ version to those that should also
 be applicable to full oceanographic models. Note that although we
 retain the I/O functionality, all of the results presented in this work
 carefully exclude the effects of I/O since it is compute performance
 that interests us here.
 
 In order to maximise the flexibility (and thus potential for
-optimisation) of the \psykal version of nemolite2d, we made the
+optimisation) of the \psykal\ version of nemolite2d, we made the
 kernels as fine-grained as possible. This resulted in eight distinct
 kernels, each of which updates a single field at a single point (since
 we have chosen to use point-wise kernels). With a little bit of
@@ -421,7 +421,7 @@ Figure~\ref{FIG_psykal_nemolite2d_structure}.
 \begin{figure}
 \centering
 %\includegraphics[width=85mm]{psykal_nemolite2d}
-\caption{A schematic of the vanilla \psykal version of the nemolite2d code.}
+\caption{A schematic of the vanilla \psykal\ version of the nemolite2d code.}
 \label{FIG_psykal_nemolite2d_structure}
 \end{figure}
 
@@ -483,7 +483,7 @@ NVIDIA Tesla K40 &       &             &         &        &  {\bf Jeremy} \\
 In Table~\ref{TABLE_compiler_flags} we give the optimisation flags
 used with each compiler. {\bf Explanation of the compiler flags?}
 %These flags are particularly important for
-%the \psykal versions of the code. The performance of the original
+%the \psykal\ versions of the code. The performance of the original
 %version of the code is much less sensitive to the compiler
 %options. This is because it consists of a single source file
 %containing effectively a single routine (excluding those for I/O).
@@ -511,22 +511,22 @@ PGI       & {\bf Jeremy to supply}                    &   \\
 Before applying any code transformations, we first benchmark the
 original, serial version of the code. We also benchmark the vanilla,
 unoptimised version after it has been re-structured following the
-\psykal approach. In addition to this benchmarking, we profile these
+\psykal\ approach. In addition to this benchmarking, we profile these
 versions of the code at the algorithm level (using a high-level timing
 API). The resulting profiles are given in
 Table~\ref{TABLE_profile}. The Momentum section dominates the profile
 of both versions of the code, accounting for around 70--80\% of the
 wall-clock time spent doing time-stepping. It is also the key section
 when we consider the performance loss when moving from the original to
-the \psykal version of the code; it slows down by a factor of
+the \psykal\ version of the code; it slows down by a factor of
 two. Although less significant in terms of absolute time, the
-Continuity section is also dramatically slower in the \psykal version,
+Continuity section is also dramatically slower in the \psykal\ version,
 this time by a factor of three. In contrast, the performance of the
 Time-update and Boundary Condition regions are not significantly
-affected by the move to the \psykal version.
+affected by the move to the \psykal\ version.
 
 \begin{table}[!t]
-\caption{The performance profile of the original and \psykal versions
+\caption{The performance profile of the original and \psykal\ versions
   of nemolite2d on the Intel Ivy Bridge CPU (for 2000 time-steps of the
   $128^{2}$ domain and the Intel compiler).}
 \label{TABLE_profile}
@@ -545,8 +545,8 @@ Continuity  & 0.10  & 3.7   & 0.33  & 6.6  & 0.11 & 4.1  \\
 \end{tabular}
 \end{table}
 
-Beginning with the vanilla \psykal version, we then apply a series of
-code transformations while obeying the \psykal separation of concerns,
+Beginning with the vanilla \psykal\ version, we then apply a series of
+code transformations while obeying the \psykal\ separation of concerns,
 {\it i.e.} optimisation is restricted to the middle, {PS}y layer and
 leaves the kernel and algorithm layers unchanged. The aim of these
 optimisations is to recover, as much as is possible, the performance
@@ -583,7 +583,7 @@ useful (the Momentum loops and some of the BC loops).
 The profiling data in Table~\ref{TABLE_profile} shows that it is the
 Momentum section that accounts for the bulk of the model run-time.  We
 therefore chose to attempt to optimise this section first. In-keeping
-with the \psykal approach, we are only permitted to optimise the middle
+with the \psykal\ approach, we are only permitted to optimise the middle
 (PSy) layer which, for this section comprises calls to two kernels,
 one for each of the $x$ and $y$ components of momentum. These kernels
 are relatively large; each comprises roughly 85 lines of Fortran
@@ -657,7 +657,7 @@ inlining for the two kernels making up the Momentum section.
  using directives}
 
 It turns out that the Cray-compiled binaries of both the original and
-\psykal versions of nemolite2d perform considerably less well than
+\psykal\ versions of nemolite2d perform considerably less well than
 their Intel-compiled counterparts. Comparison of the diagnostic output
 from each of the compilers revealed that while the Intel compiler was
 happy to vectorise the Momentum loops, the Cray compiler was choosing
@@ -695,11 +695,11 @@ found to be reliable.
 \subsubsection{Work around limitations related to derived types}
 
 Having optimised the Momentum section as much as permitted by the
-\psykal approach, we turn our attention to the three remaining
+\psykal\ approach, we turn our attention to the three remaining
 sections of the code. The profile data in Table~\ref{TABLE_profile}
 shows that these regions are all comparable in terms of cost. What is
 striking however, is that the cost of the Continuity section increases
-by more than a factor of three in moving to the \psykal version of the
+by more than a factor of three in moving to the \psykal\ version of the
 code.
 
 Comparison of the diagnostic output from the Cray and Intel
@@ -794,7 +794,7 @@ optimising the code.
 \subsection{Construction of OpenMP-Parallel Nemolite2D}
 \label{sec_omp_steps}
 
-For this part of the work we began with the optimal \psykal version of
+For this part of the work we began with the optimal \psykal\ version of
 the code, as obtained after applying the various transformations
 described in the previous section. As with the transformations of the
 serial code, our purpose here is to determine the functionality
@@ -922,12 +922,12 @@ the range of compilers and CPU-based systems under consideration.}
 \label{FIG_orig_perf_summary}
 \end{figure}
 
-Moving now the to the \psykal version of nemolite2d,
+Moving now the to the \psykal\ version of nemolite2d,
 Figure~\ref{FIG_best_psykal_perf_summary} plots the performance of the
-fastest \psykal version for each of the compiler/CPU combinations.
+fastest \psykal\ version for each of the compiler/CPU combinations.
 While the Intel compiler still produces the best-performing binary,
 the Cray-compiled binary is now a very close second. In fact, the
-performance of both the Gnu- and Cray-compiled \psykal versions is
+performance of both the Gnu- and Cray-compiled \psykal\ versions is
 generally significantly greater than that of their respective original
 versions. We also note that best absolute performance (in terms of
 grid points processed per second) with any compiler is obtained with
@@ -936,18 +936,18 @@ the $256^2$ domain.
 \begin{figure}[!t]
 \centering
 \includegraphics[width=7.5cm]{best_psykal_summary}
-\caption{Summary of the best performance achieved by any \psykal 
+\caption{Summary of the best performance achieved by any \psykal\ 
 version of nemolite2d with each of the compilers and CPUs under 
 consideration.}
 \label{FIG_best_psykal_perf_summary}
 \end{figure}
 
 Figure~\ref{FIG_slowdown_summary} plots the percentage difference
-between the performance of the original and the best \psykal versions
+between the performance of the original and the best \psykal\ versions
 of nemolite2d for each compiler/CPU combination. This shows that it is
 only the Intel-compiled binary running the $64^2$ domain that is
-slower with the \psykal version of the code (and then only by some
-3\%). For all other points in the space, the optimised \psykal version
+slower with the \psykal\ version of the code (and then only by some
+3\%). For all other points in the space, the optimised \psykal\ version
 of the code performs better. The results for the Cray compiler are
 however somewhat sqewed by the fact that it did not SIMD vectorise key
 parts of the original version (see below).
@@ -955,9 +955,9 @@ parts of the original version (see below).
 \begin{figure}[!t]
 \centering
 \includegraphics[width=2.8in]{slowdown_summary}
-\caption{Comparison of the performance of the best \psykal
+\caption{Comparison of the performance of the best \psykal\
 version with that of the original version of the code. A negative value 
-indicates that the \psykal version is slower than the original.}
+indicates that the \psykal\ version is slower than the original.}
 \label{FIG_slowdown_summary}
 \end{figure}
 
@@ -968,7 +968,7 @@ do this for the $256^{2}$ case since this fits within cache on the Ivy
 Bridge CPUs we are using here.  Table~\ref{TABLE_opt_breakdown} shows
 detailed performance figures for this case after each transformation has been
 applied to the code. The same data is visualised in
-Figure~\ref{FIG_opt_stages_256} where the performance of the \psykal
+Figure~\ref{FIG_opt_stages_256} where the performance of the \psykal\
 version for a given compiler/CPU is given relative to the performance
 of the original with the same compiler/CPU.
 
@@ -1035,7 +1035,7 @@ In-line field copies       & 5.92 & 12.5 & 11.4 \\
 \begin{figure}[!t]
 \centering
 \includegraphics[width=93mm]{opt_stages_256}
-\caption{Performance of the \psykal version of nemolite2d for the
+\caption{Performance of the \psykal\ version of nemolite2d for the
   $256^{2}$ domain at each stage of optimisation. The first (black)
   bar of each cluster gives the performance of the original version of
   nemolite2d for that compiler/CPU combination.}
@@ -1078,7 +1078,7 @@ In-line field copies       & 5.92 & 12.5 & 11.4 \\
 
 We now turn to transformations related to parallelisation of the
 nemolite2d code; the introduction of OpenMP and OpenACC directives. In
-keeping with the \psykal approach we do not modify either the
+keeping with the \psykal\ approach we do not modify either the
 Algorithm- or Kernel-layer code.  Any code changes are restricted to
 either the PSy (middle) layer or the underlying library that manages
 {\it e.g.} the construction of field objects.
@@ -1126,7 +1126,7 @@ and \ref{FIG_cray_omp_256}.
 \centering
 \includegraphics[width=\picwidth]{omp_scaling_problem_size}
 \caption{The scaling behaviour of the most performant OpenMP-parallel
-  version of \psykal nemolite2d for the full range of domain sizes
+  version of \psykal\ nemolite2d for the full range of domain sizes
   considered on the CPU. Results are for the Intel compiler on a
   single Intel Ivy Bridge socket. The corresponding parallel
   efficiencies are shown using open symbols and dashed lines. The
@@ -1137,7 +1137,7 @@ and \ref{FIG_cray_omp_256}.
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{omp_scaling_256_gnu}
-\caption{Performance of the OpenMP-parallel version of \psykal
+\caption{Performance of the OpenMP-parallel version of \psykal\
   nemolite2d for the Gnu compiler on a single Intel Ivy Bridge
   socket. The corresponding parallel efficiencies are shown using open
   symbols and dashed lines. The 24-thread runs employed hyperthreading
@@ -1167,7 +1167,7 @@ diamond symbols in Figures~\ref{FIG_gnu_omp_256} and
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{omp_scaling_256_intel}
-\caption{Performance of the OpenMP-parallel version of \psykal
+\caption{Performance of the OpenMP-parallel version of \psykal\
   nemolite2d for the Intel compiler on a single Intel Ivy Bridge
   socket.  The corresponding parallel efficiencies are shown using
   open symbols and dashed lines. The 24-thread runs employed
@@ -1179,7 +1179,7 @@ diamond symbols in Figures~\ref{FIG_gnu_omp_256} and
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{omp_scaling_256_cray}
-\caption{Performance of the OpenMP-parallel version of \psykal
+\caption{Performance of the OpenMP-parallel version of \psykal\
   nemolite2d for the Cray compiler on a single Intel Ivy Bridge
   socket.  The corresponding parallel efficiencies are shown using
   open symbols and dashed lines. The 24-thread runs employed
@@ -1241,7 +1241,7 @@ hyperthreading while the two-socket case is not.  {\bf Have query in
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{1and2sockets}
-\caption{Performance of the OpenMP-parallel version of \psykal
+\caption{Performance of the OpenMP-parallel version of \psykal\
   nemolite2d on one and two sockets of Intel Ivy Bridge. The 24-thread
   runs on a single socket used hyperthreading and the two-socket runs
   had the threads shared equally between the sockets.}
@@ -1271,7 +1271,7 @@ qualifiers.
 %\begin{figure}
 %\centering
 %\includegraphics[width=\picwidth]{omp_scaling_32_gnu}
-%\caption{Performance of the OpenMP-parallel version of \psykal
+%\caption{Performance of the OpenMP-parallel version of \psykal\
 %  nemolite2d for the Gnu compiler on a single Intel Ivy Bridge
 %  socket. The corresponding parallel efficiencies are shown using open
 %  symbols and dashed lines. The 24-thread runs employed hyperthreading
@@ -1282,7 +1282,7 @@ qualifiers.
 %\begin{figure}
 %\centering
 %\includegraphics[width=\picwidth]{omp_scaling_32_intel}
-%\caption{Performance of the OpenMP-parallel version of \psykal
+%\caption{Performance of the OpenMP-parallel version of \psykal\
 %  nemolite2d for the Intel compiler on a single Intel Ivy Bridge
 %  socket.  The corresponding parallel efficiencies are shown using
 %  open symbols and dashed lines. The 24-thread runs employed
@@ -1294,7 +1294,7 @@ qualifiers.
 %\begin{figure}
 %\centering
 %\includegraphics[width=\picwidth]{omp_scaling_32_cray}
-%\caption{Performance of the OpenMP-parallel version of \psykal
+%\caption{Performance of the OpenMP-parallel version of \psykal\
 %  nemolite2d for the Cray compiler on a single Intel Ivy Bridge
 %  socket.  The corresponding parallel efficiencies are shown using
 %  open symbols and dashed lines. The 24-thread runs employed
@@ -1332,7 +1332,7 @@ the execution of the kernel itself.
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{cpu_cf_gpu}
-\caption{Performance of the best OpenMP-parallel version of \psykal
+\caption{Performance of the best OpenMP-parallel version of \psykal\
   nemolite2d (on a single Intel Ivy Bridge socket) compared with the best GPU implementation. {\bf This should really be best OpenACC version as that's what PSyclone can support.}}
 \label{FIG_cpu_cf_gpu}
 \end{figure}
@@ -1352,25 +1352,34 @@ than the OpenMP version on the CPU. {\bf Can we relate this to the
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
 
-We have investigated the application of the \psykal separation of
-concerns approach to the domain of finite-difference ocean
-models. This approach enables the computational science (performance)
-related aspects of a computer model to be kept separate from the
-natural (oceanographic) science aspects. In this work we have shown
-that the \psykal approach has the potential to improve performance and
-to improve code structure/maintainability.
+We have investigated the application of the \psykal\ separation of
+concerns approach to the domain of shared-memory parallel,
+finite-difference ocean models. This approach enables the
+computational science (performance) related aspects of a computer
+model to be kept separate from the natural (oceanographic) science
+aspects.
+
+We have used a new and un-optimised, two-dimension model extracted
+from the NEMO ocean model for this work. As a consequence of this, the
+introduction of the \psykal\ separation of concerns followed by
+suitable transformations of the PSy Layer is found to improve
+performance. This is in contrast to our previous
+experience~\cite{shallow_psykal} with tackling the Shallow code which
+has had been optimised over the course of several years. In that case
+we were able to recover\ldots
 
 The application of code transformations to the middle/PSy layer is key
-to the performance of the \psykal version of a code.
+to the performance of the \psykal\ version of a code.
 
 
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % use section* for acknowledgement
 \section*{Acknowledgments}
 
 This work made use of the ARCHER UK National Supercomputing Service
-(\url{http://www.archer.ac.uk}) and some {\bf NVIDIA system}.
+(\url{http://www.archer.ac.uk}) and some {\bf NVIDIA system - or is it
+  Emerald?}.
 
 % http://www.ctan.org/tex-archive/biblio/bibtex/contrib/doc/
 % The IEEEtran BibTeX style support page is at:
