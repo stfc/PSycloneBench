@@ -1351,7 +1351,58 @@ than the OpenMP version on the CPU. {\bf Can we relate this to the
 
 Although we have investigated how the performance of the \psykal
 version of nemolite2d compares with that or the original, we have not
-addressed how efficient the original actually is.
+addressed how efficient the original actually is. In order to do so we
+use the Roofline Model~\cite{roofline} which provides a relatively
+simple way of characterising the performance of a code in terms of
+whether it is memory-bandwidth bound or compute bound. To do so we
+follow the approach suggested in~\cite{para_pearls} and use the
+well-known STREAM~\cite{stream} and LINPACK~\cite{linpack} benchmarks
+in order to get the upper bounds on the memory bandwidth and FLOPS for
+the test hardware. Since we are using an Intel Ivybridge CPU we used
+the Intel Math Kernel Library implementation of LINPACK.
+
+A key component of the Roofline model is the Arithmetic Intensity of
+the code being executed:
+\begin{equation}
+AI = \frac{\textrm{No. of floating-point operations}}{\textrm{Bytes fetched from memory}}
+\end{equation}
+We calculated this quantity manually by examining the
+source code and counting the number of memory references and
+arithmetic operations that it contained. In doing this counting we
+assume that any references to adjacent array elements are fetched in a
+single cache-line and thus only count once.
+
+To illustrate this, consider the following code fragment (which forms
+the body of a doubly-nested loop over {\tt i} and {\tt j} with {\tt i}
+innermost):
+\begin{verbatim}
+CU(I+1,J) = .5d0*(P(I+1,J)+P(I,J))*U(I+1,J)
+CV(I,J+1) = .5d0*(P(I,J+1)+P(I,J))*V(I,J+1)
+Z(I+1,J+1) =(FSDX*(V(I+1,J+1)-V(I,J+1))- &
+             FSDY*(U(I+1,J+1)-U(I+1,J)))/&
+            (P(I,J)+P(I+1,J)+            &
+             P(I+1,J+1)+P(I,J+1))
+H(I,J) = P(I,J)+0.25d0*                   &
+         (U(I+1,J)*U(I+1,J)+U(I,J)*U(I,J) & 
+         +V(I,J+1)*V(I,J+1)+V(I,J)*V(I,J))
+\end{verbatim}
+This code writes to four memory locations ({\tt CU}, {\tt CV}, {\tt Z}
+and {\tt H}) and reads from ten distinct locations.  However, if we
+assume caching of reads from adjacent locations ({\it e.g.} {\tt
+  P(i,j)} and {\tt P(i+1,j)}) then we have only six distinct reads.
+If we assume that each of these ten memory accesses will touch a
+separate cache line then this code fragment will result in the moving
+of ten cache lines, each of which is 64 bytes (eight double-precision
+words). However, as noted above, this code fragment is the body of a
+loop nest. Therefore, upon the next loop trip {\tt i} will have been
+incremented by one and the majority of the accessed values will still
+be in cache. In fact, a new cache line will only have to be fetched
+every seven trips of the (innermost) loop and thus the mean memory
+traffic per loop trip is approximately $640/7$ bytes.
+
+We can also count the number of floating-point arithmetic operations
+in this code fragment which gives us 12 multiplications and 12
+additions. $AI$ for this code fragment is then $24*7/640 = 0.26$.
 
 \begin{figure}
 \centering

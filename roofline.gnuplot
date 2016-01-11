@@ -22,14 +22,17 @@ L_MEM_ANG=36
 MAX_X=8
 MIN_Y=0.5
 MAX_Y=32
-set xrange [0.125:MAX_X]
+set xrange [0.02:MAX_X]
 set yrange [MIN_Y:MAX_Y]
 
 # Kernel constants
 # First loop nest of shallow has AI = 0.3 FLOP/byte
-SHALLOW_LOOP1_AI = 0.3
+# Counting bytes from cache lines (i.e. 64 bytes per reference instead
+# of just 8 bytes for a d.p. word) it is:
+SHALLOW_LOOP1_AI = 0.26
 # u-momentum kernel of nemolite2d has AI = 0.44 FLOP/byte
-NEMOLITE_MOM_AI = 0.44
+# Counting bytes from cache lines it is:
+NEMOLITE_MOM_AI = 0.38
 
 # CPU CONSTANTS
 # For single core of Xeon E5-2697 v2 (Archer), as measured with 
