@@ -23,15 +23,23 @@ GRACE_PLOTS = omp_scaling_32_gnu.pdf \
               omp_scaling_32_intel.pdf \
               omp_scaling_problem_size.pdf
 
-figs: ${FIG_FILES} ${GRACE_PLOTS}
+# Plots generated from gnuplot
+GNU_PLOTS = roofline.pdf
+
+figs: ${FIG_FILES} ${GRACE_PLOTS} ${GNU_PLOTS}
 
 %.pdf: %.dat
 	./bargraph.pl $< > $*.eps
 	epstopdf $*.eps
-	#rm $*.eps
+	rm $*.eps
 
 %.pdf: %.agr
 	gracebat -hdevice EPS -printfile $*.eps $<
+	epstopdf $*.eps
+	rm $*.eps
+
+%.pdf: %.gnuplot
+	gnuplot $<
 	epstopdf $*.eps
 	rm $*.eps
 
