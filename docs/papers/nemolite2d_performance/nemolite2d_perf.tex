@@ -1236,8 +1236,6 @@ hyperthreading while the two-socket case is not.  {\bf Have query in
   would like to run 512 case on 2 sockets to see how it goes out to 48
   threads.}
 
-{\bf Add roofline model to aid understanding of this result.}
-
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{1and2sockets}
@@ -1348,6 +1346,19 @@ memory. At this stage the OpenACC version of the code on the GPU is
 some {\bf 3.7 (this is the factor for the CUDA version!)} times faster
 than the OpenMP version on the CPU. {\bf Can we relate this to the
   difference in peak memory b/w between the GPU and CPU?}
+
+\subsection{Performance Analysis with the Roofline Model}
+
+Although we have investigated how the performance of the \psykal
+version of nemolite2d compares with that or the original, we have not
+addressed how efficient the original actually is.
+
+\begin{figure}
+\centering
+\includegraphics[width=\picwidth]{roofline}
+\caption{Comparison of the performance achieved by nemolite2d and Shallow}
+\label{FIG_roofline}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
