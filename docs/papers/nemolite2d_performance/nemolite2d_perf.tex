@@ -427,21 +427,21 @@ Figure~\ref{FIG_psykal_nemolite2d_structure}.
 
 As with any full oceanographic model, boundary conditions must be
 applied at the edges of the model domain. Since nemolite2d applies
-external boundary conditions (e.g. barotropic forcing), this is done
-via user-supplied kernels.
-
+external boundary conditions ({\it e.g.} barotropic forcing), this is
+done via user-supplied kernels.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Methodology(?)}
+\section{Methodology}
 \label{sec_methodology}
 
 Our aim in this work is to achieve portable performance. Consequently,
 we have performed tests with the hardware and compilers listed in
 Table~\ref{TABLE_compilers}. Where a compiler is available on a given
 piece of hardware, the version number used in this work is specified.
-The Intel Haswell-based system (Xeon E5-1620 v2) has a clock speed of
-3.7~GHz and 10~MB of last-level cache. The Intel Ivy Bridge-based
+%The Intel Haswell-based system (Xeon E5-1620 v2) has a clock speed of
+%3.7~GHz and 10~MB of last-level cache. 
+The Intel Ivy Bridge-based
 system (Xeon E5-2697) has a clock speed of 2.7~GHz and a last-level
 cache of 30~MB. 
 
@@ -456,7 +456,6 @@ maximise the performance of the code.
 % An example of a floating table. Note that, for IEEE style tables, the 
 % \caption command should come BEFORE the table. Table text will default to
 % \footnotesize as IEEE normally uses this smaller font for tables.
-% The \label must come after \caption as always.
 %
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
@@ -473,7 +472,7 @@ maximise the performance of the code.
 \hline
                  & Gnu   & Intel       & Cray    & IBM    &  PGI \\
 \hline
-Intel Haswell    & 4.8.2 & 14.0.0      &         &        &  \\
+%Intel Haswell    & 4.8.2 & 14.0.0      &         &        &  \\
 Intel Ivy Bridge & 4.9.1 & 15.0.0.090  & 8.3.3   &        &  \\
 IBM Power 8      &       &             &         &        &  \\
 NVIDIA Tesla K40 &       &             &         &        &  {\bf Jeremy} \\
@@ -528,8 +527,8 @@ affected by the move to the \psykal version.
 
 \begin{table}[!t]
 \caption{The performance profile of the original and \psykal versions
-  of nemolite2d (for 2000 time-steps of the $128^{2}$ domain and the
-  Intel compiler).}
+  of nemolite2d on the Intel Ivy Bridge CPU (for 2000 time-steps of the
+  $128^{2}$ domain and the Intel compiler).}
 \label{TABLE_profile}
 \centering
 \begin{tabular}{l|c|c|c|c|c|c}
@@ -554,7 +553,7 @@ optimisations is to recover, as much as is possible, the performance
 of the original version of the code. The transformations we have
 performed and the reasons for them are described in the following sections.
 
-\subsubsection{Addition of `safe-address' directives}
+\subsubsection{Addition of {\tt safe\_address} directives}
 \label{sec_safe_address}
 
 Much of the optimisations we have performed have been informed by the
@@ -574,7 +573,7 @@ from "!dir$ safe_address".
 \end{verbatim}
 In order that we could safely add such directives we altered the field
 module to allocate all field-data arrays with extents greater than
-strictly required.  We were then able to safely add the safe\_address
+strictly required.  We were then able to safely add the {\tt safe\_address}
 before all of the loops where the Cray compiler indicated it might be
 useful (the Momentum loops and some of the BC loops).
 
@@ -673,7 +672,7 @@ not to:
  conditional code which is more
  efficient if executed in scalar mode.
 \end{verbatim}
-Inserting the Cray `vector always' directive persuaded the compiler
+Inserting the Cray {\tt vector always} directive persuaded the compiler
 to vectorise the loop:
 \begin{verbatim}
   99.    !dir$ vector always
@@ -714,8 +713,8 @@ section of the field, contains a pointer to a GOcean grid object. If a
 kernel requires grid-related quantities ({\it e.g.} the grid spacing)
 then these are obtained by passing it a reference to the appropriate
 array within the grid object. Although these grid-related quantities
-are read-only within a compute kernel, if they were obtained from the
-same object as that containing the array to which that kernel writes
+are read-only within a compute kernel, if they were referenced from the
+same field object as that containing an array to which the kernel writes
 then the Intel compiler identified a dependency preventing
 vectorisation.  This limitation was simply removed by ensuring that
 all read-only quantities were accessed via field objects that were
@@ -808,23 +807,24 @@ The simplest possible OpenMP-parallel implementation consists of
 parallelising each loop nest in the PSy layer. This was done by
 inserting an OpenMP PARALLEL DO directive before each loop nest so
 that the iterations of the outermost or $j$ loop (over the y-dimension
-of the model domain) are shared amongst the OpenMP threads. This
+of the model domain) are shared out amongst the OpenMP threads. This
 leaves the innermost ($i$) loop available for SIMD vectorisation by
 the compiler.
 
 The loop nest dealing with the application of the Flather boundary
 condition to the y-component of velocity has a loop-carried dependency
-in $j$ which prevented its being executed in parallel. This was
+in $j$ which appears to prevent its being executed in parallel. This was
 therefore left unchanged and executed on thread 0 only.
 
 \subsubsection{Single PARALLEL region}
 \label{sec_single_parallel}
 
 Although very simple to implement, the use of separate PARALLEL DO
-directives causes the team of OpenMP threads to be repeatedly created
-and destroyed. This may be avoided by keeping the thread team in
-existence for as long as possible using an OpenMP PARALLEL region.  We
-therefore enclosed the whole of the PSy layer (in this code, a single
+directives results in a lot of thread synchronisation and can also
+cause the team of OpenMP threads to be repeatedly created and
+destroyed. This may be avoided by keeping the thread team in existence
+for as long as possible using an OpenMP PARALLEL region.  We therefore
+enclosed the whole of the PSy layer (in this code, a single
 subroutine) within a single PARALLEL region. The directive preceeding
 each loop nest to be parallelised was then changed to an OpenMP DO. We
 ensured that the v-Flather loop nest was executed in serial (by the
@@ -844,10 +844,9 @@ first initialised by that thread. This is simply achieved by using an
 OpenMP-parallel loop to initialise newly-allocated arrays to some
 value, {\it e.g.} zero.
 
-Since data arrays are managed within the GOcean Library {\bf (is this
-  a good/appropriate name?)} this optimisation can again be
-implemented without changing user code (the Application and Kernel
-layers).
+Since data arrays are managed within the GOcean Library this
+optimisation can again be implemented without changing user code ({\it
+  i.e.} the Application and Kernel layers).
 
 \subsubsection{Minimise thread synchronisation}
 \label{sec_synch}
@@ -902,17 +901,17 @@ performance on both CPU- and GPU-based systems.
 
 In Figure~\ref{FIG_orig_perf_summary} we plot the serial performance
 of the original version of the nemolite2d code for the range of
-compilers and CPUs considered here. Unlike the Shallow code, the
-original version of nemolite2d has not been optimised. Although it is
-still a single source file it is, in common with NEMO itself,
-logically structured with separate subroutines performing different
-parts of the physics within each time step. This structuring and the
-heavy use of conditional statements favour the Intel compiler which
-significantly out-performs both the Gnu and Cray compilers. Only when
-the problem size falls out of cache does the performance gap begin to
-narrow. The reason for the performance deficit of the Cray-compiled
-binary comes down to SIMD vectorisation, an issue that we explore
-below.
+compilers and CPUs considered here. Unlike the Shallow
+code~\cite{shallow_psykal}, the original version of nemolite2d has not
+been optimised. Although it is still a single source file it is, in
+common with NEMO itself, logically structured with separate
+subroutines performing different parts of the physics within each time
+step. This structuring and the heavy use of conditional statements
+favour the Intel compiler which significantly out-performs both the
+Gnu and Cray compilers. Only when the problem size falls out of cache
+does the performance gap begin to narrow. The reason for the
+performance deficit of the Cray-compiled binary comes down to (a lack
+of) SIMD vectorisation, an issue that we explore below.
 
 \begin{figure}[!t]
 \centering
@@ -1028,14 +1027,14 @@ In-line Continuity         & 4.83 & 11.8 & 11.6 \\
 In-line remaining kernels  & 5.89 & 12.0 & 11.5 \\
 In-line field copies       & 5.92 & 12.5 & 11.4 \\
 \hline
-\parbox{2.5cm}{\raggedright \%-speed-up of best {\it c.f.} original} & 34.62 & 2.39 & 42.22 \\
+\parbox{2.5cm}{\raggedright \%-speed-up of best {\it c.f.} original} & 34.6 & 2.39 & 42.2 \\
 \hline
 \end{tabular}
 \end{table}
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=90mm]{opt_stages_256}
+\includegraphics[width=93mm]{opt_stages_256}
 \caption{Performance of the \psykal version of nemolite2d for the
   $256^{2}$ domain at each stage of optimisation. The first (black)
   bar of each cluster gives the performance of the original version of
@@ -1082,7 +1081,7 @@ nemolite2d code; the introduction of OpenMP and OpenACC directives. In
 keeping with the \psykal approach we do not modify either the
 Algorithm- or Kernel-layer code.  Any code changes are restricted to
 either the PSy (middle) layer or the underlying library that manages
-e.g. the construction of field objects.
+{\it e.g.} the construction of field objects.
 
 \subsubsection{OpenMP Version}
 
@@ -1162,7 +1161,8 @@ implementing a `first-touch' policy has any effect and yet, for the
 Gnu- and Intel-compiled binaries, it appears to improve performance
 when hyperthreading is employed to run on 24 threads (green lines and
 diamond symbols in Figures~\ref{FIG_gnu_omp_256} and
-~\ref{FIG_intel_omp_256}). {\bf Can we explain this?}
+~\ref{FIG_intel_omp_256}). {\bf Can we explain this? Perhaps with HW
+  counters?}
 
 \begin{figure}
 \centering
@@ -1228,13 +1228,15 @@ SINGLE' version of the code is compared with the single-socket
 performance in Figure~\ref{FIG_omp_2socks}. Surprisingly, doubling the
 available memory bandwidth in this way has little effect on
 performance - the two-socket performance figures track those from a
-single socket very closely. The only realy difference in performance
+single socket very closely. The only significant difference in performance
 is at 24 threads where, in addition to the difference in available
 memory bandwidth, the single-socket configuration is using
 hyperthreading while the two-socket case is not.  {\bf Have query in
   with Archer helpdesk on behaviour seen with Cray compiler here. Also
   would like to run 512 case on 2 sockets to see how it goes out to 48
   threads.}
+
+{\bf Add roofline model to aid understanding of this result.}
 
 \begin{figure}
 \centering
