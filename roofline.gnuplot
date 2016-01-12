@@ -1,5 +1,5 @@
 # initial config
-set term postscript eps enhanced
+set term postscript eps enhanced color
 set output 'roofline.eps'
 #set term pngcairo
 #set output 'roofline.png'
@@ -22,7 +22,7 @@ L_MEM_ANG=36
 MAX_X=8
 MIN_Y=0.5
 MAX_Y=32
-set xrange [0.02:MAX_X]
+set xrange [0.1:MAX_X]
 set yrange [MIN_Y:MAX_Y]
 
 # Kernel constants
