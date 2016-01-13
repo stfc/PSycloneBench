@@ -32,7 +32,9 @@ set yrange [MIN_Y:MAX_Y]
 SHALLOW_LOOP1_AI = 0.26
 # u-momentum kernel of nemolite2d has AI = 0.44 FLOP/byte
 # Counting bytes from cache lines it is:
-NEMOLITE_MOM_AI = 0.38
+#NEMOLITE_MOM_AI = 0.38
+# Using measured FLOP count it is:
+NEMOLITE_MOM_AI = 0.514
 
 # CPU CONSTANTS
 # For single core of Xeon E5-2697 v2 (Archer), as measured with 
@@ -122,6 +124,7 @@ set label 14 "nemolite2d: Mom, 256" at (NEMOLITE_MOM_AI*1.06),3.6 front textcolo
 set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.6 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
 # 128 domain - not as fast as you'd expect
 set label 15 "nemolite2d: Mom, 128" at (NEMOLITE_MOM_AI*1.06),3.15 front textcolor ls LINE_MOM_128
+# 3.39 is computed value on Archer
 set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.39 nohead ls LINE_MOM_128 lw BAR_WIDTH*NEMOLITE_MOM_AI
 # 512 domain ~spills from L3 cache to main memory
 set label 11 "nemolite2d: Mom, 512" at (NEMOLITE_MOM_AI*1.06),2.7 front textcolor ls LINE_MOM_512
