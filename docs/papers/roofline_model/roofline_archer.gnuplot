@@ -1,6 +1,6 @@
 # initial config
 set term postscript eps enhanced color
-set output 'roofline.eps'
+set output 'roofline_archer.eps'
 #set term pngcairo
 #set output 'roofline.png'
 
@@ -125,7 +125,8 @@ set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.6 nohead ls LINE_MOM_2
 # 128 domain - not as fast as you'd expect
 set label 15 "nemolite2d: Mom, 128" at (NEMOLITE_MOM_AI*1.06),3.15 front textcolor ls LINE_MOM_128
 # 3.39 is computed value on Archer
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.39 nohead ls LINE_MOM_128 lw BAR_WIDTH*NEMOLITE_MOM_AI
+# 4.27 is measured value on Haswell desktop
+set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,4.27 nohead ls LINE_MOM_128 lw BAR_WIDTH*NEMOLITE_MOM_AI
 # 512 domain ~spills from L3 cache to main memory
 set label 11 "nemolite2d: Mom, 512" at (NEMOLITE_MOM_AI*1.06),2.7 front textcolor ls LINE_MOM_512
 set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.26 nohead ls LINE_MOM_512 lw BAR_WIDTH*NEMOLITE_MOM_AI

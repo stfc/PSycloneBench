@@ -1,6 +1,6 @@
 # initial config
 set term postscript eps enhanced color
-set output 'roofline.eps'
+set output 'roofline_haswell.eps'
 #set term pngcairo
 #set output 'roofline.png'
 
@@ -21,7 +21,7 @@ L_MEM_ANG=36
 # range of each axis
 MAX_X=8
 MIN_Y=0.5
-MAX_Y=32
+MAX_Y=34
 set xrange [0.1:MAX_X]
 set yrange [MIN_Y:MAX_Y]
 
@@ -37,10 +37,10 @@ SHALLOW_LOOP1_AI = 0.26
 NEMOLITE_MOM_AI = 0.514
 
 # CPU CONSTANTS
-# For single core of Xeon E5-2697 v2 (Archer), as measured with 
+# For single core of Xeon E5-1620 v2 (my desktop), as measured with 
 # the Intel MKL version of linpack. This is therefore using
 # 256-bit AVX instructions (SIMD)
-PEAK_GFLOPS=24.1
+PEAK_GFLOPS=28.1
 NUM_CORES=1
 
 #ceilings
@@ -58,10 +58,10 @@ C_ILP_ONLY		= 2 * C_SIMD
 # the 'copy' result of STREAM
 # with arrays of 15M elements. Therefore, this is bandwidth to 
 # main memory, not cache. Units are GB/s.
-PEAK_MEM_BW=8.4
-# Using arrays of 0.5M elements I think we get bandwidth to
+PEAK_MEM_BW=14.5
+# Using arrays of 0.25M elements I think we get bandwidth to
 # L3 cache:
-PEAK_L3_BW=17.7
+PEAK_L3_BW=39.6
 
 
 NUM_CHANNELS=2
@@ -105,27 +105,29 @@ set style line LINE_MOM_128       lt 1 lc rgb "red"
 # PLOTS
 set multiplot
 
-# Bars for measured individual kernel performance
+# Bars for measured individual kernel performance (GFLOPS)
 
-# From Shallow with the Cray compiler (as that's the best)
+# From Shallow - need to run these on desktop
 
 # Loop1 of shallow with 512^2 achieves 7.0 GFLOPS
-set label 12 "shallow: loop 1, 512" at (SHALLOW_LOOP1_AI*0.6),8.0 front textcolor ls LINE_LOOP1_512
-set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.0 nohead ls LINE_LOOP1_512 lw BAR_WIDTH*SHALLOW_LOOP1_AI
+#set label 12 "shallow: loop 1, 512" at (SHALLOW_LOOP1_AI*0.6),8.0 front textcolor ls LINE_LOOP1_512
+#set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.0 nohead ls LINE_LOOP1_512 lw BAR_WIDTH*SHALLOW_LOOP1_AI
 
-set label 13 "shallow: loop 1, 1024" at (SHALLOW_LOOP1_AI*1.06), 4.3 front textcolor ls LINE_LOOP1_1024
+#set label 13 "shallow: loop 1, 1024" at (SHALLOW_LOOP1_AI*1.06), 4.3 front textcolor ls LINE_LOOP1_1024
 # Loop1 of shallow with 1024^2 achieves 4.1 GFLOPS
-set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.1 nohead ls LINE_LOOP1_1024 lw BAR_WIDTH*SHALLOW_LOOP1_AI
+#set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.1 nohead ls LINE_LOOP1_1024 lw BAR_WIDTH*SHALLOW_LOOP1_AI
 
 # From Nemolite2D with Intel compiler (as that's the fastest)
+
+# 128 domain - not as fast as you'd expect
+set label 15 "nemolite2d: Mom, 128" at (NEMOLITE_MOM_AI*1.06),4.15 front textcolor ls LINE_MOM_128
+# 4.27 is measured value (likwid) on Haswell desktop
+set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,4.27 nohead ls LINE_MOM_128 lw BAR_WIDTH*NEMOLITE_MOM_AI
 
 # 256 domain should fit within L3 cache
 set label 14 "nemolite2d: Mom, 256" at (NEMOLITE_MOM_AI*1.06),3.6 front textcolor ls LINE_MOM_256
 set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.6 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
-# 128 domain - not as fast as you'd expect
-set label 15 "nemolite2d: Mom, 128" at (NEMOLITE_MOM_AI*1.06),3.15 front textcolor ls LINE_MOM_128
-# 3.39 is computed value on Archer
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.39 nohead ls LINE_MOM_128 lw BAR_WIDTH*NEMOLITE_MOM_AI
+
 # 512 domain ~spills from L3 cache to main memory
 set label 11 "nemolite2d: Mom, 512" at (NEMOLITE_MOM_AI*1.06),2.7 front textcolor ls LINE_MOM_512
 set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.26 nohead ls LINE_MOM_512 lw BAR_WIDTH*NEMOLITE_MOM_AI
