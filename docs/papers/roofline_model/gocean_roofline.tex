@@ -105,6 +105,42 @@ the FLOP count: 4.269 GFLOPS $\times 1.677 s = 7.1615217$ GFLOPs. This is for
 \label{FIG_roofline_haswell}
 \end{figure}
 
+\begin{table}
+\begin{tabular}{l|l|l}
+\hline
+\hline
+                                    &    128       &   256 \\
+\hline
+        Runtime (RDTSC) [s]        &   1.697142   &     6.446171  \\
+        Runtime unhalted [s]       & 1.750448e+00 &   6.734944e+00 \\
+            Clock [MHz]            & 3.818981e+03 &   3.875309e+03 \\
+                CPI                & 6.503796e-01 &   6.348858e-01 \\
+\hline
+        L1 DTLB load misses        &    1317912   &    6748712   \\
+       L1 DTLB load miss rate      & 1.326630e-04 & 1.723565e-04 \\
+  L1 DTLB load miss duration [Cyc] & 2.101039e+01 & 2.013584e+01 \\
+        L1 DTLB store misses       &     87257    &    401036    \\
+      L1 DTLB store miss rate      & 8.783423e-06 & 1.024213e-05 \\
+ L1 DTLB store miss duration [Cyc] & 2.151055e+01 & 2.669793e+01 \\
+\hline
+  L2D load bandwidth [MBytes/s] & 1.080936e+04 & 1.446214e+04 \\
+  L2D load data volume [GBytes] &  18.1215488  &   92.177536  \\
+ L2D evict bandwidth [MBytes/s] & 4.501487e+02 & 5.065637e+02 \\
+ L2D evict data volume [GBytes] &  0.75465984  &  3.22869248  \\
+     L2 bandwidth [MBytes/s]    & 1.130282e+04 & 1.498363e+04 \\
+     L2 data volume [GBytes]    & 18.948807808 & 95.501414592 \\
+\hline
+  L3 load bandwidth [MBytes/s] & 4.511686e+03 & 4.607617e+03 \\
+  L3 load data volume [GBytes] &   7.6168768  &   29.692832  \\
+ L3 evict bandwidth [MBytes/s] & 2.771148e+02 & 2.722823e+02 \\
+ L3 evict data volume [GBytes] &  0.467840512 &  1.75466688  \\
+    L3 bandwidth [MBytes/s]    & 4.788801e+03 & 4.879899e+03 \\
+    L3 data volume [GBytes]    &  8.084717312 &  31.44749888 \\
+\hline
+\hline
+\end{tabular}
+\end{table}
+
 \bibliographystyle{unsrt}
 \bibliography{gocean_roofline}
 
