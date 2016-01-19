@@ -16,6 +16,59 @@
 
 \maketitle
 
+\section{Introduction}
+
+We want to use the Roofline Model to establish the efficiency (or
+otherwise) of two shallow-water benchmark codes that we have used in
+the GOcean project.
+
+\section{Hardware Details}
+
+CPU name:       Intel(R) Xeon(R) CPU E5-1620 v2 @ 3.70GHz
+CPU type:       Intel Xeon IvyBridge EN/EP/EX processor
+
+Level 1 32 kB
+Level 2 256 kB
+Level 3 10 MB
+
+\section{Hardware Performance Counters}
+
+The likwid tool (\url{https://github.com/RRZE-HPC/likwid}) gives
+access to Hardware Performance Counters (HWPCs) on Intel and AMD CPUs.
+However, there are issues with the accuracy of these counters,
+especially for FLOP-related measurements on Ivybridge architectures. A
+tool is included in the likwid distribution that tests the accuracy of
+HWPC-derived data by running micro-benchmarks for which the FLOP count
+and memory traffic are known:
+\url{https://code.google.com/p/likwid/wiki/IvyBridgeVerification}.
+The results of doing this on an Intel Xeon E5-1620 v2 CPU are shown in
+Figures~\ref{FIG_flops_dp_stream_test}
+and~\ref{FIG_flops_dp_triad_test}. It appears that once the memory
+footprint spills out of L1 cache (which all of our nemolite2d
+benchmark configurations do), the performance counter results
+significantly overestimate the FLOPs performed.
+
+\begin{figure}
+\centering
+\includegraphics[width=120mm]{FLOPS_DP_stream_ivybridgeEP.pdf}
+\caption{Results of the likwid accuracy test for the FLOPS\_DP group
+  and the stream benchmark on an Intel Xeon E5-1620 v2.}
+\label{FIG_flops_dp_stream_test}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=120mm]{FLOPS_DP_triad_ivybridgeEP.pdf}
+\caption{Results of the likwid accuracy test for the FLOPS\_DP group
+  and the triad benchmark on an Intel Xeon E5-1620 v2.}
+\label{FIG_flops_dp_triad_test}
+\end{figure}
+
+We therefore need some other way of measuring FLOPS. We could use
+likwid on an older Intel CPU (to which we have root access) or try
+another tool on the IvybridgeEP system. Other possible tools include
+Intel's VTune or OProfile.
+
 \section{Performance Analysis with the Roofline Model}
 
 Although we have investigated how the performance of the \psykal
@@ -106,39 +159,48 @@ the FLOP count: 4.269 GFLOPS $\times 1.677 s = 7.1615217$ GFLOPs. This is for
 \end{figure}
 
 \begin{table}
-\begin{tabular}{l|l|l}
+\begin{tabular}{l|l|l|l|l}
 \hline
 \hline
-                                    &    128       &   256 \\
+               & \multicolumn{4}{c}{Problem size} \\
+               & 32     &    64        &    128       &   256 \\
 \hline
-        Runtime (RDTSC) [s]        &   1.697142   &     6.446171  \\
-        Runtime unhalted [s]       & 1.750448e+00 &   6.734944e+00 \\
-            Clock [MHz]            & 3.818981e+03 &   3.875309e+03 \\
-                CPI                & 6.503796e-01 &   6.348858e-01 \\
+Footprint (MB) & 0.1 & 0.5          & 2.3          & 9.2 \\
 \hline
-        L1 DTLB load misses        &    1317912   &    6748712   \\
-       L1 DTLB load miss rate      & 1.326630e-04 & 1.723565e-04 \\
-  L1 DTLB load miss duration [Cyc] & 2.101039e+01 & 2.013584e+01 \\
-        L1 DTLB store misses       &     87257    &    401036    \\
-      L1 DTLB store miss rate      & 8.783423e-06 & 1.024213e-05 \\
- L1 DTLB store miss duration [Cyc] & 2.151055e+01 & 2.669793e+01 \\
+Runtime (RDTSC) [s]   & 0.144868 &  0.4485108   &   1.697142   &   6.446171  \\
+Runtime unhalted [s]  & 1.199456e-01 & 4.475135e-01 & 1.750448e+00 &   6.734944e+00 \\
+CPI                   & 6.431867e-01 & 6.423220e-01 & 6.503796e-01 &   6.348858e-01 \\
 \hline
-  L2D load bandwidth [MBytes/s] & 1.080936e+04 & 1.446214e+04 \\
-  L2D load data volume [GBytes] &  18.1215488  &   92.177536  \\
- L2D evict bandwidth [MBytes/s] & 4.501487e+02 & 5.065637e+02 \\
- L2D evict data volume [GBytes] &  0.75465984  &  3.22869248  \\
-     L2 bandwidth [MBytes/s]    & 1.130282e+04 & 1.498363e+04 \\
-     L2 data volume [GBytes]    & 18.948807808 & 95.501414592 \\
+MFLOPS           & 3.112780e+03 & 3.877720e+03  & 4.163209e+03 & 4.304728e+03 \\
+AVX MFLOPS       & 2.840625e+03 & 3.660086e+03  & 3.993397e+03 & 4.164647e+03 \\
+Packed MUOPS/s   & 7.423377e+02 & 9.584935e+02  & 1.046781e+03 & 1.092280e+03 \\
+Scalar MUOPS/s   & 2.077927e+02 & 1.306897e+02  & 7.294811e+01 & 3.784506e+01 \\
 \hline
-  L3 load bandwidth [MBytes/s] & 4.511686e+03 & 4.607617e+03 \\
-  L3 load data volume [GBytes] &   7.6168768  &   29.692832  \\
- L3 evict bandwidth [MBytes/s] & 2.771148e+02 & 2.722823e+02 \\
- L3 evict data volume [GBytes] &  0.467840512 &  1.75466688  \\
-    L3 bandwidth [MBytes/s]    & 4.788801e+03 & 4.879899e+03 \\
-    L3 data volume [GBytes]    &  8.084717312 &  31.44749888 \\
+L1 DTLB load misses          &      2007     &      17015   &    1317912   &    6748712   \\
+L1 DTLB load miss rate       &  2.949686e-06 &  6.607264e-06& 1.326630e-04 & 1.723565e-04 \\
+L1 DTLB load miss durn [Cyc] &  3.970154e+01 &  3.080153e+01& 2.101039e+01 & 2.013584e+01 \\
+L1 DTLB store misses         &       77      &       16     &     87257    &    401036    \\
+L1 DTLB store miss rate      &  1.131668e-07 &  6.213119e-09& 8.783423e-06 & 1.024213e-05 \\
+L1 DTLB store miss durn [Cyc]&  5.633766e+01 &       29     & 2.151055e+01 & 2.669793e+01 \\
+\hline
+L2D load bandwidth [MB/s]  &  3.811099e+03 &  5.030691e+03 & 1.080936e+04 & 1.446214e+04 \\
+L2D load data volume [GB]  &   0.541220288 &   2.34655488  &  18.1215488  &   92.177536  \\
+L2D evict bandwidth [MB/s] &  3.131102e+02 &  3.094459e+02 & 4.501487e+02 & 5.065637e+02 \\
+L2D evict data volume [GB] &   0.04446528  &   0.144340352 &  0.75465984  &  3.22869248  \\
+L2 bandwidth [MB/s]        &  4.600834e+03 &  5.493404e+03 & 1.130282e+04 & 1.498363e+04 \\
+L2 data volume [GB]        &   0.653371776 &   2.562386304 & 18.948807808 & 95.501414592 \\
+\hline
+L3 load bandwidth [MB/s]  &  2.434255e+03 & 4.626177e+03 & 4.511686e+03 & 4.607617e+03 \\
+L3 load data volume [GB]  &   0.371968512 &  2.07489024  &   7.6168768  &   29.692832  \\
+L3 evict bandwidth [MB/s] &  5.652167e+02 & 4.828169e+02 & 2.771148e+02 & 2.722823e+02 \\
+L3 evict data volume [GB] &   0.086368448 &  0.216548608 &  0.467840512 &  1.75466688  \\
+L3 bandwidth [MB/s]       &  2.999472e+03 & 5.108994e+03 & 4.788801e+03 & 4.879899e+03 \\
+L3 data volume [GB]       &   0.45833696  &  2.291438848 &  8.084717312 &  31.44749888 \\
 \hline
 \hline
 \end{tabular}
+\caption{Hardware performance counter data for the u-Momentum kernel on the Intel E5-1620 v2 processor.}
+\label{TAB_HWPC_MOM_U}
 \end{table}
 
 \bibliographystyle{unsrt}

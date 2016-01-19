@@ -32,9 +32,9 @@ set yrange [MIN_Y:MAX_Y]
 SHALLOW_LOOP1_AI = 0.26
 # u-momentum kernel of nemolite2d has AI = 0.44 FLOP/byte
 # Counting bytes from cache lines it is:
-#NEMOLITE_MOM_AI = 0.38
-# Using measured FLOP count it is:
-NEMOLITE_MOM_AI = 0.514
+NEMOLITE_MOM_AI = 0.38
+# The continuity kernel of nemolite2d
+NEMOLITE_CONT_AI = 0.153
 
 # CPU CONSTANTS
 # For single core of Xeon E5-1620 v2 (my desktop), as measured with 
@@ -89,6 +89,10 @@ LINE_LOOP1_1024=4
 LINE_MOM_512=5
 LINE_MOM_256=6
 LINE_MOM_128=7
+LINE_CONT_128=8
+LINE_CONT_128_NO_VEC=9
+LINE_CONT_256=10
+LINE_CONT_256_NO_VEC=11
 
 # Width of the vertical 'bars' at x=1
 BAR_WIDTH = 12
@@ -101,6 +105,10 @@ set style line LINE_LOOP1_1024    lt 1 lc rgb "green"
 set style line LINE_MOM_512       lt 1 lc rgb "violet"
 set style line LINE_MOM_256       lt 1 lc rgb "orange"
 set style line LINE_MOM_128       lt 1 lc rgb "red"
+set style line LINE_CONT_128      lt 1 lc rgb "green"
+set style line LINE_CONT_128_NO_VEC lt 1 lc rgb "dark-chartreuse"
+set style line LINE_CONT_256      lt 1 lc rgb "dark-khaki"
+set style line LINE_CONT_256_NO_VEC lt 1 lc rgb "dark-goldenrod"
 
 # PLOTS
 set multiplot
@@ -117,20 +125,38 @@ set multiplot
 # Loop1 of shallow with 1024^2 achieves 4.1 GFLOPS
 #set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.1 nohead ls LINE_LOOP1_1024 lw BAR_WIDTH*SHALLOW_LOOP1_AI
 
-# From Nemolite2D with Intel compiler (as that's the fastest)
+# u-Momentum kernel from Nemolite2D with Intel compiler (as that's the fastest)
 
 # 128 domain - not as fast as you'd expect
-set label 15 "nemolite2d: Mom, 128" at (NEMOLITE_MOM_AI*1.06),4.15 front textcolor ls LINE_MOM_128
+set label 15 "u-Momentum, 128" at (NEMOLITE_MOM_AI*1.06),4.15 front textcolor ls LINE_MOM_128
 # 4.27 is measured value (likwid) on Haswell desktop
 set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,4.27 nohead ls LINE_MOM_128 lw BAR_WIDTH*NEMOLITE_MOM_AI
 
 # 256 domain should fit within L3 cache
-set label 14 "nemolite2d: Mom, 256" at (NEMOLITE_MOM_AI*1.06),3.6 front textcolor ls LINE_MOM_256
+set label 14 "u-Momentum, 256" at (NEMOLITE_MOM_AI*1.06),3.6 front textcolor ls LINE_MOM_256
 set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.6 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
 
 # 512 domain ~spills from L3 cache to main memory
-set label 11 "nemolite2d: Mom, 512" at (NEMOLITE_MOM_AI*1.06),2.7 front textcolor ls LINE_MOM_512
+set label 11 "u-Momentum, 512" at (NEMOLITE_MOM_AI*1.06),2.7 front textcolor ls LINE_MOM_512
 set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.26 nohead ls LINE_MOM_512 lw BAR_WIDTH*NEMOLITE_MOM_AI
+
+# Nemolite2d, Continuity kernel
+
+# 256 domain, SSE
+set label 19 "Continuity, SSE, 256" at (NEMOLITE_CONT_AI*1.06),5.4 front textcolor ls LINE_CONT_256
+set arrow from NEMOLITE_CONT_AI,MIN_Y to NEMOLITE_CONT_AI,5.425 nohead ls LINE_CONT_256 lw BAR_WIDTH*NEMOLITE_CONT_AI
+
+# 128 domain, SSE
+set label 17 "Continuity, SSE, 128" at (NEMOLITE_CONT_AI*1.06),5.1 front textcolor ls LINE_CONT_128
+set arrow from NEMOLITE_CONT_AI,MIN_Y to NEMOLITE_CONT_AI,5.082 nohead ls LINE_CONT_128 lw BAR_WIDTH*NEMOLITE_CONT_AI
+
+# 128 domain, no-vec
+set label 16 "Continuity, no-vec, 128" at (NEMOLITE_CONT_AI*1.06),3.6 front textcolor ls LINE_CONT_128_NO_VEC
+set arrow from NEMOLITE_CONT_AI,MIN_Y to NEMOLITE_CONT_AI,3.558 nohead ls LINE_CONT_128_NO_VEC lw BAR_WIDTH*NEMOLITE_CONT_AI
+
+# 256 domain, no-vec
+set label 18 "Continuity, no-vec, 256" at (NEMOLITE_CONT_AI*1.06),3.3 front textcolor ls LINE_CONT_256_NO_VEC
+set arrow from NEMOLITE_CONT_AI,MIN_Y to NEMOLITE_CONT_AI,3.410 nohead ls LINE_CONT_256_NO_VEC lw BAR_WIDTH*NEMOLITE_CONT_AI
 
 
 # CPU CEILINGS
