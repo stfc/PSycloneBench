@@ -71,6 +71,28 @@ Intel's VTune or OProfile.
 
 \section{Performance Analysis with the Roofline Model}
 
+\subsection{Kernel Characteristics}
+
+Although the Continuity kernel is very simple, the u-Momentum kernel
+is not and in particular, includes a call to the {\tt sin()} function.
+\begin{verbatim}
+  my_sum = 0.0d0
+  do i = 1, 1000
+    my_sum = my_sum + sin(real(i))
+  end do
+  write (*,*) 'My sum = ', my_sum
+\end{verbatim}
+
+\begin{table}
+\begin{tabular}{l|c|c}
+                         & Continuity & u-Momentum \\
+FLOPs                    &    14      &   108      \\
+Distinct memory refs     &    10      &   31       \\
+Arithmetic intensity (FLOPs/byte) & 0.153  & 0.38  \\
+Working set size (bytes) &  $64n^2$   &            \\
+\end{tabular}
+\end{table}
+
 Although we have investigated how the performance of the \psykal
 version of nemolite2d compares with that or the original, we have not
 addressed how efficient the original actually is. In order to do so we
