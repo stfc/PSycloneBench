@@ -22,7 +22,7 @@ XMAX= 4.0
 cpu_roof <- PEAK_GFLOPS
 PEAK_BW <- max(PEAK_MEM_BW,PEAK_L3_BW)
 
-mydata <- read.table("./roofline.dat", sep=",")
+mydata <- read.table("./roofline_haswell.dat", sep=",")
 xvals <- seq(from=XMIN, to=XMAX, length.out=100)
 yvals <- mydata$V2
 # Width of bars to draw
@@ -54,4 +54,4 @@ plot(mydata$V1, mydata$V2, log="xy", xlim=c(XMIN,XMAX), ylim=c(0.01,30.0), xlab=
 rect(xleft=(1.0-barW)*mydata$V1, ybottom=0.01, xright=(1.0+barW)*mydata$V1, ytop=yvals)
 curve(mem_ceiling, xvals, add=TRUE, col="blue")
 curve(nosimd_cpu_ceiling, xvals, add=TRUE, col="blue")
-curve(peak_cpu_ceiling, xvals, add=TRUE, col="red")
+curve(peak_cpu_ceiling, xvals, add=TRUE, col="red", lty=1, lwd=2)
