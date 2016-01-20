@@ -18,6 +18,8 @@ PEAK_L3_BW= 39.6
 
 XMIN= 0.05
 XMAX= 4.0
+YMIN= 0.5
+YMAX= 32.0
 
 cpu_roof <- PEAK_GFLOPS
 PEAK_BW <- max(PEAK_MEM_BW,PEAK_L3_BW)
@@ -25,6 +27,8 @@ PEAK_BW <- max(PEAK_MEM_BW,PEAK_L3_BW)
 mydata <- read.table("./roofline_haswell.dat", sep=",")
 xvals <- seq(from=XMIN, to=XMAX, length.out=100)
 yvals <- mydata$V2
+labels <- mydata$V3
+
 # Width of bars to draw
 barW <- 0.02
 
@@ -50,8 +54,10 @@ mem_ceiling <- function(x) {
     return(result)
 }
 
-plot(mydata$V1, mydata$V2, log="xy", xlim=c(XMIN,XMAX), ylim=c(0.01,30.0), xlab="Operational intensity (FLOPs/byte)", ylab="GFLOPS")
+plot(mydata$V1, mydata$V2, log="xy", xlim=c(XMIN,XMAX), ylim=c(YMIN,YMAX), xlab="Operational intensity (FLOPs/byte)", ylab="GFLOPS")
+axis(2, at=c(0.5,1,2,4,8,16,32))
 rect(xleft=(1.0-barW)*mydata$V1, ybottom=0.01, xright=(1.0+barW)*mydata$V1, ytop=yvals)
 curve(mem_ceiling, xvals, add=TRUE, col="blue")
 curve(nosimd_cpu_ceiling, xvals, add=TRUE, col="blue")
 curve(peak_cpu_ceiling, xvals, add=TRUE, col="red", lty=1, lwd=2)
+grid(equilogs=FALSE)
