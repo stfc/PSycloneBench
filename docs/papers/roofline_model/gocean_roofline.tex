@@ -22,6 +22,13 @@ We want to use the Roofline Model to establish the efficiency (or
 otherwise) of two shallow-water benchmark codes that we have used in
 the GOcean project.
 
+Although we have investigated how the performance of the \psykal
+version of nemolite2d compares with that or the original, we have not
+addressed how efficient the original actually is. In order to do so we
+use the Roofline Model~\cite{roofline} which provides a relatively
+simple way of characterising the performance of a code in terms of
+whether it is memory-bandwidth bound or compute bound.
+
 \section{Hardware Details}
 
 CPU name:       Intel(R) Xeon(R) CPU E5-1620 v2 @ 3.70GHz
@@ -71,10 +78,13 @@ Intel's VTune or OProfile.
 
 \section{Performance Analysis with the Roofline Model}
 
-\subsection{Kernel Characteristics}
+\subsection{Calculating Kernel Characteristics}
 
 Although the Continuity kernel is very simple, the u-Momentum kernel
 is not and in particular, includes a call to the {\tt sin()} function.
+In order to estimate the cost of this function in FLOPs the following
+code was compiled (with the Intel compiler and -O1) and run with
+likwid-perfctr:
 \begin{verbatim}
   my_sum = 0.0d0
   do i = 1, 1000
@@ -82,28 +92,8 @@ is not and in particular, includes a call to the {\tt sin()} function.
   end do
   write (*,*) 'My sum = ', my_sum
 \end{verbatim}
-
-\begin{table}
-\begin{tabular}{l|c|c}
-                         & Continuity & u-Momentum \\
-FLOPs                    &    14      &   108      \\
-Distinct memory refs     &    10      &   31       \\
-Arithmetic intensity (FLOPs/byte) & 0.153  & 0.38  \\
-Working set size (bytes) &  $64n^2$   &            \\
-\end{tabular}
-\end{table}
-
-Although we have investigated how the performance of the \psykal
-version of nemolite2d compares with that or the original, we have not
-addressed how efficient the original actually is. In order to do so we
-use the Roofline Model~\cite{roofline} which provides a relatively
-simple way of characterising the performance of a code in terms of
-whether it is memory-bandwidth bound or compute bound. To do so we
-follow the approach suggested in~\cite{para_pearls} and use the
-well-known STREAM~\cite{stream} and LINPACK~\cite{linpack} benchmarks
-in order to get the upper bounds on the memory bandwidth and FLOPS for
-the test hardware. Since we are using an Intel CPUs we used
-the Intel Math Kernel Library implementation of LINPACK.
+This measurement revealed that the {\tt sin()} function requires
+approximately 13 FLOPs.
 
 A key component of the Roofline model is the Arithmetic Intensity of
 the code being executed:
@@ -116,9 +106,10 @@ arithmetic operations that it contained. In doing this counting we
 assume that any references to adjacent array elements are fetched in a
 single cache-line and thus only count once.
 
-To illustrate this, consider the following code fragment (which forms
-the body of a doubly-nested loop over {\tt i} and {\tt j} with {\tt i}
-innermost):
+To illustrate this, we consider the first loop-nest in the
+time-stepping section of the Shallow code. This is a doubly-nested
+loop over {\tt i} and {\tt j} with {\tt i} innermost). The body of the
+loop is:
 \begin{verbatim}
 CU(I+1,J) = .5d0*(P(I+1,J)+P(I,J))*U(I+1,J)
 CV(I,J+1) = .5d0*(P(I,J+1)+P(I,J))*V(I,J+1)
@@ -147,11 +138,33 @@ traffic per loop trip is approximately $640/7$ bytes.
 We can also count the number of floating-point arithmetic operations
 in this code fragment which gives us 12 multiplications and 12
 additions. $AI$ for this code fragment is then $24*7/640 = 0.26$
-FLOPs/byte.  If we do the same analysis for the (longer) x-Momentum
+FLOPs/byte.  If we do the same analysis for the (longer) u-Momentum
 kernel of nemolite2d then we find that there are 51 addition
 operations, 56 multiplication/division operations and one call to
 sin(). There are 31 distinct memory references. This gives an $AI$ of
-approximately $108*7/(31*64)$ or 0.38 FLOPs/byte.
+approximately $(107+13)*7/(31*64)$ or 0.42 FLOPs/byte.
+
+\begin{table}
+  \begin{tabular}{l|c|c|c}
+                           & Shallow & \multicolumn{2}{c}{nemolite2d} \\
+                           & 1st Loop nest & Continuity & u-Momentum \\
+\hline                                
+FLOPs                      & 24      &    14      &   107+13   \\
+Distinct memory refs       & 10      &    10      &   31       \\
+$AI$ (FLOPs/byte)          & 0.26    &  0.153     &   0.42     \\
+Working set size (bytes)   & $56n^2$ &  $64n^2$   &            \\
+\end{tabular}
+\caption{Details of the two nemolite2d kernels investigated with the
+  roofline model.}
+\label{TAB_kernel_details}
+\end{table}
+
+In applying the roofline model we follow the approach suggested
+in~\cite{para_pearls} and use the well-known STREAM~\cite{stream} and
+LINPACK~\cite{linpack} benchmarks in order to get the upper bounds on
+the memory bandwidth and FLOPS for the test hardware. Since we are
+using an Intel CPUs we used the Intel Math Kernel Library
+implementation of LINPACK.
 
 We measure the mean time to execute this region of code as 0.0020
 seconds (Intel v.16 on Haswell E5-1620 v2) for the 256 domain. This

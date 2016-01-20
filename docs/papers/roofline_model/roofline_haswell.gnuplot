@@ -30,9 +30,8 @@ set yrange [MIN_Y:MAX_Y]
 # Counting bytes from cache lines (i.e. 64 bytes per reference instead
 # of just 8 bytes for a d.p. word) it is:
 SHALLOW_LOOP1_AI = 0.26
-# u-momentum kernel of nemolite2d has AI = 0.44 FLOP/byte
-# Counting bytes from cache lines it is:
-NEMOLITE_MOM_AI = 0.38
+# u-momentum kernel of nemolite2d has AI = 0.42 FLOP/byte
+NEMOLITE_MOM_AI = 0.42
 # The continuity kernel of nemolite2d
 NEMOLITE_CONT_AI = 0.153
 
