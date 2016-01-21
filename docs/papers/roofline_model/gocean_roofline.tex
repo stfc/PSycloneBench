@@ -35,20 +35,46 @@ In applying the roofline model we follow the approach suggested
 in~\cite{para_pearls} and use the well-known STREAM~\cite{stream} and
 LINPACK~\cite{linpack} benchmarks in order to get the upper bounds on
 the memory bandwidth and FLOPS for the test hardware. Since we are
-using Intel CPUs we used the Intel Math Kernel Library
-implementation of LINPACK.
+using Intel CPUs we used the Intel Math Kernel Library implementation
+of LINPACK.
+
+Interpreting the results of the STREAM benchmark in order to get
+bandwidth figures for all levels of the cache hierarchy is not
+straightforward. We therefore used the STREAM2 benchmark which is
+intended for this purpose. In Figure~\ref{FIG_stream2_desktop} we plot
+the results obtained from the DAXPY component of the STREAM2 benchmark
+on the E5-1620 CPU. The plateaux in bandwidth for L2, L3 and main
+memory are clear but that for L1 is considerably noisier. The final
+values we have used in the roofline plots are given in
+Table~\ref{TAB_stream_linpack}.
+
+\begin{figure}
+\includegraphics{stream2_desktop}
+\caption{Results from running the STREAM2 benchmark on the E5-1620 CPU.}
+\label{FIG_stream2_desktop}
+\end{figure}
+
 
 \begin{table}
-\begin{tabular}{l|c|c|c|c}
-  & \multicolumn{2}{c|}{E5-1620 v.~2, 3.7GHz} & \multicolumn{2}{c}{E5-2697 v.~2, 2.7GHz}  \\
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+  \multicolumn{5}{|c|}{E5-1620 v.~2, 3.7GHz} \\
   \hline
-  L2 Cache (KB)             & \multicolumn{2}{c|}{256} &  \multicolumn{2}{c}{256}  \\
-  L3 Cache (MB)             & \multicolumn{2}{c|}{10}  &  \multicolumn{2}{c}{30}  \\
+LINPACK (GFLOPS) & \multicolumn{4}{c|}{28.32} \\
+\hline
+ &  L1 Cache & L2 Cache & L3 Cache & Main memory \\
+ &   32 KB   & 256 KB   & 10 MB    &  --         \\
+\hline
+STREAM2 (GB/s)   &  117  &  65.8  & 46.7 &  20.5 \\
   \hline
-  Array size ($10^6$ words) &   0.25 &  5      &  0.25  & 0.5    & 15 \\
-  STREAM, Triad (GB/s)      &  35.49 & 17.64   & 29.271 & 13.8426 & 9.6218 \\
-  \hline
- LINPACK (GFLOPS)      & \multicolumn{2}{c|}{28.32}  & \multicolumn{2}{c}{25.41} \\
+\multicolumn{5}{|c|}{E5-2697 v.~2, 2.7GHz}  \\
+\hline
+LINPACK (GFLOPS) & \multicolumn{4}{c|}{25.41} \\
+\hline
+ & L1 Cache & L2 Cache & L3 Cache & Main memory \\
+ &   32 KB  & 256 KB   & 30 MB    &  --         \\
+\hline
+STREAM2 (GB/s) &   &   &  &  \\
 \hline
 \end{tabular}
 \caption{The STREAM and LINPACK benchmark results for a single thread
