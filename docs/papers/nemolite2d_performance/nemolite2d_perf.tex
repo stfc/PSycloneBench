@@ -39,7 +39,7 @@
 
 % *** MATH PACKAGES ***
 %
-%\usepackage[cmex10]{amsmath}
+\usepackage[cmex10]{amsmath}
 % A popular package from the American Mathematical Society that provides
 % many useful and powerful commands for dealing with mathematics. If using
 % it, be sure to load this package with the cmex10 option to ensure that
@@ -355,11 +355,23 @@ For this work we have used a program "nemolite2d" developed by
 ourselves.  “nemolite2d” is a vertically-averaged version of NEMO
 (Nucleus for European Modelling of the Ocean~\cite{nemo}), which only keeps its
 dynamical part. The whole model system is represented through one
-continuity equation (for the update of the sea-surface height) and two
-vertically-integrated momentum equations (for the two velocity
+continuity equation \eqref{continuity} (for the update of the sea-surface height) and two
+vertically-integrated momentum equations \eqref{momentum} (for the two velocity
 components, respectively).
 
-(add above three equations in .tex file).
+\begin{equation}\label{continuity}
+ \frac{\partial \zeta}{\partial t} + \vec{\nabla} \cdot (\vec{U}h) = 0
+\end{equation}
+\begin{equation}\label{momentum}
+ \frac{\partial \vec{U}h}{\partial t}
+   + \vec{U} \cdot \vec{\nabla} (\vec{U}h) = 
+   - gh \vec{\nabla} \zeta - 2h \vec{\Omega} \times \vec{u}
+   + \nu h \Delta \vec{U}
+\end{equation}
+
+where $\zeta$ and $\vec{U}$ represent the sea surface height and horizontal velocity vector
+respectively. $h$ is the total water depth, $\Omega$ is the Earth rotation velocity vector.
+$g$ is the gravity. $\nu$ is the kinematic viscosity coefficient.
 
 The external forcing includes surface wind stress, bottom friction,
 and open boundary barotropic forcing. A lateral slip boundary
@@ -1343,7 +1355,7 @@ version is considerably faster than the CPU.  For problem sizes of
 $1024^2$ and greater, the 30MB cache of the Ivy Bridge CPU is
 exhausted and performance becomes limited by the bandwidth to main
 memory. At this stage the OpenACC version of the code on the GPU is
-some {\bf 3.7 (this is the factor for the CUDA version!)} times faster
+some {\bf 3.7 (this is the factor for the CUDA version!)}sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss times faster
 than the OpenMP version on the CPU. {\bf Can we relate this to the
   difference in peak memory b/w between the GPU and CPU?}
 
