@@ -19,7 +19,7 @@ L_MEM_X=0.125
 L_MEM_ANG=36
 
 # range of each axis
-MAX_X=8
+MAX_X=4
 MIN_Y=0.5
 MAX_Y=34
 set xrange [0.1:MAX_X]
@@ -54,13 +54,11 @@ C_ILP_ONLY		= 2 * C_SIMD
 
 # MEM CONSTANTS
 # For single core of Xeon E5-1620 v2 (desktop) as measured with 
-# the 'triad' result of STREAM
-# with arrays of 15M elements. Therefore, this is bandwidth to 
-# main memory, not cache. Units are GB/s.
-PEAK_MEM_BW=17.64
-# Using arrays of 0.25M elements I think we get bandwidth to
-# L3 cache:
-PEAK_L3_BW=35.49
+# the 'DAXPY' result of STREAM2. Units are GB/s.
+PEAK_MEM_BW=20.5
+PEAK_L3_BW=46.7
+PEAK_L2_BW=65.8
+PEAK_L1_BW=117.0
 
 
 NUM_CHANNELS=2
