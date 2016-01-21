@@ -7,8 +7,8 @@ set output 'roofline_haswell.eps'
 set nokey
 set grid layerdefault   linetype 0 linewidth 1.000,  linetype 0 linewidth 1.000
 
-set xlabel "Operational Intensity (Flops/byte)"
-set ylabel "GFlops/s"
+set xlabel "Operational Intensity (FLOPs/byte)"
+set ylabel "GFLOPS"
 
 # sets log base 2 scale for both axes
 set logscale x 2
@@ -39,7 +39,7 @@ NEMOLITE_CONT_AI = 0.153
 # For single core of Xeon E5-1620 v2 (my desktop), as measured with 
 # the Intel MKL version of linpack. This is therefore using
 # 256-bit AVX instructions (SIMD)
-PEAK_GFLOPS=28.1
+PEAK_GFLOPS=28.32
 NUM_CORES=1
 
 #ceilings
@@ -53,14 +53,14 @@ C_SIMD			= 4.0
 C_ILP_ONLY		= 2 * C_SIMD
 
 # MEM CONSTANTS
-# For single core of Xeon E5-2697 v2 (Archer) as measured with 
-# the 'copy' result of STREAM
+# For single core of Xeon E5-1620 v2 (desktop) as measured with 
+# the 'triad' result of STREAM
 # with arrays of 15M elements. Therefore, this is bandwidth to 
 # main memory, not cache. Units are GB/s.
-PEAK_MEM_BW=14.5
+PEAK_MEM_BW=17.64
 # Using arrays of 0.25M elements I think we get bandwidth to
 # L3 cache:
-PEAK_L3_BW=39.6
+PEAK_L3_BW=35.49
 
 
 NUM_CHANNELS=2

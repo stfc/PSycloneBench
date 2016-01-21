@@ -40,7 +40,7 @@ NEMOLITE_MOM_AI = 0.514
 # For single core of Xeon E5-2697 v2 (Archer), as measured with 
 # the Intel MKL version of linpack. This is therefore using
 # 256-bit AVX instructions (SIMD)
-PEAK_GFLOPS=24.1
+PEAK_GFLOPS=25.41
 NUM_CORES=1
 
 #ceilings
@@ -55,13 +55,13 @@ C_ILP_ONLY		= 2 * C_SIMD
 
 # MEM CONSTANTS
 # For single core of Xeon E5-2697 v2 (Archer) as measured with 
-# the 'copy' result of STREAM
+# the 'triad' result of STREAM
 # with arrays of 15M elements. Therefore, this is bandwidth to 
 # main memory, not cache. Units are GB/s.
-PEAK_MEM_BW=8.4
+PEAK_MEM_BW=9.6218
 # Using arrays of 0.5M elements I think we get bandwidth to
 # L3 cache:
-PEAK_L3_BW=17.7
+PEAK_L3_BW=13.8426
 
 
 NUM_CHANNELS=2
@@ -125,8 +125,7 @@ set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.6 nohead ls LINE_MOM_2
 # 128 domain - not as fast as you'd expect
 set label 15 "nemolite2d: Mom, 128" at (NEMOLITE_MOM_AI*1.06),3.15 front textcolor ls LINE_MOM_128
 # 3.39 is computed value on Archer
-# 4.27 is measured value on Haswell desktop
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,4.27 nohead ls LINE_MOM_128 lw BAR_WIDTH*NEMOLITE_MOM_AI
+set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.39 nohead ls LINE_MOM_128 lw BAR_WIDTH*NEMOLITE_MOM_AI
 # 512 domain ~spills from L3 cache to main memory
 set label 11 "nemolite2d: Mom, 512" at (NEMOLITE_MOM_AI*1.06),2.7 front textcolor ls LINE_MOM_512
 set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.26 nohead ls LINE_MOM_512 lw BAR_WIDTH*NEMOLITE_MOM_AI

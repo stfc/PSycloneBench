@@ -31,12 +31,30 @@ whether it is memory-bandwidth bound or compute bound.
 
 \section{Hardware Details}
 
-CPU name:       Intel(R) Xeon(R) CPU E5-1620 v2 @ 3.70GHz
-CPU type:       Intel Xeon IvyBridge EN/EP/EX processor
+In applying the roofline model we follow the approach suggested
+in~\cite{para_pearls} and use the well-known STREAM~\cite{stream} and
+LINPACK~\cite{linpack} benchmarks in order to get the upper bounds on
+the memory bandwidth and FLOPS for the test hardware. Since we are
+using Intel CPUs we used the Intel Math Kernel Library
+implementation of LINPACK.
 
-Level 1 32 kB
-Level 2 256 kB
-Level 3 10 MB
+\begin{table}
+\begin{tabular}{l|c|c|c|c}
+  & \multicolumn{2}{c|}{E5-1620 v.~2, 3.7GHz} & \multicolumn{2}{c}{E5-2697 v.~2, 2.7GHz}  \\
+  \hline
+  L2 Cache (KB)             & \multicolumn{2}{c|}{256} &  \multicolumn{2}{c}{256}  \\
+  L3 Cache (MB)             & \multicolumn{2}{c|}{10}  &  \multicolumn{2}{c}{30}  \\
+  \hline
+  Array size ($10^6$ words) &   0.25 &  5      &  0.25  & 0.5    & 15 \\
+  STREAM, Triad (GB/s)      &  35.49 & 17.64   & 29.271 & 13.8426 & 9.6218 \\
+  \hline
+ LINPACK (GFLOPS)      & \multicolumn{2}{c|}{28.32}  & \multicolumn{2}{c}{25.41} \\
+\hline
+\end{tabular}
+\caption{The STREAM and LINPACK benchmark results for a single thread
+  running on each of the two CPUs considered here.}
+\label{TAB_stream_linpack}
+\end{table}
 
 \section{Hardware Performance Counters}
 
@@ -159,13 +177,6 @@ Working set size (bytes)   & $56n^2$ &  $64n^2$   &            \\
 \label{TAB_kernel_details}
 \end{table}
 
-In applying the roofline model we follow the approach suggested
-in~\cite{para_pearls} and use the well-known STREAM~\cite{stream} and
-LINPACK~\cite{linpack} benchmarks in order to get the upper bounds on
-the memory bandwidth and FLOPS for the test hardware. Since we are
-using an Intel CPUs we used the Intel Math Kernel Library
-implementation of LINPACK.
-
 We measure the mean time to execute this region of code as 0.0020
 seconds (Intel v.16 on Haswell E5-1620 v2) for the 256 domain. This
 gives us $\frac{108*256^2}{0.002} = 3.5$ GFLOPS. In contrast,
@@ -191,6 +202,15 @@ the FLOP count: 4.269 GFLOPS $\times 1.677 s = 7.1615217$ GFLOPs. This is for
 \includegraphics[width=120mm]{roofline_haswell}
 \caption{Comparison of the performance achieved by nemolite2d and Shallow on Intel Haswell}
 \label{FIG_roofline_haswell}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=120mm]{nemolite2d_kernel_perf}
+  \caption{Performance of the Continuity and u-Momentum kernels as a
+    function of SIMD vectorisation and problem size. Results are for
+    v.16 of the Intel compiler on a Xeon E5-1620 v.2 CPU.}
+  \label{FIG_kernel_perf}
 \end{figure}
 
 \begin{table}

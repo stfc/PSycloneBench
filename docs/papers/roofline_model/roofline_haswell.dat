@@ -1,18 +1,18 @@
-# u-Momentum, 128 domain, xhost
-0.42, 3.106, "128, AVX"
-# u-Momentum, 256 domain should fit within L3 cache, xhost
-0.42, 3.737, "256, AVX"
-# u-Momentum, 512 domain ~spills from L3 cache to main memory
 # SSE gives best performance
-0.42, 2.594, "512, SSE"
+0.42 2.594 "512, SSE"
+# u-Momentum, 128 domain, xhost
+0.42 3.106 "128, AVX"
+# u-Momentum, 256 domain should fit within L3 cache, xhost
+0.42 3.737 "256, AVX"
+# u-Momentum, 512 domain ~spills from L3 cache to main memory
 # Nemolite2d, Continuity kernel
-# 512 domain, xhost
-0.153, 3.504, "512, AVX"
-# 256 domain, SSE
-0.153, 5.425, "256, SSE"
-# 128 domain, SSE
-0.153, 5.082, "128, SSE"
-# 128 domain, no-vec
-0.153,3.558, "128, No-SIMD"
 # 256 domain, no-vec
-0.153, 3.410, "256, No-SIMD"
+0.153 3.410 "256, No-SIMD"
+# 512 domain, xhost
+0.153 3.504 "512, AVX"
+# 128 domain, no-vec
+0.153 3.558 "128, No-SIMD"
+# 128 domain, SSE
+0.153 5.082 "128, SSE"
+# 256 domain, SSE
+0.153 5.425 "256, SSE"

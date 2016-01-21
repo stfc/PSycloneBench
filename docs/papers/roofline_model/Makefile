@@ -13,17 +13,12 @@ gocean_roofline.aux: gocean_roofline.tex
 FIG_FILES = 
 
 # Plots generated from Grace (xmgrace)
-GRACE_PLOTS = 
+GRACE_PLOTS = nemolite2d_kernel_perf.pdf
 
 # Plots generated from gnuplot
 GNU_PLOTS = roofline_archer.pdf roofline_haswell.pdf
 
 figs: ${FIG_FILES} ${GRACE_PLOTS} ${GNU_PLOTS}
-
-%.pdf: %.dat
-	./bargraph.pl $< > $*.eps
-	epstopdf $*.eps
-	rm $*.eps
 
 %.pdf: %.agr
 	gracebat -hdevice EPS -printfile $*.eps $<
