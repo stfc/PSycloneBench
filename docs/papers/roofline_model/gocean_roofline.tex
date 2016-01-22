@@ -233,7 +233,7 @@ If we assume that each of these ten memory accesses will touch a
 separate cache line then this code fragment will result in the moving
 of ten cache lines, each of which is 64 bytes (eight double-precision
 words). However, as noted above, this code fragment is the body of a
-loop nest. Therefore, upon the next loop trip {\tt i} will have been
+loop nest. Therefore, upon the next loop trip, {\tt i} will have been
 incremented by one and the majority of the accessed values will still
 be in cache. In fact, a new cache line will only have to be fetched
 every seven trips of the (innermost) loop and thus the mean memory
@@ -246,7 +246,7 @@ FLOPs/byte.  If we do the same analysis for the (longer) u-Momentum
 kernel of nemolite2d then we find that there are 51 addition
 operations, 56 multiplication/division operations and one call to {\tt
   sin()}. There are 31 distinct memory references. This gives an $AI$
-of approximately $(107+13)*7/(31*64)$ or 0.42 FLOPs/byte (where we
+of approximately $(107+13)*7/(31*64) = 0.42$ FLOPs/byte (where we
 assume the call to {\tt sin()} costs 13 FLOPs). The results of this
 analysis are summarised in Table~\ref{TAB_kernel_details}.
 
@@ -270,21 +270,23 @@ Working-set size (bytes)   & $56n^2$ &  $64n^2$   &   $136n^2$ \\
 \end{table}
 
 We measure the mean time to execute the u-Momentum kernel over the
-whole domain as 0.0020 seconds (Intel v.16 on the E5-1620) for the
+whole domain as 0.0021 seconds (Intel v.16 on the E5-1620) for the
 $256^2$ problem size. This gives us a performance of
-$\frac{108*256^2}{0.002} = 3.5$ GFLOPS. In contrast, instrumenting
+$\frac{120\times 256^2}{0.0021} = 3.7$ GFLOPS. In contrast, instrumenting
 this section of code with the LIKWID marker API and using
 likwid-perfctr we measure 4.7 GFLOPS.
-
-For the $128^2$ domain, the measured time is 0.570033E-03 s. This
-gives a performance of $108*128^2/0.570e-3 = 3.1$ GFLOPS which is 25\%
-less than we measure directly with likwid. 
+For the $128^2$ domain, the measured time is 0.556E-03 s. This gives a
+performance of $\frac{120\times 128^2}{0.556\times10^{-3}} = 3.5$
+GFLOPS which is some 25\% less than we measure directly with likwid.
 
 Using these figures we can finally construct the Roofline model for
 the two CPUs and the various kernels. In
 Figure~\ref{FIG_roofline_archer} we plot the model for the E5-2697 CPU
 and show the performance of the 1st loop-nest of Shallow and the
-u-Momentum kernel of nemolite2d.
+u-Momentum kernel of nemolite2d. Two things are immediately clear from
+this plot: first, the performance of the first loop nest of Shallow is
+clearly memory-bandwidth limited and second, the u-Momentum kernel of
+NEMOLite2D is no-where near approaching this limit.
 
 \begin{figure}
 \centering
@@ -294,13 +296,33 @@ u-Momentum kernel of nemolite2d.
 \label{FIG_roofline_archer}
 \end{figure}
 
+ Two performance points are plotted for the Shallow kernel
+ corresponding to domains of $512^2$ and $1024^2$. Using the equation
+ for working-set size in Table~\ref{TAB_kernel_details}, these
+ correspond to 14.7 and 58.7~MB, respectively. Since the E5-2697 has
+ an L3 cache of 30~MB, the $512^2$ case should be contained in cache
+ while the $1024^2$ case will spill to main memory. This is borne out
+ by the plot; the $1024^2$ case is achieving a performance in-line
+ with saturating the bandwidth to main memory. The $512^2$ case is
+ approaching the L3 bandwidth limit. We attribute the shortfall to the
+ fact that the kernel is not run in isolation but as part of a
+ time-stepping loop -- other kernels requiring different arrays are
+ run on either side of it. {\bf BUT, the working-set for the
+   time-stepping loop as a whole has 13 arrays giving a size of 27~MB
+   so it should fit in L3 cache?}
+
 \begin{figure}
 \centering
 \includegraphics[width=120mm]{roofline_haswell}
-\caption{Comparison of the performance achieved by different nemolite2d and
-kernels on the E5-1620.}
+\caption{Comparison of the performance achieved by different
+  NEMOLite2D kernels on the E5-1620 CPU.}
 \label{FIG_roofline_haswell}
 \end{figure}
+
+In contrast to those results, the performance of the NEMOLite2D
+u-Momentum kernel shows little sensitivity to working-set size -- the
+$128^2$, $256^2$ and $512^2$ performance points in
+Figure~\ref{FIG_roofline_archer} are very close together.
 
 \begin{figure}
   \centering

@@ -88,16 +88,22 @@ LINE_MOM_256=6
 LINE_MOM_128=7
 
 # Width of the vertical 'bars' at x=1
-BAR_WIDTH = 12
+BAR_WIDTH = 0.02
 
 set style line LINE_ROOF	lt 1 lw 6 lc rgb "#8B0000"
 set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
 
-set style line LINE_LOOP1_512     lt 1 lc rgb "dark-olivegreen"
-set style line LINE_LOOP1_1024    lt 1 lc rgb "green"
-set style line LINE_MOM_512       lt 1 lc rgb "violet"
-set style line LINE_MOM_256       lt 1 lc rgb "orange"
-set style line LINE_MOM_128       lt 1 lc rgb "red"
+LOOP1_512_COL = "dark-olivegreen"
+LOOP1_1024_COL = "green"
+MOM_512_COL = "violet"
+MOM_256_COL = "orange"
+MOM_128_COL = "red"
+
+set style line LINE_LOOP1_512     lt 1 lc rgb LOOP1_512_COL
+set style line LINE_LOOP1_1024    lt 1 lc rgb LOOP1_1024_COL
+set style line LINE_MOM_512       lt 1 lc rgb MOM_512_COL
+set style line LINE_MOM_256       lt 1 lc rgb MOM_256_COL
+set style line LINE_MOM_128       lt 1 lc rgb MOM_128_COL
 
 # PLOTS
 set multiplot
@@ -105,28 +111,27 @@ set multiplot
 # Bars for measured individual kernel performance
 
 # From Shallow with the Cray compiler (as that's the best)
-
 # Loop1 of shallow with 512^2 achieves 7.0 GFLOPS
-set label 12 "shallow: loop 1, 512" at (SHALLOW_LOOP1_AI*0.6),8.0 front textcolor ls LINE_LOOP1_512
-set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.0 nohead ls LINE_LOOP1_512 lw BAR_WIDTH*SHALLOW_LOOP1_AI
+set label 12 "shallow: loop 1, 512" at (SHALLOW_LOOP1_AI*1.07),7.5 front textcolor ls LINE_LOOP1_512
+set object 1 rect from (1.0-BAR_WIDTH)*SHALLOW_LOOP1_AI,MIN_Y to (1.0+BAR_WIDTH)*SHALLOW_LOOP1_AI,7.0 back fc rgb LOOP1_512_COL fs solid
 
 set label 13 "shallow: loop 1, 1024" at (SHALLOW_LOOP1_AI*1.06), 4.3 front textcolor ls LINE_LOOP1_1024
 # Loop1 of shallow with 1024^2 achieves 4.1 GFLOPS
-set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.1 nohead ls LINE_LOOP1_1024 lw BAR_WIDTH*SHALLOW_LOOP1_AI
+set object 2 rect from  (1.0-BAR_WIDTH)*SHALLOW_LOOP1_AI,MIN_Y to (1.0+BAR_WIDTH)*SHALLOW_LOOP1_AI,4.1 back fc rgb LOOP1_1024_COL fs solid
 
 # From Nemolite2D with Intel compiler (as that's the fastest)
 
 # 256 domain should fit within L3 cache
-set label 14 "nemolite2d: Mom, 256" at (NEMOLITE_MOM_AI*1.06),3.6 front textcolor ls LINE_MOM_256
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.6 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
-# 128 domain - not as fast as you'd expect
-set label 15 "nemolite2d: Mom, 128" at (NEMOLITE_MOM_AI*1.06),3.15 front textcolor ls LINE_MOM_128
-# 3.39 is computed value on Archer
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.39 nohead ls LINE_MOM_128 lw BAR_WIDTH*NEMOLITE_MOM_AI
-# 512 domain ~spills from L3 cache to main memory
-set label 11 "nemolite2d: Mom, 512" at (NEMOLITE_MOM_AI*1.06),2.7 front textcolor ls LINE_MOM_512
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.26 nohead ls LINE_MOM_512 lw BAR_WIDTH*NEMOLITE_MOM_AI
+set label 14 "nemolite2d: u-Mom, 256" at (NEMOLITE_MOM_AI*1.06),3.6 front textcolor ls LINE_MOM_256
+set object 3 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.6 back fc rgb MOM_256_COL fs solid
 
+# 128 domain - not as fast as you'd expect
+set label 15 "nemolite2d: u-Mom, 128" at (NEMOLITE_MOM_AI*1.06),3.15 front textcolor ls LINE_MOM_128
+set object 4 rect from  (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.39 back fc rgb MOM_128_COL fs solid
+
+# 512 domain ~spills from L3 cache to main memory
+set label 11 "nemolite2d: u-Mom, 512" at (NEMOLITE_MOM_AI*1.06),2.7 front textcolor ls LINE_MOM_512
+set object 5 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.26 back fc rgb MOM_512_COL fs solid
 
 # CPU CEILINGS
 # All cores (same as roofline)
