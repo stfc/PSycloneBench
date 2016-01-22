@@ -16,7 +16,7 @@ FIG_FILES =
 GRACE_PLOTS = nemolite2d_kernel_perf.pdf
 
 # Plots generated from gnuplot
-GNU_PLOTS = roofline_archer.pdf roofline_haswell.pdf stream2_desktop.pdf
+GNU_PLOTS = roofline_archer.pdf roofline_haswell.pdf stream2_desktop.pdf stream2_archer.pdf
 
 figs: ${FIG_FILES} ${GRACE_PLOTS} ${GNU_PLOTS}
 

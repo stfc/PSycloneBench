@@ -41,7 +41,7 @@ of LINPACK.
 Interpreting the results of the STREAM benchmark in order to get
 bandwidth figures for all levels of the cache hierarchy is not
 straightforward. We therefore used the STREAM2 benchmark which is
-intended for this purpose. In Figure~\ref{FIG_stream2_desktop} we plot
+intended for this purpose. In Figure~\ref{FIG_stream2} we plot
 the results obtained from the DAXPY component of the STREAM2 benchmark
 on the E5-1620 CPU. The plateaux in bandwidth for L2, L3 and main
 memory are clear but that for L1 is considerably noisier. The final
@@ -50,8 +50,10 @@ Table~\ref{TAB_stream_linpack}.
 
 \begin{figure}
 \includegraphics{stream2_desktop}
-\caption{Results from running the STREAM2 benchmark on the E5-1620 CPU.}
-\label{FIG_stream2_desktop}
+\includegraphics{stream2_archer}
+\caption{Results from running the STREAM2 benchmark on the E5-1620
+  (top) and E5-2697 (bottom) CPUs.}
+\label{FIG_stream2}
 \end{figure}
 
 
@@ -74,7 +76,7 @@ LINPACK (GFLOPS) & \multicolumn{4}{c|}{25.41} \\
  & L1 Cache & L2 Cache & L3 Cache & Main memory \\
  &   32 KB  & 256 KB   & 30 MB    &  --         \\
 \hline
-STREAM2 (GB/s) &   &   &  &  \\
+STREAM2 (GB/s) & 108 & 54.0 & 37.7  &  17.6 \\
 \hline
 \end{tabular}
 \caption{The STREAM and LINPACK benchmark results for a single thread
@@ -93,8 +95,7 @@ HWPC-derived data by running micro-benchmarks for which the FLOP count
 and memory traffic are known:
 \url{https://code.google.com/p/likwid/wiki/IvyBridgeVerification}.
 The results of doing this on an Intel Xeon E5-1620 v2 CPU are shown in
-Figures~\ref{FIG_flops_dp_stream_test}
-and~\ref{FIG_flops_dp_triad_test}. It appears that once the memory
+Figure~\ref{FIG_flops_dp_test}. It appears that once the memory
 footprint spills out of L1 cache (which all of our nemolite2d
 benchmark configurations do), the performance counter results
 significantly overestimate the FLOPs performed.
@@ -102,17 +103,11 @@ significantly overestimate the FLOPs performed.
 \begin{figure}
 \centering
 \includegraphics[width=120mm]{FLOPS_DP_stream_ivybridgeEP.pdf}
-\caption{Results of the likwid accuracy test for the FLOPS\_DP group
-  and the stream benchmark on an Intel Xeon E5-1620 v2.}
-\label{FIG_flops_dp_stream_test}
-\end{figure}
-
-\begin{figure}
-\centering
 \includegraphics[width=120mm]{FLOPS_DP_triad_ivybridgeEP.pdf}
 \caption{Results of the likwid accuracy test for the FLOPS\_DP group
-  and the triad benchmark on an Intel Xeon E5-1620 v2.}
-\label{FIG_flops_dp_triad_test}
+  and the stream (top) and triad (bottom) benchmark on an Intel Xeon
+  E5-1620 v2.}
+\label{FIG_flops_dp_test}
 \end{figure}
 
 We therefore need some other way of measuring FLOPS. We could use
@@ -230,27 +225,32 @@ every seven trips of the (innermost) loop and thus the mean memory
 traffic per loop trip is approximately $640/7$ bytes.
 
 We can also count the number of floating-point arithmetic operations
-in this code fragment which gives us 12 multiplications and 12
-additions. $AI$ for this code fragment is then $24*7/640 = 0.26$
+(FLOPs) in this code fragment which gives us 12 multiplications and 12
+additions. The $AI$ for this code fragment is then $24*7/640 = 0.26$
 FLOPs/byte.  If we do the same analysis for the (longer) u-Momentum
 kernel of nemolite2d then we find that there are 51 addition
 operations, 56 multiplication/division operations and one call to
 sin(). There are 31 distinct memory references. This gives an $AI$ of
-approximately $(107+13)*7/(31*64)$ or 0.42 FLOPs/byte.
+approximately $(107+13)*7/(31*64)$ or 0.42 FLOPs/byte (where we assume
+the call to {\tt sin()} costs 13 FLOPs). The results of this analysis
+are summarised in Table~\ref{TAB_kernel_details}.
 
 \begin{table}
-  \begin{tabular}{l|c|c|c}
-                           & Shallow & \multicolumn{2}{c}{nemolite2d} \\
-                           & 1st Loop nest & Continuity & u-Momentum \\
+\begin{tabular}{|l|c|c|c|}
+\hline
+Code                       & Shallow & \multicolumn{2}{c|}{nemolite2d} \\
+\hline
+Kernel                     & 1st loop nest & Continuity & u-Momentum \\
 \hline                                
 FLOPs                      & 24      &    14      &   107+13   \\
 Distinct memory refs       & 10      &    10      &   31       \\
 $AI$ (FLOPs/byte)          & 0.26    &  0.153     &   0.42     \\
-Working set size (bytes)   & $56n^2$ &  $64n^2$   &            \\
+Working set size (bytes)   & $56n^2$ &  $64n^2$   &   $136n^2$ \\
+\hline
 \end{tabular}
-\caption{Details of the two nemolite2d kernels investigated with the
-  roofline model. $n$ is the problem size -- the length of one side of
-  the square domain.}
+\caption{Details of the kernels investigated with the roofline
+  model. $n$ is the problem size -- the length of one side of the
+  square domain.}
 \label{TAB_kernel_details}
 \end{table}
 
@@ -270,14 +270,16 @@ the FLOP count: 4.269 GFLOPS $\times 1.677 s = 7.1615217$ GFLOPs. This is for
 \begin{figure}
 \centering
 \includegraphics[width=120mm]{roofline_archer}
-\caption{Comparison of the performance achieved by nemolite2d and Shallow on Archer (Intel Ivybridge)}
+\caption{Comparison of the performance achieved by nemolite2d and
+  Shallow on Archer (Intel Ivybridge)}
 \label{FIG_roofline_archer}
 \end{figure}
 
 \begin{figure}
 \centering
 \includegraphics[width=120mm]{roofline_haswell}
-\caption{Comparison of the performance achieved by nemolite2d and Shallow on Intel Haswell}
+\caption{Comparison of the performance achieved by nemolite2d and
+  Shallow on Intel Haswell}
 \label{FIG_roofline_haswell}
 \end{figure}
 
@@ -303,15 +305,22 @@ The reasons for this include:
 \begin{itemize}
 \item HWPC data on its own doesn't give much insight into performance issues;
 \item FLOPS data produced by likwid is unreliable on Ivy Bridge processors;
-\item Persuading any tool to give HWPC data can be difficult. likwid is relatively straightforward but root access was required on a Redhat-based linux distribution. Thus far we haven't succeeded in getting this data from Intel's VTune.
+\item Persuading any tool to give HWPC data can be difficult. likwid
+  is relatively straightforward but root access was required on a
+  Redhat-based linux distribution. Thus far we haven't succeeded in
+  getting this data from Intel's VTune.
 \item The Intel compiler tends to report ``Loop was vectorised'' but
   it is hard to judge how efficient this vectorisation is. For
   instance we have found occasions where backing-off from AVX to SSE
-  instructions actually gave better performing code. Ways of establishing the quality of the code produced by the compiler are missing;
+  instructions actually gave better performing code. Ways of
+  establishing the quality of the code produced by the compiler are
+  missing;
 \end{itemize}
 
 It feels as though there is a need for a tool that addresses some of
-these issues.
+these issues. It could be that Intel's Vectorization Advisor will be
+useful and this requires investigation.
+
 
 \section{Conclusions}
 
