@@ -291,8 +291,8 @@ NEMOLite2D is no-where near approaching this limit.
 \begin{figure}
 \centering
 \includegraphics[width=120mm]{roofline_archer}
-\caption{Comparison of the performance achieved by nemolite2d and
-  Shallow on the E5-2697}
+\caption{Comparison of the performance achieved by NEMOLite2D and
+  Shallow on the E5-2697 CPU.}
 \label{FIG_roofline_archer}
 \end{figure}
 
@@ -310,6 +310,21 @@ NEMOLite2D is no-where near approaching this limit.
  run on either side of it. {\bf BUT, the working-set for the
    time-stepping loop as a whole has 13 arrays giving a size of 27~MB
    so it should fit in L3 cache?}
+
+In Figure~\ref{FIG_roofline_haswell} we plot the Roofline model
+obtained for the E5-1620 CPU. In order to investigate the poor
+performance of the u-Momentum kernel of NEMOLite2D, we also show the
+performance of the (simpler) Continuity kernel from that code. As we
+would expect, the performance of the u-Momentum kernel remains poor on
+this CPU. However, the Continuity kernel performs well. The
+working-set sizes for this kernel for the $128^2$ and $256^2$ domains
+are approximately 1~MB and 4.2~MB, respectively. Both of these should
+therefore fit comfortably in L3 cache. However, again, this kernel is
+one of several within the time-stepping loop of NEMOLite2D. For the
+$128^2$ domain this loop as a whole has a working-set size of
+$18\times128^2\times 8$ bytes or 2.4~MB. {\bf Again, this should all
+  fit comfortably in l3 cache so why are we nowhere near the L3
+  bandwidth limit?}
 
 \begin{figure}
 \centering
