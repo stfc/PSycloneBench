@@ -311,6 +311,11 @@ NEMOLite2D is no-where near approaching this limit.
    time-stepping loop as a whole has 13 arrays giving a size of 27~MB
    so it should fit in L3 cache?}
 
+In contrast to those results, the performance of the NEMOLite2D
+u-Momentum kernel shows little sensitivity to working-set size -- the
+$128^2$, $256^2$ and $512^2$ performance points in
+Figure~\ref{FIG_roofline_archer} are very close together.
+
 In Figure~\ref{FIG_roofline_haswell} we plot the Roofline model
 obtained for the E5-1620 CPU. In order to investigate the poor
 performance of the u-Momentum kernel of NEMOLite2D, we also show the
@@ -333,11 +338,6 @@ $18\times128^2\times 8$ bytes or 2.4~MB. {\bf Again, this should all
   NEMOLite2D kernels on the E5-1620 CPU.}
 \label{FIG_roofline_haswell}
 \end{figure}
-
-In contrast to those results, the performance of the NEMOLite2D
-u-Momentum kernel shows little sensitivity to working-set size -- the
-$128^2$, $256^2$ and $512^2$ performance points in
-Figure~\ref{FIG_roofline_archer} are very close together.
 
 \begin{figure}
   \centering
