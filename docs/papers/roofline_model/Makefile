@@ -34,5 +34,5 @@ clean:
 	rm -f *.blg *.log *~
 
 allclean: clean
-	rm -f ${FIG_FILES}
+	rm -f ${FIG_FILES} ${GNU_PLOTS} ${GRACE_PLOTS}
 	rm -f *.bbl *.aux gocean_roofline.pdf

@@ -20,42 +20,27 @@
 
 We want to use the Roofline Model to establish the efficiency (or
 otherwise) of two shallow-water benchmark codes that we have used in
-the GOcean project.
+the GOcean project. The first of these codes, Shallow, was originally
+written by Paul Swarztrauber over 30 years ago and has been optimised
+by various people over that time. In contrast, nemolite2d is a new,
+un-optimised code that has been extracted from NEMO.
 
 Although we have investigated how the performance of the \psykal
-version of nemolite2d compares with that or the original, we have not
+version of nemolite2d compares with that of the original, we have not
 addressed how efficient the original actually is. In order to do so we
 use the Roofline Model~\cite{roofline} which provides a relatively
 simple way of characterising the performance of a code in terms of
 whether it is memory-bandwidth bound or compute bound.
 
+In this report we investigate the application of the Roofline Model to
+these two, serial, shallow-water codes.
+
 \section{Hardware Details}
 
-In applying the roofline model we follow the approach suggested
-in~\cite{para_pearls} and use the well-known STREAM~\cite{stream} and
-LINPACK~\cite{linpack} benchmarks in order to get the upper bounds on
-the memory bandwidth and FLOPS for the test hardware. Since we are
-using Intel CPUs we used the Intel Math Kernel Library implementation
-of LINPACK.
-
-Interpreting the results of the STREAM benchmark in order to get
-bandwidth figures for all levels of the cache hierarchy is not
-straightforward. We therefore used the STREAM2 benchmark which is
-intended for this purpose. In Figure~\ref{FIG_stream2} we plot
-the results obtained from the DAXPY component of the STREAM2 benchmark
-on the E5-1620 CPU. The plateaux in bandwidth for L2, L3 and main
-memory are clear but that for L1 is considerably noisier. The final
-values we have used in the roofline plots are given in
-Table~\ref{TAB_stream_linpack}.
-
-\begin{figure}
-\includegraphics{stream2_desktop}
-\includegraphics{stream2_archer}
-\caption{Results from running the STREAM2 benchmark on the E5-1620
-  (top) and E5-2697 (bottom) CPUs.}
-\label{FIG_stream2}
-\end{figure}
-
+We have performed this investigation on two different Intel CPUs; an
+E5-1620 v.2 and an E5-2697 v.2. Both of these use the Intel Ivy Bridge
+microarchitecture and have Ivy Bridge-EP cores. More details are given
+in Table~\ref{TAB_stream_linpack}.
 
 \begin{table}
 \begin{tabular}{|l|c|c|c|c|}
@@ -79,17 +64,47 @@ LINPACK (GFLOPS) & \multicolumn{4}{c|}{25.41} \\
 STREAM2 (GB/s) & 108 & 54.0 & 37.7  &  17.6 \\
 \hline
 \end{tabular}
-\caption{The STREAM and LINPACK benchmark results for a single thread
-  running on each of the two CPUs considered here.}
+\caption{The STREAM2 (DAXPY) and LINPACK benchmark results for a
+  single thread running on each of the two CPUs considered here.}
 \label{TAB_stream_linpack}
 \end{table}
 
+In applying the roofline model we follow the approach suggested
+in~\cite{para_pearls} and use the well-known STREAM~\cite{stream} and
+LINPACK~\cite{linpack} benchmarks in order to get the upper bounds on
+the memory bandwidth and FLOPS for the test hardware. Since we are
+using Intel CPUs we used the Intel Math Kernel Library implementation
+of LINPACK.
+
+Interpreting the results of the STREAM benchmark in order to get
+bandwidth figures for all levels of the cache hierarchy is not
+straightforward. We therefore used the STREAM2 benchmark which is
+intended for this purpose. In Figure~\ref{FIG_stream2} we plot the
+results obtained from the DAXPY component of the STREAM2 benchmark on
+both of the CPUs examined here. The plateaux in bandwidth for L2, L3
+and main memory are clear but that for L1 is considerably noisier. The
+final values we have used in the roofline plots are given in
+Table~\ref{TAB_stream_linpack}.
+
+\begin{figure}
+\includegraphics{stream2_desktop}
+\includegraphics{stream2_archer}
+\caption{Results from running the STREAM2 benchmark on the E5-1620
+  (top) and E5-2697 (bottom) CPUs.}
+\label{FIG_stream2}
+\end{figure}
+
+
 \section{Hardware Performance Counters}
 
+Initially, we hoped to use Hardware Performance Counters (HWPCs) in
+order to get an accurate measure of the FLOPS and memory traffic
+associated with specific kernels in each of the models.
+
 The likwid tool (\url{https://github.com/RRZE-HPC/likwid}) gives
-access to Hardware Performance Counters (HWPCs) on Intel and AMD CPUs.
+access to HWPCs on Intel and AMD CPUs.
 However, there are issues with the accuracy of these counters,
-especially for FLOP-related measurements on Ivybridge architectures. A
+especially for FLOP-related measurements on Ivy Bridge architectures. A
 tool is included in the likwid distribution that tests the accuracy of
 HWPC-derived data by running micro-benchmarks for which the FLOP count
 and memory traffic are known:
@@ -171,7 +186,7 @@ L3 data volume [GB]       &   0.45833696  &  2.291438848 &  8.084717312 &  31.44
 
 Although the Continuity kernel is very simple, the u-Momentum kernel
 is not and in particular, includes a call to the {\tt sin()} function.
-In order to estimate the cost of this function in FLOPs the following
+In order to estimate the cost of this function in FLOPs, the following
 code was compiled (with the Intel compiler and -O1) and run with
 likwid-perfctr:
 \begin{verbatim}
@@ -189,15 +204,15 @@ the code being executed:
 \begin{equation}
 AI = \frac{\textrm{No. of floating-point operations}}{\textrm{Bytes fetched from memory}}
 \end{equation}
-We calculated this quantity manually by examining the
-source code and counting the number of memory references and
-arithmetic operations that it contained. In doing this counting we
-assume that any references to adjacent array elements are fetched in a
-single cache-line and thus only count once.
+Since HWPC data proved to be unreliable, we calculated this quantity
+manually by examining the source code and counting the number of
+memory references and arithmetic operations that it contained. In
+doing this counting we assume that any references to adjacent array
+elements are fetched in a single cache-line and thus only count once.
 
 To illustrate this, we consider the first loop-nest in the
 time-stepping section of the Shallow code. This is a doubly-nested
-loop over {\tt i} and {\tt j} with {\tt i} innermost). The body of the
+loop over {\tt i} and {\tt j} with {\tt i} innermost. The body of the
 loop is:
 \begin{verbatim}
 CU(I+1,J) = .5d0*(P(I+1,J)+P(I,J))*U(I+1,J)
@@ -212,7 +227,7 @@ H(I,J) = P(I,J)+0.25d0*                   &
 \end{verbatim}
 This code writes to four memory locations ({\tt CU}, {\tt CV}, {\tt Z}
 and {\tt H}) and reads from ten distinct locations.  However, if we
-assume caching of reads from adjacent locations ({\it e.g.} {\tt
+assume caching of reads from locations adjacent in memory ({\it e.g.} {\tt
   P(i,j)} and {\tt P(i+1,j)}) then we have only six distinct reads.
 If we assume that each of these ten memory accesses will touch a
 separate cache line then this code fragment will result in the moving
@@ -229,11 +244,11 @@ We can also count the number of floating-point arithmetic operations
 additions. The $AI$ for this code fragment is then $24*7/640 = 0.26$
 FLOPs/byte.  If we do the same analysis for the (longer) u-Momentum
 kernel of nemolite2d then we find that there are 51 addition
-operations, 56 multiplication/division operations and one call to
-sin(). There are 31 distinct memory references. This gives an $AI$ of
-approximately $(107+13)*7/(31*64)$ or 0.42 FLOPs/byte (where we assume
-the call to {\tt sin()} costs 13 FLOPs). The results of this analysis
-are summarised in Table~\ref{TAB_kernel_details}.
+operations, 56 multiplication/division operations and one call to {\tt
+  sin()}. There are 31 distinct memory references. This gives an $AI$
+of approximately $(107+13)*7/(31*64)$ or 0.42 FLOPs/byte (where we
+assume the call to {\tt sin()} costs 13 FLOPs). The results of this
+analysis are summarised in Table~\ref{TAB_kernel_details}.
 
 \begin{table}
 \begin{tabular}{|l|c|c|c|}
@@ -245,7 +260,7 @@ Kernel                     & 1st loop nest & Continuity & u-Momentum \\
 FLOPs                      & 24      &    14      &   107+13   \\
 Distinct memory refs       & 10      &    10      &   31       \\
 $AI$ (FLOPs/byte)          & 0.26    &  0.153     &   0.42     \\
-Working set size (bytes)   & $56n^2$ &  $64n^2$   &   $136n^2$ \\
+Working-set size (bytes)   & $56n^2$ &  $64n^2$   &   $136n^2$ \\
 \hline
 \end{tabular}
 \caption{Details of the kernels investigated with the roofline
@@ -254,32 +269,36 @@ Working set size (bytes)   & $56n^2$ &  $64n^2$   &   $136n^2$ \\
 \label{TAB_kernel_details}
 \end{table}
 
-We measure the mean time to execute this region of code as 0.0020
-seconds (Intel v.16 on Haswell E5-1620 v2) for the 256 domain. This
-gives us $\frac{108*256^2}{0.002} = 3.5$ GFLOPS. In contrast,
-instrumenting this section of code with the LIKWID marker API and
-using likwid-perfctr we measure 4.7 GFLOPS.
+We measure the mean time to execute the u-Momentum kernel over the
+whole domain as 0.0020 seconds (Intel v.16 on the E5-1620) for the
+$256^2$ problem size. This gives us a performance of
+$\frac{108*256^2}{0.002} = 3.5$ GFLOPS. In contrast, instrumenting
+this section of code with the LIKWID marker API and using
+likwid-perfctr we measure 4.7 GFLOPS.
 
-For the 128 the measured time per kernel call is 0.570033E-03 s.
-$108*128^2/0.570e-3 = 3.1$ GFLOPS which is 25\% less than we measure
-directly with likwid.  We can use the value reported by likwid to get
-the FLOP count: 4.269 GFLOPS $\times 1.677 s = 7.1615217$ GFLOPs. This is for
-3000 steps of $128^2$ so one kernel call is: $7.1615217/(3000*128^2) =
-145.7$ FLOPs. This means that $AI = 145.7*7/(31*64) = 0.514$ FLOP/byte
+For the $128^2$ domain, the measured time is 0.570033E-03 s. This
+gives a performance of $108*128^2/0.570e-3 = 3.1$ GFLOPS which is 25\%
+less than we measure directly with likwid. 
+
+Using these figures we can finally construct the Roofline model for
+the two CPUs and the various kernels. In
+Figure~\ref{FIG_roofline_archer} we plot the model for the E5-2697 CPU
+and show the performance of the 1st loop-nest of Shallow and the
+u-Momentum kernel of nemolite2d.
 
 \begin{figure}
 \centering
 \includegraphics[width=120mm]{roofline_archer}
 \caption{Comparison of the performance achieved by nemolite2d and
-  Shallow on Archer (Intel Ivybridge)}
+  Shallow on the E5-2697}
 \label{FIG_roofline_archer}
 \end{figure}
 
 \begin{figure}
 \centering
 \includegraphics[width=120mm]{roofline_haswell}
-\caption{Comparison of the performance achieved by nemolite2d and
-  Shallow on Intel Haswell}
+\caption{Comparison of the performance achieved by different nemolite2d and
+kernels on the E5-1620.}
 \label{FIG_roofline_haswell}
 \end{figure}
 
