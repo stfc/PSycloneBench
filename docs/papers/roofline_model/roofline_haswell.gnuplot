@@ -15,8 +15,8 @@ set logscale x 2
 set logscale y 2
 
 # label offsets
-L_MEM_X=0.125
-L_MEM_ANG=36
+L_MEM_X=0.3
+L_MEM_ANG=34
 
 # range of each axis
 MAX_X=4
@@ -86,26 +86,38 @@ LINE_LOOP1_1024=4
 LINE_MOM_512=5
 LINE_MOM_256=6
 LINE_MOM_128=7
+LINE_CONT_64=13
 LINE_CONT_128=8
 LINE_CONT_128_NO_VEC=9
 LINE_CONT_256=10
 LINE_CONT_256_NO_VEC=11
+LINE_CONT_512_NO_VEC=12
 
-# Width of the vertical 'bars' at x=1
-BAR_WIDTH = 12
+# Width of the bars
+BAR_WIDTH = 0.02
 
 set style line LINE_ROOF	lt 1 lw 6 lc rgb "#8B0000"
 set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
 
-set style line LINE_LOOP1_512     lt 1 lc rgb "dark-olivegreen"
-set style line LINE_LOOP1_1024    lt 1 lc rgb "green"
-set style line LINE_MOM_512       lt 1 lc rgb "violet"
-set style line LINE_MOM_256       lt 1 lc rgb "orange"
-set style line LINE_MOM_128       lt 1 lc rgb "red"
-set style line LINE_CONT_128      lt 1 lc rgb "green"
-set style line LINE_CONT_128_NO_VEC lt 1 lc rgb "dark-chartreuse"
-set style line LINE_CONT_256      lt 1 lc rgb "dark-khaki"
-set style line LINE_CONT_256_NO_VEC lt 1 lc rgb "dark-goldenrod"
+MOM_512_COL         = "violet"
+MOM_256_COL         = "orange"
+MOM_128_COL         = "red"
+CONT_64_COL         = "purple"
+CONT_128_COL        = "green"
+CONT_128_NO_VEC_COL = "dark-chartreuse"
+CONT_256_COL        = "dark-khaki"
+CONT_256_NO_VEC_COL = "dark-goldenrod"
+CONT_512_NO_VEC_COL = "dark-green"
+
+set style line LINE_MOM_512       lt 1 lc rgb MOM_512_COL
+set style line LINE_MOM_256       lt 1 lc rgb MOM_256_COL
+set style line LINE_MOM_128       lt 1 lc rgb MOM_128_COL
+set style line LINE_CONT_64       lt 1 lc rgb CONT_64_COL
+set style line LINE_CONT_128      lt 1 lc rgb CONT_128_COL
+set style line LINE_CONT_128_NO_VEC lt 1 lc rgb CONT_128_NO_VEC_COL
+set style line LINE_CONT_256      lt 1 lc rgb CONT_256_COL
+set style line LINE_CONT_256_NO_VEC lt 1 lc rgb CONT_256_NO_VEC_COL
+set style line LINE_CONT_512_NO_VEC lt 1 lc rgb CONT_512_NO_VEC_COL
 
 # PLOTS
 set multiplot
@@ -127,34 +139,42 @@ set multiplot
 # 128 domain - not as fast as you'd expect
 set label 15 "u-Momentum, 128" at (NEMOLITE_MOM_AI*1.06),4.15 front textcolor ls LINE_MOM_128
 # 4.27 is measured value (likwid) on Haswell desktop
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,4.27 nohead ls LINE_MOM_128 lw BAR_WIDTH*NEMOLITE_MOM_AI
+set object 1 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,4.27 back fc rgb MOM_128_COL fs solid
 
 # 256 domain should fit within L3 cache
 set label 14 "u-Momentum, 256" at (NEMOLITE_MOM_AI*1.06),3.6 front textcolor ls LINE_MOM_256
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.6 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
+#set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.6 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
+set object 2 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.6 back fc rgb MOM_256_COL fs solid
 
 # 512 domain ~spills from L3 cache to main memory
-set label 11 "u-Momentum, 512" at (NEMOLITE_MOM_AI*1.06),2.7 front textcolor ls LINE_MOM_512
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.26 nohead ls LINE_MOM_512 lw BAR_WIDTH*NEMOLITE_MOM_AI
+set label 11 "u-Momentum, 512" at (NEMOLITE_MOM_AI*1.06),2.9 front textcolor ls LINE_MOM_512
+set object 3 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.26 back fc rgb MOM_512_COL fs solid
 
 # Nemolite2d, Continuity kernel
 
 # 256 domain, SSE
-set label 19 "Continuity, SSE, 256" at (NEMOLITE_CONT_AI*1.06),5.4 front textcolor ls LINE_CONT_256
-set arrow from NEMOLITE_CONT_AI,MIN_Y to NEMOLITE_CONT_AI,5.425 nohead ls LINE_CONT_256 lw BAR_WIDTH*NEMOLITE_CONT_AI
+set label 19 "Continuity, SSE, 256" at (NEMOLITE_CONT_AI*1.06),5.7 front textcolor ls LINE_CONT_256
+set object 4 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.425 back fc rgb CONT_256_COL fs solid
 
 # 128 domain, SSE
 set label 17 "Continuity, SSE, 128" at (NEMOLITE_CONT_AI*1.06),5.1 front textcolor ls LINE_CONT_128
-set arrow from NEMOLITE_CONT_AI,MIN_Y to NEMOLITE_CONT_AI,5.082 nohead ls LINE_CONT_128 lw BAR_WIDTH*NEMOLITE_CONT_AI
+set object 5 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.082 back fc rgb CONT_128_COL fs solid
+
+# 64 domain, SSE
+set label 21 "Continuity, SSE, 64" at (NEMOLITE_CONT_AI*1.06),4.5 front textcolor ls LINE_CONT_64
+set object 6 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,4.819 back fc rgb CONT_64_COL fs solid
 
 # 128 domain, no-vec
 set label 16 "Continuity, no-vec, 128" at (NEMOLITE_CONT_AI*1.06),3.6 front textcolor ls LINE_CONT_128_NO_VEC
-set arrow from NEMOLITE_CONT_AI,MIN_Y to NEMOLITE_CONT_AI,3.558 nohead ls LINE_CONT_128_NO_VEC lw BAR_WIDTH*NEMOLITE_CONT_AI
+set object 7 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,3.558 back fc rgb CONT_128_NO_VEC_COL fs solid
 
 # 256 domain, no-vec
-set label 18 "Continuity, no-vec, 256" at (NEMOLITE_CONT_AI*1.06),3.3 front textcolor ls LINE_CONT_256_NO_VEC
-set arrow from NEMOLITE_CONT_AI,MIN_Y to NEMOLITE_CONT_AI,3.410 nohead ls LINE_CONT_256_NO_VEC lw BAR_WIDTH*NEMOLITE_CONT_AI
+set label 18 "Continuity, no-vec, 256" at (NEMOLITE_CONT_AI*1.06),3.2 front textcolor ls LINE_CONT_256_NO_VEC
+set object 8 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,3.410 back fc rgb CONT_256_NO_VEC_COL fs solid
 
+# 512 domain, no-vec
+set label 20 "Continuity, no-vec, 512" at (NEMOLITE_CONT_AI*1.06),2.8 front textcolor ls LINE_CONT_512_NO_VEC
+set object 9 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,2.981 back fc rgb CONT_512_NO_VEC_COL fs solid
 
 # CPU CEILINGS
 # All cores (same as roofline)

@@ -8,7 +8,7 @@ set nokey
 set grid layerdefault   linetype 0 linewidth 1.000,  linetype 0 linewidth 1.000
 
 set xlabel "Operational Intensity (Flops/byte)"
-set ylabel "GFlops/s"
+set ylabel "GFLOPS"
 
 # sets log base 2 scale for both axes
 set logscale x 2
@@ -87,7 +87,7 @@ LINE_MOM_512=5
 LINE_MOM_256=6
 LINE_MOM_128=7
 
-# Width of the vertical 'bars' at x=1
+# Width of the bars
 BAR_WIDTH = 0.02
 
 set style line LINE_ROOF	lt 1 lw 6 lc rgb "#8B0000"
