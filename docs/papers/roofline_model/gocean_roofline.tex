@@ -84,16 +84,25 @@ results obtained from the DAXPY component of the STREAM2 benchmark on
 both of the CPUs examined here. The plateaux in bandwidth for L2, L3
 and main memory are clear but that for L1 is considerably noisier. The
 final values we have used in the roofline plots are given in
-Table~\ref{TAB_stream_linpack}.
+Table~\ref{TAB_stream_linpack}. On the E5-1620 the benchmark was
+compiled with the Intel v.16 compiler with the flags ``-O3
+-fast''. Strangely, we found that dropping ``-fast'' from the link
+stage resulted in better bandwidth to main memory. Removing ``-fast''
+altogether and just using ``-O3 -xHost'' gave identical results.
 
 \begin{figure}
 \includegraphics{stream2_desktop}
 \includegraphics{stream2_archer}
 \caption{Results from running the STREAM2 benchmark on the E5-1620
-  (top) and E5-2697 (bottom) CPUs.}
+  (top) and E5-2697 (bottom) CPUs. Error bars indicate the maximum and
+  minimum values obtained from 200 runs performed for each array
+  size. }
 \label{FIG_stream2}
 \end{figure}
 
+The bandwidths obtained on the E5-1620 are significantly greater than
+those on the E5-2697.  {\bf need to check by re-running on Archer with
+  200 repeats and new min/max results}.
 
 \section{Hardware Performance Counters}
 
