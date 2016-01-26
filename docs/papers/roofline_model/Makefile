@@ -12,8 +12,8 @@ gocean_roofline.aux: gocean_roofline.tex
 # List of figures that are GENERATED from .dat files of the same name
 FIG_FILES = 
 
-# Plots generated from Grace (xmgrace)
-GRACE_PLOTS = nemolite2d_kernel_perf.pdf
+# Plots generated from Grace (xmgrace) - i.e. .agr files
+GRACE_PLOTS = nemolite2d_kernel_perf.pdf nemolite2d_cont_perf.pdf
 
 # Plots generated from gnuplot
 GNU_PLOTS = roofline_archer.pdf roofline_haswell.pdf stream2_desktop.pdf stream2_archer.pdf

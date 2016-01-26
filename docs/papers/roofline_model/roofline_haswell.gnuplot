@@ -85,13 +85,14 @@ LINE_LOOP1_512=3
 LINE_LOOP1_1024=4
 LINE_MOM_512=5
 LINE_MOM_256=6
+LINE_MOM_256_NO_IF=12
 LINE_MOM_128=7
 LINE_CONT_64=13
 LINE_CONT_128=8
 LINE_CONT_128_NO_VEC=9
 LINE_CONT_256=10
 LINE_CONT_256_NO_VEC=11
-LINE_CONT_512_NO_VEC=12
+LINE_CONT_512_NO_VEC=13
 
 # Width of the bars
 BAR_WIDTH = 0.02
@@ -101,6 +102,7 @@ set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
 
 MOM_512_COL         = "violet"
 MOM_256_COL         = "orange"
+MOM_256_NO_IF_COL   = "dark-red"
 MOM_128_COL         = "red"
 CONT_64_COL         = "purple"
 CONT_128_COL        = "green"
@@ -111,11 +113,12 @@ CONT_512_NO_VEC_COL = "dark-green"
 
 set style line LINE_MOM_512       lt 1 lc rgb MOM_512_COL
 set style line LINE_MOM_256       lt 1 lc rgb MOM_256_COL
+set style line LINE_MOM_256_NO_IF  lt 1 lc rgb MOM_256_NO_IF_COL
 set style line LINE_MOM_128       lt 1 lc rgb MOM_128_COL
 set style line LINE_CONT_64       lt 1 lc rgb CONT_64_COL
 set style line LINE_CONT_128      lt 1 lc rgb CONT_128_COL
 set style line LINE_CONT_128_NO_VEC lt 1 lc rgb CONT_128_NO_VEC_COL
-set style line LINE_CONT_256      lt 1 lc rgb CONT_256_COL
+set style line LINE_CONT_256        lt 1 lc rgb CONT_256_COL
 set style line LINE_CONT_256_NO_VEC lt 1 lc rgb CONT_256_NO_VEC_COL
 set style line LINE_CONT_512_NO_VEC lt 1 lc rgb CONT_512_NO_VEC_COL
 
@@ -124,57 +127,50 @@ set multiplot
 
 # Bars for measured individual kernel performance (GFLOPS)
 
-# From Shallow - need to run these on desktop
-
-# Loop1 of shallow with 512^2 achieves 7.0 GFLOPS
-#set label 12 "shallow: loop 1, 512" at (SHALLOW_LOOP1_AI*0.6),8.0 front textcolor ls LINE_LOOP1_512
-#set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.0 nohead ls LINE_LOOP1_512 lw BAR_WIDTH*SHALLOW_LOOP1_AI
-
-#set label 13 "shallow: loop 1, 1024" at (SHALLOW_LOOP1_AI*1.06), 4.3 front textcolor ls LINE_LOOP1_1024
-# Loop1 of shallow with 1024^2 achieves 4.1 GFLOPS
-#set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.1 nohead ls LINE_LOOP1_1024 lw BAR_WIDTH*SHALLOW_LOOP1_AI
-
 # u-Momentum kernel from Nemolite2D with Intel compiler (as that's the fastest)
 
+# 256 domain run without IF's
+set label 1 "u-Momentum, no-IFs, 256" at (NEMOLITE_MOM_AI*1.06),5.8 front textcolor ls LINE_MOM_256_NO_IF
+set object 1 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,5.809 back fc rgb MOM_256_NO_IF_COL fs solid
+
 # 128 domain - not as fast as you'd expect
-set label 15 "u-Momentum, 128" at (NEMOLITE_MOM_AI*1.06),4.15 front textcolor ls LINE_MOM_128
+set label 2 "u-Momentum, 128" at (NEMOLITE_MOM_AI*1.06),4.15 front textcolor ls LINE_MOM_128
 # 4.27 is measured value (likwid) on Haswell desktop
-set object 1 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,4.27 back fc rgb MOM_128_COL fs solid
+set object 2 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,4.27 back fc rgb MOM_128_COL fs solid
 
 # 256 domain should fit within L3 cache
-set label 14 "u-Momentum, 256" at (NEMOLITE_MOM_AI*1.06),3.6 front textcolor ls LINE_MOM_256
-#set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.6 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
-set object 2 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.6 back fc rgb MOM_256_COL fs solid
+set label 3 "u-Momentum, 256" at (NEMOLITE_MOM_AI*1.06),3.6 front textcolor ls LINE_MOM_256
+set object 3 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.6 back fc rgb MOM_256_COL fs solid
 
 # 512 domain ~spills from L3 cache to main memory
-set label 11 "u-Momentum, 512" at (NEMOLITE_MOM_AI*1.06),2.9 front textcolor ls LINE_MOM_512
-set object 3 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.26 back fc rgb MOM_512_COL fs solid
+set label 4 "u-Momentum, 512" at (NEMOLITE_MOM_AI*1.06),2.9 front textcolor ls LINE_MOM_512
+set object 4 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.26 back fc rgb MOM_512_COL fs solid
 
 # Nemolite2d, Continuity kernel
 
 # 256 domain, SSE
-set label 19 "Continuity, SSE, 256" at (NEMOLITE_CONT_AI*1.06),5.7 front textcolor ls LINE_CONT_256
-set object 4 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.425 back fc rgb CONT_256_COL fs solid
+set label 5 "Continuity, SSE, 256" at (NEMOLITE_CONT_AI*1.06),5.7 front textcolor ls LINE_CONT_256
+set object 5 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.425 back fc rgb CONT_256_COL fs solid
 
 # 128 domain, SSE
-set label 17 "Continuity, SSE, 128" at (NEMOLITE_CONT_AI*1.06),5.1 front textcolor ls LINE_CONT_128
-set object 5 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.082 back fc rgb CONT_128_COL fs solid
+set label 6 "Continuity, SSE, 128" at (NEMOLITE_CONT_AI*1.06),5.1 front textcolor ls LINE_CONT_128
+set object 6 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.082 back fc rgb CONT_128_COL fs solid
 
 # 64 domain, SSE
-set label 21 "Continuity, SSE, 64" at (NEMOLITE_CONT_AI*1.06),4.5 front textcolor ls LINE_CONT_64
-set object 6 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,4.819 back fc rgb CONT_64_COL fs solid
+set label 7 "Continuity, SSE, 64" at (NEMOLITE_CONT_AI*1.06),4.5 front textcolor ls LINE_CONT_64
+set object 7 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,4.819 back fc rgb CONT_64_COL fs solid
 
 # 128 domain, no-vec
-set label 16 "Continuity, no-vec, 128" at (NEMOLITE_CONT_AI*1.06),3.6 front textcolor ls LINE_CONT_128_NO_VEC
-set object 7 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,3.558 back fc rgb CONT_128_NO_VEC_COL fs solid
+set label 8 "Continuity, no-vec, 128" at (NEMOLITE_CONT_AI*1.06),3.6 front textcolor ls LINE_CONT_128_NO_VEC
+set object 8 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,3.558 back fc rgb CONT_128_NO_VEC_COL fs solid
 
 # 256 domain, no-vec
-set label 18 "Continuity, no-vec, 256" at (NEMOLITE_CONT_AI*1.06),3.2 front textcolor ls LINE_CONT_256_NO_VEC
-set object 8 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,3.410 back fc rgb CONT_256_NO_VEC_COL fs solid
+set label 9 "Continuity, no-vec, 256" at (NEMOLITE_CONT_AI*1.06),3.2 front textcolor ls LINE_CONT_256_NO_VEC
+set object 9 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,3.410 back fc rgb CONT_256_NO_VEC_COL fs solid
 
 # 512 domain, no-vec
-set label 20 "Continuity, no-vec, 512" at (NEMOLITE_CONT_AI*1.06),2.8 front textcolor ls LINE_CONT_512_NO_VEC
-set object 9 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,2.981 back fc rgb CONT_512_NO_VEC_COL fs solid
+set label 10 "Continuity, no-vec, 512" at (NEMOLITE_CONT_AI*1.06),2.8 front textcolor ls LINE_CONT_512_NO_VEC
+set object 10 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,2.981 back fc rgb CONT_512_NO_VEC_COL fs solid
 
 # CPU CEILINGS
 # All cores (same as roofline)
@@ -182,21 +178,21 @@ set object 9 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)
 #plot cpu_ceiling(x, cpu_roof / C_ALL_CORES) ls LINE_CEIL
 
 # SIMD
-set label 5 "No SIMD" at (MAX_X-1),((cpu_roof / C_SIMD)/1.1) right
+set label 11 "No SIMD" at (MAX_X-1),((cpu_roof / C_SIMD)/1.1) right
 plot cpu_ceiling(x, cpu_roof / C_SIMD) ls LINE_CEIL
 
 # No parallelism
-#set label 6 "ILP Only" at (MAX_X-1),((cpu_roof / C_ILP_ONLY)/1.1) right
+#set label 12 "ILP Only" at (MAX_X-1),((cpu_roof / C_ILP_ONLY)/1.1) right
 #plot cpu_ceiling(x, cpu_roof / C_ILP_ONLY) ls LINE_CEIL
 
 # MEM CEILINGS
 
-set label 8 "Main memory" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_MEM_BW)*1.1) rotate by L_MEM_ANG
+set label 13 "Main memory" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_MEM_BW)*1.1) rotate by L_MEM_ANG
 plot mem_ceiling(mem_roof(x,PEAK_MEM_BW)) ls LINE_CEIL
 
 # ROOFLINE
-set label 1 "Peak FP Performance" at (MAX_X-1),(PEAK_GFLOPS*1.1) right
-set label 2 "L3 Mem Bandwidth" at L_MEM_X,mem_roof(L_MEM_X,PEAK_BW)*1.1 rotate by L_MEM_ANG
+set label 14 "Peak FP Performance" at (MAX_X-1),(PEAK_GFLOPS*1.1) right
+set label 15 "L3 Mem Bandwidth" at L_MEM_X,mem_roof(L_MEM_X,PEAK_BW)*1.1 rotate by L_MEM_ANG
 plot roofline(x, cpu_roof) ls LINE_ROOF
 
 unset multiplot

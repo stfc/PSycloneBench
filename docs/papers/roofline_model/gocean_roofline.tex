@@ -339,6 +339,12 @@ $18\times128^2\times 8$ bytes or 2.4~MB. {\bf Again, this should all
 \label{FIG_roofline_haswell}
 \end{figure}
 
+In order to investigate why the performance of the Continuity kernel
+is falling well short of the maximum predicted by the roofline model
+we have experimented with the level of SIMD
+vectorisation. Figure~\ref{FIG_kernel_perf} shows the performance of
+the Continuity and u-Momentum kernels as a function of problem size.
+
 \begin{figure}
   \centering
   \includegraphics[width=120mm]{nemolite2d_kernel_perf}
@@ -346,6 +352,15 @@ $18\times128^2\times 8$ bytes or 2.4~MB. {\bf Again, this should all
     function of SIMD vectorisation and problem size. Results are for
     v.16 of the Intel compiler on a Xeon E5-1620 v.2 CPU.}
   \label{FIG_kernel_perf}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=120mm]{nemolite2d_cont_perf}
+  \caption{Performance of the Continuity kernel (compiled with AVX
+    instructions) and HWPC data as a function of problem size. Results
+    are for v.16 of the Intel compiler on a Xeon E5-1620 v.2 CPU.}
+  \label{FIG_cont_perf}
 \end{figure}
 
 \section{Tools}
