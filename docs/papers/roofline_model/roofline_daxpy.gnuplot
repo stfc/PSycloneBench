@@ -105,14 +105,14 @@ set for [i=1:words(kernels)] label i+20 word(kernels,i) at word(kernel_ai,i),MIN
 # CPU CEILINGS
 
 # SIMD
-set label 11 "No SIMD" at (MAX_X-0.5),((cpu_roof / C_SIMD)/1.1) right tc "dark-blue"
+set label 11 "No SIMD" at (MAX_X-0.5),((cpu_roof / C_SIMD)/1.1) right tc rgb "dark-blue"
 plot cpu_ceiling(x, cpu_roof / C_SIMD) ls LINE_CPU_CEIL
 
 # MEM CEILINGS
 
-set label 13 "Memory Bandwidth" at 0.45,(mem_roof(0.45,PEAK_MEM_BW)*0.87) rotate by L_MEM_ANG tc "blue"
-set label 16 "L2 Bandwidth" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_L2_BW)*0.87) rotate by L_MEM_ANG tc "blue"
-set label 17 "L3 Bandwidth" at 0.34,(mem_roof(0.34,PEAK_L3_BW)*0.87) rotate by L_MEM_ANG tc "blue"
+set label 13 "Memory Bandwidth" at 0.45,(mem_roof(0.45,PEAK_MEM_BW)*0.87) rotate by L_MEM_ANG tc rgb "blue"
+set label 16 "L2 Bandwidth" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_L2_BW)*0.87) rotate by L_MEM_ANG tc rgb "blue"
+set label 17 "L3 Bandwidth" at 0.34,(mem_roof(0.34,PEAK_L3_BW)*0.87) rotate by L_MEM_ANG tc rgb "blue"
 plot mem_ceiling(mem_roof(x,PEAK_MEM_BW)) ls LINE_CEIL
 plot mem_ceiling(mem_roof(x,PEAK_L3_BW)) ls LINE_CEIL
 plot mem_ceiling(mem_roof(x,PEAK_L2_BW)) ls LINE_CEIL

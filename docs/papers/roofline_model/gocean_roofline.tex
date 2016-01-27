@@ -111,15 +111,6 @@ of this cache on the E5-1620.
 \label{FIG_daxpy_bw}
 \end{figure}
 
-\begin{figure}
-\includegraphics[width=120mm]{roofline_daxpy}
-\caption{Roofline plot of daxpy-based kernels on the E5-1620 CPU. Each
-  cluster of bars represents a different kernel. Bars within a cluster
-  are for problem sizes chosen to fit within the L3, L2 and L1 cache
-  (arrays of 94,427, 8271 and 1533 elements, respectively). }
-\label{FIG_daxpy_roofline}
-\end{figure}
-
 \section{Hardware Performance Counters}
 
 Initially, we hoped to use Hardware Performance Counters (HWPCs) in
@@ -389,6 +380,31 @@ the Continuity and u-Momentum kernels as a function of problem size.
     instructions) and HWPC data as a function of problem size. Results
     are for v.16 of the Intel compiler on a Xeon E5-1620 v.2 CPU.}
   \label{FIG_cont_perf}
+\end{figure}
+
+As well as examining the performance of the Continuity kernel, we have
+also experimented with altering the DAXPY kernel of the STREAM2
+benchmark so as to vary its $AI$. We did this by adding further
+arithmetic operations but making use of the same array
+elements. We used four different kernels:
+\begin{enumerate}
+\item {\tt b(i) = b(i) + scalar*a(i)}
+\item {\tt b(i) = b(i) + scalar*a(i)+ a(i)*b(i)}
+\item {\tt b(i) = b(i) + scalar*a(i)+ a(i)*b(i)*b(i)}
+\item {\tt b(i) = b(i) + scalar*a(i)+ a(i)*b(i)*b(i)*b(i)}
+\end{enumerate}
+Figure~\ref{FIG_daxpy_roofline} shows the performance of these kernels
+on a roofline plot for the E5-1620 CPU. They generally reach L2 and L3
+bandwidth apart from at the lowest AI. Continuity kernel has AI of
+{\bf xxx more discussion here}
+
+\begin{figure}
+\includegraphics[width=120mm]{roofline_daxpy}
+\caption{Roofline plot of daxpy-based kernels on the E5-1620 CPU. Each
+  cluster of bars represents a different kernel. Bars within a cluster
+  are for problem sizes chosen to fit within the L3, L2 and L1 cache
+  (arrays of 94,427, 8271 and 1533 elements, respectively). }
+\label{FIG_daxpy_roofline}
 \end{figure}
 
 \section{Tools}
