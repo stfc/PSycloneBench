@@ -14,8 +14,8 @@ set yrange [20:165]
 set grid
 
 set xtics   (30.0000, 100.000, 1000.00, 10000.0, 100000.0, 1.00000e+06)
-set ytics   (22.0000, 45.0000, 63.0000, 160.000)
+set ytics   (22.0000, 46.0000, 61.0000, 160.000)
 
-plot 'daxpy_desktop.dat' u 1:4 w lp title 'daxpy', 'daxpypxy_desktop.dat' u 1:4 w lp title 'daxpypxy', 'daxpypxyy_desktop.dat' u 1:4 w lp title 'daxpypxyy', 'daxpypxyyy_destop.dat' u 1:4 w lp title 'daxpypyyy'
+plot 'daxpy_desktop.dat' u 1:4 w lp title 'daxpy', 'daxpypxy_desktop.dat' u 1:4 w lp title 'daxpypxy', 'daxpypxyy_desktop.dat' u 1:4 w lp title 'daxpypxyy', 'daxpypxyyy_desktop.dat' u 1:4 w lp title 'daxpypyyy'
 
 

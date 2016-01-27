@@ -66,14 +66,16 @@ roofline(x, y)		= cpu_ceiling(x, y)
 
 LINE_ROOF=1
 LINE_CEIL=2
+LINE_CPU_CEIL = 3
 
 # Width of the bars
 BAR_WIDTH = 0.02
 
 set style line LINE_ROOF	lt 1 lw 6 lc rgb "black"
 set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
+set style line LINE_CPU_CEIL	lt 1 lw 3 lc rgb "dark-blue"
 
-kernels = "DAXPY DAXPYPXY DAXPYPXYY DAXPYPXYYY"
+kernels = "AXPY AXPYPXY AXPYPXYY AXPYPXYYY"
 kernel_ai = "0.125 0.167 0.208 0.25"
 kernel_flops_L3 = "3.65 7.18 8.59 10.26"
 kernel_flops_L2 = "5.05 10.49 12.49 15.06"
@@ -89,21 +91,28 @@ set for [i=1:words(colors)] linetype i lc rgb word(colors, i)
 xshift = -0.05
 set for [i=1:words(kernels)] object i rect from (1.0-BAR_WIDTH+xshift)*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+xshift)*word(kernel_ai, i),word(kernel_flops_L3, i) back fc rgb word(colors, i) fs solid
 xshift = 0.0
-set for [i=1:words(kernels)] object i+words(kernels) rect from (1.0-BAR_WIDTH+xshift)*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+xshift)*word(kernel_ai, i),word(kernel_flops_L2, i) back fc rgb word(colors, i) fs solid
+set for [i=1:words(kernels)] object i+words(kernels) rect from (1.0-BAR_WIDTH+xshift)*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+xshift)*word(kernel_ai, i),word(kernel_flops_L2, i) back fc rgb word(colors, i) fs pattern 1
 xshift = 0.05
-set for [i=1:words(kernels)] object i+2*words(kernels) rect from (1.0-BAR_WIDTH+xshift)*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+xshift)*word(kernel_ai, i),word(kernel_flops_L1, i) back fc rgb word(colors, i) fs solid
+set for [i=1:words(kernels)] object i+2*words(kernels) rect from (1.0-BAR_WIDTH+xshift)*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+xshift)*word(kernel_ai, i),word(kernel_flops_L1, i) back fc rgb word(colors, i) fs pattern 2
+
+# Label each cluster of bars
+xshift = 0.02
+# Put a white box behind each label
+set for [i=1:words(kernels)] object i+20 rect from (1.0-BAR_WIDTH-xshift)*word(kernel_ai,i),MIN_Y*1.3 to (1.0+BAR_WIDTH+xshift)*word(kernel_ai,i),MIN_Y*3.1 back fc rgb "white" fs solid noborder
+# The labels themselves
+set for [i=1:words(kernels)] label i+20 word(kernels,i) at word(kernel_ai,i),MIN_Y*2.0 centre rotate by 90
 
 # CPU CEILINGS
 
 # SIMD
-set label 11 "No SIMD" at (MAX_X-0.5),((cpu_roof / C_SIMD)/1.1) right
-plot cpu_ceiling(x, cpu_roof / C_SIMD) ls LINE_CEIL
+set label 11 "No SIMD" at (MAX_X-0.5),((cpu_roof / C_SIMD)/1.1) right tc "dark-blue"
+plot cpu_ceiling(x, cpu_roof / C_SIMD) ls LINE_CPU_CEIL
 
 # MEM CEILINGS
 
-set label 13 "Memory Bandwidth" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_MEM_BW)*0.87) rotate by L_MEM_ANG
-set label 16 "L2 Bandwidth" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_L2_BW)*0.87) rotate by L_MEM_ANG
-set label 17 "L3 Bandwidth" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_L3_BW)*0.87) rotate by L_MEM_ANG
+set label 13 "Memory Bandwidth" at 0.45,(mem_roof(0.45,PEAK_MEM_BW)*0.87) rotate by L_MEM_ANG tc "blue"
+set label 16 "L2 Bandwidth" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_L2_BW)*0.87) rotate by L_MEM_ANG tc "blue"
+set label 17 "L3 Bandwidth" at 0.34,(mem_roof(0.34,PEAK_L3_BW)*0.87) rotate by L_MEM_ANG tc "blue"
 plot mem_ceiling(mem_roof(x,PEAK_MEM_BW)) ls LINE_CEIL
 plot mem_ceiling(mem_roof(x,PEAK_L3_BW)) ls LINE_CEIL
 plot mem_ceiling(mem_roof(x,PEAK_L2_BW)) ls LINE_CEIL

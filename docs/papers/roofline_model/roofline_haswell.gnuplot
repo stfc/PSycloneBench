@@ -56,10 +56,9 @@ C_ILP_ONLY		= 2 * C_SIMD
 # For single core of Xeon E5-1620 v2 (desktop) as measured with 
 # the 'DAXPY' result of STREAM2. Units are GB/s.
 PEAK_MEM_BW=20.5
-#PEAK_L3_BW=46.7
-PEAK_L3_BW=30.7
-PEAK_L2_BW=65.8
-PEAK_L1_BW=117.0
+PEAK_L3_BW=46.0
+PEAK_L2_BW=61.0
+PEAK_L1_BW=160.0
 
 
 NUM_CHANNELS=2
