@@ -104,6 +104,18 @@ The bandwidths obtained on the E5-1620 are significantly greater than
 those on the E5-2697.  {\bf need to check by re-running on Archer with
   200 repeats and new min/max results}.
 
+\begin{figure}
+\includegraphics{daxpy_plot}
+\caption{Bandwidth obtained on the E5-1620 CPU by modified versions of the daxpy kernel.}
+\label{FIG_daxpy_bw}
+\end{figure}
+
+\begin{figure}
+\includegraphics{roofline_daxpy}
+\caption{Roofline plot of daxpy-based kernels. }
+\label{FIG_daxpy_roofline}
+\end{figure}
+
 \section{Hardware Performance Counters}
 
 Initially, we hoped to use Hardware Performance Counters (HWPCs) in
