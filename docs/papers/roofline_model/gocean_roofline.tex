@@ -49,19 +49,19 @@ in Table~\ref{TAB_stream_linpack}.
   \hline
 LINPACK (GFLOPS) & \multicolumn{4}{c|}{28.32} \\
 \hline
- &  L1 Cache & L2 Cache & L3 Cache & Main memory \\
- &   32 KB   & 256 KB   & 10 MB    &  --         \\
+                 &  L1 Cache & L2 Cache & L3 Cache & Main memory \\
+                 &   32 KB   & 256 KB   & 10 MB    &  --         \\
 \hline
-STREAM2 (GB/s)   &  117  &  65.8  & 46.7 &  20.5 \\
+STREAM2 (GB/s)   &  160  &  61.0  & 46.0 &  20.5 \\
   \hline
 \multicolumn{5}{|c|}{E5-2697 v.~2, 2.7GHz}  \\
 \hline
 LINPACK (GFLOPS) & \multicolumn{4}{c|}{25.41} \\
 \hline
- & L1 Cache & L2 Cache & L3 Cache & Main memory \\
- &   32 KB  & 256 KB   & 30 MB    &  --         \\
+               & L1 Cache & L2 Cache & L3 Cache & Main memory \\
+               &   32 KB  & 256 KB   & 30 MB    &  --         \\
 \hline
-STREAM2 (GB/s) & 108 & 54.0 & 37.7  &  17.6 \\
+STREAM2 (GB/s) & 132      & 59.0     & 40.0     &  20.2 \\
 \hline
 \end{tabular}
 \caption{The STREAM2 (DAXPY) and LINPACK benchmark results for a
@@ -95,14 +95,13 @@ Table~\ref{TAB_stream_linpack}.
 \label{FIG_stream2}
 \end{figure}
 
- The equivalent results for the E5-1620
-CPU are shown in Figure~\ref{FIG_daxpy_bw}. This plot has the same
-shape as that for the E5-2697 but is shifted upwards indicating a
-considerable increase in bandwidth accross all levels of the cache
-hierarchy. {\bf need to check by re-running on Archer with 200 repeats
-  and new min/max results}. In addition, the width of the plateau
-corresponding to the L3 cache is narrower because of the smaller size
-of this cache on the E5-1620.
+ The equivalent results for the E5-1620 CPU are shown in
+ Figure~\ref{FIG_daxpy_bw}. This plot has the same shape as that for
+ the E5-2697 but is shifted upwards indicating an increase in
+ bandwidth accross all levels of the cache hierarchy, but particularly
+ for L3 and L1. In addition, the width of the plateau corresponding to
+ the L3 cache is narrower because of the smaller size of this cache on
+ the E5-1620.
 
 \begin{figure}
 \includegraphics[width=120mm]{daxpy_plot}
@@ -146,9 +145,9 @@ likwid on an older Intel CPU (to which we have root access) or try
 another tool on the IvybridgeEP system. Other possible tools include
 Intel's VTune or OProfile.
 
-Despite the unreliability of FLOP counts, we hope that the trends in
-HWPC data as the problem size is varied will be useful. This raw data
-is given in Table~\ref{TAB_hwpc_mom_u}.
+Despite the unreliability of the absolute values of the FLOP counts,
+we hope that the trends in HWPC data as the problem size is varied
+will be useful. This raw data is given in Table~\ref{TAB_hwpc_mom_u}.
 
 \begin{table}
 \begin{tabular}{l|l|l|l|l}
@@ -287,13 +286,13 @@ Working-set size (bytes)   & $56n^2$ &  $64n^2$   &   $136n^2$ \\
 
 We measure the mean time to execute the u-Momentum kernel over the
 whole domain as 0.0021 seconds (Intel v.16 on the E5-1620) for the
-$256^2$ problem size. This gives us a performance of
-$\frac{120\times 256^2}{0.0021} = 3.7$ GFLOPS. In contrast, instrumenting
-this section of code with the LIKWID marker API and using
-likwid-perfctr we measure 4.7 GFLOPS.
-For the $128^2$ domain, the measured time is 0.556E-03 s. This gives a
-performance of $\frac{120\times 128^2}{0.556\times10^{-3}} = 3.5$
-GFLOPS which is some 25\% less than we measure directly with likwid.
+$256^2$ problem size. This gives us a performance of $\frac{120\times
+  256^2}{0.0021} = 3.7$ GFLOPS. (In contrast, instrumenting this
+section of code with the LIKWID marker API and using likwid-perfctr we
+measure 4.7 GFLOPS.)  For the $128^2$ domain, the measured time is
+0.556E-03 s. This gives a performance of $\frac{120\times
+  128^2}{0.556\times10^{-3}} = 3.5$ GFLOPS which again is some 25\% less
+than we measure directly with likwid.
 
 Using these figures we can finally construct the Roofline model for
 the two CPUs and the various kernels. In
@@ -312,43 +311,40 @@ NEMOLite2D is no-where near approaching this limit.
 \label{FIG_roofline_archer}
 \end{figure}
 
- Two performance points are plotted for the Shallow kernel
- corresponding to domains of $512^2$ and $1024^2$. Using the equation
- for working-set size in Table~\ref{TAB_kernel_details}, these
- correspond to 14.7 and 58.7~MB, respectively. Since the E5-2697 has
- an L3 cache of 30~MB, the $512^2$ case should be contained in cache
- while the $1024^2$ case will spill to main memory. This is borne out
- by the plot; the $1024^2$ case is achieving a performance in-line
- with saturating the bandwidth to main memory. The $512^2$ case is
- approaching the L3 bandwidth limit. We attribute the shortfall to the
- fact that the kernel is not run in isolation but as part of a
- time-stepping loop -- other kernels requiring different arrays are
- run on either side of it. {\bf BUT, the working-set for the
-   time-stepping loop as a whole has 13 arrays giving a size of 27~MB
-   so it should fit in L3 cache?}
-
-In contrast to those results, the performance of the NEMOLite2D
-u-Momentum kernel shows little sensitivity to working-set size -- the
-$128^2$, $256^2$ and $512^2$ performance points in
-Figure~\ref{FIG_roofline_archer} are very close together.
+Two performance points are plotted for the Shallow kernel
+corresponding to domains of $512^2$ and $1024^2$. Using the equation
+for working-set size in Table~\ref{TAB_kernel_details}, these
+correspond to 14.7 and 58.7~MB, respectively. Since the E5-2697 has
+an L3 cache of 30~MB, the $512^2$ case should be contained in cache
+while the $1024^2$ case will spill to main memory. This is borne out
+by the plot; the $1024^2$ case is achieving a performance in-line
+with saturating the bandwidth to main memory. The $512^2$ case is
+approaching the L3 bandwidth limit. We investigate the reasons for
+the fact that it does not achieve the L3 bandwidth limit below.
+ 
+In contrast to the results obtained with the Shallow kernel, the
+performance of the NEMOLite2D u-Momentum kernel shows little
+sensitivity to working-set size -- the $128^2$, $256^2$ and $512^2$
+performance points in Figure~\ref{FIG_roofline_archer} are very close
+together.
 
 In Figure~\ref{FIG_roofline_haswell} we plot the Roofline model
 obtained for the E5-1620 CPU. In order to investigate the poor
 performance of the u-Momentum kernel of NEMOLite2D, we also show the
 performance of the (simpler) Continuity kernel from that code. As we
 would expect, the performance of the u-Momentum kernel remains poor on
-this CPU. However, the Continuity kernel performs well. The
-working-set sizes for this kernel for the $128^2$ and $256^2$ domains
-are approximately 1~MB and 4.2~MB, respectively. Both of these should
-therefore fit comfortably in L3 cache. However, again, this kernel is
-one of several within the time-stepping loop of NEMOLite2D. For the
-$128^2$ domain this loop as a whole has a working-set size of
-$18\times128^2\times 8$ bytes or 2.4~MB. {\bf Again, this should all
-  fit comfortably in l3 cache so why are we nowhere near the L3
-  bandwidth limit? Need to look at performance variation with problem
-  size and maybe HWPCs at the same time. Is my figure for l3 bandwidth
-  correct? What does loop1 of Shallow achieve on smaller problem
-  sizes?}
+this CPU. For the $512^2$ domain the Continuity kernel performs well,
+reaching the limit imposed by the bandwidth to main memory. However,
+the working-set sizes for this kernel for the $128^2$ and $256^2$
+domains are approximately 1~MB and 4.2~MB, respectively and therefore
+both of these should fit comfortably within L3 cache. Despite this,
+the performance achieved with these domain sizes falls short of the L3
+bandwidth limit.  Although this kernel is one of several within the
+time-stepping loop of NEMOLite2D, the working-set size of this loop
+for the $128^2$ domain is just 2.4~MB which again is well within the
+capacity of L3.  . Need to look at performance variation with problem
+size and maybe HWPCs at the same time.  What does loop1 of Shallow
+achieve on smaller problem sizes?
 
 \begin{figure}
 \centering

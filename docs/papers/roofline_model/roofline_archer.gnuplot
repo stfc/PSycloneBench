@@ -55,11 +55,12 @@ C_ILP_ONLY		= 2 * C_SIMD
 
 # MEM CONSTANTS
 # For single core of Xeon E5-2697 v2 (Archer) as measured with 
-# the 'DAXPY' result of STREAM2
-PEAK_MEM_BW=17.6
+# the 'DAXPY' result of STREAM2 with 200 repetitions
+PEAK_MEM_BW=20.2
 # L3 cache:
-PEAK_L3_BW=37.7
-PEAK_L2_BW=54.0
+PEAK_L3_BW=40.0
+PEAK_L2_BW=59.0
+PEAK_L1_BW=132.0
 
 NUM_CHANNELS=2
 # first ceiling, without multiple memory channels

@@ -18,6 +18,6 @@ set nokey
 
 # range of each axis
 set xtics(30,100,500,1000,10000,1000000)
-set ytics(130000,108000,54000,37700,17600)
+set ytics(132.0,103.0,59.0,40.0,20.20)
 
-plot dfile u 1:5 w lp
+plot dfile u 1:10 w lp
