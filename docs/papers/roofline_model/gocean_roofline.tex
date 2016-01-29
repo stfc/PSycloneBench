@@ -344,9 +344,7 @@ the performance achieved with these domain sizes falls short of the L3
 bandwidth limit.  Although this kernel is one of several within the
 time-stepping loop of NEMOLite2D, the working-set size of this loop
 for the $128^2$ domain is just 2.4~MB which again is well within the
-capacity of L3.  . Need to look at performance variation with problem
-size and maybe HWPCs at the same time.  What does loop1 of Shallow
-achieve on smaller problem sizes?
+capacity of L3.
 
 \begin{figure}
 \centering
@@ -360,7 +358,17 @@ In order to investigate why the performance of the Continuity kernel
 is falling well short of the maximum predicted by the roofline model
 we have experimented with the level of SIMD
 vectorisation. Figure~\ref{FIG_kernel_perf} shows the performance of
-the Continuity and u-Momentum kernels as a function of problem size.
+the Continuity and u-Momentum kernels when compiled without
+vectorisation (``-no-vec''), with SSE4 (Streaming SIMD Extensions)
+vectorisation (``-axSSE4.2'') and with AVX (``-xHost''). SSE supports
+vector lengths of 128 bits (two double-precision words) and AVX 512
+bits (four double-precision words). For the 64, 128 and 256 problem
+sizes, changing from no vectorisation to SSE increases the performance
+of the Continuity kernel by up to roughly 60\%; some way short of the
+ideal speed-up of 100\% that would be obtained with perfect
+SSE vectorisation of a compute-bound kernel. Unsurprisingly then, moving
+from SSE to AVX vectors does not give any performance improvement and
+in fact, is slightly detrimental for most of the problem sizes. 
 
 \begin{figure}
   \centering
@@ -370,6 +378,32 @@ the Continuity and u-Momentum kernels as a function of problem size.
     v.16 of the Intel compiler on a Xeon E5-1620 v.2 CPU.}
   \label{FIG_kernel_perf}
 \end{figure}
+
+Peak absolute performance is obtained for the 256 problem size with
+SSE instructions. The 512 problem size spills from L3 cache and
+becomes bound by the bandwidth to main memory: SIMD vectorisation
+gives no performance benefit. The fact that best performance is
+obtained when the problem size fits within L3 indicates that there are
+other overheads that dominate when the problem size is small enough to
+fit within L2. This is possibly because the inner, SIMD-vectorised
+loop then only has a trip-count of 35. (This is not 32 because of the way
+the simulation domain is set-up; it is the {\em internal} region of
+the domain that has dimension $32^2$.)
+
+Turning now to the u-Momentum kernel (lower plot in
+Figure~\ref{FIG_kernel_perf}), it is striking that the kernel
+performance is almost independent of problem size. The reason for this
+becomes clear when we edit the kernel to remove the many IF statements
+(present because of the application of boundary conditions). The blue
+symbols mark the resulting performance which is significantly
+increased and again reaches a maximum at the 256 problem size.  It
+should be noted that the compiler reported that this loop had been
+vectorised, even before the IF statements were removed. Clearly the
+vectorisation is more efficient once the code is simplified. However,
+even with the up-lift in performance given by removing all the IF
+statements, the performance of this kernel is still far short of even
+the main-memory bandwidth limit, despite the fact that the $256^2$
+problem fits within L3 cache.
 
 \begin{figure}
   \centering

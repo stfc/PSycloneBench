@@ -1,8 +1,6 @@
 # initial config
 set term postscript eps enhanced color
 set output 'roofline_haswell.eps'
-#set term pngcairo
-#set output 'roofline.png'
 
 set nokey
 set grid layerdefault   linetype 0 linewidth 1.000,  linetype 0 linewidth 1.000
@@ -26,10 +24,6 @@ set xrange [0.1:MAX_X]
 set yrange [MIN_Y:MAX_Y]
 
 # Kernel constants
-# First loop nest of shallow has AI = 0.3 FLOP/byte
-# Counting bytes from cache lines (i.e. 64 bytes per reference instead
-# of just 8 bytes for a d.p. word) it is:
-SHALLOW_LOOP1_AI = 0.26
 # u-momentum kernel of nemolite2d has AI = 0.42 FLOP/byte
 NEMOLITE_MOM_AI = 0.42
 # The continuity kernel of nemolite2d
@@ -59,7 +53,6 @@ PEAK_MEM_BW=20.5
 PEAK_L3_BW=46.0
 PEAK_L2_BW=61.0
 PEAK_L1_BW=160.0
-
 
 NUM_CHANNELS=2
 # first ceiling, without multiple memory channels
@@ -127,46 +120,48 @@ set multiplot
 
 # Bars for measured individual kernel performance (GFLOPS)
 
+###########################################################################
 # u-Momentum kernel from Nemolite2D with Intel compiler (as that's the fastest)
 
 # 256 domain run without IF's
-set label 1 "u-Momentum, no-IFs, 256" at (NEMOLITE_MOM_AI*1.06),5.8 front textcolor ls LINE_MOM_256_NO_IF
-set object 1 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,5.809 back fc rgb MOM_256_NO_IF_COL fs solid
+KERNEL_AI = 0.4492
+set label 1 "u-Momentum, no-IFs, 256" at (KERNEL_AI*1.06),5.8 front textcolor ls LINE_MOM_256_NO_IF
+set object 1 rect from (1.0-BAR_WIDTH)*KERNEL_AI,MIN_Y to (1.0+BAR_WIDTH)*KERNEL_AI,5.813 back fc rgb MOM_256_NO_IF_COL fs solid
 
 # 128 domain - not as fast as you'd expect
-set label 2 "u-Momentum, 128" at (NEMOLITE_MOM_AI*1.06),4.15 front textcolor ls LINE_MOM_128
-# 4.27 is measured value (likwid) on Haswell desktop
-set object 2 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,4.27 back fc rgb MOM_128_COL fs solid
+set label 2 "u-Momentum, 128" at (NEMOLITE_MOM_AI*1.06),3.5 front textcolor ls LINE_MOM_128
+set object 2 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.534 back fc rgb MOM_128_COL fs solid
 
 # 256 domain should fit within L3 cache
 set label 3 "u-Momentum, 256" at (NEMOLITE_MOM_AI*1.06),3.6 front textcolor ls LINE_MOM_256
-set object 3 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.6 back fc rgb MOM_256_COL fs solid
+set object 3 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.737 back fc rgb MOM_256_COL fs solid
 
 # 512 domain ~spills from L3 cache to main memory
-set label 4 "u-Momentum, 512" at (NEMOLITE_MOM_AI*1.06),2.9 front textcolor ls LINE_MOM_512
-set object 4 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.26 back fc rgb MOM_512_COL fs solid
+set label 4 "u-Momentum, 512" at (NEMOLITE_MOM_AI*1.06),3.0 front textcolor ls LINE_MOM_512
+set object 4 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_MOM_AI,3.504 back fc rgb MOM_512_COL fs solid
 
+###########################################################################
 # Nemolite2d, Continuity kernel
 
 # 256 domain, SSE
-set label 5 "Continuity, SSE, 256" at (NEMOLITE_CONT_AI*1.06),5.7 front textcolor ls LINE_CONT_256
-set object 5 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.425 back fc rgb CONT_256_COL fs solid
+set label 5 "Continuity, SSE, 256" at (NEMOLITE_CONT_AI*1.06),5.8 front textcolor ls LINE_CONT_256
+set object 5 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.787 back fc rgb CONT_256_COL fs solid
 
 # 128 domain, SSE
-set label 6 "Continuity, SSE, 128" at (NEMOLITE_CONT_AI*1.06),5.1 front textcolor ls LINE_CONT_128
-set object 6 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.082 back fc rgb CONT_128_COL fs solid
+set label 6 "Continuity, SSE, 128" at (NEMOLITE_CONT_AI*1.06),5.6 front textcolor ls LINE_CONT_128
+set object 6 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.717 back fc rgb CONT_128_COL fs solid
 
 # 64 domain, SSE
-set label 7 "Continuity, SSE, 64" at (NEMOLITE_CONT_AI*1.06),4.5 front textcolor ls LINE_CONT_64
-set object 7 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,4.819 back fc rgb CONT_64_COL fs solid
+set label 7 "Continuity, SSE, 64" at (NEMOLITE_CONT_AI*1.06),5.1 front textcolor ls LINE_CONT_64
+set object 7 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.138 back fc rgb CONT_64_COL fs solid
 
 # 128 domain, no-vec
-set label 8 "Continuity, no-vec, 128" at (NEMOLITE_CONT_AI*1.06),3.6 front textcolor ls LINE_CONT_128_NO_VEC
-set object 8 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,3.558 back fc rgb CONT_128_NO_VEC_COL fs solid
+#set label 8 "Continuity, no-vec, 128" at (NEMOLITE_CONT_AI*1.06),3.6 front textcolor ls LINE_CONT_128_NO_VEC
+#set object 8 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,3.558 back fc rgb CONT_128_NO_VEC_COL fs solid
 
 # 256 domain, no-vec
-set label 9 "Continuity, no-vec, 256" at (NEMOLITE_CONT_AI*1.06),3.2 front textcolor ls LINE_CONT_256_NO_VEC
-set object 9 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,3.410 back fc rgb CONT_256_NO_VEC_COL fs solid
+#set label 9 "Continuity, no-vec, 256" at (NEMOLITE_CONT_AI*1.06),3.2 front textcolor ls LINE_CONT_256_NO_VEC
+#set object 9 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,3.410 back fc rgb CONT_256_NO_VEC_COL fs solid
 
 # 512 domain, no-vec
 set label 10 "Continuity, no-vec, 512" at (NEMOLITE_CONT_AI*1.06),2.8 front textcolor ls LINE_CONT_512_NO_VEC
