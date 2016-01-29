@@ -388,7 +388,7 @@ other overheads that dominate when the problem size is small enough to
 fit within L2. This is possibly because the inner, SIMD-vectorised
 loop then only has a trip-count of 35. (This is not 32 because of the way
 the simulation domain is set-up; it is the {\em internal} region of
-the domain that has dimension $32^2$.)
+the domain that has dimension $32^2$.) {\bf Remainder and xxx loops.}
 
 Turning now to the u-Momentum kernel (lower plot in
 Figure~\ref{FIG_kernel_perf}), it is striking that the kernel
@@ -405,12 +405,22 @@ statements, the performance of this kernel is still far short of even
 the main-memory bandwidth limit, despite the fact that the $256^2$
 problem fits within L3 cache.
 
+In order to help further understand the performance of the Continuity
+kernel in Figure~\ref{FIG_cont_perf} we plot the performance of the
+Continuity kernel alongside HWPC-derived metrics (obtained using the
+likwid tool). We use the version compiled with SSE instructions since
+that gave the best performance. This plot confirms that the $32^2$
+problem size is dominated by bandwidth to L2. Sizes $64^2$, $128^2$
+and $256^2$ are dominated by bandwidth to L2 and L3 and $512^2$ makes
+heavy use of main memory.
+
 \begin{figure}
   \centering
   \includegraphics[width=120mm]{nemolite2d_cont_perf}
-  \caption{Performance of the Continuity kernel (compiled with AVX
-    instructions) and HWPC data as a function of problem size. Results
-    are for v.16 of the Intel compiler on a Xeon E5-1620 v.2 CPU.}
+  \caption{Performance of the Continuity kernel (bars -- right y-axis)
+    and HWPC data (open circles -- left y-axis) as a function of
+    problem size. Results are for v.16 of the Intel compiler on a Xeon
+    E5-1620 v.2 CPU.}
   \label{FIG_cont_perf}
 \end{figure}
 
