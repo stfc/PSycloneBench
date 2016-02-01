@@ -145,7 +145,7 @@ set object 4 rect from (1.0-BAR_WIDTH)*NEMOLITE_MOM_AI,MIN_Y to (1.0+BAR_WIDTH)*
 
 # 256 domain, SSE
 set label 5 "Continuity, SSE, 256" at (NEMOLITE_CONT_AI*1.06),5.8 front textcolor ls LINE_CONT_256
-set object 5 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.787 back fc rgb CONT_256_COL fs solid
+set object 5 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.946 back fc rgb CONT_256_COL fs solid
 
 # 128 domain, SSE
 set label 6 "Continuity, SSE, 128" at (NEMOLITE_CONT_AI*1.06),5.6 front textcolor ls LINE_CONT_128
@@ -153,7 +153,7 @@ set object 6 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)
 
 # 64 domain, SSE
 set label 7 "Continuity, SSE, 64" at (NEMOLITE_CONT_AI*1.06),5.1 front textcolor ls LINE_CONT_64
-set object 7 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.138 back fc rgb CONT_64_COL fs solid
+set object 7 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.251 back fc rgb CONT_64_COL fs solid
 
 # 128 domain, no-vec
 #set label 8 "Continuity, no-vec, 128" at (NEMOLITE_CONT_AI*1.06),3.6 front textcolor ls LINE_CONT_128_NO_VEC
