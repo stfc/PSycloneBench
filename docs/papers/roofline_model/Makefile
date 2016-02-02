@@ -13,7 +13,7 @@ gocean_roofline.aux: gocean_roofline.tex
 FIG_FILES = 
 
 # Plots generated from Grace (xmgrace) - i.e. .agr files
-GRACE_PLOTS = nemolite2d_kernel_perf.pdf nemolite2d_cont_perf.pdf
+GRACE_PLOTS = nemolite2d_kernel_perf.pdf nemolite2d_cont_perf.pdf daxpy_bw_perf.pdf
 
 # Plots generated from gnuplot
 GNU_PLOTS = roofline_archer.pdf roofline_haswell.pdf stream2_desktop.pdf stream2_archer.pdf roofline_daxpy.pdf daxpy_plot.pdf

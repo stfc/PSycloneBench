@@ -75,12 +75,12 @@ set style line LINE_ROOF	lt 1 lw 6 lc rgb "black"
 set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
 set style line LINE_CPU_CEIL	lt 1 lw 3 lc rgb "dark-blue"
 
-kernels = "AXPY AXPYPXY AXPYPXYY AXPYPXYYY"
-kernel_ai = "0.125 0.167 0.208 0.25"
-kernel_flops_L3 = "3.65 7.18 8.59 10.26"
-kernel_flops_L2 = "5.05 10.49 12.49 15.06"
-kernel_flops_L1 = "13.30 21.74 22.70 20.82"
-colors = "violet orange dark-red red"
+kernels =          "AXPY AXPYPXY AXPYPXYY AXPYPXYYY AXPYPXYYYua"
+kernel_ai =       "0.125 0.167    0.208     0.25     0.25"
+kernel_flops_L3 = "3.65   7.18 8.59  10.26 9.57"
+kernel_flops_L2 = "5.08  10.49 12.49 14.4  12.5 "
+kernel_flops_L1 = "13.30 21.74 22.70 21.76 15.59"
+colors = "violet orange dark-red red brown pink"
 
 set multiplot
 
