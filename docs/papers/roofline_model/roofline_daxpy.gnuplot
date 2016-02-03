@@ -75,12 +75,16 @@ set style line LINE_ROOF	lt 1 lw 6 lc rgb "black"
 set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
 set style line LINE_CPU_CEIL	lt 1 lw 3 lc rgb "dark-blue"
 
-kernels =          "AXPY AXPYPXY AXPYPXYY AXPYPXYYY AXPYPXYYYua"
+kernels =          "AXPY AXPYPXY AXPYPXYY AXPYPXYYY AXPYPXYYY"
 kernel_ai =       "0.125 0.167    0.208     0.25     0.25"
 kernel_flops_L3 = "3.65   7.18 8.59  10.26 9.57"
 kernel_flops_L2 = "5.08  10.49 12.49 14.4  12.5 "
 kernel_flops_L1 = "13.30 21.74 22.70 21.76 15.59"
+kernel_xshift = "0.0 0.0 0.0 -0.01 0.01"
 colors = "violet orange dark-red red brown pink"
+L3_colour = "black"
+L2_colour = "red"
+L1_colour = "blue"
 
 set multiplot
 
@@ -88,12 +92,20 @@ set multiplot
 set for [i=1:words(colors)] linetype i lc rgb word(colors, i)
 
 # Draw a rectangle for each data point
-xshift = -0.05
-set for [i=1:words(kernels)] object i rect from (1.0-BAR_WIDTH+xshift)*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+xshift)*word(kernel_ai, i),word(kernel_flops_L3, i) back fc rgb word(colors, i) fs solid
-xshift = 0.0
-set for [i=1:words(kernels)] object i+words(kernels) rect from (1.0-BAR_WIDTH+xshift)*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+xshift)*word(kernel_ai, i),word(kernel_flops_L2, i) back fc rgb word(colors, i) fs pattern 1
-xshift = 0.05
-set for [i=1:words(kernels)] object i+2*words(kernels) rect from (1.0-BAR_WIDTH+xshift)*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+xshift)*word(kernel_ai, i),word(kernel_flops_L1, i) back fc rgb word(colors, i) fs pattern 2
+# Problem size fits in L1
+obj_idx = 0
+set for [i=1:words(kernels)-1] object i+obj_idx rect from (1.0-BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),word(kernel_flops_L1, i) back fc rgb L1_colour fs solid
+set for [i=words(kernels):words(kernels)] object i+obj_idx rect from (1.0-BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),word(kernel_flops_L1, i) back fc rgb L1_colour fs pattern 1
+
+# Problem size fits in L2
+obj_idx = words(kernels)
+set for [i=1:words(kernels)-1] object i+obj_idx rect from (1.0-BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),word(kernel_flops_L2, i) back fc rgb L2_colour fs solid
+set for [i=words(kernels):words(kernels)] object i+obj_idx rect from (1.0-BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),word(kernel_flops_L2, i) back fc rgb L2_colour fs pattern 1
+
+# Problem size fits in L3
+obj_idx = obj_idx + words(kernels)
+set for [i=1:words(kernels)-1] object i+obj_idx rect from (1.0-BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),word(kernel_flops_L3, i) back fc rgb L3_colour fs solid
+set for [i=words(kernels):words(kernels)] object i+obj_idx rect from (1.0-BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),word(kernel_flops_L3, i) back fc rgb L3_colour fs pattern 1
 
 # Label each cluster of bars
 xshift = 0.02
