@@ -77,6 +77,7 @@ set style line LINE_CPU_CEIL	lt 1 lw 3 lc rgb "dark-blue"
 
 kernels =          "AXPY AXPYPXY AXPYPXYY AXPYPXYYY AXPYPXYYY"
 kernel_ai =       "0.125 0.167    0.208     0.25     0.25"
+kernel_flops_MEM = "1.68 3.60     4.60      5.61     5.36"
 kernel_flops_L3 = "3.65   7.18 8.59  10.26 9.57"
 kernel_flops_L2 = "5.08  10.49 12.49 14.4  12.5 "
 kernel_flops_L1 = "13.30 21.74 22.70 21.76 15.59"
@@ -85,6 +86,7 @@ colors = "violet orange dark-red red brown pink"
 L3_colour = "black"
 L2_colour = "red"
 L1_colour = "blue"
+MEM_colour = "dark-green"
 
 set multiplot
 
@@ -106,6 +108,11 @@ set for [i=words(kernels):words(kernels)] object i+obj_idx rect from (1.0-BAR_WI
 obj_idx = obj_idx + words(kernels)
 set for [i=1:words(kernels)-1] object i+obj_idx rect from (1.0-BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),word(kernel_flops_L3, i) back fc rgb L3_colour fs solid
 set for [i=words(kernels):words(kernels)] object i+obj_idx rect from (1.0-BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),word(kernel_flops_L3, i) back fc rgb L3_colour fs pattern 1
+
+# Problem size fits in main memory
+obj_idx = obj_idx + words(kernels)
+set for [i=1:words(kernels)-1] object i+obj_idx rect from (1.0-BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),word(kernel_flops_MEM, i) back fc rgb MEM_colour fs solid
+set for [i=words(kernels):words(kernels)] object i+obj_idx rect from (1.0-BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),MIN_Y to (1.0+BAR_WIDTH+word(kernel_xshift,i))*word(kernel_ai, i),word(kernel_flops_MEM, i) back fc rgb MEM_colour fs pattern 1
 
 # Label each cluster of bars
 xshift = 0.02

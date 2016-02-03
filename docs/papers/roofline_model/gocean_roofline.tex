@@ -388,7 +388,7 @@ other overheads that dominate when the problem size is small enough to
 fit within L2. This is possibly because the inner, SIMD-vectorised
 loop then only has a trip-count of 35. (This is not 32 because of the way
 the simulation domain is set-up; it is the {\em internal} region of
-the domain that has dimension $32^2$.) {\bf Remainder and xxx loops.}
+the domain that has dimension $32^2$.) {\bf Remainder and peel loops.}
 
 Turning now to the u-Momentum kernel (lower plot in
 Figure~\ref{FIG_kernel_perf}), it is striking that the kernel
@@ -428,24 +428,48 @@ As well as examining the performance of the Continuity kernel, we have
 also experimented with altering the DAXPY kernel of the STREAM2
 benchmark so as to vary its $AI$. We did this by adding further
 arithmetic operations but making use of the same array
-elements. We used four different kernels:
+elements. We used five different kernels:
 \begin{enumerate}
-\item {\tt b(i) = b(i) + scalar*a(i)}
-\item {\tt b(i) = b(i) + scalar*a(i)+ a(i)*b(i)}
-\item {\tt b(i) = b(i) + scalar*a(i)+ a(i)*b(i)*b(i)}
-\item {\tt b(i) = b(i) + scalar*a(i)+ a(i)*b(i)*b(i)*b(i)}
+\item {\tt y(i) = y(i) + a*x(i)}, AI = 0.125
+\item {\tt y(i) = y(i) + a*x(i)+ x(i)*y(i)}, AI = 0.167
+\item {\tt y(i) = y(i) + a*x(i)+ x(i)*y(i)*y(i)}, AI = 0.208
+\item {\tt y(i) = y(i) + a*x(i)+ x(i)*y(i)*y(i)*y(i)}, AI = 0.25
+\item {\tt y(i) = y(i) + a*x(i)+ x(i-1)*y(i)*y(i)*y(i)}, AI = 0.25
 \end{enumerate}
-Figure~\ref{FIG_daxpy_roofline} shows the performance of these kernels
-on a roofline plot for the E5-1620 CPU. They generally reach L2 and L3
-bandwidth apart from at the lowest AI. Continuity kernel has AI of
-{\bf xxx more discussion here}
+The fifth of these introduces an un-aligned array access ({\tt
+  x(i-1)}) so as to better represent real-life finite difference
+kernels.  Figure~\ref{FIG_daxpy_roofline} shows the performance of
+these kernels on a roofline plot for the E5-1620 CPU. The performance
+of each kernel is plotted for four problem sizes, chosen so as to fit
+within L1, L2, L3 cache and main memory. The performance of kernels 2,
+3 and 4 is entirely consistent with the roofline model for problem
+sizes that fit within the L3 and L3 caches (red and black bars). Their
+performance for the smallest problem size doesn't quite reach the L1
+bandwidth limit but does appear to track the roofline.  Kernel 1 has
+the lowest AI of the five kernels and this appears to limit its
+performance; at no point does the performance reach the limit imposed
+by the bandwidth to the relevant level of the memory hierarchy. {\bf need to expore the reason for this}
+
+The performance of kernel 5 is plotted using patterned bars in
+Figure~\ref{FIG_daxpy_roofline}. This kernel has the same AI as kernel
+4 but has an un-aligned array access. Comparing the performance of
+these two kernels we see that the resulting reduction in the
+efficiency with which the kernel can be SIMD vectorised (because of
+the need for gather/scatter operations) harms performance,
+particularly when the cost of accessing memory is small (i.e. when the
+problem is contained in L1 or L2). Since all of the NEMOLite2D kernels
+contain un-aligned array accesses, this goes some way to accounting
+for the fact that they do not reach the theoretical limits of the
+roofline plot in Figure~\ref{FIG_roofline_haswell}.
 
 \begin{figure}
 \includegraphics[width=120mm]{roofline_daxpy}
 \caption{Roofline plot of daxpy-based kernels on the E5-1620 CPU. Each
-  cluster of bars represents a different kernel. Bars within a cluster
-  are for problem sizes chosen to fit within the L3, L2 and L1 cache
-  (arrays of 94,427, 8271 and 1533 elements, respectively). }
+  cluster of bars represents a different kernel. The green, black, red and
+  blue bars are for problem sizes chosen to fit within main memory, L3, L2 and
+  L1 caches (arrays of 3.3M, 94K, 8.3K and 1.5K elements),
+  respectively. Bars with patterned fill are for kernel 5 (unaligned
+  access).}
 \label{FIG_daxpy_roofline}
 \end{figure}
 
