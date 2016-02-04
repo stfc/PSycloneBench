@@ -66,13 +66,15 @@ nemolite2d_gen_acc:
 infrastructure_mod.f90:
 	ln -sf ${API_DIR}/infrastructure_mod.f90 .
 
-# Normal targets
+# Normal targets. Need to link with OpenMP in order to use OMP timer
 nemolite2d: 
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d.exe
 
 ${API_LIB}: ${API_DIR}/*.?90
 	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" \
-            AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
+            OMPFLAGS="${OMPFLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" \
+            API_LIB="gocean_api.a"
 
 nemolite2d.o: $(COMMON_MODULES)
 

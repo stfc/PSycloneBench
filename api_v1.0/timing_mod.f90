@@ -54,7 +54,15 @@ MODULE timing_mod
    ! Counter register). If false then the Fortran intrinsic SYSTEM_CLOCK 
    ! is used.
    LOGICAL, PARAMETER :: use_rdtsc_timer = .FALSE.
-
+   ! Intel-specific rdtsc timer (reads the Time Stamp Counter register)
+   INTEGER, PARAMETER :: RDTSC_TIMER = 0
+   ! Use the OpenMP wtime routine (must link against OpenMP)
+   INTEGER, PARAMETER :: OMP_TIMER=1
+   ! Use the Fortran intrinsic timer (precision may be limited)
+   INTEGER, PARAMETER :: INTRINSIC_TIMER=2
+   ! Which of these timers to use by default
+   INTEGER :: base_timer = OMP_TIMER
+   
    !-------------------------------------------------------------------
    ! Publicly-accessible routines
 
@@ -80,20 +88,27 @@ MODULE timing_mod
 !$      END IF
 
       ! Initialise the timer structures
+      select case(base_timer)
 
-      IF(use_rdtsc_timer)THEN
-         iclk_rate =1
+      case(OMP_TIMER)
+         iclk_rate = 1
          iclk_max = 1
-      ELSE
-         CALL SYSTEM_CLOCK(COUNT_RATE=iclk_rate, COUNT_MAX=iclk_max)
-         WRITE (*,"('System clock, cycles/sec =',I7,', max count = ',I11)") &
-                iclk_rate, iclk_max
-      END IF
+         write (*,"('TIMING: using OpenMP omp_get_wtime()')")
+      case(RDTSC_TIMER)
+         iclk_rate = 1
+         iclk_max = 1
+         write (*,"('TIMING: using Intel Time Stamp Counter register')")
+      case(INTRINSIC_TIMER)
+         call SYSTEM_CLOCK(COUNT_RATE=iclk_rate, COUNT_MAX=iclk_max)
+         write (*,"('TIMING: using Fortran intrinsic system clock, cycles/sec =',I7, &
+              &   ', max count = ',I11)") iclk_rate, iclk_max
+      end select
 
       nThreads = 1
 !$    nThreads = omp_get_max_threads()
 
-      WRITE (*,"('Allocating timer structures for ',I3,' threads.')") nThreads
+      WRITE (*,"('TIMING: Allocating timer structures for ',I3,' threads.')") &
+           nThreads
 
       ALLOCATE(timer(MAX_TIMERS,nThreads), itimerCount(nThreads), &
                Stat=ierr)
@@ -198,12 +213,16 @@ MODULE timing_mod
       idx = ji
 
       ! And finally record the current timer value
-      IF(use_rdtsc_timer)THEN
+      select case(base_timer)
+      case(OMP_TIMER)
+! Requires that this file be compiled with OpenMP enabled
+!$       timer(ji,ith)%istart = omp_get_wtime()         
+      case(RDTSC_TIMER)
          timer(ji,ith)%istart = REAL(getticks(), wp)
-      ELSE
+      case(INTRINSIC_TIMER)
          CALL SYSTEM_CLOCK(iclk)
          timer(ji,ith)%istart = REAL(iclk, wp)
-      END IF
+      end select
 
    END SUBROUTINE timer_start
 
@@ -216,31 +235,38 @@ MODULE timing_mod
       ! since it was started.
       INTEGER :: iclk, ith
       INTEGER (kind=int64) :: iclk64
+      REAL(wp) :: time_now
 
-      IF(use_rdtsc_timer)THEN
+      select case(base_timer)
+      case(OMP_TIMER)
+!$       time_now = omp_get_wtime()
+      case(RDTSC_TIMER)
          iclk64 = getticks()
-      ELSE
+      case(INTRINSIC_TIMER)
          CALL SYSTEM_CLOCK(iclk)
          iclk64 = INT(iclk, int64)
-      END IF
+      end select
 
       IF(itag < 1)RETURN
 
       ith = 1
 !$    ith = 1 + omp_get_thread_num()
 
-      IF( use_rdtsc_timer )THEN
+      select case(base_timer)
+      case(OMP_TIMER)
+         timer(itag,ith)%total = timer(itag,ith)%total + &
+                          (time_now - timer(itag,ith)%istart)
+      case(RDTSC_TIMER)
          timer(itag,ith)%total = timer(itag,ith)%total + &
                           (REAL(iclk64,wp) - timer(itag,ith)%istart)
-
-      ELSE
+      case(INTRINSIC_TIMER)
          IF( iclk < timer(itag,ith)%istart )THEN
             iclk64 = iclk64 + INT(iclk_max,int64)
          END IF
 
          timer(itag,ith)%total = timer(itag,ith)%total + &
                           (REAL(iclk64,wp) - timer(itag,ith)%istart)
-      END IF
+      end select
 
    END SUBROUTINE timer_stop
 
