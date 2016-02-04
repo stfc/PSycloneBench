@@ -45,13 +45,18 @@ psy_omp.f90: nemolite2d_alg.f90 nemolite2d_omp_transform.py
 psy_acc.f90: nemolite2d_alg.f90 nemolite2d_acc_transform.py
 	python ${PSYCLONE}/src/generator.py -api gocean1.0 nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 -opsy psy_acc.f90 -s nemolite2d_acc_transform.py
 
-nemolite2d_align:
-	${MAKE} MODULE_LIST="nemolite2d.o time_step_mod_align.o ${COMMON_MODULES}" \
+# Version of nemolite2d with the time-stepping routine hacked to
+# encourage the Intel compiler to vectorise efficiently
+nemolite2d_align: ${COMMON_MODULES} time_step_mod_align.o nemolite2d.o
+        # Have to delete any existing time_step_mod because it contains a module
+        # with the same name as that in time_step_mod_align
+	rm -f time_step_mod.o time_step_mod.mod
+	${MAKE} MODULE_LIST="time_step_mod_align.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_align.exe
 
 # The generated code depends on the generated Psy middle-layer
 nemolite2d_gen:
-	${MAKE} MODULE_LIST="nemolite2d_gen.o psy.o infrastructure_mod.o time_step_mod.o ${COMMON_MODULES}" LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen.exe
+	${MAKE} MODULE_LIST="nemolite2d_gen.o psy.o infrastructure_mod.o ${MODULES} time_step_mod.o ${API_LIB}" LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen.exe
 
 nemolite2d_gen_omp:
 	${MAKE} MODULE_LIST="nemolite2d_gen.o psy_omp.o infrastructure_mod.o time_step_mod.o ${COMMON_MODULES}" \
@@ -79,9 +84,8 @@ ${API_LIB}: ${API_DIR}/*.?90
             OMPFLAGS="${OMPFLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" \
             API_LIB="gocean_api.a"
 
-nemolite2d.o: $(COMMON_MODULES)
 
-nemolite2d_gen.o: infrastructure_mod.o $(COMMON_MODULES) psy.o
+nemolite2d_gen.o: infrastructure_mod.o $(COMMON_MODULES) time_step_mod.o psy.o
 
 # Interdependencies between modules, alphabetical order
 
@@ -98,6 +102,12 @@ time_update_mod.o: model_mod.o ${API_LIB}
 # Generic rules
 
 %.exe: $(MODULE_LIST)
+	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
+
+# Have a specific rule for nemolite2d_align because its dependencies are 'non-standard'
+# in that it needs time_step_mod_align.o. This is specified to the nemolite2d_align target
+# above.
+nemolite2d_align.exe:
 	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
 
 %.o: %.f90

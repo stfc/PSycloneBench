@@ -85,26 +85,6 @@ contains
                                   hu%data, hv%data, &
                                   un%data, vn%data, sshn_t%grid%area_t)
 
-    !call timer_start('Continuity',idxt)
-    !call likwid_markerStartRegion('Continuity')
-
-!    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
-!      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
-!!$    do jj = 2, N, 1
-!!$      do ji = 2, M, 1
-!!$
-!!$         rtmp1 = (sshn_u%data(ji  ,jj ) + hu%data(ji  ,jj  ))*un%data(ji  ,jj)
-!!$         rtmp2 = (sshn_u%data(ji-1,jj ) + hu%data(ji-1,jj  ))*un%data(ji-1,jj)
-!!$         rtmp3 = (sshn_v%data(ji ,jj ) + hv%data(ji  ,jj  ))*vn%data(ji ,jj)
-!!$         rtmp4 = (sshn_v%data(ji ,jj-1) + hv%data(ji  ,jj-1))*vn%data(ji,jj-1)
-!!$
-!!$         ssha%data(ji,jj) = sshn_t%data(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
-!!$                       rdt / sshn_t%grid%area_t(ji,jj)
-!!$      end do
-!!$    end do
-
-    !call likwid_markerStopRegion('Continuity')
-    !call timer_stop(idxt)
 
 !!$    call invoke_momentum_u_arrays(sshn_t%grid%nx, sshn_t%grid%ny, M, N, &
 !!$                                  ua%data, un%data, vn%data, &
@@ -555,10 +535,10 @@ contains
     real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     integer :: nrepeat, ic
     
-!!!DIRx$ ASSUME (MOD(NX,4) .EQ. 0)
-!!!DIRx$ ASSUME (MOD(M,2) .EQ. 0)
-!!!DIRx$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
-!!!DIRx$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
+!DIR$ ASSUME (MOD(NX,4) .EQ. 0)
+!DIR$ ASSUME (MOD(M,2) .EQ. 0)
+!DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
+!DIR$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
 
     ! Hack to ensure all our arrays are loaded into cache
 !!$    do jj = 2, N, 1
@@ -581,7 +561,7 @@ contains
     call timer_start('Continuity',idxt)
     !call likwid_markerStartRegion('Continuity')
 !    do ic=1, nrepeat
-!!!DIRx$ VECTOR ALIGNED
+!DIR$ VECTOR ALIGNED
     do jj = 2, N, 1
 
        ji = 2
