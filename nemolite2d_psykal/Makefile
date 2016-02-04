@@ -18,8 +18,7 @@ EXECS = nemolite2d nemolite2d_gen nemolite2d_gen_omp
 MODULES = model_mod.o boundary_conditions_mod.o \
           continuity_mod.o initialisation_mod.o \
           momentum_mod.o physical_params_mod.o \
-          time_update_mod.o gocean2d_io_mod.o \
-          time_step_mod.o
+          time_update_mod.o gocean2d_io_mod.o
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
@@ -46,17 +45,21 @@ psy_omp.f90: nemolite2d_alg.f90 nemolite2d_omp_transform.py
 psy_acc.f90: nemolite2d_alg.f90 nemolite2d_acc_transform.py
 	python ${PSYCLONE}/src/generator.py -api gocean1.0 nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 -opsy psy_acc.f90 -s nemolite2d_acc_transform.py
 
+nemolite2d_align:
+	${MAKE} MODULE_LIST="nemolite2d.o time_step_mod_align.o ${COMMON_MODULES}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_align.exe
+
 # The generated code depends on the generated Psy middle-layer
 nemolite2d_gen:
-	${MAKE} MODULE_LIST="nemolite2d_gen.o psy.o infrastructure_mod.o ${COMMON_MODULES}" nemolite2d_gen.exe
+	${MAKE} MODULE_LIST="nemolite2d_gen.o psy.o infrastructure_mod.o time_step_mod.o ${COMMON_MODULES}" LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen.exe
 
 nemolite2d_gen_omp:
-	${MAKE} MODULE_LIST="nemolite2d_gen.o psy_omp.o infrastructure_mod.o ${COMMON_MODULES}" \
+	${MAKE} MODULE_LIST="nemolite2d_gen.o psy_omp.o infrastructure_mod.o time_step_mod.o ${COMMON_MODULES}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_omp.exe
 
 nemolite2d_gen_acc:
-	${MAKE} MODULE_LIST="nemolite2d_gen.o psy_acc.o infrastructure_mod.o ${COMMON_MODULES}" \
+	${MAKE} MODULE_LIST="nemolite2d_gen.o psy_acc.o infrastructure_mod.o time_step_mod.o ${COMMON_MODULES}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_acc.exe
 
@@ -68,7 +71,7 @@ infrastructure_mod.f90:
 
 # Normal targets. Need to link with OpenMP in order to use OMP timer
 nemolite2d: 
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" \
+	${MAKE} MODULE_LIST="nemolite2d.o time_step_mod.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d.exe
 
 ${API_LIB}: ${API_DIR}/*.?90
