@@ -97,6 +97,8 @@ module grid_mod
 
      !> Coordinates of grid (T) points in horizontal plane
      real(wp), allocatable :: xt(:,:), yt(:,:)
+   contains
+     procedure :: get_tmask
 
   end type grid_type
 
@@ -109,6 +111,15 @@ module grid_mod
 contains
 
   !============================================
+  function get_tmask(self) result(tmask)
+    implicit none
+    class (grid_type), target, intent(in) :: self
+    integer, pointer :: tmask(:,:)
+
+    tmask => self%tmask
+
+    return
+  end function get_tmask
 
   !> Basic constructor for the grid type. Full details
   !! are fleshed-out by the grid_init() routine.
