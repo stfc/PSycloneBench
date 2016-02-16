@@ -10,6 +10,7 @@ contains
   subroutine invoke_time_step(istp, ssha, ssha_u, ssha_v, &
                               sshn_t, sshn_u, sshn_v, &
                               hu, hv, ht, ua, va, un, vn)
+    use global_parameters_mod, only: ALIGNMENT
     use kind_params_mod
     use timing_mod
     use field_mod
@@ -45,10 +46,10 @@ contains
     real(wp) :: amp_tide, omega_tide, rtime
 
     M  = ssha%grid%simulation_domain%xstop
-    if(mod(M, 2) .ne. 0)then
-       M = M + 1
+    if(mod(M, ALIGNMENT) .ne. 0)then
+       M = (M/ALIGNMENT + 1)*ALIGNMENT
     end if
-!DIR$ ASSUME (MOD(M,2) .EQ. 0)
+!DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
     N  = ssha%grid%simulation_domain%ystop
 
     ! In the general case we have to reason about whether or not the
@@ -521,6 +522,7 @@ contains
   subroutine invoke_continuity_arrays(nx, ny, M, N, rdt, ssha, &
                                       sshn_t, sshn_u, sshn_v, &
                                       hu, hv, un, vn, area_t)
+    use global_parameters_mod, only: ALIGNMENT
     use kind_params_mod
     use timing_mod
     implicit none
@@ -535,24 +537,24 @@ contains
     real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     integer :: nrepeat, ic
     
-!DIR$ ASSUME (MOD(NX,4) .EQ. 0)
-!DIR$ ASSUME (MOD(M,2) .EQ. 0)
+!DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
+!DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
 !DIR$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
 
     ! Hack to ensure all our arrays are loaded into cache
-!!$    do jj = 2, N, 1
-!!$      do ji = 2, M, 1
-!!$
-!!$         rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
-!!$         rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
-!!$         rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
-!!$         rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
-!!$
-!!$         ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
-!!$                       rdt / area_t(ji,jj)
-!!$      end do
-!!$    end do
+!    do jj = 2, N, 1
+!      do ji = 2, M, 1
+!
+!         rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
+!         rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
+!         rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
+!         rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
+!
+!         ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+!                       rdt / area_t(ji,jj)
+!      end do
+!    end do
 
     nrepeat = 30000/(nx*ny)
     nrepeat = MAX(nrepeat, 1)
@@ -564,15 +566,18 @@ contains
 !DIR$ VECTOR ALIGNED
     do jj = 2, N, 1
 
-       ji = 2
-       rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
-       rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
-       rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
-       rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
+       ! Explicit peel loop
+       do ji = 2, ALIGNMENT
+          rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
+          rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
+          rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
+          rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
 
-       ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
-                       rdt / area_t(ji,jj)
-      do ji = 3, M, 1
+          ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+               rdt / area_t(ji,jj)
+       end do
+       
+      do ji = ALIGNMENT+1, M, 1
 
          rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
          rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)

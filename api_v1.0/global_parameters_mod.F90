@@ -12,7 +12,7 @@ module global_parameters_mod
   integer, parameter, public :: NAME_LEN = 1024
 
   ! What boundary to align arrays on
-  ! 256 bit = 4 d.p. words
+  ! AVX is 256 bit = 4 d.p. words
   integer, parameter, public :: ALIGNMENT = 4
 
   ! Iteration spaces for kernels.
