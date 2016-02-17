@@ -80,7 +80,8 @@ LINE_MOM_512=5
 LINE_MOM_256=6
 LINE_MOM_256_NO_IF=12
 LINE_MOM_128=7
-LINE_CONT_64=13
+LINE_CONT_32=15
+LINE_CONT_64=14
 LINE_CONT_128=8
 LINE_CONT_128_NO_VEC=9
 LINE_CONT_256=10
@@ -97,6 +98,7 @@ MOM_512_COL         = "violet"
 MOM_256_COL         = "orange"
 MOM_256_NO_IF_COL   = "dark-red"
 MOM_128_COL         = "red"
+CONT_32_COL         = "dark-blue"
 CONT_64_COL         = "purple"
 CONT_128_COL        = "green"
 CONT_128_NO_VEC_COL = "dark-chartreuse"
@@ -108,6 +110,7 @@ set style line LINE_MOM_512       lt 1 lc rgb MOM_512_COL
 set style line LINE_MOM_256       lt 1 lc rgb MOM_256_COL
 set style line LINE_MOM_256_NO_IF  lt 1 lc rgb MOM_256_NO_IF_COL
 set style line LINE_MOM_128       lt 1 lc rgb MOM_128_COL
+set style line LINE_CONT_32       lt 1 lc rgb CONT_32_COL
 set style line LINE_CONT_64       lt 1 lc rgb CONT_64_COL
 set style line LINE_CONT_128      lt 1 lc rgb CONT_128_COL
 set style line LINE_CONT_128_NO_VEC lt 1 lc rgb CONT_128_NO_VEC_COL
@@ -154,6 +157,10 @@ set object 6 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)
 # 64 domain, SSE
 set label 7 "Continuity, SSE, 64" at (NEMOLITE_CONT_AI*1.06),5.1 front textcolor ls LINE_CONT_64
 set object 7 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,5.251 back fc rgb CONT_64_COL fs solid
+
+# 32 domain, SSE, aligned
+set label 16 "Continuity, SSE, 32" at (NEMOLITE_CONT_AI*1.06),4.5 front textcolor ls LINE_CONT_32
+set object 16 rect from (1.0-BAR_WIDTH)*NEMOLITE_CONT_AI,MIN_Y to (1.0+BAR_WIDTH)*NEMOLITE_CONT_AI,4.57 back fc rgb CONT_32_COL fs solid
 
 # 128 domain, no-vec
 #set label 8 "Continuity, no-vec, 128" at (NEMOLITE_CONT_AI*1.06),3.6 front textcolor ls LINE_CONT_128_NO_VEC

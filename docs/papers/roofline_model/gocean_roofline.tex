@@ -379,16 +379,23 @@ in fact, is slightly detrimental for most of the problem sizes.
   \label{FIG_kernel_perf}
 \end{figure}
 
-Peak absolute performance is obtained for the 256 problem size with
-SSE instructions. The 512 problem size spills from L3 cache and
+Peak absolute performance is obtained for the $256^2$ problem size
+with SSE instructions. The 512 problem size spills from L3 cache and
 becomes bound by the bandwidth to main memory: SIMD vectorisation
 gives no performance benefit. The fact that best performance is
 obtained when the problem size fits within L3 indicates that there are
 other overheads that dominate when the problem size is small enough to
-fit within L2. This is possibly because the inner, SIMD-vectorised
-loop then only has a trip-count of 35. (This is not 32 because of the way
-the simulation domain is set-up; it is the {\em internal} region of
-the domain that has dimension $32^2$.) {\bf Remainder and peel loops.}
+fit within L2. We checked the efficiency of the SIMD vectorised code
+by looking at the compiler diagnostic output. On the basis of this we
+added Intel-specific directives to the code in order to specify that
+the arrays were aligned on 64-byte boundaries. We also manually coded
+the 'peel loop' (iterations required to reach a 64-byte
+boundary). Having done this the compiler reported that no peel or
+remainder loops were generated and the resulting (SSE) vectorised loop
+had an estimated speed-up of 1.9. (This estimated speed-up was
+previously 1.6; in agreement with the speed-up we measured.) After
+making these changes the performance of the Continuity kernel with the
+$32^2$ domain increased from 4.22 to 4.57 GFLOPs.
 
 Turning now to the u-Momentum kernel (lower plot in
 Figure~\ref{FIG_kernel_perf}), it is striking that the kernel
@@ -422,6 +429,15 @@ heavy use of main memory.
     problem size. Results are for v.16 of the Intel compiler on a Xeon
     E5-1620 v.2 CPU.}
   \label{FIG_cont_perf}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=120mm]{continuity_opt}
+  \caption{Performance of the Continuity kernel with optimisations
+    intended to aid SIMD vectorisation. Results are for v.16 of the
+    Intel compiler on a Xeon E5-1620 v.2 CPU.}
+  \label{FIG_cont_vec}
 \end{figure}
 
 As well as examining the performance of the Continuity kernel, we have

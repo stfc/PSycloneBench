@@ -10,7 +10,7 @@ gocean_roofline.aux: gocean_roofline.tex
 	pdflatex $<
 
 # List of figures that are GENERATED from .dat files of the same name
-FIG_FILES = 
+FIG_FILES = continuity_opt.pdf
 
 # Plots generated from Grace (xmgrace) - i.e. .agr files
 GRACE_PLOTS = nemolite2d_kernel_perf.pdf nemolite2d_cont_perf.pdf daxpy_bw_perf.pdf
@@ -19,6 +19,11 @@ GRACE_PLOTS = nemolite2d_kernel_perf.pdf nemolite2d_cont_perf.pdf daxpy_bw_perf.
 GNU_PLOTS = roofline_archer.pdf roofline_haswell.pdf stream2_desktop.pdf stream2_archer.pdf roofline_daxpy.pdf daxpy_plot.pdf
 
 figs: ${FIG_FILES} ${GRACE_PLOTS} ${GNU_PLOTS}
+
+%.pdf: %.dat
+	./bargraph.pl $< > $*.eps
+	epstopdf $*.eps
+	rm $*.eps
 
 %.pdf: %.agr
 	gracebat -hdevice EPS -printfile $*.eps $<
