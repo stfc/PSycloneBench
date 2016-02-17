@@ -22,6 +22,7 @@ MODULE timing_mod
 
    INTEGER :: iclk_rate ! Ticks per second of Fortran timer
    INTEGER :: iclk_max  ! Max value that Fortran timer can return
+   REAL(wp) :: clock_tick_s ! Time in seconds between clock ticks
 
    INTEGER, PARAMETER :: LABEL_LEN  = 128
    INTEGER, PARAMETER :: MAX_TIMERS = 60
@@ -93,15 +94,20 @@ MODULE timing_mod
       case(OMP_TIMER)
          iclk_rate = 1
          iclk_max = 1
+!$       clock_tick_s = omp_get_wtick()
          write (*,"('TIMING: using OpenMP omp_get_wtime()')")
+         write (*,"('TIMING: time between clock ticks =',1E13.5,' (s)')") &
+               clock_tick_s
       case(RDTSC_TIMER)
          iclk_rate = 1
          iclk_max = 1
+         clock_tick_s = 1.0d0 ! TODO work out how to get this quantity
          write (*,"('TIMING: using Intel Time Stamp Counter register')")
       case(INTRINSIC_TIMER)
          call SYSTEM_CLOCK(COUNT_RATE=iclk_rate, COUNT_MAX=iclk_max)
          write (*,"('TIMING: using Fortran intrinsic system clock, cycles/sec =',I7, &
               &   ', max count = ',I11)") iclk_rate, iclk_max
+         clock_tick_s = 1.0d0/REAL(iclk_rate)
       end select
 
       nThreads = 1
@@ -309,7 +315,7 @@ MODULE timing_mod
          WRITE(*," (' Timed using Fortran SYSTEM_CLOCK intrinsic. Units are seconds.')")
       END IF
       WRITE(*," ('-------------------------------------------------------------------')")
-      WRITE(*," ('Region',26x,'Counts      Total         Average')")
+      WRITE(*," ('Region',26x,'Counts      Total         Average      Error')")
       WRITE(*," ('-------------------------------------------------------------------')")
       DO jt = 1, nThreads, 1
          IF(jt > 1)THEN
@@ -327,9 +333,10 @@ MODULE timing_mod
             END IF
 
             ! Truncate the label to 32 chars for table-formatting purposes
-            WRITE(*,"((A),1x,I5,1x,E13.6,2x,E13.6)") &
+            WRITE(*,"((A),1x,I5,1x,E13.6,2x,E13.6,1x,E13.6)") &
                             timer(ji,jt)%label(1:32), timer(ji,jt)%count, &
-                            wtime, wtime/REAL(timer(ji,jt)%count)
+                            wtime, wtime/REAL(timer(ji,jt)%count), &
+                            time_err(timer(ji,jt)%count)
          END DO
       END DO
       WRITE(*," ('===================================================================')")
@@ -341,7 +348,7 @@ MODULE timing_mod
    SUBROUTINE timer_report_with_repeats()
       IMPLICIT none
       INTEGER       :: ji, jt
-      REAL(KIND=wp) :: wtime
+      REAL(KIND=wp) :: wtime, tmean, trepeat
 
       WRITE(*,"(/34('='),' Timing report ',34('='))")
       IF(use_rdtsc_timer)THEN
@@ -350,7 +357,7 @@ MODULE timing_mod
          WRITE(*," (' Timed using Fortran SYSTEM_CLOCK intrinsic. Units are seconds.')")
       END IF
       WRITE(*,"(83('-'))")
-      WRITE(*,"('Region',26x,'Counts      Total         Average    Average/repeat')")
+      WRITE(*,"('Region',26x,'Counts      Total         Average    Average/repeat   Error')")
       WRITE(*,"(83('-'))")
       DO jt = 1, nThreads, 1
          IF(jt > 1)THEN
@@ -367,16 +374,39 @@ MODULE timing_mod
                wtime = time_in_s(0._wp,timer(ji,jt)%total)
             END IF
 
+            ! Mean time spent in timed region
+            tmean = wtime/REAL(timer(ji,jt)%count)
+            ! Mean time spent in the repeated section of code in the
+            ! timed region
+            trepeat = tmean/REAL(timer(ji,jt)%nrepeat)
             ! Truncate the label to 32 chars for table-formatting purposes
-            WRITE(*,"((A),1x,I4,2x,E13.6,2x,E13.6,2x,E13.6)")          &
+            WRITE(*,"((A),1x,I6,1x,E13.6,1x,E13.6,1x,E13.6,1x,E13.6)")    &
                             timer(ji,jt)%label(1:32), timer(ji,jt)%count, &
-                            wtime, wtime/REAL(timer(ji,jt)%count),        &
-                            wtime/REAL(timer(ji,jt)%count * timer(ji,jt)%nrepeat)
+                            wtime, tmean, trepeat, & 
+                            ! Error estimate using quadrature formula for
+                            ! the time spent in just one of the nrepeat 
+                            ! regions - use product formula
+                            trepeat*time_err(timer(ji,jt)%count)/tmean
          END DO
       END DO
       WRITE(*,"(83('='))")
 
    END SUBROUTINE timer_report_with_repeats
+
+   !===================================================================
+
+   FUNCTION time_err(ncount)
+     implicit none
+     integer :: ncount
+     real :: time_err
+     ! Calculate the error in the mean time duration using the reported
+     ! granularity of the clock and quadrature formula
+     ! Every time we time a region we get a start time and a stop time.
+     ! There is an error of +/-clock_tick_s in each of these so the error
+     ! in the measured duration is sqrt(2*clock_tick_s^2). We then have
+     ! ncount measured durations so the error in the mean duration is:
+     time_err = clock_tick_s*sqrt(2.0d0/REAL(ncount))
+   END FUNCTION time_err
 
 !============================================================================
 
