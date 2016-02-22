@@ -27,7 +27,7 @@ set yrange [MIN_Y:MAX_Y]
 # u-momentum kernel of nemolite2d has AI = 0.42 FLOP/byte
 NEMOLITE_MOM_AI = 0.42
 # The continuity kernel of nemolite2d
-NEMOLITE_CONT_AI = 0.153
+NEMOLITE_CONT_AI = 0.1276
 
 # CPU CONSTANTS
 # For single core of Xeon E5-1620 v2 (my desktop), as measured with 

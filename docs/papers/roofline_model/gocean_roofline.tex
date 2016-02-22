@@ -275,9 +275,9 @@ Code                       & Shallow & \multicolumn{2}{c|}{nemolite2d} \\
 Kernel                     & 1st loop nest & Continuity & u-Momentum \\
 \hline                                
 FLOPs                      & 24      &    14      &   107+13   \\
-Distinct memory refs       & 10      &    10      &   31       \\
-$AI$ (FLOPs/byte)          & 0.26    &  0.153     &   0.42     \\
-Working-set size (bytes)   & $56n^2$ &  $64n^2$   &   $136n^2$ \\
+Distinct memory refs       & 10      &    12      &   31       \\
+$AI$ (FLOPs/byte)          & 0.26    &  0.128     &   0.42     \\
+Working-set size (bytes)   & $56n^2$ &  $72n^2$   &   $136n^2$ \\
 \hline
 \end{tabular}
 \caption{Details of the kernels investigated with the roofline
@@ -338,11 +338,11 @@ would expect, the performance of the u-Momentum kernel remains poor on
 this CPU. For the $512^2$ domain the Continuity kernel performs well,
 reaching the limit imposed by the bandwidth to main memory. However,
 the working-set sizes for this kernel for the $128^2$ and $256^2$
-domains are approximately 1~MB and 4.2~MB, respectively and therefore
+domains are approximately 1.1~MB and 4.7~MB, respectively and therefore
 both of these should fit comfortably within L3 cache. Despite this,
 the performance achieved with these domain sizes falls short of the L3
 bandwidth limit.  Although this kernel is one of several within the
-time-stepping loop of NEMOLite2D, the working-set size of this loop
+time-stepping loop of NEMOLite2D, the working-set size of the latter
 for the $128^2$ domain is just 2.4~MB which again is well within the
 capacity of L3.
 
@@ -357,7 +357,19 @@ capacity of L3.
 In order to investigate why the performance of the Continuity kernel
 is falling well short of the maximum predicted by the roofline model
 we have experimented with the level of SIMD
-vectorisation. Figure~\ref{FIG_kernel_perf} shows the performance of
+vectorisation. Figure~\ref{FIG_cont_vec} shows the performance of the
+Continuity kernel compiled with differing levels of SIMD vectorisation
+and after code modifications intended to improve vectorisation.
+Compiling without auto-vectorisation (``-no-vec''), the kernel
+achieves a performance that is largely limited by the bandwidth to
+main memory. Note that there is very little opportunity for temporal
+cache re-use in the Continuity kernel -- only three of the twelve
+distinct memory references are to previous rows of the array. The size
+of this effect can be seen in the small drop in performance (black
+bars) in going from the $256^2$ to the $512^2$ domain as at this point
+the working-set size spills out of L3 cache.
+
+Figure~\ref{FIG_kernel_perf} shows the performance of
 the Continuity and u-Momentum kernels when compiled without
 vectorisation (``-no-vec''), with SSE4 (Streaming SIMD Extensions)
 vectorisation (``-axSSE4.2'') and with AVX (``-xHost''). SSE supports
@@ -375,8 +387,18 @@ in fact, is slightly detrimental for most of the problem sizes.
   \includegraphics[width=120mm]{nemolite2d_kernel_perf}
   \caption{Performance of the Continuity and u-Momentum kernels as a
     function of SIMD vectorisation and problem size. Results are for
-    v.16 of the Intel compiler on a Xeon E5-1620 v.2 CPU.}
+    v.16 of the Intel compiler on a Xeon E5-1620 v.2 CPU.{\bf This plot
+requires updating or dropping in favour of the clustered-bar form.}}
   \label{FIG_kernel_perf}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=130mm]{continuity_opt}
+  \caption{Performance of the Continuity kernel with optimisations
+    intended to aid SIMD vectorisation. Results are for v.16 of the
+    Intel compiler on a Xeon E5-1620 v.2 CPU.}
+  \label{FIG_cont_vec}
 \end{figure}
 
 Peak absolute performance is obtained for the $256^2$ problem size
@@ -424,20 +446,11 @@ heavy use of main memory.
 \begin{figure}
   \centering
   \includegraphics[width=120mm]{nemolite2d_cont_perf}
-  \caption{Performance of the Continuity kernel (bars -- right y-axis)
-    and HWPC data (open circles -- left y-axis) as a function of
+  \caption{Performance of the Continuity kernel (open circles -- right y-axis)
+    and associated HWPC data (bars -- left y-axis) as a function of
     problem size. Results are for v.16 of the Intel compiler on a Xeon
     E5-1620 v.2 CPU.}
   \label{FIG_cont_perf}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=120mm]{continuity_opt}
-  \caption{Performance of the Continuity kernel with optimisations
-    intended to aid SIMD vectorisation. Results are for v.16 of the
-    Intel compiler on a Xeon E5-1620 v.2 CPU.}
-  \label{FIG_cont_vec}
 \end{figure}
 
 As well as examining the performance of the Continuity kernel, we have
