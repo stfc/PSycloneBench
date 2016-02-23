@@ -396,6 +396,93 @@ loop and handling any ``peel'' or ``remainder'' loops. As the problem
 size increases, this overhead (as a fraction of the vectorisable
 workload) decreases.
 
+Examining the optimisation report produced by the Intel compiler
+revealed that the majority of array accesses within the loop were not
+aligned:
+\begin{verbatim}
+Example of unaligned access report here
+\end{verbatim}
+and that this inhibited efficient vectorisation. Tackling this issue
+requires two steps; first, ensure that the arrays are allocated to
+align with 64-byte boundaries and second, ensure that the compiler is
+aware of this where those arrays are used. The first requirement is
+easily met by passing the ``-align array64byte'' flag to
+the compiler when building the code. This ensures that any array that
+is constructed using a call to ALLOCATE is aligned on 64-byte
+boundaries in memory.
+
+The second requirement is complicated by the fact that the NEMOLite2D
+code makes extensive use of Fortran derived types --- the data arrays
+used for computation are members of derived types. The information
+about the alignment of these arrays cannot therefore be propagated
+through the code by module {\tt use} statements. In fact, even the
+Intel compiler directive which can be used to specify the alignment
+of a particular array at its point of use will not accept references
+to members of a derived type. It was therefore necessary to wrap the
+kernel call (and associated loops) within a routine and pass in
+references to the arrays. Within the wrapper routine the corresponding
+dummy arguments are declared as simple arrays and their alignment can
+then be specified using the {\tt ASSUME\_ALIGNED} directive:
+\begin{verbatim}
+subroutine invoke_continuity_arrays(nx, ny, ssha, ...)
+  integer, intent(in)   :: nx, ny
+  real(wp), intent(out) :: ssha(nx,ny)
+!DIR$ ASSUME_ALIGNED ssha:64
+  ...
+\end{verbatim}
+This approach also enables the extent of the arrays ({\tt nx} and {\tt
+  ny} in this example) to be specified explicitly.
+
+The continuity kernel includes array accesses of the form {\tt
+  a(i,j-1)}. If array {\tt a} is allocated with extent {\tt (Nx, Ny)}
+then this specifies a location in memory {\tt Nx} words before that
+occupied by {\tt a(i,j)}. In order for such an access to be aligned,
+{\tt Nx} must be a multiple of the SIMD vector width (2 for SSE, 4 for
+AVX) and this must be specified to the compiler. We therefore padded Nx
+as required and added a directive within the wrapper routine:
+\begin{verbatim}
+!DIR$ ASSUME (MOD(Nx,ALIGNMENT) .EQ. 0)
+\end{verbatim}
+
+Once all of these steps were complete, the only un-aligned array
+accesses reported by the compiler were those of the form {\tt
+  a(i-1,j)}. Without taking a physical copy of the array {\tt a}, such
+unaligned accesses are unavoidable in a stencil-based
+finite-difference code.
+
+The final SIMD-related optimisations are concerned with what happens
+at the beginning and end of a SIMD-vectorisable loop. If the loop
+updates e.g. {\tt a(i,j)} and begins on a value of {\tt i} that
+  results in unaligned memory accesses (e.g. {\tt i = 2}) then the
+  compiler must insert a ``peel'' loop to handle those iterations
+  required to reach a point where memory is accessed on a 64-byte
+  boundary.  Similarly, if the trip-count of the resulting
+  vectorisable loop is not an integer multiple of the SIMD vector
+  width then the compiler must insert a ``remainder'' loop to handle
+  those iterations left over.  We removed the remainder loop by
+  ensuring that the length of the inner loop was a multiple of the
+  vector width and adding an {\tt ASSUME} compiler directive
+  (c.f. that for {\tt Nx} above). This was straightforward since we
+  had already padded the array extents themselves and NEMOLite2D uses
+  a mask to define the active computational domain - the additional
+  grid points resulting from the padding were simply marked as
+  external to the domain.  Despite doing this we found that the
+  remainder loop was not removed until we manually introduced the peel
+  loop (rather than relying on the compiler).
+
+The inner loop of the kernel where all array accesses are aligned and
+the number of distinct streams has been reduced to eight (with a
+concommitant reduction in the number of FLOPs):
+\begin{verbatim}
+do ji = ALIGNMENT+1, M, 1
+   rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
+   rtmp2 = (sshn_u(ji-ALIGNMENT,jj ) + hu(ji-ALIGNMENT,jj))* &
+           un(ji-ALIGNMENT,jj)
+   rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
+   ssha(ji,jj) =  (rtmp2 - rtmp1 - rtmp3) / sshn_t(ji,jj)
+end do
+\end{verbatim}
+
 Figure~\ref{FIG_kernel_perf} shows the performance of the Continuity
 and u-Momentum kernels when compiled without vectorisation
 (``-no-vec''), with SSE vectorisation (``-axSSE4.2'') and with AVX
