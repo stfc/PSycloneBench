@@ -54,6 +54,34 @@ nemolite2d_align: ${COMMON_MODULES} time_step_mod_align.o nemolite2d.o
 	${MAKE} MODULE_LIST="time_step_mod_align.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_align.exe
 
+nemolite2d_preload: ${COMMON_MODULES} time_step_mod_align_preload.o nemolite2d.o
+        # Have to delete any existing time_step_mod because it contains a module
+        # with the same name as that in time_step_mod_align_preload
+	rm -f time_step_mod.o time_step_mod.mod
+	${MAKE} MODULE_LIST="time_step_mod_align_preload.o nemolite2d.o ${COMMON_MODULES}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_preload.exe
+
+nemolite2d_alignall: ${COMMON_MODULES} time_step_mod_alignall_preload.o nemolite2d.o
+        # Have to delete any existing time_step_mod because it contains a module
+        # with the same name as that in time_step_mod_align_preload
+	rm -f time_step_mod*.o time_step_mod*.mod
+	${MAKE} MODULE_LIST="time_step_mod_alignall_preload.o nemolite2d.o ${COMMON_MODULES}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_alignall.exe
+
+nemolite2d_nopeel: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel.o nemolite2d.o
+        # Have to delete any existing time_step_mod because it contains a module
+        # with the same name as that in time_step_mod_align_preload
+	rm -f time_step_mod*.o time_step_mod*.mod
+	${MAKE} MODULE_LIST="time_step_mod_alignall_preload_nopeel.o nemolite2d.o ${COMMON_MODULES}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_nopeel.exe
+
+nemolite2d_8arrays: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel_8arrays.o nemolite2d.o
+        # Have to delete any existing time_step_mod because it contains a module
+        # with the same name as that in time_step_mod_align_preload
+	rm -f time_step_mod*.o time_step_mod*.mod
+	${MAKE} MODULE_LIST="time_step_mod_alignall_preload_nopeel_8arrays.o nemolite2d.o ${COMMON_MODULES}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_8arrays.exe
+
 # The generated code depends on the generated Psy middle-layer
 nemolite2d_gen:
 	${MAKE} MODULE_LIST="nemolite2d_gen.o psy.o infrastructure_mod.o ${MODULES} time_step_mod.o ${API_LIB}" LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen.exe
@@ -98,17 +126,10 @@ momentum_mod.o: model_mod.o physical_params_mod.o ${API_DIR}/kind_params_mod.o
 time_step_mod.o: ${API_LIB} momentum_mod.o continuity_mod.o \
                  time_update_mod.o boundary_conditions_mod.o
 time_update_mod.o: model_mod.o ${API_LIB}
-nemolite2d.o: time_step_mod.o
 
 # Generic rules
 
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
-
-# Have a specific rule for nemolite2d_align because its dependencies are 'non-standard'
-# in that it needs time_step_mod_align.o. This is specified to the nemolite2d_align target
-# above.
-nemolite2d_align.exe:
 	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
 
 %.o: %.f90
