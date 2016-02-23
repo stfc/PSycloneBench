@@ -75,7 +75,7 @@ infrastructure_mod.f90:
 	ln -sf ${API_DIR}/infrastructure_mod.f90 .
 
 # Normal targets. Need to link with OpenMP in order to use OMP timer
-nemolite2d: 
+nemolite2d: ${API_LIB} ${MODULES}
 	${MAKE} MODULE_LIST="nemolite2d.o time_step_mod.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d.exe
 
@@ -98,6 +98,7 @@ momentum_mod.o: model_mod.o physical_params_mod.o ${API_DIR}/kind_params_mod.o
 time_step_mod.o: ${API_LIB} momentum_mod.o continuity_mod.o \
                  time_update_mod.o boundary_conditions_mod.o
 time_update_mod.o: model_mod.o ${API_LIB}
+nemolite2d.o: time_step_mod.o
 
 # Generic rules
 

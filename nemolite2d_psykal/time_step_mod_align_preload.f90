@@ -535,11 +535,27 @@ contains
     ! Locals
     integer :: jj, ji, idxt
     real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
-    integer :: nrepeat, ic
+    integer :: nrepeat
 !DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
 !DIR$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
+
+    ! Hack to ensure all our arrays are loaded into cache - we
+    ! simply execute the whole loop here first before entering
+    ! the timed region
+    do jj = 2, N, 1
+      do ji = 2, M, 1
+
+         rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
+         rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
+         rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
+         rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
+
+         ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+                       rdt / area_t(ji,jj)
+      end do
+    end do
 
     nrepeat = 1
 
