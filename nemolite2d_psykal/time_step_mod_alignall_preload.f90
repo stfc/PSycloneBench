@@ -568,7 +568,7 @@ contains
       ! Explicit peel loop
       do ji = 2, ALIGNMENT
          rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
-         rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
+         rtmp2 = (sshn_u(ji-ALIGNMENT,jj ) + hu(ji-ALIGNMENT,jj))*un(ji-ALIGNMENT,jj)
          rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
          rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
          ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
@@ -580,7 +580,7 @@ contains
          rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
          rtmp2 = (sshn_u(ji-ALIGNMENT,jj ) + hu(ji-ALIGNMENT,jj))*un(ji-ALIGNMENT,jj)
          rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
-         rtmp4 = (sshn_v(ji ,jj-ALIGNMENT) + hv(ji ,jj-ALIGNMENT))*vn(ji,jj-ALIGNMENT)
+         rtmp4 = (sshn_v(ji ,jj-1) + hv(ji ,jj-1))*vn(ji,jj-1)
          ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
                        rdt / area_t(ji,jj)
       end do
