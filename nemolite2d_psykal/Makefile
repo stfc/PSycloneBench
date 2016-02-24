@@ -45,6 +45,11 @@ psy_omp.f90: nemolite2d_alg.f90 nemolite2d_omp_transform.py
 psy_acc.f90: nemolite2d_alg.f90 nemolite2d_acc_transform.py
 	python ${PSYCLONE}/src/generator.py -api gocean1.0 nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 -opsy psy_acc.f90 -s nemolite2d_acc_transform.py
 
+# Normal targets. Need to link with OpenMP in order to use OMP timer
+nemolite2d: ${API_LIB} ${MODULES} time_step_mod.o nemolite2d.o
+	${MAKE} MODULE_LIST="nemolite2d.o time_step_mod.o ${COMMON_MODULES}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d.exe
+
 # Version of nemolite2d with the time-stepping routine hacked to
 # encourage the Intel compiler to vectorise efficiently
 nemolite2d_align: ${COMMON_MODULES} time_step_mod_align.o nemolite2d.o
@@ -83,7 +88,7 @@ nemolite2d_8arrays: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel_8arr
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_8arrays.exe
 
 # The generated code depends on the generated Psy middle-layer
-nemolite2d_gen:
+nemolite2d_gen: time_step_mod.o nemolite2d_gen.o psy.o infrastructure_mod.o${MODULES}
 	${MAKE} MODULE_LIST="nemolite2d_gen.o psy.o infrastructure_mod.o ${MODULES} time_step_mod.o ${API_LIB}" LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen.exe
 
 nemolite2d_gen_omp:
@@ -102,10 +107,6 @@ nemolite2d_gen_acc:
 infrastructure_mod.f90:
 	ln -sf ${API_DIR}/infrastructure_mod.f90 .
 
-# Normal targets. Need to link with OpenMP in order to use OMP timer
-nemolite2d: ${API_LIB} ${MODULES}
-	${MAKE} MODULE_LIST="nemolite2d.o time_step_mod.o ${COMMON_MODULES}" \
-             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d.exe
 
 ${API_LIB}: ${API_DIR}/*.?90
 	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" \
