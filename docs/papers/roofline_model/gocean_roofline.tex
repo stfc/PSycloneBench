@@ -329,7 +329,7 @@ In contrast to the results obtained with the Shallow kernel, the
 performance of the NEMOLite2D u-Momentum kernel shows little
 sensitivity to working-set size -- the $128^2$, $256^2$ and $512^2$
 performance points in Figure~\ref{FIG_roofline_archer} are very close
-together.
+together and well below any of the roofline limits.
 
 In Figure~\ref{FIG_roofline_haswell} we plot the Roofline model
 obtained for the E5-1620 CPU. In order to investigate the poor
@@ -342,11 +342,13 @@ the working-set sizes for this kernel for the $128^2$ and $256^2$
 domains are approximately 1.1~MB and 4.7~MB, respectively and
 therefore both of these should fit comfortably within L3
 cache. Despite this, the performance achieved with these domain sizes
-falls short of the L3 bandwidth limit.  However, the Continuity kernel is just
-one of several within the time-stepping loop of NEMOLite2D; the loop
-as a whole has a working-set size of $180\times n^{2}$ bytes. For the
-$32^2$ domain this is 180~KB, for $52^2$ it is 475~KB and for the
-$128^2$ domain it is 2.9~MB which is well within the capacity of L3.
+falls short of the L3 bandwidth limit.  Even when we consider that the
+Continuity kernel is just one of several within the time-stepping loop
+of NEMOLite2D we see that the L3 bandwidth limit is still applicable;
+the loop as a whole has a working-set size of $180\times n^{2}$
+bytes. For the $32^2$ domain this is 180~KB ({\it i.e.}\ within L2),
+while the $52^2$ (475~KB) through to the $128^2$ domain (2.9~MB) fall
+well within the capacity of L3.
 
 \begin{figure}
 \centering
@@ -443,12 +445,32 @@ as required and added a directive within the wrapper routine:
 \begin{verbatim}
 !DIR$ ASSUME (MOD(Nx,ALIGNMENT) .EQ. 0)
 \end{verbatim}
+where {\tt ALIGNMENT} is an integer parameter declared to have the value two
+when compiling with SSE and four with AVX.
 
-Once all of these steps were complete, the only un-aligned array
+We can see in Figure~\ref{FIG_cont_vec} that these changes (``SSE
+align'') significantly improve the performance of the smaller
+domains. Again, as the domain size increases this improvement reduces
+until, for $512^2$ and $1024^2$ (where we are limited by the bandwidth
+to main memory), this optimisation has no effect.
+
+Since the Continuity kernel is one of several in the time-stepping
+loop, we experimented with pre-loading the fields into cache simply by
+executing the Continuity kernel immediately prior to executing it for
+a second time with timing. Figure~\ref{FIG_cont_vec} shows that this
+``pre-loading'' slightly improved the kernel performance for those
+problem sizes that fit within cache. {\bf Discuss this}
+
+Once all of the above steps were complete, the only un-aligned array
 accesses reported by the compiler were those of the form {\tt
   a(i-1,j)}. Without taking a physical copy of the array {\tt a}, such
 unaligned accesses are unavoidable in a stencil-based
-finite-difference code.
+finite-difference code. However, in order to quantify how much these
+accesses limit the performance of the kernel we experimented with
+replacing e.g. {\tt a(i-1,j)} with {\tt a(i-ALIGNMENT,j)}. The
+resulting kernel had no un-aligned accesses and performed
+significantly better; actually reaching or exceeding the L3-bandwidth
+roofline for domains $64^2$ -- $256^2$.
 
 The final SIMD-related optimisations are concerned with what happens
 at the beginning and end of a SIMD-vectorisable loop. If the loop
