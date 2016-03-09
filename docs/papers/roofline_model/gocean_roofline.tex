@@ -395,7 +395,14 @@ cache. It is therefore likely that the reason this factor is below the
 ideal value of 2.0 is the overhead associated with constructing the
 loop and handling any ``peel'' or ``remainder'' loops. As the problem
 size increases, this overhead (as a fraction of the vectorisable
-workload) decreases.
+workload) decreases. {\bf if this is the case then why is my 128x8 domain
+not faster than the 32x32?}
+
+When compiling with AVX instructions rather than SSE, the performance
+of the Continuity kernel was typically just below that of the latter
+for all of the problem sizes fitting within cache. We attribute this
+to the higher overheads associated with managing the longer AVX
+vectors.
 
 Examining the optimisation report produced by the Intel compiler
 revealed that the majority of array accesses within the loop were not
@@ -453,6 +460,10 @@ domains. Again, as the domain size increases this improvement reduces
 until, for $512^2$ and $1024^2$ (where we are limited by the bandwidth
 to main memory), this optimisation has no effect.
 
+In what follows, the code modifications were no longer restricted to
+those that maintained correctness since we were interested in what
+characteristics of the code were limiting its performance.
+
 Since the Continuity kernel is one of several in the time-stepping
 loop, we experimented with pre-loading the fields into cache simply by
 executing the Continuity kernel immediately prior to executing it for
@@ -500,11 +511,11 @@ sizes that are contained within L3 cache with the exception of $52^2$.
 Since the caches of both of the CPUs used are eight-way associative,
 we also considered whether we might be experiencing ``cache
 thrashing'' whereby different locations in memory are mapped to the
-same location in memory.
-
-The inner loop of the kernel where all array accesses are aligned and
-the number of distinct streams has been reduced to eight (with a
-concommitant reduction in the number of FLOPs):
+same location in cache. We therefore constructed a version of the
+kernel with the number of distinct streams reduced from twelve to
+eight. In order to maintain the same Arithmetic Intensity as the
+original kernel we also reduced the number of FLOPs. The inner loop of
+the resulting kernel was:
 \begin{verbatim}
 do ji = ALIGNMENT+1, M, 1
    rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
@@ -514,6 +525,11 @@ do ji = ALIGNMENT+1, M, 1
    ssha(ji,jj) =  (rtmp2 - rtmp1 - rtmp3) / sshn_t(ji,jj)
 end do
 \end{verbatim}
+
+Figure~\ref{FIG_cont_vec} shows that the absolute performance of this
+modified kernel (``8 arrays'') is mostly lower than that of the kernel
+with twelve streams and certainly never exceeds it. We therefore
+conclude that cache-thrashing is not a problem for this kernel.
 
 Figure~\ref{FIG_kernel_perf} shows the performance of the Continuity
 and u-Momentum kernels when compiled without vectorisation
