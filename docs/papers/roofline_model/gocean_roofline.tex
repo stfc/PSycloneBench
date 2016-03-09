@@ -22,11 +22,11 @@ We want to use the Roofline Model to establish the efficiency (or
 otherwise) of two shallow-water benchmark codes that we have used in
 the GOcean project. The first of these codes, Shallow, was originally
 written by Paul Swarztrauber over 30 years ago and has been optimised
-by various people over that time. In contrast, nemolite2d is a new,
+by various people over that time. In contrast, NEMOLite2D is a new,
 un-optimised code that has been extracted from NEMO.
 
 Although we have investigated how the performance of the \psykal
-version of nemolite2d compares with that of the original, we have not
+version of NEMOLite2D compares with that of the original, we have not
 addressed how efficient the original actually is. In order to do so we
 use the Roofline Model~\cite{roofline} which provides a relatively
 simple way of characterising the performance of a code in terms of
@@ -92,8 +92,7 @@ Table~\ref{TAB_stream_linpack}.
 \begin{figure}
 \includegraphics[width=120mm]{stream2_archer}
 \caption{Results from running the STREAM2 benchmark on the E5-2697
-  CPUs. Error bars indicate the maximum and minimum values obtained
-  from 200 repeats of each case.  size. }
+  CPU.}
 \label{FIG_stream2}
 \end{figure}
 
@@ -128,7 +127,7 @@ and memory traffic are known:
 \url{https://code.google.com/p/likwid/wiki/IvyBridgeVerification}.
 The results of doing this on an Intel Xeon E5-1620 v2 CPU are shown in
 Figure~\ref{FIG_flops_dp_test}. It appears that once the memory
-footprint spills out of L1 cache (which all of our nemolite2d
+footprint spills out of L1 cache (which all of our NEMOLite2D
 benchmark configurations do), the performance counter results
 significantly overestimate the FLOPs performed.
 
@@ -260,7 +259,7 @@ We can also count the number of floating-point arithmetic operations
 (FLOPs) in this code fragment which gives us 12 multiplications and 12
 additions. The $AI$ for this code fragment is then $24*7/640 = 0.26$
 FLOPs/byte.  If we do the same analysis for the (longer) u-Momentum
-kernel of nemolite2d then we find that there are 51 addition
+kernel of NEMOLite2D then we find that there are 51 addition
 operations, 56 multiplication/division operations and one call to {\tt
   sin()}. There are 31 distinct memory references. This gives an $AI$
 of approximately $(107+13)*7/(31*64) = 0.42$ FLOPs/byte (where we
@@ -270,7 +269,7 @@ analysis are summarised in Table~\ref{TAB_kernel_details}.
 \begin{table}
 \begin{tabular}{|l|c|c|c|}
 \hline
-                             & Shallow & \multicolumn{2}{c|}{nemolite2d} \\
+                             & Shallow & \multicolumn{2}{c|}{NEMOLite2D} \\
 WSS of time-stepping (bytes) & $104n^2$ & \multicolumn{2}{c|}{$180n^2$} \\ 
 \hline
 Kernel                     & 1st loop nest & Continuity & u-Momentum \\
@@ -301,7 +300,7 @@ Using these figures we can finally construct the Roofline model for
 the two CPUs and the various kernels. In
 Figure~\ref{FIG_roofline_archer} we plot the model for the E5-2697 CPU
 and show the performance of the 1st loop-nest of Shallow and the
-u-Momentum kernel of nemolite2d. Two things are immediately clear from
+u-Momentum kernel of NEMOLite2D. Two things are immediately clear from
 this plot: first, the performance of the first loop nest of Shallow is
 clearly memory-bandwidth limited and second, the u-Momentum kernel of
 NEMOLite2D is no-where near approaching this limit.
@@ -317,13 +316,13 @@ NEMOLite2D is no-where near approaching this limit.
 Two performance points are plotted for the Shallow kernel
 corresponding to domains of $512^2$ and $1024^2$. Using the equation
 for working-set size in Table~\ref{TAB_kernel_details}, these
-correspond to 14.7 and 58.7~MB, respectively. Since the E5-2697 has
-an L3 cache of 30~MB, the $512^2$ case should be contained in cache
-while the $1024^2$ case will spill to main memory. This is borne out
-by the plot; the $1024^2$ case is achieving a performance in-line
+correspond to 14.7 and 58.7~MB, respectively. Since the E5-2697 has an
+L3 cache of 30~MB, the $512^2$ case should be contained in cache while
+the $1024^2$ case will spill to main memory. This is borne out by the
+plot; the $1024^2$ case is achieving a performance roughly in-line
 with saturating the bandwidth to main memory. The $512^2$ case is
-approaching the L3 bandwidth limit. We investigate the reasons for
-the fact that it does not achieve the L3 bandwidth limit below.
+approaching the L3 bandwidth limit. We investigate the reasons for the
+fact that it does not achieve the L3 bandwidth limit below.
  
 In contrast to the results obtained with the Shallow kernel, the
 performance of the NEMOLite2D u-Momentum kernel shows little
@@ -440,7 +439,7 @@ The continuity kernel includes array accesses of the form {\tt
 then this specifies a location in memory {\tt Nx} words before that
 occupied by {\tt a(i,j)}. In order for such an access to be aligned,
 {\tt Nx} must be a multiple of the SIMD vector width (2 for SSE, 4 for
-AVX) and this must be specified to the compiler. We therefore padded Nx
+AVX) and this must be specified to the compiler. We therefore padded {\tt Nx}
 as required and added a directive within the wrapper routine:
 \begin{verbatim}
 !DIR$ ASSUME (MOD(Nx,ALIGNMENT) .EQ. 0)
@@ -470,27 +469,38 @@ accesses limit the performance of the kernel we experimented with
 replacing e.g. {\tt a(i-1,j)} with {\tt a(i-ALIGNMENT,j)}. The
 resulting kernel had no un-aligned accesses and performed
 significantly better; actually reaching or exceeding the L3-bandwidth
-roofline for domains $64^2$ -- $256^2$.
+roofline for domains of $52^2$ -- $256^2$ (Figure~\ref{FIG_cont_vec} -
+``align all'').
 
 The final SIMD-related optimisations are concerned with what happens
 at the beginning and end of a SIMD-vectorisable loop. If the loop
-updates e.g. {\tt a(i,j)} and begins on a value of {\tt i} that
-  results in unaligned memory accesses (e.g. {\tt i = 2}) then the
-  compiler must insert a ``peel'' loop to handle those iterations
-  required to reach a point where memory is accessed on a 64-byte
-  boundary.  Similarly, if the trip-count of the resulting
-  vectorisable loop is not an integer multiple of the SIMD vector
-  width then the compiler must insert a ``remainder'' loop to handle
-  those iterations left over.  We removed the remainder loop by
-  ensuring that the length of the inner loop was a multiple of the
-  vector width and adding an {\tt ASSUME} compiler directive
-  (c.f. that for {\tt Nx} above). This was straightforward since we
-  had already padded the array extents themselves and NEMOLite2D uses
-  a mask to define the active computational domain - the additional
-  grid points resulting from the padding were simply marked as
-  external to the domain.  Despite doing this we found that the
-  remainder loop was not removed until we manually introduced the peel
-  loop (rather than relying on the compiler).
+updates {\it e.g.}\ {\tt a(i,j)} and begins on a value of {\tt i} that
+results in unaligned memory accesses ({\it e.g.}\ {\tt i = 2}) then
+the compiler must insert a ``peel'' loop to handle those iterations
+required to reach a point where memory is accessed on a 64-byte
+boundary.  Similarly, if the trip-count of the resulting vectorisable
+loop is not an integer multiple of the SIMD vector width then the
+compiler must insert a ``remainder'' loop to handle those iterations
+left over.
+
+We removed the remainder loop by ensuring that the length of the inner
+loop was a multiple of the vector width and adding an {\tt ASSUME}
+compiler directive ({\it c.f.}\ that for {\tt Nx} above). This was
+straightforward since we had already padded the array extents
+themselves and NEMOLite2D uses a mask to define the active
+computational domain - the additional grid points resulting from the
+padding were simply marked as external to the domain.  Despite doing
+this we found that the remainder loop was not removed until we
+manually introduced the peel loop (rather than relying on the
+compiler). Figure~\ref{FIG_cont_vec} shows that the resulting binary
+was the most performant of all those compiled with SSE on all problem
+sizes that are contained within L3 cache with the exception of $52^2$.
+{\bf Why is $52^2$ an exception? Something to do with tuning it to fit in L2?}
+
+Since the caches of both of the CPUs used are eight-way associative,
+we also considered whether we might be experiencing ``cache
+thrashing'' whereby different locations in memory are mapped to the
+same location in memory.
 
 The inner loop of the kernel where all array accesses are aligned and
 the number of distinct streams has been reduced to eight (with a
