@@ -22,10 +22,10 @@ We want to use the Roofline Model to establish the efficiency (or
 otherwise) of two shallow-water benchmark codes that we have used in
 the GOcean project. The first of these codes, Shallow, was originally
 written by Paul Swarztrauber over 30 years ago and has been optimised
-by various people over that time. In contrast, NEMOLite2D is a new,
+by various people since that time. In contrast, NEMOLite2D is a new,
 un-optimised code that has been extracted from NEMO.
 
-Although we have investigated how the performance of the \psykal
+Although we have investigated how the performance of the \psykal\ 
 version of NEMOLite2D compares with that of the original, we have not
 addressed how efficient the original actually is. In order to do so we
 use the Roofline Model~\cite{roofline} which provides a relatively
@@ -45,7 +45,7 @@ in Table~\ref{TAB_stream_linpack}.
 \begin{table}
 \begin{tabular}{|l|c|c|c|c|}
 \hline
-  \multicolumn{5}{|c|}{E5-1620 v.~2, 3.7GHz} \\
+  \multicolumn{5}{|c|}{E5-1620 v.2, 3.7GHz} \\
   \hline
 LINPACK (GFLOPS) & \multicolumn{4}{c|}{28.32} \\
 \hline
@@ -55,7 +55,7 @@ Size                  &   32 KB/core   & 256 KB/core   & 10 MB    &  -- \\
 \hline
 STREAM2 (GB/s)   &  160  &  61.0  & 46.0 &  20.5 \\
   \hline
-\multicolumn{5}{|c|}{E5-2697 v.~2, 2.7GHz}  \\
+\multicolumn{5}{|c|}{E5-2697 v.2, 2.7GHz}  \\
 \hline
 LINPACK (GFLOPS) & \multicolumn{4}{c|}{25.41} \\
 \hline
