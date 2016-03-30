@@ -17,10 +17,11 @@ L_MEM_X=0.3
 L_MEM_ANG=27
 
 # range of each axis
+MIN_X=0.05
 MAX_X=2
 MIN_Y=0.5
 MAX_Y=34
-set xrange [0.1:MAX_X]
+set xrange [MIN_X:MAX_X]
 set yrange [MIN_Y:MAX_Y]
 
 # CPU CONSTANTS
@@ -76,7 +77,7 @@ set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
 set style line LINE_CPU_CEIL	lt 1 lw 3 lc rgb "dark-blue"
 
 kernels =          "AXPY AXPYPXY AXPYPXYY AXPYPXYYY AXPYPXYYY"
-kernel_ai =       "0.125 0.167    0.208     0.25     0.25"
+kernel_ai =       "0.0833 0.167    0.208     0.25     0.25"
 kernel_flops_MEM = "1.68 3.60     4.60      5.61     5.36"
 kernel_flops_L3 = "3.65   7.18 8.59  10.26 9.57"
 kernel_flops_L2 = "5.08  10.49 12.49 14.4  12.5 "
@@ -117,9 +118,9 @@ set for [i=words(kernels):words(kernels)] object i+obj_idx rect from (1.0-BAR_WI
 # Label each cluster of bars
 xshift = 0.02
 # Put a white box behind each label
-set for [i=1:words(kernels)] object i+20 rect from (1.0-BAR_WIDTH-xshift)*word(kernel_ai,i),MIN_Y*1.3 to (1.0+BAR_WIDTH+xshift)*word(kernel_ai,i),MIN_Y*3.1 back fc rgb "white" fs solid noborder
+set for [i=1:words(kernels)] object i+20 rect from (1.0-BAR_WIDTH-xshift)*word(kernel_ai,i),MIN_Y*1.25 to (1.0+BAR_WIDTH+xshift)*word(kernel_ai,i),MIN_Y*2.95 back fc rgb "white" fs solid noborder
 # The labels themselves
-set for [i=1:words(kernels)] label i+20 word(kernels,i) at word(kernel_ai,i),MIN_Y*2.0 centre rotate by 90
+set for [i=1:words(kernels)] label i+20 word(kernels,i) at word(kernel_ai,i),MIN_Y*1.9 centre rotate by 90
 
 # CPU CEILINGS
 

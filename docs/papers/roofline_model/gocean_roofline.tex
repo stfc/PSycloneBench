@@ -508,6 +508,36 @@ was the most performant of all those compiled with SSE on all problem
 sizes that are contained within L3 cache with the exception of $52^2$.
 {\bf Why is $52^2$ an exception? Something to do with tuning it to fit in L2?}
 
+\begin{verbatim}
+!DIR$ VECTOR ALIGNED
+do ic = 1, nrepeat, 1
+  do jj = 2, N, 1
+
+    ! Explicit peel loop
+    do ji = 2, ALIGNMENT
+       rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
+       rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
+       rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
+       rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
+       ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+             rdt / area_t(ji,jj)
+    end do
+    
+    do ji = ALIGNMENT+1, M, 1
+
+       rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
+       rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj))*un(ji-1,jj)
+       rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
+       rtmp4 = (sshn_v(ji ,jj-1) + hv(ji ,jj-1))*vn(ji,jj-1)
+
+       ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+                     rdt / area_t(ji,jj)
+    end do
+    
+  end do
+end do
+\end{verbatim}
+
 Since the caches of both of the CPUs used are eight-way associative,
 we also considered whether we might be experiencing ``cache
 thrashing'' whereby different locations in memory are mapped to the
@@ -588,7 +618,7 @@ the main-memory bandwidth limit, despite the fact that the $256^2$
 problem fits within L3 cache.
 
 In order to help further understand the performance of the Continuity
-kernel in Figure~\ref{FIG_cont_perf} we plot the performance of the
+kernel, in Figure~\ref{FIG_cont_perf} we plot the performance of the
 Continuity kernel alongside HWPC-derived metrics (obtained using the
 likwid tool). We use the version compiled with SSE instructions since
 that gave the best performance. This plot confirms that the $32^2$
@@ -602,7 +632,7 @@ heavy use of main memory.
   \caption{Performance of the Continuity kernel (open circles -- right y-axis)
     and associated HWPC data (bars -- left y-axis) as a function of
     problem size. Results are for v.16 of the Intel compiler on a Xeon
-    E5-1620 v.2 CPU.}
+    E5-1620 v.2 CPU using only the SSE SIMD instructions.}
   \label{FIG_cont_perf}
 \end{figure}
 
@@ -612,7 +642,7 @@ benchmark so as to vary its $AI$. We did this by adding further
 arithmetic operations but making use of the same array
 elements. We used five different kernels:
 \begin{enumerate}
-\item {\tt y(i) = y(i) + a*x(i)}, AI = 0.125
+\item {\tt y(i) = y(i) + a*x(i)}, AI = 0.083
 \item {\tt y(i) = y(i) + a*x(i)+ x(i)*y(i)}, AI = 0.167
 \item {\tt y(i) = y(i) + a*x(i)+ x(i)*y(i)*y(i)}, AI = 0.208
 \item {\tt y(i) = y(i) + a*x(i)+ x(i)*y(i)*y(i)*y(i)}, AI = 0.25
@@ -623,14 +653,11 @@ The fifth of these introduces an un-aligned array access ({\tt
 kernels.  Figure~\ref{FIG_daxpy_roofline} shows the performance of
 these kernels on a roofline plot for the E5-1620 CPU. The performance
 of each kernel is plotted for four problem sizes, chosen so as to fit
-within L1, L2, L3 cache and main memory. The performance of kernels 2,
-3 and 4 is entirely consistent with the roofline model for problem
-sizes that fit within the L3 and L3 caches (red and black bars). Their
+within L1, L2, L3 cache and main memory. The performance of kernels
+1--4 is entirely consistent with the roofline model for problem sizes
+that fit within the L3 and L3 caches (red and black bars). Their
 performance for the smallest problem size doesn't quite reach the L1
-bandwidth limit but does appear to track the roofline.  Kernel 1 has
-the lowest AI of the five kernels and this appears to limit its
-performance; at no point does the performance reach the limit imposed
-by the bandwidth to the relevant level of the memory hierarchy. {\bf need to expore the reason for this}
+bandwidth limit but does appear to track the roofline.
 
 The performance of kernel 5 is plotted using patterned bars in
 Figure~\ref{FIG_daxpy_roofline}. This kernel has the same AI as kernel
