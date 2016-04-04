@@ -2,7 +2,7 @@
   m = 128,          ! points in the y direction
   n = 128,          ! points in the x direction
   itmax = 2000,     ! number of iterations
-  mprint = 500     ! frequency of output prints
+  mprint = 5000     ! frequency of output prints
 /
 
 &io_control

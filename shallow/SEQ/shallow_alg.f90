@@ -37,7 +37,7 @@ program shallow
 !     Andrew Porter, April 2014
 
   use shallow_io_mod
-  use timing_mod
+  use dl_timer
   use gocean_mod, only: model_write_log
   use model_mod
   use grid_mod

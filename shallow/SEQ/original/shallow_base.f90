@@ -33,7 +33,7 @@
 !     - Use 8-byte reals. 
 
 
-      USE timing_mod
+      USE dl_timer
       use shallow_io_mod, only: ascii_write
       IMPLICIT NONE
 

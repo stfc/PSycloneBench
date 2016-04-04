@@ -41,6 +41,7 @@ shallow_gen.f90: infrastructure_mod.f90 shallow_alg.f90
 psy.f90: shallow_gen.f90
 
 # The generated code depends on the generated Psy middle-layer
+.PHONY: shallow_gen
 shallow_gen:
 	${MAKE} MODULE_LIST="shallow_gen.o ${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
 
@@ -51,6 +52,7 @@ infrastructure_mod.f90:
 	ln -sf ${API_DIR}/infrastructure_mod.f90 .
 
 # Normal targets
+.PHONY: shallow_base
 shallow_base: ${API_LIB}
 	${MAKE} MODULE_LIST="shallow_base.o ${COMMON_MODULES}" shallow_base.exe
 
@@ -84,13 +86,13 @@ time_step_mod.o: ${API_LIB} \
                  compute_h_mod.o
 
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
+	$(F90) $(OMPFLAGS) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS)
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${API_DIR} -c $<
+	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_INC} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) -I${API_DIR} -c $<
+	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_INC} -c $<
 
 clean: 
 	${MAKE} -C ${API_DIR} clean
