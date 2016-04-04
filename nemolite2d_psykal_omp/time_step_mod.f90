@@ -11,7 +11,7 @@ contains
                               sshn_t, sshn_u, sshn_v, &
                               hu, hv, ht, ua, va, un, vn)
     use kind_params_mod
-    use timing_mod
+    use dl_timer
     use field_mod
     use grid_mod
     use model_mod,       only: rdt, cbfr, visc
@@ -588,7 +588,7 @@ contains
                                     sshn_t, sshn_u, sshn_v, &
                                     hu, hv, ht, ua, va, un, vn)
     use kind_params_mod
-    use timing_mod
+    use dl_timer
     use field_mod
     use grid_mod
     use model_mod,       only: rdt, cbfr, visc

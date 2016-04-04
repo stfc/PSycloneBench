@@ -1,5 +1,5 @@
 program gocean2d
-  use timing_mod
+  use dl_timer
   use grid_mod
   use field_mod
   use initialisation_mod, only: initialisation

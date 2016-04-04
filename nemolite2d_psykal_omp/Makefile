@@ -42,6 +42,7 @@ shallow_gen:
 	#${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
 
 # Normal targets
+.PHONY: nemolite2d
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
@@ -66,13 +67,13 @@ time_update_mod.o: model_mod.o ${API_LIB}
 # Generic rules
 
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS) ${OMPFLAGS}
+	$(F90) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS}
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${API_DIR} -c $<
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${API_DIR} -c $<
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
 
 clean: 
 	${MAKE} -C ${API_DIR} clean
