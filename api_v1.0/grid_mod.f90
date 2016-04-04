@@ -237,7 +237,12 @@ contains
        ! allocated with extent (nx,ny).
        mlocal = m + 1
        if( mod(mlocal, ALIGNMENT) > 0 )then
-          grid%nx = (mlocal/ALIGNMENT + 1)*ALIGNMENT
+          ! Since this is the dimension of the array and not that of
+          ! the internal region, we add two lots of 'ALIGNMENT'. This
+          ! allows us to subsequently extend the loop over the internal
+          ! region so that it too is aligned without array accesses of
+          ! the form a(i+1,j) going out of bounds.
+          grid%nx = (mlocal/ALIGNMENT + 2)*ALIGNMENT
        else
           grid%nx = mlocal
        end if
@@ -253,7 +258,12 @@ contains
        ! in such a way that that optimisation is supported.
        mlocal = m + 2*HALO_WIDTH_X
        if( mod(mlocal, ALIGNMENT) > 0 )then
-          grid%nx = (mlocal/ALIGNMENT + 1)*ALIGNMENT
+          ! Since this is the dimension of the array and not that of
+          ! the internal region, we add two lots of 'ALIGNMENT'. This
+          ! allows us to subsequently extend the loop over the internal
+          ! region so that it too is aligned without array accesses of
+          ! the form a(i+1,j) going out of bounds.
+          grid%nx = (mlocal/ALIGNMENT + 2)*ALIGNMENT
        else
           grid%nx = mlocal
        end if
