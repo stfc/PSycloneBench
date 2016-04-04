@@ -12,7 +12,7 @@ contains
                               hu, hv, ht, ua, va, un, vn)
     use global_parameters_mod, only: ALIGNMENT
     use kind_params_mod
-    use timing_mod
+    use dl_timer
     use field_mod
     use grid_mod
     use model_mod,       only: rdt, cbfr, visc
@@ -40,7 +40,7 @@ contains
     real(wp) :: uu_e, uu_n, uu_s, uu_w
     real(wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
     real(wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
-    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    real(wp) :: rtmp1
     ! end locals for momentum
     ! Locals for BCs
     real(wp) :: amp_tide, omega_tide, rtime
@@ -524,7 +524,7 @@ contains
                                       hu, hv, un, vn, area_t)
     use global_parameters_mod, only: ALIGNMENT
     use kind_params_mod
-    use timing_mod
+    use dl_timer
     implicit none
     integer, intent(in) :: nx, ny, M, N
     real(wp), intent(in) :: rdt
@@ -591,7 +591,7 @@ contains
                                       area_u, &
                                       gphiu)
     use kind_params_mod
-    use timing_mod
+    use dl_timer
     use model_mod,       only: rdt, cbfr, visc
     use physical_params_mod, only: g, omega, d2r
     implicit none
