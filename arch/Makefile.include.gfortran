@@ -4,6 +4,9 @@ F90 = gfortran
 NETCDF_INC = /usr/include
 NETCDF_LIB = /usr/lib64
 
+TIMER_LIB = ${HOME}/MyInstalls/lib/dl_timer_lib.a
+TIMER_INC = ${HOME}/MyInstalls/include
+
 F90FLAGS = -Wall -Wsurprising -Wuninitialized
 F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g -O0
 #F90FLAGS +=  -faggressive-function-elimination
@@ -11,7 +14,7 @@ F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g -O0
 # f2py does not break long lines so tell gfortran not to
 # limit the length of a line
 F90FLAGS += -ffree-line-length-none
-#F90FLAGS = -O3 -fopenmp
+#F90FLAGS = -O3
 
 OMPFLAGS = -fopenmp
 
