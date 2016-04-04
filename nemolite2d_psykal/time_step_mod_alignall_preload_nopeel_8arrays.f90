@@ -12,7 +12,7 @@ contains
                               hu, hv, ht, ua, va, un, vn)
     use global_parameters_mod, only: ALIGNMENT
     use kind_params_mod
-    use timing_mod
+    use dl_timer
     use field_mod
     use grid_mod
     use model_mod,       only: rdt, cbfr, visc
@@ -524,7 +524,7 @@ contains
                                       hu, hv, un, vn, area_t)
     use global_parameters_mod, only: ALIGNMENT
     use kind_params_mod
-    use timing_mod
+    use dl_timer
     implicit none
     integer, intent(in) :: nx, ny, M, N
     real(wp), intent(in) :: rdt
@@ -596,7 +596,7 @@ contains
                                       area_u, &
                                       gphiu)
     use kind_params_mod
-    use timing_mod
+    use dl_timer
     use model_mod,       only: rdt, cbfr, visc
     use physical_params_mod, only: g, omega, d2r
     implicit none
