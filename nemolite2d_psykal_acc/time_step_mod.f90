@@ -71,7 +71,7 @@ contains
                                      ssha, ssha_u, ssha_v,       &
                                      sshn_t, sshn_u, sshn_v,     &
                                      hu, hv, ht, ua, va, un, vn)
-    use timing_mod
+    use dl_timer
     use model_mod,           only: rdt, cbfr, visc
     use physical_params_mod, only: g, omega, d2r
 !    use continuity_mod,      only: continuity_code

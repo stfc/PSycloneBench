@@ -34,6 +34,7 @@ infrastructure_mod.f90:
 	ln -sf ${API_DIR}/infrastructure_mod.f90 .
 
 # Normal targets
+.PHONY: nemolite2d
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
@@ -56,13 +57,13 @@ time_update_mod.o: model_mod.o ${API_LIB}
 # Generic rules
 
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
+	$(F90) $(OMPFLAGS) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS)
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${API_DIR} -c $<
+	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_INC} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) -I${API_DIR} -c $<
+	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_INC} -c $<
 
 clean: 
 	${MAKE} -C ${API_DIR} clean
