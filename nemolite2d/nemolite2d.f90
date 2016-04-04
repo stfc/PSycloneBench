@@ -2,7 +2,7 @@ PROGRAM nemolite2d
          !!! A Horizontal 2D hydrodynamic ocean model which
          !!   1) using structured grid
          !!   2) using direct data addressig structures
-         use timing_mod
+         use dl_timer
          use field_mod
          use gocean_mod,      only: model_write_log
          IMPLICIT NONE
