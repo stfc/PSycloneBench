@@ -80,28 +80,33 @@ public class GOceanManager extends CustomManager {
 		//KernelBlock pbcs_f = addKernel(new PBCsF(makeKernelParameters(s_kernelName14)));
 
 		// Streams for reading/writing LMEM from CPU
-		DFELink cpu2lmem_u = addStreamToOnCardMemory("test_in",
+		DFELink cpu2lmem_u = addStreamToOnCardMemory("lmemuold_in",
 				                      MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
-		DFELink lmem2cpu_u = addStreamFromOnCardMemory("test_out",
+		DFELink lmem2cpu_u = addStreamFromOnCardMemory("lmemuold_out",
 				                      MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
-		DFELink cpu2lmem_v = addStreamToOnCardMemory("v_in",
+		DFELink cpu2lmem_v = addStreamToOnCardMemory("lmemvold_in",
                                       MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
-        DFELink lmem2cpu_v = addStreamFromOnCardMemory("v_out",
+        DFELink lmem2cpu_v = addStreamFromOnCardMemory("lmemvold_out",
                                       MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
-		DFELink cpu2lmem_p = addStreamToOnCardMemory("p_in",
+		DFELink cpu2lmem_p = addStreamToOnCardMemory("lmempold_in",
                                       MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
-        DFELink lmem2cpu_p = addStreamFromOnCardMemory("p_out",
+        DFELink lmem2cpu_p = addStreamFromOnCardMemory("lmempold_out",
                                       MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
 
 		// Incoming u stream goes to LMEM
-        DFELink atest = addStreamFromCPU("cpu2lmem");
+        DFELink atest = addStreamFromCPU("cpu2lmem_uold");
         cpu2lmem_u <== atest;
         // Incoming v stream goes to LMEM
-        DFELink vlink = addStreamFromCPU("cpu2lmem_v");
+        DFELink vlink = addStreamFromCPU("cpu2lmem_vold");
         cpu2lmem_v <== vlink;
         // Incoming p stream goes to LMEM
-        DFELink plink = addStreamFromCPU("cpu2lmem_p");
+        DFELink plink = addStreamFromCPU("cpu2lmem_pold");
         cpu2lmem_p <== plink;
+
+        // Stream from LMEM into timesmooth kernel
+        DFELink pold_lmem = addStreamFromOnCardMemory("pold_from_lmem",MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
+        DFELink vold_lmem = addStreamFromOnCardMemory("vold_from_lmem",MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
+        DFELink uold_lmem = addStreamFromOnCardMemory("uold_from_lmem",MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
 
 		// We need a 'Fanout' Routing Block to duplicate the input stream 'p' from the CPU to
 		// the various kernels that need it.
@@ -153,33 +158,28 @@ public class GOceanManager extends CustomManager {
         Fanout uoldFanout = fanout(s_uoldFanout);
         uoldFanout.getInput() <== uold;
         DFELink uold_lnk1 = uoldFanout.addOutput("uold1");
-        DFELink uold_lnk2 = uoldFanout.addOutput("uold2");
 
         compute_Unew.getInput("uold") <== uold_lnk1;
-        timeSmoothU.getInput("field_old") <== uold_lnk2;
+        timeSmoothU.getInput("field_old") <== uold_lmem;
 
         // Input stream vold
         DFELink vold = addStreamFromCPU("vold");
         Fanout voldFanout = fanout(s_voldFanout);
         voldFanout.getInput() <== vold;
         DFELink vold_lnk1 = voldFanout.addOutput("vold1");
-        DFELink vold_lnk2 = voldFanout.addOutput("vold2");
+        //DFELink vold_lnk2 = voldFanout.addOutput("vold2");
 
         compute_Vnew.getInput("vold") <== vold_lnk1;
-        timeSmoothV.getInput("field_old") <== vold_lnk2;
+        timeSmoothV.getInput("field_old") <== vold_lmem;
 
         // Input stream pold
         DFELink pold = addStreamFromCPU("pold");
         Fanout poldFanout = fanout(s_poldFanout);
         poldFanout.getInput() <== pold;
         DFELink pold_lnk1 = poldFanout.addOutput("pold1");
-        //DFELink pold_lnk2 = poldFanout.addOutput("pold2");
-
-        // Stream from LMEM into timesmooth kernel
-        DFELink pold_lmem = addStreamFromOnCardMemory("p_from_lmem",MemoryControlGroup.MemoryAccessPattern.LINEAR_1D);
 
         compute_Pnew.getInput("pold") <== pold_lnk1;
-        timeSmoothP.getInput("field_old") <== pold_lmem;//pold_lnk2;
+        timeSmoothP.getInput("field_old") <== pold_lmem;
 
         // Apply PBCs to cu
         //pbcs_u.getInput("ufld") <== compute_CU.getOutput("cu");
@@ -271,14 +271,14 @@ public class GOceanManager extends CustomManager {
         pout <== timeSmoothP.getOutput("curr_out");
         poldOut <== timeSmoothP.getOutput("old_out");
 
-        // test is streamed back to the CPU from LMEM
-        DFELink testout = addStreamToCPU("lmem2cpu");
-        testout <== lmem2cpu_u;
+        // uold is streamed back to the CPU from LMEM
+        DFELink ulinkout = addStreamToCPU("lmem2cpu_uold");
+        ulinkout <== lmem2cpu_u;
         // v is streamed back to CPU from LMEM
-        DFELink vlinkout = addStreamToCPU("lmem2cpu_v");
+        DFELink vlinkout = addStreamToCPU("lmem2cpu_vold");
         vlinkout <== lmem2cpu_v;
         // p is streamed back to CPU from LMEM
-        DFELink plinkout = addStreamToCPU("lmem2cpu_p");
+        DFELink plinkout = addStreamToCPU("lmem2cpu_pold");
         plinkout <== lmem2cpu_p;
 
 		//configBuild(engineParameters);
@@ -293,12 +293,12 @@ public class GOceanManager extends CustomManager {
 		InterfaceParam start = ei.addParam("start", itype);
 		InterfaceParam sizeInBytes = size*dptype.sizeInBytes();
 
-		ei.setLMemLinear("test_out", start*dptype.sizeInBytes(), sizeInBytes);
-		ei.setLMemLinear("v_out", start*dptype.sizeInBytes() + sizeInBytes, sizeInBytes);
-		ei.setLMemLinear("p_out", start*dptype.sizeInBytes() + 2*sizeInBytes, sizeInBytes);
-		ei.setStream("lmem2cpu", dptype, sizeInBytes);
-		ei.setStream("lmem2cpu_v", dptype, sizeInBytes);
-		ei.setStream("lmem2cpu_p", dptype, sizeInBytes);
+		ei.setLMemLinear("lmemuold_out", start*dptype.sizeInBytes(), sizeInBytes);
+		ei.setLMemLinear("lmemvold_out", start*dptype.sizeInBytes() + sizeInBytes, sizeInBytes);
+		ei.setLMemLinear("lmempold_out", start*dptype.sizeInBytes() + 2*sizeInBytes, sizeInBytes);
+		ei.setStream("lmem2cpu_uold", dptype, sizeInBytes);
+		ei.setStream("lmem2cpu_vold", dptype, sizeInBytes);
+		ei.setStream("lmem2cpu_pold", dptype, sizeInBytes);
 
 		ei.ignoreAll(EngineInterface.Direction.IN_OUT);
 
@@ -314,12 +314,12 @@ public class GOceanManager extends CustomManager {
 		InterfaceParam start = ei.addParam("start", itype);
 		InterfaceParam sizeBytes = size*dptype.sizeInBytes();
 
-		ei.setStream("cpu2lmem", dptype, sizeBytes);
-		ei.setStream("cpu2lmem_v", dptype, sizeBytes);
-		ei.setStream("cpu2lmem_p", dptype, sizeBytes);
-		ei.setLMemLinear("test_in", start*dptype.sizeInBytes(), sizeBytes);
-		ei.setLMemLinear("v_in", start*dptype.sizeInBytes() + sizeBytes, sizeBytes);
-		ei.setLMemLinear("p_in", start*dptype.sizeInBytes() + 2*sizeBytes, sizeBytes);
+		ei.setStream("cpu2lmem_uold", dptype, sizeBytes);
+		ei.setStream("cpu2lmem_vold", dptype, sizeBytes);
+		ei.setStream("cpu2lmem_pold", dptype, sizeBytes);
+		ei.setLMemLinear("lmemuold_in", start*dptype.sizeInBytes(), sizeBytes);
+		ei.setLMemLinear("lmemvold_in", start*dptype.sizeInBytes() + sizeBytes, sizeBytes);
+		ei.setLMemLinear("lmempold_in", start*dptype.sizeInBytes() + 2*sizeBytes, sizeBytes);
 
 		ei.ignoreAll(EngineInterface.Direction.IN_OUT);
 
@@ -383,10 +383,15 @@ public class GOceanManager extends CustomManager {
 
 		// Streams from/to LMEM
 		InterfaceParam zero = engine_interface.addConstant(0);
-		engine_interface.setLMemLinear("test_in_lmem", zero, NLmem*size);
-		engine_interface.setStream("p_from_lmem", type, NLmem*size);
+		engine_interface.setLMemLinear("uold_lmem", zero, NLmem*size);
+		engine_interface.setLMemLinear("vold_lmem", NLmem*size, NLmem*size);
+		engine_interface.setLMemLinear("pold_lmem", 2*NLmem*size, NLmem*size);
+		engine_interface.setStream("uold_from_lmem", type, NLmem*size);
+		engine_interface.setStream("vold_from_lmem", type, NLmem*size);
+		engine_interface.setStream("pold_from_lmem", type, NLmem*size);
 		// Stream from TimeSmooth kernel to LMEM
 		//engine_interface.setLMemLinear("testout", sizeInBytes, sizeInBytes);
+
 		engine_interface.ignoreAll(EngineInterface.Direction.IN_OUT);
 
 		return engine_interface;

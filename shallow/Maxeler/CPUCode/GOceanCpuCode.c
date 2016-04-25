@@ -94,9 +94,9 @@ int main(void)
 	GOcean_writeLMem_actions_t write_s;
 	write_s.param_start = 0;
 	write_s.param_size  = lmem_size;
-	write_s.instream_cpu2lmem = unew;
-	write_s.instream_cpu2lmem_v = vnew;
-	write_s.instream_cpu2lmem_p = pnew;
+	write_s.instream_cpu2lmem_uold = unew;
+	write_s.instream_cpu2lmem_vold = vnew;
+	write_s.instream_cpu2lmem_pold = pnew;
 
 	GOcean_writeLMem_run(engine, &write_s);
 
