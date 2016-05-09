@@ -53,7 +53,7 @@ LINPACK (GFLOPS) & \multicolumn{4}{c|}{28.32} \\
 $n$-way set associative & 8    & 8   & 10 & -- \\
 Size                  &   32 KB/core   & 256 KB/core   & 10 MB    &  -- \\
 \hline
-STREAM2 (GB/s)   &  160  &  61.0  & 46.0 &  20.5 \\
+STREAM2 (GB/s)   &  140  &  65.0  & 46.7 &  20.5 \\
   \hline
 \multicolumn{5}{|c|}{E5-2697 v.2, 2.7GHz}  \\
 \hline
@@ -81,7 +81,7 @@ of LINPACK.
 Interpreting the results of the STREAM benchmark in order to get
 bandwidth figures for all levels of the cache hierarchy is not
 straightforward. We therefore used the STREAM2 benchmark which is
-intended for this purpose. In Figure~\ref{FIG_stream2} we plot the
+intended for this purpose. In Figure~\ref{FIG_stream2_archer} we plot the
 results obtained from the DAXPY component of the STREAM2 benchmark on
 the E5-2697 CPU (using v.~14 {\bf (check this)} of the Intel
 compiler. The plateaux in bandwidth for L2, L3 and main memory are
@@ -91,24 +91,38 @@ Table~\ref{TAB_stream_linpack}.
 
 \begin{figure}
 \includegraphics[width=120mm]{stream2_archer}
-\caption{Results from running the STREAM2 benchmark on the E5-2697
-  CPU.}
-\label{FIG_stream2}
+\caption{Bandwidth results from running the DAXPY component of the
+  STREAM2 benchmark on the E5-2697 CPU.}
+\label{FIG_stream2_archer}
 \end{figure}
 
  The equivalent results for the E5-1620 CPU are shown in
- Figure~\ref{FIG_daxpy_bw}. This plot has the same shape as that for
- the E5-2697 but is shifted upwards indicating an increase in
+ Figure~\ref{FIG_stream2_desktop}. This plot has the same shape as
+ that for the E5-2697 but is shifted upwards indicating an increase in
  bandwidth accross all levels of the cache hierarchy, but particularly
  for L3 and L1. In addition, the width of the plateau corresponding to
  the L3 cache is narrower because of the smaller size of this cache on
- the E5-1620.
+ the E5-1620. Figure~\ref{FIG_stream2_desktop} also shows the effect
+ on performance of disabling the turbo and frequency-stepping modes of
+ the CPU. (Both sets of results are with hyper-threading disabled in
+ order to reduce noise due to resource contention.) This reduces the
+ performance obtained from the various levels of the cache hierarchy
+ by a few percent but increases the bandwidth obtained to main-memory
+ by a similar amount.
+
+\begin{figure}
+\includegraphics[width=120mm]{stream2_desktop}
+\caption{Bandwidth results from running the DAXPY component of the
+  STREAM2 benchmark on the E5-1620 CPU. Three data sets are plotted
+  corresponding to three consecutive runs of the benchmark.}
+\label{FIG_stream2_desktop}
+\end{figure}
 
 \begin{figure}
 \includegraphics[width=120mm]{daxpy_bw_perf}
 \caption{Bandwidth obtained on the E5-1620 CPU by the original and
   modified versions of the daxpy kernel from the STREAM2 benchmark.}
-\label{FIG_daxpy_bw}
+\label{FIG_stream2_daxpy}
 \end{figure}
 
 \section{Hardware Performance Counters}

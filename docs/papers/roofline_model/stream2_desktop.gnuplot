@@ -14,13 +14,11 @@ set logscale y 2
 #set nokey
 
 # range of each axis
-#set format x "%e"
-set xtics(30,100,500,1000,10000,1000000)
-set ytics(142,111,64.0,46.7,20.500,22.5)
+set xtics(20,100,500,1000,10000,1000000)
+set ytics(142,111,65.0,46.7,30,20.70)
 set yrange[20.0:150.0]
 set multiplot
-dfile1='stream2_desktop_fast.dat'
-dfile2='stream2_desktop_no_ldfast.dat'
-plot dfile1 u 1:10:9:11 w yerrorbars notitle, dfile1 u 1:10 w l lc rgb "red" title "-O3 -fast", dfile2 u 1:10:9:11 w yerrorbars notitle, dfile2 u 1:10 w l lc rgb "blue" title "No -fast"
-#dfile='stream2_desktop_no_fast.dat'
-#plot dfile u 1:10:9:11 w yerrorbars, dfile u 1:10 w l lc rgb "green"
+dfile1='stream2_runs_no_HT.out'
+dfile2='stream2_runs_no_HT_no_turb_no_step.out'
+plot dfile1 u 1:10 w lp notitle, dfile2 u 1:10 w lp title 'No turbo or stepping'
+
