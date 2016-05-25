@@ -1,4 +1,5 @@
 module time_step_mod
+  !use likwid
   implicit none
 
   private
@@ -22,7 +23,6 @@ contains
 !    use continuity_mod,  only: continuity_code
 !    use time_update_mod, only: next_sshu_code, next_sshv_code
     use boundary_conditions_mod
-    !use likwid
     implicit none
     real(wp),        intent(in)    :: istp
     type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
@@ -30,7 +30,8 @@ contains
     type(r2d_field), intent(in)    :: hu, hv, ht
     ! Locals
     integer :: ji, jj, jiu, jiv
-    integer :: M, N, idxt
+    integer :: M, N
+    integer :: umom_timer, vmom_timer, bc_timer, next_timer
     ! Locals for momentum
     REAL(wp) :: u_e, u_w, v_n, v_s
     real(wp) :: v_nc, v_sc
@@ -51,6 +52,10 @@ contains
     end if
 !DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
     N  = ssha%grid%simulation_domain%ystop
+
+    if(istp .eq. 1)then
+      write (*,"('Loop bounds (inner,outer) = ',I4,1x I4)") M, N
+    end if
 
     ! In the general case we have to reason about whether or not the
     ! domain has PBCs and what sort of offset convention the kernels
@@ -101,7 +106,7 @@ contains
 !!$                                  un%grid%area_u, &
 !!$                                  un%grid%gphiu)
 
-    call timer_start('Momentum-u',idxt)
+    call timer_start(umom_timer, label='Momentum-u')
     !call likwid_markerStartRegion('Momentum-u')
 
 !    do jj = ua%internal%ystart, ua%internal%ystop, 1
@@ -217,9 +222,9 @@ contains
     end do
  
     !call likwid_markerStopRegion('Momentum-u')
-    call timer_stop(idxt)
+    call timer_stop(umom_timer)
 
-    call timer_start('Momentum-v',idxt)
+    call timer_start(vmom_timer, label='Momentum-v')
 
 !dir$ safe_address
     do jj = 2, N-1, 1
@@ -338,11 +343,11 @@ contains
       end do
     end do
 
-    call timer_stop(idxt)
+    call timer_stop(vmom_timer)
 
     ! Apply open and solid boundary conditions
 
-    call timer_start('BCs', idxt)
+    call timer_start(bc_timer, label='BCs')
 
 !    DO jj = ssha%internal%ystart, ssha%internal%ystop 
 !       DO ji = ssha%internal%xstart, ssha%internal%xstop 
@@ -451,11 +456,11 @@ contains
        END DO
     END DO
 
-    call timer_stop(idxt)
+    call timer_stop(bc_timer)
 
     ! Time update of fields
 
-    call timer_start('Next', idxt)
+    call timer_start(next_timer, label='Next')
 
 !    call copy_field(ua, un)
 !    call copy_field(va, vn)
@@ -513,7 +518,7 @@ contains
       end do
     end do
 
-    call timer_stop(idxt)
+    call timer_stop(next_timer)
 
   end subroutine invoke_time_step
 
@@ -524,7 +529,7 @@ contains
                                       hu, hv, un, vn, area_t)
     use global_parameters_mod, only: ALIGNMENT
     use kind_params_mod
-    use dl_timer
+    use dl_timer, only: timer_start, timer_stop
     implicit none
     integer, intent(in) :: nx, ny, M, N
     real(wp), intent(in) :: rdt
@@ -535,17 +540,21 @@ contains
     ! Locals
     integer :: jj, ji, idxt
     real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    !> For timing
+    real(wp) :: t1, t2
     integer :: nrepeat, ic
 !DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
 !DIR$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
 
-    nrepeat = 1
-
-    call timer_start('Continuity',idxt,nrepeat)
+    nrepeat = 100 
+    !nrepeat = 1
+   
+    call timer_start(idxt, label='Continuity', num_repeats=nrepeat)
     !call likwid_markerStartRegion('Continuity')
 !DIR$ VECTOR ALIGNED
+    do ic = 1, nrepeat, 1
     do jj = 2, N, 1
 
       ! Explicit peel loop
@@ -564,13 +573,14 @@ contains
          rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj))*un(ji-1,jj)
          rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
          rtmp4 = (sshn_v(ji ,jj-1) + hv(ji ,jj-1))*vn(ji,jj-1)
-
          ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
                        rdt / area_t(ji,jj)
       end do
       
     end do
+    end do
     !call likwid_markerStopRegion('Continuity')
+
     call timer_stop(idxt)
 
   end subroutine invoke_continuity_arrays
@@ -606,7 +616,7 @@ contains
     real(wp) :: u_e, u_w, v_n, v_s, v_sc, v_nc, depe, depw, deps, depn
     real(wp) :: uu_e, uu_w, uu_s, uu_n, dudy_s, dudy_n, dudx_e, dudx_w
     real(wp) :: vis, adv, cor, hpg
-    call timer_start('Momentum-u',idxt)
+    call timer_start(idxt, label='Momentum-u')
     !call likwid_markerStartRegion('Momentum-u')
 
     do jj = 2, N, 1

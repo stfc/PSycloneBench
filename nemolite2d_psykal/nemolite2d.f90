@@ -1,5 +1,5 @@
 program gocean2d
-  use dl_timer
+  use dl_timer, only: timer_start, timer_stop, timer_init, timer_report
   use grid_mod
   use field_mod
   use initialisation_mod, only: initialisation
@@ -7,6 +7,7 @@ program gocean2d
   use boundary_conditions_mod
   use gocean2d_io_mod, only: model_write
   use gocean_mod,      only: model_write_log
+  !use likwid
 
   !> A Horizontal 2D hydrodynamic ocean model which
   !!   1) using structured grid
@@ -43,6 +44,7 @@ program gocean2d
 
   !! read in model parameters and configure the model grid 
   CALL model_init(model_grid)
+  !call likwid_markerInit()
 
   ! Create fields on this grid
 
@@ -77,7 +79,8 @@ program gocean2d
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
 
   ! Start timer for time-stepping section
-  CALL timer_start('Time-stepping', itimer0, (nitend-nit000+1) )
+  CALL timer_start(itimer0, label='Time-stepping', &
+                   num_repeats=(nitend-nit000+1) )
 
   !! time stepping 
   do istp = nit000, nitend, 1
@@ -107,7 +110,8 @@ program gocean2d
 
   !! finalise the model run
   call model_finalise()
-  
+  !call likwid_markerClose()
+
   call model_write_log("((A))", 'Simulation finished!!')
 
 end program gocean2d

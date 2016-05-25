@@ -28,7 +28,8 @@ contains
     type(r2d_field), intent(in)    :: hu, hv, ht
     ! Locals
     integer :: ji, jj, jiu, jiv
-    integer :: M, N, idxt
+    integer :: M, N
+    integer :: cont_timer, mom_timer, bc_timer, next_timer
     ! Locals for momentum
     REAL(wp) :: u_e, u_w, v_n, v_s
     real(wp) :: v_nc, v_sc
@@ -74,7 +75,7 @@ contains
     !vwhole_ystart = 1 ! vystart - NBOUNDARY
     !vwhole_ystop  = N ! vystop  + NBOUNDARY
 
-    call timer_start('Continuity',idxt)
+    call timer_start(cont_timer, label='Continuity')
 
 !    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
 !      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
@@ -96,9 +97,9 @@ contains
       end do
     end do
 
-    call timer_stop(idxt)
+    call timer_stop(cont_timer)
 
-    call timer_start('Momentum',idxt)
+    call timer_start(mom_timer, label='Momentum')
 
 !    do jj = ua%internal%ystart, ua%internal%ystop, 1
 !      do ji = ua%internal%xstart, ua%internal%xstop, 1
@@ -329,11 +330,11 @@ contains
       end do
     end do
 
-    call timer_stop(idxt)
+    call timer_stop(mom_timer)
 
     ! Apply open and solid boundary conditions
 
-    call timer_start('BCs', idxt)
+    call timer_start(bc_timer, label='BCs')
 
 !    DO jj = ssha%internal%ystart, ssha%internal%ystop 
 !       DO ji = ssha%internal%xstart, ssha%internal%xstop 
@@ -442,11 +443,11 @@ contains
        END DO
     END DO
 
-    call timer_stop(idxt)
+    call timer_stop(bc_timer)
 
     ! Time update of fields
 
-    call timer_start('Next', idxt)
+    call timer_start(next_timer, label='Next')
 
 !    call copy_field(ua, un)
 !    call copy_field(va, vn)
@@ -504,7 +505,7 @@ contains
       end do
     end do
 
-    call timer_stop(idxt)
+    call timer_stop(next_timer)
 
   end subroutine invoke_time_step
 
