@@ -43,7 +43,7 @@ psy_omp.f90: nemolite2d_alg.f90 nemolite2d_omp_transform.py
 # psy_acc.f90 is the same PSy layer but with OpenACC transformations
 # applied to it.
 psy_acc.f90: nemolite2d_alg.f90 nemolite2d_acc_transform.py
-	python ${PSYCLONE}/src/generator.py -api gocean1.0 nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 -opsy psy_acc.f90 -s nemolite2d_acc_transform.py
+	python ${PSYCLONE}/src/generator.py -api gocean1.0 nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 -opsy psy_acc.f90 -s ./nemolite2d_acc_transform.py
 
 # Normal targets. Need to link with OpenMP in order to use OMP timer
 nemolite2d: ${API_LIB} ${MODULES} time_step_mod.o nemolite2d.o
@@ -58,6 +58,13 @@ nemolite2d_align: ${COMMON_MODULES} time_step_mod_align.o nemolite2d.o
 	rm -f time_step_mod.o time_step_mod.mod
 	${MAKE} MODULE_LIST="time_step_mod_align.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_align.exe
+
+nemolite2d_nodiv: ${COMMON_MODULES} time_step_mod_align_nodiv.o nemolite2d.o
+        # Have to delete any existing time_step_mod because it contains a module
+        # with the same name as that in time_step_mod_align_nodiv
+	rm -f time_step_mod.o time_step_mod.mod
+	${MAKE} MODULE_LIST="time_step_mod_align_nodiv.o nemolite2d.o ${COMMON_MODULES}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_nodiv.exe
 
 nemolite2d_preload: ${COMMON_MODULES} time_step_mod_align_preload.o nemolite2d.o
         # Have to delete any existing time_step_mod because it contains a module
