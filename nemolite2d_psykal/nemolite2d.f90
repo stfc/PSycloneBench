@@ -34,6 +34,9 @@ program gocean2d
   real(wp) :: rstp 
   integer :: itimer0
 
+  ! Scratch space for logging messages
+  character(len=160) :: log_str
+
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
   ! points immediately to the North and East of a T point all have the
   ! same i,j index).  This is the same offset scheme as used by NEMO.
@@ -77,6 +80,13 @@ program gocean2d
                       un_fld, vn_fld)
 
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
+
+  write(log_str, "('Simulation domain = (',I4,':',I4,',',I4,':',I4,')')") &
+                       model_grid%simulation_domain%xstart, &
+                       model_grid%simulation_domain%xstop,  &
+                       model_grid%simulation_domain%ystart, &
+                       model_grid%simulation_domain%ystop
+  call model_write_log("((A))", TRIM(log_str))
 
   ! Start timer for time-stepping section
   CALL timer_start(itimer0, label='Time-stepping', &
