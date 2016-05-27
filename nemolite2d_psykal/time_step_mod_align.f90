@@ -20,7 +20,7 @@ contains
     use physical_params_mod, only: g, omega, d2r
 !    use momentum_mod,    only: momentum_v_code
 !    use momentum_mod,    only: momentum_u_code
-!    use continuity_mod,  only: continuity_code
+    use continuity_mod,  only: invoke_continuity_arrays
 !    use time_update_mod, only: next_sshu_code, next_sshv_code
     use boundary_conditions_mod
     implicit none
@@ -521,69 +521,6 @@ contains
     call timer_stop(next_timer)
 
   end subroutine invoke_time_step
-
-  !=================================================================
-
-  subroutine invoke_continuity_arrays(nx, ny, M, N, rdt, ssha, &
-                                      sshn_t, sshn_u, sshn_v, &
-                                      hu, hv, un, vn, area_t)
-    use global_parameters_mod, only: ALIGNMENT
-    use kind_params_mod
-    use dl_timer, only: timer_start, timer_stop
-    implicit none
-    integer, intent(in) :: nx, ny, M, N
-    real(wp), intent(in) :: rdt
-    real(wp), intent(out) :: ssha(nx,ny)
-    real(wp), intent(in)  :: sshn_u(nx,ny), sshn_v(nx,ny), sshn_t(nx,ny)
-    real(wp), intent(in)  :: un(nx,ny), vn(nx,ny)
-    real(wp), intent(in)  :: hu(nx,ny), hv(nx,ny), area_t(nx,ny)
-    ! Locals
-    integer :: jj, ji, idxt
-    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
-    !> For timing
-    real(wp) :: t1, t2
-    integer :: nrepeat, ic
-!DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
-!DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
-!DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
-!DIR$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
-
-    nrepeat = 100 
-    !nrepeat = 1
-   
-    call timer_start(idxt, label='Continuity', num_repeats=nrepeat)
-    !call likwid_markerStartRegion('Continuity')
-!DIR$ VECTOR ALIGNED
-    do ic = 1, nrepeat, 1
-    do jj = 2, N, 1
-
-      ! Explicit peel loop
-      do ji = 2, ALIGNMENT
-         rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
-         rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
-         rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
-         rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
-         ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
-               rdt / area_t(ji,jj)
-      end do
-      
-      do ji = ALIGNMENT+1, M, 1
-
-         rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
-         rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj))*un(ji-1,jj)
-         rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
-         rtmp4 = (sshn_v(ji ,jj-1) + hv(ji ,jj-1))*vn(ji,jj-1)
-         ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
-                       rdt / area_t(ji,jj)
-      end do
-      
-    end do
-    end do
-    !call likwid_markerStopRegion('Continuity')
-
-    call timer_stop(idxt)
-
-  end subroutine invoke_continuity_arrays
 
   !=============================================================
 
