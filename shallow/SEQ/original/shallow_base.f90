@@ -78,19 +78,25 @@
       INTEGER :: ierr
 
       !> Integer tags for timers
-      INTEGER :: idxt0, idxt1
-
+      INTEGER :: idxt0, cu_timer, pbcs_timer, unew_timer, tsmooth_timer
 
 !  ** Initialisations ** 
-      CALL timer_init()
-
+      call timer_init()
+      
 !     Read in namelist 
       OPEN(unit=input_unit, file=nml_name, status='old',iostat=ierr)
-        CALL check(ierr, "open "//nml_name)
+      CALL check(ierr, "open "//nml_name)
       READ(unit=input_unit, nml=global_domain, iostat=ierr)
-        CALL check(ierr, "read "//nml_name)
+      CALL check(ierr, "read "//nml_name)
       READ(unit=input_unit, nml=io_control, iostat=ierr)
-        CALL check(ierr, "read "//nml_name)
+      CALL check(ierr, "read "//nml_name)
+
+      call timer_register(idxt0,     label='Time-stepping', &
+                          num_repeats=itmax)
+      call timer_register(cu_timer,  label='Compute CU,CV,CZ,H')
+      call timer_register(pbcs_timer,label='PBCs')
+      call timer_register(unew_timer,label='Compute {U,V,P}NEW')
+      call timer_register(tsmooth_timer,label='Time smooth')
 
 !     Set up arrays
       m_len = m+1
@@ -210,7 +216,7 @@
       TIME = 0.
 
       !     Start timer
-      CALL timer_start('Time-stepping',idxt0)
+      CALL timer_start(idxt0)
 
 !  ** Start of time loop ** 
       DO ncycle=1,itmax
@@ -221,7 +227,7 @@
 
          !call system_clock(count=c1, count_rate=r,count_max=max)
          !T100 = c1
-         CALL timer_start('Compute CU,CV,CZ,H',idxt1)
+         CALL timer_start(cu_timer)
 
          DO J=1,N
             DO I=1,M
@@ -234,11 +240,11 @@
             END DO
          END DO
 
-         CALL timer_stop(idxt1)
+         CALL timer_stop(cu_timer)
          !call system_clock(count=c2,count_rate=r,count_max=max)
          !T100 = dble(c2-T100)/dble(r)
 
-         CALL timer_start('PBCs',idxt1)
+         CALL timer_start(pbcs_timer)
 !        PERIODIC CONTINUATION
          DO J=1,N
             CU(1,J) = CU(M+1,J)
@@ -257,7 +263,7 @@
          Z(1,1) = Z(M+1,N+1)
          H(M+1,N+1) = H(1,1)
      
-         CALL timer_stop(idxt1)
+         CALL timer_stop(pbcs_timer)
 
 !        COMPUTE NEW VALUES U,V AND P
          TDTS8 = TDT/8.0d0
@@ -266,7 +272,7 @@
 
          !call system_clock(count=c1, count_rate=r, count_max=max)
          !T200 = c1
-         CALL timer_start('Compute {U,V,P}NEW',idxt1)
+         CALL timer_start(unew_timer)
 
          DO J=1,N
             DO I=1,M
@@ -281,11 +287,11 @@
             END DO
          END DO
 
-         CALL timer_stop(idxt1)
+         CALL timer_stop(unew_timer)
          !call system_clock(count=c2, count_rate=r, count_max=max)
          !T200 = dble(c2 -T200)/dble(r)
 
-         CALL timer_start('PBCs',idxt1)
+         CALL timer_start(pbcs_timer)
 !        PERIODIC CONTINUATION
          DO J=1,N
             UNEW(1,J) = UNEW(M+1,J)
@@ -301,7 +307,7 @@
          VNEW(M+1,1) = VNEW(1,N+1)
          PNEW(M+1,N+1) = PNEW(1,1)
 
-         CALL timer_stop(idxt1)
+         CALL timer_stop(pbcs_timer)
 
          TIME = TIME + DT
 
@@ -373,7 +379,7 @@
 
             !call system_clock(count=c1,count_rate=r,count_max=max)
             !T300 = c1
-            CALL timer_start('Time smooth',idxt1)
+            CALL timer_start(tsmooth_timer)
 
             DO J=1,N
                DO I=1,M
@@ -386,7 +392,7 @@
                END DO
             END DO
 
-            CALL timer_stop(idxt1)
+            CALL timer_stop(tsmooth_timer)
             !call system_clock(count=c2,count_rate=r, count_max=max)
             !T300 = dble(c2 - T300)/dble(r)
     

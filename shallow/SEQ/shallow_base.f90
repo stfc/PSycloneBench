@@ -157,7 +157,7 @@ program shallow
   CALL model_write(0, p_fld, u_fld, v_fld)
 
   !     Start timer
-  CALL timer_start('Time-stepping',idxt0)
+  CALL timer_start(idxt0, label='Time-stepping')
 
   !====================================
   ! Perform the first time step
