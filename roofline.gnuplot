@@ -37,10 +37,10 @@ SHALLOW_LOOP1_AI = 0.26
 NEMOLITE_MOM_AI = 0.514
 
 # CPU CONSTANTS
-# For single core of Xeon E5-2697 v2 (Archer), as measured with 
+# For single core of Xeon E5-1620 v2 (my desktop), as measured with 
 # the Intel MKL version of linpack. This is therefore using
 # 256-bit AVX instructions (SIMD)
-PEAK_GFLOPS=24.1
+PEAK_GFLOPS=28.32
 NUM_CORES=1
 
 #ceilings
@@ -58,14 +58,13 @@ C_UMOM_PERFECT_ILP = 4.85
 C_UMOM_NO_ILP = 1.73
 
 # MEM CONSTANTS
-# For single core of Xeon E5-2697 v2 (Archer) as measured with 
-# the 'copy' result of STREAM
-# with arrays of 15M elements. Therefore, this is bandwidth to 
-# main memory, not cache. Units are GB/s.
-PEAK_MEM_BW=8.4
-# Using arrays of 0.5M elements I think we get bandwidth to
-# L3 cache:
+# For single core of Xeon E5-1620 v2 (desktop) as measured with 
+# the 'DAXPY' result of STREAM2. Units are GB/s.
 PEAK_L3_BW=17.7
+PEAK_MEM_BW=20.5
+PEAK_L3_BW=46.0
+PEAK_L2_BW=61.0
+PEAK_L1_BW=160.0
 
 
 NUM_CHANNELS=2
@@ -113,15 +112,15 @@ set multiplot
 
 # Bars for measured individual kernel performance
 
-# From Shallow with the Cray compiler (as that's the best)
+# From Shallow with the Intel compiler
 
-# Loop1 of shallow with 512^2 achieves 7.0 GFLOPS
-set label 12 "shallow: loop 1, 512" at (SHALLOW_LOOP1_AI*0.6),8.0 front textcolor ls LINE_LOOP1_512
-set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.0 nohead ls LINE_LOOP1_512 lw BAR_WIDTH*SHALLOW_LOOP1_AI
+# Loop1 of shallow with 512^2 achieves 7.55 GFLOPS
+set label 12 "shallow: loop 1, 512" at (SHALLOW_LOOP1_AI*0.6),8.1 front textcolor ls LINE_LOOP1_512
+set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.55 nohead ls LINE_LOOP1_512 lw BAR_WIDTH*SHALLOW_LOOP1_AI
 
-set label 13 "shallow: loop 1, 1024" at (SHALLOW_LOOP1_AI*1.06), 4.3 front textcolor ls LINE_LOOP1_1024
-# Loop1 of shallow with 1024^2 achieves 4.1 GFLOPS
-set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.1 nohead ls LINE_LOOP1_1024 lw BAR_WIDTH*SHALLOW_LOOP1_AI
+set label 13 "shallow: loop 1, 1024" at (SHALLOW_LOOP1_AI*1.06), 4.4 front textcolor ls LINE_LOOP1_1024
+# Loop1 of shallow with 1024^2 achieves 4.61 GFLOPS
+set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.61 nohead ls LINE_LOOP1_1024 lw BAR_WIDTH*SHALLOW_LOOP1_AI
 
 # From Nemolite2D with Intel compiler (as that's the fastest)
 
