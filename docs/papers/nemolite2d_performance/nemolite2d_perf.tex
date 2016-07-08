@@ -1368,7 +1368,7 @@ use the Roofline Model~\cite{roofline} which provides a relatively
 simple way of characterising the performance of a code in terms of
 whether it is memory-bandwidth bound or compute bound. To do so we
 follow the approach suggested in~\cite{para_pearls} and use the
-well-known STREAM~\cite{stream} and LINPACK~\cite{linpack} benchmarks
+ STREAM~\cite{stream} and LINPACK~\cite{linpack} benchmarks
 in order to get the upper bounds on the memory bandwidth and FLOPS for
 the test hardware. Since we are using an Intel Ivybridge CPU we used
 the Intel Math Kernel Library implementation of LINPACK.
@@ -1392,6 +1392,29 @@ single cache-line and thus only count once.
   $256^2$ domain since that gave the best performance.}
 \label{FIG_roofline}
 \end{figure}
+
+In Figure~\ref{FIG_roofline} we show the performance of kernels from
+both Shallow and NEMOLite2D on the roofline model for the E5-2697 CPU.
+This demonstrates that the Shallow kernel is achieving a performance
+roughly consistent with saturating the available memory bandwidth. In
+contrast, the kernel taken from NEMOLite2D is struggling to reach a
+performance consistent with saturating the bandwidth to main
+memory. The fact that reducing the problem size does not improve the
+performance points to more fundamental issues with the way that the
+kernel is implemented.
+
+We investigated this using the simpler Continuity kernel since it too
+performs poorly while being much shorter.
+{\bf Plot of Cont. GFLOPS as function of optimisations here.}
+\begin{itemize}
+\item AVX versus SSE versus no SIMD vectorisation.
+\item Telling the compiler about alignment
+\item The division operation
+\end{itemize}
+Move back to Momentum kernel. Discuss further issues:
+\begin{itemize}
+\item IFs within loop (masking)
+\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
