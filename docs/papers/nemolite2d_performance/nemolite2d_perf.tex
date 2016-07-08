@@ -493,13 +493,12 @@ NVIDIA Tesla K40 &       &             &         &        &  {\bf Jeremy} \\
 \end{table}
 
 In Table~\ref{TABLE_compiler_flags} we give the optimisation flags
-used with each compiler. {\bf Explanation of the compiler flags?}
-%These flags are particularly important for
-%the \psykal\ versions of the code. The performance of the original
-%version of the code is much less sensitive to the compiler
-%options. This is because it consists of a single source file
-%containing effectively a single routine (excluding those for I/O).
- 
+used with each compiler. For the IBM, Gnu and Intel compilers, we
+include flags to encourage in-lining of kernel bodies. The Intel flag
+``-xHost'' enables the highest-level of SIMD vectorisation supported
+by the host CPU (AVX in this case). The Intel flag ``-fast'' and Cray
+flags ``-O ipa5'' and ``-h wp'' enable inter-procedural optimisation.
+
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
 \renewcommand{\arraystretch}{1.3}
@@ -653,16 +652,17 @@ LOOP BEGIN at time_step_mod.f90(97,7)
  --- end vector loop cost summary ---
 LOOP END
 \end{verbatim}
-Looking at the `estimated potential speedup' in the compiler outputs
+Looking at the `estimated potential speedup' in the compiler output
 above, it is clear that the way in which the compiler vectorises the
 two versions must be very different. This conclusion is borne out by
 the fact that if one persuades the compiler to vectorise the first
 version (through the use of a directive) then the performance of the
 resulting binary is worse than that where the loop is left
-un-vectorised. {\bf In principle we could investigate this by looking
-  at the assembler that the Intel compiler generates\ldots}
+un-vectorised. In principle this could be investigated further by
+looking at the assembler that the Intel compiler generates but that is
+outside the scope of this work.
 
-For the best possible performance, we have chosen to do full, manual
+For the best possible performance, we have therefore chosen to do full, manual
 inlining for the two kernels making up the Momentum section.
 
 \subsubsection{Force SIMD vectorisation of the Momentum kernels 
@@ -1173,8 +1173,7 @@ implementing a `first-touch' policy has any effect and yet, for the
 Gnu- and Intel-compiled binaries, it appears to improve performance
 when hyperthreading is employed to run on 24 threads (green lines and
 diamond symbols in Figures~\ref{FIG_gnu_omp_256} and
-~\ref{FIG_intel_omp_256}). {\bf Can we explain this? Perhaps with HW
-  counters?}
+~\ref{FIG_intel_omp_256}).
 
 \begin{figure}
 \centering
@@ -1240,13 +1239,12 @@ SINGLE' version of the code is compared with the single-socket
 performance in Figure~\ref{FIG_omp_2socks}. Surprisingly, doubling the
 available memory bandwidth in this way has little effect on
 performance - the two-socket performance figures track those from a
-single socket very closely. The only significant difference in performance
-is at 24 threads where, in addition to the difference in available
-memory bandwidth, the single-socket configuration is using
-hyperthreading while the two-socket case is not.  {\bf Have query in
-  with Archer helpdesk on behaviour seen with Cray compiler here. Also
-  would like to run 512 case on 2 sockets to see how it goes out to 48
-  threads.}
+single socket very closely. The only significant difference in
+performance is at 24 threads where, in addition to the difference in
+available memory bandwidth, the single-socket configuration is using
+hyperthreading while the two-socket case is not.  The discrepancy in
+the performance of the Cray- and Intel-compiled binaries at this
+thread count is under investigation by Cray.
 
 \begin{figure}
 \centering
@@ -1434,16 +1432,27 @@ kernel; all of the operations on the other port are assumed to be done
 in parallel. This gives a performance estimate of $1.029 \times
 CLOCK\_SPEED$ FLOPS or 3.96 GFLOPS at 3.85~GHz.
 
-These performance estimates are plotted as CPU ceilings in
-Figure~\ref{FIG_roofline}. The performance of the Momentum kernel is
-seen to fall between these two bounds which demonstrates that its
-performance is not memory-bandwidth limited, as might have been
-assumed by its low AI. Therefore, although the performance of this
-kernel is clearly sub-optimal, this is due to the balance of
-floating-point operations that it contains. Improving this is outside
-the scope of the current work since we are focused on the \psykal
-separation of concerns and the introduction of parallelism in the PSy
-layer.
+These performance estimates are plotted as CPU ceilings (horizontal
+dashed lines) in Figure~\ref{FIG_roofline}. The performance of the
+Momentum kernel is seen to fall between these two bounds which
+demonstrates that its performance is not memory-bandwidth limited, as
+might have been assumed by its low AI. Therefore, although the
+performance of this kernel is clearly sub-optimal, this is due to the
+balance of floating-point operations that it contains. Improving this
+is outside the scope of the current work since here we are focused on
+the \psykal separation of concerns and the introduction of parallelism
+in the PSy layer.
+
+Enabling SIMD vectorisation for this kernel does not significantly
+improve its performance (Figure~\ref{FIG_roofline}) and in fact,
+limiting it to SSE instructions (vector width of two double-precision
+floating point numbers) rather than AVX (vector width of four) was
+found to produce a slightly more performant version. The poor
+efficiency of the SIMD version is highlighted by the fact that the
+corresponding kernel performance no longer falls within the bounds of
+our performance estimate. This is because we have incorporated the
+effect of SSE by assuming perfect vectorisation which gives a
+performance increase of a factor of two.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
