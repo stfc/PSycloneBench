@@ -1368,10 +1368,11 @@ use the Roofline Model~\cite{roofline} which provides a relatively
 simple way of characterising the performance of a code in terms of
 whether it is memory-bandwidth bound or compute bound. To do so we
 follow the approach suggested in~\cite{para_pearls} and use the
- STREAM~\cite{stream} and LINPACK~\cite{linpack} benchmarks
-in order to get the upper bounds on the memory bandwidth and FLOPS for
-the test hardware. Since we are using an Intel Ivybridge CPU we used
-the Intel Math Kernel Library implementation of LINPACK.
+STREAM~\cite{stream} and LINPACK~\cite{linpack} benchmarks in order to
+get the upper bounds on the memory bandwidth and floating-point
+operations per second (FLOPS) for the test hardware. Since we are
+using an Intel Ivybridge CPU we used the Intel Math Kernel Library
+implementation of LINPACK.
 
 A key component of the Roofline model is the Arithmetic Intensity of
 the code being executed:
@@ -1394,27 +1395,55 @@ single cache-line and thus only count once.
 \end{figure}
 
 In Figure~\ref{FIG_roofline} we show the performance of kernels from
-both Shallow and NEMOLite2D on the roofline model for the E5-2697 CPU.
+both Shallow and NEMOLite2D on the roofline model for the E5-1620 CPU.
 This demonstrates that the Shallow kernel is achieving a performance
 roughly consistent with saturating the available memory bandwidth. In
 contrast, the kernel taken from NEMOLite2D is struggling to reach a
 performance consistent with saturating the bandwidth to main
-memory. The fact that reducing the problem size does not improve the
-performance points to more fundamental issues with the way that the
-kernel is implemented.
+memory. We experimented with reducing the problem size (so as to
+ensure it fitted within cache) but that did not significantly improve
+the performance of the kernel. This then points to more fundamental issues
+with the way that the kernel is implemented which are not captured in the
+simple roofline model.
 
-We investigated this using the simpler Continuity kernel since it too
-performs poorly while being much shorter.
-{\bf Plot of Cont. GFLOPS as function of optimisations here.}
-\begin{itemize}
-\item AVX versus SSE versus no SIMD vectorisation.
-\item Telling the compiler about alignment
-\item The division operation
-\end{itemize}
-Move back to Momentum kernel. Discuss further issues:
-\begin{itemize}
-\item IFs within loop (masking)
-\end{itemize}
+In order to aid our understanding of kernel performance we have
+developed a tool capable of parsing Fortran code and generating a
+Directed Acyclic Graph (DAG) of the data flow. This tool eases the
+laborious and error-prone process of counting memory accesses and
+FLOPs as well as providing information on those operations that are
+rate-limiting or on the critical path. Using the details of the Intel
+Ivy Bridge microarchitecture published by Fog~\cite{fog_microarch,
+  fog_instructions} we have constructed performance estimates of the
+NEMOLite2D kernel. By ignoring all Instruction-Level Parallelism
+(i.e. assuming that all nodes in the DAG are executed in serial) we
+get a lower-bound performance estimate of $0.6391 \times CLOCK\_SPEED$
+FLOPS which gives 2.46~GFLOPS at a clock speed of
+3.85~GHz.
+
+Alternatively, we may construct an upper bound by assuming the
+out-of-order execution engine of the Ivy Bridge core is able to
+perfectly schedule and pipeline all operations such that those that go
+to different execution ports are always run in parallel. In the Ivy
+Bridge core floating-point multiplication and division operations go
+to port 0 while addition and subtraction go to port
+1~\cite{fog_instructions}. Therefore we sum the cost of all
+multiplication and division operations in the DAG and compare that
+with the sum of all addition and subtraction operations. The greater
+of these two quantities is then taken to be the cost of executing the
+kernel; all of the operations on the other port are assumed to be done
+in parallel. This gives a performance estimate of $1.029 \times
+CLOCK\_SPEED$ FLOPS or 3.96 GFLOPS at 3.85~GHz.
+
+These performance estimates are plotted as CPU ceilings in
+Figure~\ref{FIG_roofline}. The performance of the Momentum kernel is
+seen to fall between these two bounds which demonstrates that its
+performance is not memory-bandwidth limited, as might have been
+assumed by its low AI. Therefore, although the performance of this
+kernel is clearly sub-optimal, this is due to the balance of
+floating-point operations that it contains. Improving this is outside
+the scope of the current work since we are focused on the \psykal
+separation of concerns and the introduction of parallelism in the PSy
+layer.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
@@ -1496,8 +1525,6 @@ Biography text here.
 % is flush with the other column.
 %\enlargethispage{-5in}
 
-
-% that's all folks
 \end{document}
 
 
