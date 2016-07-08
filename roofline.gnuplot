@@ -43,24 +43,14 @@ NEMOLITE_MOM_AI = 0.514
 PEAK_GFLOPS=28.32
 NUM_CORES=1
 
-#ceilings
-C_ALL_CORES		= 1
-C_MUL_ADD_BAL	= NUM_CORES
-# For Ivy Bridge, AVX registers are 256-bit and therefore can
-# hold 4*64-bit double-precision reals. We therefore assume
-# that peak, non-SIMD performance is 1/4 that of the performance
-# obtained by Linpack
-C_SIMD			= 4.0
-C_ILP_ONLY		= 2 * C_SIMD
 # Upper and lower bounds on performance of u-momentum kernel as
 # obtained by analysing the DAG.
-C_UMOM_PERFECT_ILP = 4.85
+C_UMOM_PERFECT_ILP = 2.78
 C_UMOM_NO_ILP = 1.73
 
 # MEM CONSTANTS
 # For single core of Xeon E5-1620 v2 (desktop) as measured with 
 # the 'DAXPY' result of STREAM2. Units are GB/s.
-PEAK_L3_BW=17.7
 PEAK_MEM_BW=20.5
 PEAK_L3_BW=46.0
 PEAK_L2_BW=61.0
@@ -95,12 +85,12 @@ LINE_UMOM_CEIL=8
 LINE_UMOM_SSE_CEIL=9
 
 # Width of the vertical 'bars' at x=1
-BAR_WIDTH = 12
+BAR_WIDTH = 14
 
 set style line LINE_ROOF	lt 1 lw 6 lc rgb "#8B0000"
 set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
-set style line LINE_UMOM_CEIL	lt 1 dt 2 lw 4 lc rgb "red"
-set style line LINE_UMOM_SSE_CEIL lt 1 dt 2 lw 4 lc rgb "orange"
+set style line LINE_UMOM_CEIL	lt 3 lw 4 lc rgb "red"
+set style line LINE_UMOM_SSE_CEIL lt 3 lw 4 lc rgb "orange"
 
 set style line LINE_LOOP1_512     lt 1 lc rgb "dark-olivegreen"
 set style line LINE_LOOP1_1024    lt 1 lc rgb "green"
@@ -125,12 +115,12 @@ set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.61 nohead ls LINE_LO
 # From Nemolite2D with Intel compiler (as that's the fastest)
 
 # 256 domain should fit within L3 cache
-set label 14 "nemolite2d: Mom, SSE" at (NEMOLITE_MOM_AI*1.06),3.6 front textcolor ls LINE_MOM_256_SSE
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.6 nohead ls LINE_MOM_256_SSE lw BAR_WIDTH*NEMOLITE_MOM_AI
+set label 14 "nemolite2d: Mom, SSE" at (NEMOLITE_MOM_AI*1.06),3.01 front textcolor ls LINE_MOM_256_SSE
+set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.01 nohead ls LINE_MOM_256_SSE lw BAR_WIDTH*NEMOLITE_MOM_AI
 
 # 256 domain without SIMD
-set label 24 "nemolite2d: Mom, no SIMD" at (NEMOLITE_MOM_AI*1.06),2.1 front textcolor ls LINE_MOM_256
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,2.1 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
+set label 24 "nemolite2d: Mom, no SIMD" at (NEMOLITE_MOM_AI*1.06),2.216 front textcolor ls LINE_MOM_256
+set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,2.216 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
 
 
 # CPU CEILINGS
@@ -138,19 +128,19 @@ set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,2.1 nohead ls LINE_MOM_2
 # ILP and SIMD
 
 # u-momentum upper bound (perfect ILP)
-set label 20 "Perfect ILP, no SIMD" at (MAX_X-1),(C_UMOM_PERFECT_ILP/1.1) right
+set label 20 "Perfect ILP, no SIMD" at (MAX_X-1),(C_UMOM_PERFECT_ILP/1.1) right textcolor ls LINE_UMOM_CEIL
 plot cpu_ceiling(x, C_UMOM_PERFECT_ILP) ls LINE_UMOM_CEIL
 
-# u-momentum lower bound (only FMA ILP)
-set label 21 "Only FMA, no SIMD" at (MAX_X-1),(C_UMOM_NO_ILP/1.1) right
+# u-momentum lower bound (No ILP)
+set label 21 "No ILP, no SIMD" at (MAX_X-1),(C_UMOM_NO_ILP/1.1) right textcolor ls LINE_UMOM_CEIL
 plot cpu_ceiling(x, C_UMOM_NO_ILP) ls LINE_UMOM_CEIL
 
 # u-momentum upper bound (perfect ILP) + perfect SSE
-set label 20 "Perfect ILP+SSE" at (MAX_X-1),(2.0*C_UMOM_PERFECT_ILP/1.1) right
+set label 22 "Perfect ILP+SSE" at (MAX_X-1),(2.0*C_UMOM_PERFECT_ILP/1.1) right textcolor ls LINE_UMOM_SSE_CEIL
 plot cpu_ceiling(x, 2.0*C_UMOM_PERFECT_ILP) ls LINE_UMOM_SSE_CEIL
 
-# u-momentum lower bound (only FMA ILP) + perfect SSE
-set label 21 "Only FMA+SSE" at (MAX_X-1),(2.0*C_UMOM_NO_ILP/1.1) right
+# u-momentum lower bound (No ILP) + perfect SSE
+set label 21 "No ILP+SSE" at (MAX_X-1),(2.0*C_UMOM_NO_ILP/1.1) right textcolor ls LINE_UMOM_SSE_CEIL
 plot cpu_ceiling(x, 2.0*C_UMOM_NO_ILP) ls LINE_UMOM_SSE_CEIL
 
 # MEM CEILINGS
@@ -159,7 +149,7 @@ set label 8 "Main memory" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_MEM_BW)*1.1) rotat
 plot mem_ceiling(mem_roof(x,PEAK_MEM_BW)) ls LINE_CEIL
 
 # ROOFLINE
-set label 1 "Peak FP Performance (LINPACK)" at (MAX_X-1),(PEAK_GFLOPS*1.1) right
+set label 1 "Peak FP Performance (LINPACK)" at (MAX_X-1),(PEAK_GFLOPS*0.9) right
 set label 2 "L3 Mem Bandwidth" at L_MEM_X,mem_roof(L_MEM_X,PEAK_BW)*1.1 rotate by L_MEM_ANG
 plot roofline(x, cpu_roof) ls LINE_ROOF
 
