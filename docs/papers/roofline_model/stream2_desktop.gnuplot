@@ -1,4 +1,7 @@
 # initial config
+#set term pngcairo
+#set output 'stream2_desktop.png'
+
 set term postscript eps enhanced color
 set output 'stream2_desktop.eps'
 
