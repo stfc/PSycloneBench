@@ -371,6 +371,16 @@ well within the capacity of L3.
 \label{FIG_roofline_desktop}
 \end{figure}
 
+\begin{figure}
+  \centering
+  \includegraphics[width=120mm]{roofline_desktop_cont_limits}
+  \includegraphics[width=120mm]{roofline_desktop_mom_limits}
+  \caption{Roofline with computed ceilings for the Continuity and
+    Momentum kernels.
+    Kernel performance shown
+    is for the $256^2$ domain on the E5-1620 CPU.}
+\end{figure}
+
 In order to investigate why the performance of the Continuity kernel
 is falling well short of the maximum predicted by the roofline model
 we have experimented with the level of SIMD

@@ -16,7 +16,12 @@ FIG_FILES = continuity_opt.pdf
 GRACE_PLOTS = nemolite2d_kernel_perf.pdf nemolite2d_cont_perf.pdf daxpy_bw_perf.pdf
 
 # Plots generated from gnuplot
-GNU_PLOTS = roofline_archer.pdf roofline_desktop.pdf stream2_desktop.pdf stream2_archer.pdf roofline_daxpy.pdf daxpy_plot.pdf
+GNU_PLOTS = roofline_archer.pdf \
+            roofline_desktop.pdf \
+            roofline_desktop_cont_limits.pdf \
+            roofline_desktop_mom_limits.pdf \
+            stream2_desktop.pdf \
+            stream2_archer.pdf roofline_daxpy.pdf daxpy_plot.pdf
 
 figs: ${FIG_FILES} ${GRACE_PLOTS} ${GNU_PLOTS}
 
