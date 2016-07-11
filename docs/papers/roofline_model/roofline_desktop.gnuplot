@@ -1,6 +1,6 @@
 # initial config
 set term postscript eps enhanced color
-set output 'roofline_haswell.eps'
+set output 'roofline_desktop.eps'
 
 set nokey
 set grid layerdefault   linetype 0 linewidth 1.000,  linetype 0 linewidth 1.000

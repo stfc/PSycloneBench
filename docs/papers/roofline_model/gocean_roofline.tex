@@ -344,7 +344,7 @@ sensitivity to working-set size -- the $128^2$, $256^2$ and $512^2$
 performance points in Figure~\ref{FIG_roofline_archer} are very close
 together and well below any of the roofline limits.
 
-In Figure~\ref{FIG_roofline_haswell} we plot the Roofline model
+In Figure~\ref{FIG_roofline_desktop} we plot the Roofline model
 obtained for the E5-1620 CPU. In order to investigate the poor
 performance of the u-Momentum kernel of NEMOLite2D, we also show the
 performance of the (simpler) Continuity kernel from that code. As we
@@ -365,10 +365,10 @@ well within the capacity of L3.
 
 \begin{figure}
 \centering
-\includegraphics[width=120mm]{roofline_haswell}
+\includegraphics[width=120mm]{roofline_desktop}
 \caption{Comparison of the performance achieved by different
   NEMOLite2D kernels on the E5-1620 CPU.}
-\label{FIG_roofline_haswell}
+\label{FIG_roofline_desktop}
 \end{figure}
 
 In order to investigate why the performance of the Continuity kernel
@@ -683,7 +683,7 @@ particularly when the cost of accessing memory is small (i.e. when the
 problem is contained in L1 or L2). Since all of the NEMOLite2D kernels
 contain un-aligned array accesses, this goes some way to accounting
 for the fact that they do not reach the theoretical limits of the
-roofline plot in Figure~\ref{FIG_roofline_haswell}.
+roofline plot in Figure~\ref{FIG_roofline_desktop}.
 
 \begin{figure}
 \includegraphics[width=120mm]{roofline_daxpy}
