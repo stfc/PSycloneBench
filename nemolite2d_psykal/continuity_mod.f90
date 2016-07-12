@@ -83,17 +83,17 @@ contains
     !> For timing
     integer, save :: idxt
     integer :: nrepeat, ic
-!xxxDIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
-!xxxDIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
-!xxxDIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
-!xxxDIR$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
+!DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
+!DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
+!DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
+!DIR$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
 
     !nrepeat = 100 
     nrepeat = 1
    
     call timer_start(idxt, label='Continuity', num_repeats=nrepeat)
     !call likwid_markerStartRegion('Continuity')
-!xxxxxDIR$ VECTOR ALIGNED
+!DIR$ VECTOR ALIGNED
     !do ic = 1, nrepeat, 1
     do jj = 2, N, 1
 
@@ -124,6 +124,56 @@ contains
     call timer_stop(idxt)
 
   end subroutine invoke_continuity_arrays
+
+  !=================================================================
+
+  subroutine invoke_continuity_arrays_basic(nx, ny, M, N, rdt, ssha, &
+                                            sshn_t, sshn_u, sshn_v, &
+                                            hu, hv, un, vn, area_t)
+    use kind_params_mod
+    use dl_timer, only: timer_start, timer_stop
+    implicit none
+    integer, intent(in) :: nx, ny, M, N
+    real(wp), intent(in) :: rdt
+    real(wp), intent(out) :: ssha(nx,ny)
+    real(wp), intent(in)  :: sshn_u(nx,ny), sshn_v(nx,ny), sshn_t(nx,ny)
+    real(wp), intent(in)  :: un(nx,ny), vn(nx,ny)
+    real(wp), intent(in)  :: hu(nx,ny), hv(nx,ny), area_t(nx,ny)
+    ! Locals
+    integer :: jj, ji
+    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    !> For timing
+    integer, save :: idxt
+    integer :: nrepeat, ic
+
+    !nrepeat = 100 
+    nrepeat = 1
+   
+    call timer_start(idxt, label='Continuity', num_repeats=nrepeat)
+
+    do jj = 2, N, 1
+      do ji = 2, M, 2
+
+         rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
+         rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj))*un(ji-1,jj)
+         rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
+         rtmp4 = (sshn_v(ji ,jj-1) + hv(ji ,jj-1))*vn(ji,jj-1)
+         ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+                       rdt / area_t(ji,jj)
+
+         rtmp1 = (sshn_u(ji+1  ,jj ) + hu(ji+1  ,jj  ))*un(ji+1  ,jj)
+         rtmp2 = (sshn_u(ji,jj ) + hu(ji,jj))*un(ji,jj)
+         rtmp3 = (sshn_v(ji+1 ,jj )  + hv(ji+1  ,jj  ))*vn(ji+1 ,jj)
+         rtmp4 = (sshn_v(ji+1 ,jj-1) + hv(ji+1 ,jj-1))*vn(ji+1,jj-1)
+         ssha(ji+1,jj) = sshn_t(ji+1,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+                       rdt / area_t(ji+1,jj)
+      end do
+      
+    end do
+
+    call timer_stop(idxt)
+
+  end subroutine invoke_continuity_arrays_basic
 
   !===================================================
 
