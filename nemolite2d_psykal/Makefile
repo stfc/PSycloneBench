@@ -59,6 +59,13 @@ nemolite2d_align: ${COMMON_MODULES} time_step_mod_align.o nemolite2d.o
 	${MAKE} MODULE_LIST="time_step_mod_align.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_align.exe
 
+nemolite2d_cont_only: ${COMMON_MODULES} time_step_mod_cont_only.o nemolite2d.o
+        # Have to delete any existing time_step_mod because it contains a module
+        # with the same name as that in time_step_mod_align
+	rm -f time_step_mod.o time_step_mod.mod
+	${MAKE} MODULE_LIST="time_step_mod_cont_only.o nemolite2d.o ${COMMON_MODULES}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_cont_only.exe
+
 nemolite2d_nodiv: ${COMMON_MODULES} time_step_mod_align_nodiv.o nemolite2d.o
         # Have to delete any existing time_step_mod because it contains a module
         # with the same name as that in time_step_mod_align_nodiv
