@@ -6,6 +6,9 @@ module time_step_mod
 
   public invoke_time_step
 
+  integer, save :: timer_momu, timer_momv, timer_cont, &
+                   timer_bcs, timer_next
+  
 contains
 
   subroutine invoke_time_step(istp, ssha, ssha_u, ssha_v, &
@@ -53,7 +56,12 @@ contains
     N  = ssha%grid%simulation_domain%ystop
 
     if(istp .eq. 1)then
-      write (*,"('Loop bounds (inner,outer) = ',I4,1x I4)") M, N
+       write (*,"('Loop bounds (inner,outer) = ',I4,1x I4)") M, N
+       call timer_register(timer_momu,label='Momentum-u')
+       call timer_register(timer_momv,label='Momentum-v')
+       call timer_register(timer_cont,label='Continuity')
+       call timer_register(timer_next,label='Next'      )
+       call timer_register(timer_bcs, label='BCs'       )
     end if
 
     ! In the general case we have to reason about whether or not the
@@ -105,7 +113,7 @@ contains
 !!$                                  un%grid%area_u, &
 !!$                                  un%grid%gphiu)
 
-    call timer_start('Momentum-u',idxt)
+    call timer_start(handle=timer_momu)
     !call likwid_markerStartRegion('Momentum-u')
 
 !    do jj = ua%internal%ystart, ua%internal%ystop, 1
@@ -221,9 +229,9 @@ contains
     end do
  
     !call likwid_markerStopRegion('Momentum-u')
-    call timer_stop(idxt)
+    call timer_stop(timer_momu)
 
-    call timer_start('Momentum-v',idxt)
+    call timer_start(handle=timer_momv)
 
 !dir$ safe_address
     do jj = 2, N-1, 1
@@ -342,11 +350,11 @@ contains
       end do
     end do
 
-    call timer_stop(idxt)
+    call timer_stop(timer_momv)
 
     ! Apply open and solid boundary conditions
 
-    call timer_start('BCs', idxt)
+    call timer_start(handle=timer_bcs)
 
 !    DO jj = ssha%internal%ystart, ssha%internal%ystop 
 !       DO ji = ssha%internal%xstart, ssha%internal%xstop 
@@ -455,11 +463,11 @@ contains
        END DO
     END DO
 
-    call timer_stop(idxt)
+    call timer_stop(timer_bcs)
 
     ! Time update of fields
 
-    call timer_start('Next', idxt)
+    call timer_start(handle=timer_next)
 
 !    call copy_field(ua, un)
 !    call copy_field(va, vn)
@@ -517,7 +525,7 @@ contains
       end do
     end do
 
-    call timer_stop(idxt)
+    call timer_stop(timer_next)
 
   end subroutine invoke_time_step
 
@@ -547,13 +555,10 @@ contains
 !DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
 !DIR$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
 
-    !nrepeat = 10 
-    nrepeat = 1
    
-    call timer_start('Continuity',idxt,nrepeat)
+    call timer_start(handle=timer_cont)
     !call likwid_markerStartRegion('Continuity')
 !DIR$ VECTOR ALIGNED
-    !do ic = 1, nrepeat, 1
     do jj = 2, N, 1
 
       ! Explicit peel loop
@@ -580,7 +585,7 @@ contains
     end do
     !call likwid_markerStopRegion('Continuity')
 
-    call timer_stop(idxt)
+    call timer_stop(timer_cont)
 
   end subroutine invoke_continuity_arrays
 
@@ -615,7 +620,7 @@ contains
     real(wp) :: u_e, u_w, v_n, v_s, v_sc, v_nc, depe, depw, deps, depn
     real(wp) :: uu_e, uu_w, uu_s, uu_n, dudy_s, dudy_n, dudx_e, dudx_w
     real(wp) :: vis, adv, cor, hpg
-    call timer_start('Momentum-u',idxt)
+    call timer_start(handle=timer_momu)
     !call likwid_markerStartRegion('Momentum-u')
 
     do jj = 2, N, 1
@@ -711,7 +716,7 @@ contains
     end do
  
     !call likwid_markerStopRegion('Momentum-u')
-    call timer_stop(idxt)
+    call timer_stop(timer_momu)
 
   end subroutine invoke_momentum_u_arrays
 
