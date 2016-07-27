@@ -174,8 +174,8 @@ int main() {
   pcf = pi * pi * a * a / (el * el);
 
   // Initial values of the stream functions and p
-  for (i = 0; i < n_len; i++) {
-    for (j = 0; j < m_len; j++) {
+  for (i = 0; i < m_len; i++) {
+    for (j = 0; j < n_len; j++) {
       psi[i][j] = a * sin((i + 0.5) * di) * sin((j + 0.5) * dj);
       p[i][j] = pcf * (cos(2.0 * (i) * di) + cos(2.0 * (j) * dj)) + 50000.0;
     }
