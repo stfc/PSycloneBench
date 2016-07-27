@@ -1,0 +1,77 @@
+package shallow;
+
+import static com.maxeler.maxcompiler.v2.managers.standard.Manager.link;
+
+import com.maxeler.maxcompiler.v2.kernelcompiler.Kernel;
+import com.maxeler.maxcompiler.v2.managers.BuildConfig;
+import com.maxeler.maxcompiler.v2.managers.engine_interfaces.CPUTypes;
+import com.maxeler.maxcompiler.v2.managers.engine_interfaces.EngineInterface;
+import com.maxeler.maxcompiler.v2.managers.engine_interfaces.InterfaceParam;
+import com.maxeler.maxcompiler.v2.managers.standard.IOLink.IODestination;
+import com.maxeler.maxcompiler.v2.managers.standard.Manager;
+
+public class shallowManager {
+
+	private static final String s_kernelName = "shallowKernel";
+
+	public static void main(String[] args) {
+		shallowEngineParameters params = new shallowEngineParameters(args);
+		Manager manager = new Manager(params);
+		Kernel kernel   = new shallowKernel(manager.makeKernelParameters(s_kernelName));
+		manager.setKernel(kernel);
+		manager.setIO(
+			link("p",   IODestination.CPU),
+			link("u",   IODestination.CPU),
+			link("v",   IODestination.CPU),
+			link("pold",   IODestination.CPU),
+			link("uold",   IODestination.CPU),
+			link("vold",   IODestination.CPU),
+			link("pnew",   IODestination.CPU),
+			link("unew",   IODestination.CPU),
+			link("vnew",   IODestination.CPU));
+
+		manager.createSLiCinterface(interfaceDefault());
+
+		configBuild(manager, params);
+
+		manager.build();
+	}
+
+	private static EngineInterface interfaceDefault() {
+		EngineInterface engine_interface = new EngineInterface();
+		CPUTypes   type = CPUTypes.DOUBLE;
+		int        size = type.sizeInBytes();
+
+		InterfaceParam len = engine_interface.addParam("len", CPUTypes.INT);
+		InterfaceParam fsdx = engine_interface.addParam("fsdx", type);
+		InterfaceParam fsdy = engine_interface.addParam("fsdy", type);
+		InterfaceParam tdt = engine_interface.addParam("tdt", type);
+		InterfaceParam dx = engine_interface.addParam("dx", type);
+		InterfaceParam dy = engine_interface.addParam("dy", type);
+
+		engine_interface.setTicks(s_kernelName, len);
+		engine_interface.setStream("p", type, len * size);
+		engine_interface.setStream("u", type, len * size);
+		engine_interface.setStream("v", type, len * size);
+		engine_interface.setStream("pold", type, len * size);
+		engine_interface.setStream("uold", type, len * size);
+		engine_interface.setStream("vold", type, len * size);
+		engine_interface.setStream("pnew", type, len * size);
+		engine_interface.setStream("unew", type, len * size);
+		engine_interface.setStream("vnew", type, len * size);
+		engine_interface.setScalar(s_kernelName, "fsdx", fsdx);
+		engine_interface.setScalar(s_kernelName, "fsdy", fsdy);
+		engine_interface.setScalar(s_kernelName, "tdt", tdt);
+		engine_interface.setScalar(s_kernelName, "dx", dx);
+		engine_interface.setScalar(s_kernelName, "dy", dy);
+		return engine_interface;
+	}
+
+	private static void configBuild(Manager manager, shallowEngineParameters params) {
+		manager.setEnableStreamStatusBlocks(false);
+		BuildConfig buildConfig = manager.getBuildConfig();
+		buildConfig.setMPPRCostTableSearchRange(params.getMPPRStartCT(), params.getMPPREndCT());
+		buildConfig.setMPPRParallelism(params.getMPPRThreads());
+		buildConfig.setMPPRRetryNearMissesThreshold(params.getMPPRRetryThreshold());
+	}
+}

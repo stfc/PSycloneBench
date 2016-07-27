@@ -1,0 +1,90 @@
+package shallow;
+
+import com.maxeler.maxcompiler.v2.kernelcompiler.Kernel;
+import com.maxeler.maxcompiler.v2.kernelcompiler.KernelParameters;
+import com.maxeler.maxcompiler.v2.kernelcompiler.stdlib.core.CounterChain;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEType;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEVar;
+
+class shallowKernel extends Kernel {
+
+	private static final DFEType type = dfeFloat(11, 53);
+
+	protected shallowKernel(KernelParameters parameters) {
+		super(parameters);
+
+		int m = 16, n = 16;
+
+		DFEVar p = io.input("p", type);
+		DFEVar u = io.input("u", type);
+		DFEVar v = io.input("v", type);
+		DFEVar pold = io.input("pold", type);
+		DFEVar uold = io.input("uold", type);
+		DFEVar vold = io.input("vold", type);
+		DFEVar fsdx = io.scalarInput("fsdx", type);
+		DFEVar fsdy = io.scalarInput("fsdy", type);
+		DFEVar tdt = io.scalarInput("tdt", type);
+		DFEVar dx = io.scalarInput("dx", type);
+		DFEVar dy = io.scalarInput("dy", type);
+
+		CounterChain chain = control.count.makeCounterChain();
+		DFEVar i = chain.addCounter(m, 1);
+		DFEVar j = chain.addCounter(n, 1);
+		DFEVar k = control.count.simpleCounter(m * n);
+
+		DFEVar cu = 0.5 * (p + stream.offset(p, -n)) * u;
+		DFEVar cv = 0.5 * (p + stream.offset(p, -1)) * v;
+		DFEVar z = (fsdx * (v - stream.offset(v, -n)) - fsdy * (u - stream.offset(u, -1))) /
+		           (stream.offset(p, -n - 1) + stream.offset(p, -1) + p + stream.offset(p, -n));
+		DFEVar h =  p + 0.25 * (stream.offset(u, n) * stream.offset(u, n) + u *
+                         u + stream.offset(v, 1) * stream.offset(v, 1) + v * v);
+
+		DFEVar h_b = k.eq(n * m - 1) ? stream.offset(h, -n * m + 1) :
+			         j.eq(n - 1) ?  stream.offset(h, -n + 1)  :
+			         i.eq(m - 1) ? stream.offset(h, -n * (m - 1)) :
+			         h;
+	    DFEVar cu_b = i.eq(0) ? stream.offset(cu, n * (m -1)) :
+	    	          cu;
+	    DFEVar cv_b = j.eq(0) ? stream.offset(cv, n -1) :
+	    	          i.eq(0) ? stream.offset(cv, n * (m -1)) :
+	    			  cv;
+	    DFEVar z_b = k.eq(0) ? stream.offset(z, n * m - 1) :
+	    	         i.eq(0) ? stream.offset(z, n * (m -1)) :
+	    	         j.eq(0) ? stream.offset(z, n -1) :
+	    	         z;
+
+	    DFEVar tdts8 = tdt / 8.0;
+	    DFEVar tdtsdx = tdt / dx;
+	    DFEVar tdtsdy = tdt / dy;
+
+	    DFEVar unew = uold + tdts8 * (stream.offset(z_b, 1) + z_b) *
+	                  (stream.offset(cv_b, 1) + stream.offset(cv_b, -n + 1) + stream.offset(cv_b, -n) + cv_b) -
+	                  tdtsdx * (h_b - stream.offset(h_b, -n));
+	    DFEVar vnew = vold - tdts8 * (stream.offset(z_b, n) + z_b) *
+	                  (stream.offset(cu_b, n) + cu_b + stream.offset(cu_b, -1) + stream.offset(cu_b, n -1)) -
+	                  tdtsdy * (h_b - stream.offset(h_b, -1));
+	    DFEVar pnew = pold - tdtsdx * (stream.offset(cu_b, n) - cu_b) -
+	                         tdtsdy * (stream.offset(cv_b, 1) - cv_b);
+
+	    DFEVar unew_b = k.eq(n - 1) ? stream.offset(unew, (n * (m - 2)) + 1) :
+	    	            j.eq(n - 1) ? stream.offset(unew, -n + 1) :
+	    	            i.eq(0) ? stream.offset(unew, n * (m - 1)) :
+	    	            unew;
+
+	    DFEVar vnew_b = k.eq(0) ? stream.offset(vnew, n - 1) :
+		    	        j.eq(0) ? stream.offset(vnew, n - 1) :
+		    	        i.eq(m -1) ? stream.offset(vnew, -n * (m - 1)) :
+		    	        vnew;
+
+		DFEVar pnew_b = k.eq(n * m - 1) ? stream.offset(pnew, (-n * m) + 1) :
+	                    j.eq(n - 1) ? stream.offset(pnew, -n + 1) :
+    	                i.eq(m - 1) ? stream.offset(pnew, -n * (m - 1)) :
+    	                pnew;
+
+		io.output("unew", unew_b, type);
+		io.output("vnew", vnew_b, type);
+		io.output("pnew", pnew_b, type);
+	}
+
+}
+
