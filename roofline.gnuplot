@@ -1,7 +1,7 @@
 # initial config
 set term postscript eps enhanced color
 set output 'roofline.eps'
-#set term pngcairo
+#set term pngcairo dashed
 #set output 'roofline.png'
 
 set nokey
@@ -16,7 +16,7 @@ set logscale y 2
 
 # label offsets
 L_MEM_X=0.125
-L_MEM_ANG=36
+L_MEM_ANG=39
 
 # range of each axis
 MAX_X=8
@@ -89,8 +89,8 @@ BAR_WIDTH = 14
 
 set style line LINE_ROOF	lt 1 lw 6 lc rgb "#8B0000"
 set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
-set style line LINE_UMOM_CEIL	lt 3 lw 4 lc rgb "red"
-set style line LINE_UMOM_SSE_CEIL lt 3 lw 4 lc rgb "orange"
+set style line LINE_UMOM_CEIL	lt 2 lw 2 lc rgb "red"
+set style line LINE_UMOM_SSE_CEIL lt 2 lw 2 lc rgb "orange"
 
 set style line LINE_LOOP1_512     lt 1 lc rgb "dark-olivegreen"
 set style line LINE_LOOP1_1024    lt 1 lc rgb "green"
@@ -105,7 +105,7 @@ set multiplot
 # From Shallow with the Intel compiler
 
 # Loop1 of shallow with 512^2 achieves 7.55 GFLOPS
-set label 12 "shallow: loop 1, 512" at (SHALLOW_LOOP1_AI*0.6),8.1 front textcolor ls LINE_LOOP1_512
+set label 12 "shallow: loop 1, 512" at (SHALLOW_LOOP1_AI*1.06),8.1 front textcolor ls LINE_LOOP1_512
 set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.55 nohead ls LINE_LOOP1_512 lw BAR_WIDTH*SHALLOW_LOOP1_AI
 
 set label 13 "shallow: loop 1, 1024" at (SHALLOW_LOOP1_AI*1.06), 4.4 front textcolor ls LINE_LOOP1_1024
@@ -115,11 +115,11 @@ set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.61 nohead ls LINE_LO
 # From Nemolite2D with Intel compiler (as that's the fastest)
 
 # 256 domain should fit within L3 cache
-set label 14 "nemolite2d: Mom, SSE" at (NEMOLITE_MOM_AI*1.06),3.01 front textcolor ls LINE_MOM_256_SSE
+set label 14 "nemolite2d: Mom, SSE" at (NEMOLITE_MOM_AI*1.06),3.05 front textcolor ls LINE_MOM_256_SSE
 set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.01 nohead ls LINE_MOM_256_SSE lw BAR_WIDTH*NEMOLITE_MOM_AI
 
 # 256 domain without SIMD
-set label 24 "nemolite2d: Mom, no SIMD" at (NEMOLITE_MOM_AI*1.06),2.216 front textcolor ls LINE_MOM_256
+set label 24 "nemolite2d: Mom, no SIMD" at (NEMOLITE_MOM_AI*1.06),2.2 front textcolor ls LINE_MOM_256
 set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,2.216 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
 
 
@@ -149,8 +149,8 @@ set label 8 "Main memory" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_MEM_BW)*1.1) rotat
 plot mem_ceiling(mem_roof(x,PEAK_MEM_BW)) ls LINE_CEIL
 
 # ROOFLINE
-set label 1 "Peak FP Performance (LINPACK)" at (MAX_X-1),(PEAK_GFLOPS*0.9) right
-set label 2 "L3 Mem Bandwidth" at L_MEM_X,mem_roof(L_MEM_X,PEAK_BW)*1.1 rotate by L_MEM_ANG
+set label 1 "Peak FP Performance (LINPACK)" at (MAX_X-1),(PEAK_GFLOPS*0.85) right
+set label 2 "L3 Mem Bandwidth" at L_MEM_X,mem_roof(L_MEM_X,PEAK_BW)*1.15 rotate by L_MEM_ANG
 plot roofline(x, cpu_roof) ls LINE_ROOF
 
 unset multiplot
