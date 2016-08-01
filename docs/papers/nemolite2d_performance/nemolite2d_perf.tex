@@ -308,10 +308,10 @@ constraint, CPU clock speeds are falling and the complex,
 multi-purpose compute core is being replaced by multiple, simpler
 cores. This philosophy can be seen at work in the rise of so-called
 accelerator-based machines in the Top 500 List~\cite{top500} of
-supercomputers: four of the top-ten machines in the November 2015 list
-make use of Intel Xeon Phi's or NVIDIA GPUs. Two of the remaining six
-machines are IBM BlueGene/Qs, the CPU of which has hardware support
-for running 64 threads.
+supercomputers: four of the top-ten machines in the June 2016 list
+make use of many-core processors (Intel Xeon Phi, NVIDIA GPU or NRCPC
+SW26010). Two of the remaining six machines are IBM BlueGene/Qs, the
+CPU of which has hardware support for running 64 threads.
 
 Achieving good performance on large numbers of light-weight cores
 requires exploiting as much parallelism in an application as possible
@@ -331,6 +331,81 @@ require different programming approaches.
 %\IEEEpubidadjcol
 
 \subsection{The \psykal\ Approach}
+
+
+
+The \psykal\ approach attempts to address the problems described in the
+previous section. It separates code into three layers; the Algorithm
+layer, the PSy layer and the Kernel layer. The approach has been
+developed in the GungHo project~\cite{GungHo}, which is creating a new
+Dynamical core for the Met Office, and its design has been influenced
+by earlier work on OP2~\cite{OP2,PYOP2}.
+
+In common with OP2, the \psykal\ approach separates out the science
+code and the performance-related code into distinct layers. The calls
+that specify parallelism in both approaches are similar in terms of
+where they are placed in the code and in their semantics. However, the
+\psykal\ approach supports the specification of more than one kernel
+in a parallel region of code, compared with one for OP2, giving more
+scope for optimisation. Another difference is that the description
+metadata is provided with a kernel in the \psykal\ approach whereas it
+is provided as part of the kernel call in OP2.
+
+While the \psykal\ approach is general, we are currently applying it to
+Atmosphere and Ocean models written in Fortran where domain
+decomposition is typically performed in the latitude-longitude
+direction, leaving columns of elements on each domain-decomposed
+partition.
+
+The top layer, in terms of calling hierarchy, is the Algorithm
+layer. This layer specifies the algorithm that the scientist would like
+to perform (in terms of calls to kernel and infrastructure routines)
+and logically operates on full fields. We say logically here as the
+fields may be domain decomposed, however the Algorithm layer is not
+aware of this. It is the scientist's responsibility to write this
+Algorithm layer.
+
+The bottom layer, in terms of calling hierarchy, is the Kernel
+layer. The Kernel layer implements the science that the Algorithm
+layer calls, as a set of subroutines. These kernels operate on fields
+that are local to the process doing the computation. (Depending on the
+type of kernel, these may be a set of elements, a single column of
+elements, or a set of columns.). Again the scientist is responsible
+for writing this layer and there is no parallelism specified here,
+but, depending on the complexity of the Kernels, there may be input
+from an HPC expert and/or some coding rules to help ensure the kernels
+compile into efficient code.  In an alternative approach, kernels are
+generated from a high-level specification~\cite{firedrake,fenics},
+potentially allowing them to be optimised automatically~\cite{coffee}.
+
+The PSy layer sits in-between the Algorithm and Kernel layers and its
+functional role is to link the algorithm calls to the associated
+kernel subroutines. As the Algorithm layer works on logically global
+fields and Kernel layer works on local fields, the PSy layer is
+responsible for iterating over columns. It is also responsible for
+including any distributed-memory operations resulting from the
+decomposition of the simulation domain, such as halo swaps and
+reductions.
+
+As the PSy layer iterates over columns, the single core performance
+can be optimised by applying transformations such as loop fusion and
+loop blocking. Additionally, the potential parallelism within this
+iteration space can also be exploited and optimised. The PSy layer can
+therefore be tailored for a particular hardware (such as multi-core,
+many-core, GPGPUs, or some combination thereof) and software (such as
+compiler, operating system, MPI implementation) configuration with no
+change to the Algorithm or Kernel layer code. This approach therefore
+offers the potential for portable performance. In this work we apply
+optimisations to the PSy layer manually. The development of a tool to
+automate this process will be the subject of a future paper.
+
+Clearly the separation of code into distinct layers may have an effect
+on performance. This overhead, how to get back to the performance
+of a hand-optimised code, and potentially improve on it, will be
+discussed in the remainder of this paper.
+
+%xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
 Proliferation of lightweight cores is resulting in increased
 complexity in the programming models required to achieve performance.
 Combine with the complexity of e.g. a model simulating circulation in
