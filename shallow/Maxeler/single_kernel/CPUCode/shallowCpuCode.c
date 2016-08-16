@@ -54,8 +54,8 @@ void free_array(double** array) {
 
 int main(void)
 {
-  int m = 15, n = 15; // Global domain size
-  int itmax = 1; // Number of timesteps
+  int m = 63, n = 63; // Global domain size
+  int itmax = 10; // Number of timesteps
   bool l_out = true; // Produce output
   int m_len = m + 1, n_len = n + 1;
 
@@ -81,14 +81,12 @@ int main(void)
   psi = allocate_array(m_len, n_len);
 
   double dt, tdt, dx, dy, a, alpha, el, pi, tpi, di, dj, pcf;
-  double tdts8, tdtsdx, tdtsdy, fsdx, fsdy;
+  double fsdx, fsdy;
 
-  int ncycle;
   int i, j;
   // timer variables
-  double t100, t200, t300;
   double tstart, ctime, tcyc;
-  double c1, c2;
+  double c2;
 
   dt = 90;
   tdt = dt; // Only for the first cycle
@@ -164,11 +162,13 @@ int main(void)
 
   shallow_actions_t run_scalar;
   run_scalar.param_len = m_len * n_len;
+  run_scalar.param_itmax = itmax;
   run_scalar.param_fsdx = fsdx;
   run_scalar.param_fsdy = fsdy;
   run_scalar.param_tdt = tdt;
   run_scalar.param_dx = dx;
   run_scalar.param_dy = dy;
+  run_scalar.param_alpha = alpha;
   run_scalar.instream_p = p[0];
   run_scalar.instream_u = u[0];
   run_scalar.instream_v = v[0];
@@ -191,15 +191,6 @@ int main(void)
    printf(" No. of steps = %d, total time = %f, time per cycle = %f (s)\n",
            itmax, ctime, tcyc);
 
-  tdt = tdt + tdt;
-  for (i = 0; i < m_len; i++) {
-    for (j = 0; j < n_len; j++) {
-      u[i][j] = unew[i][j];
-      v[i][j] = vnew[i][j];
-      p[i][j] = pnew[i][j];
-    }
-   }
-
   // End of time loop
   printf("P CHECKSUM after %d steps = %e\n",
           itmax, compute_checksum(0, m, 0, n, pnew));
@@ -207,7 +198,6 @@ int main(void)
           itmax, compute_checksum(1, m_len, 0, n, unew));
   printf("V CHECKSUM after %d steps = %e\n",
           itmax, compute_checksum(0, m, 1, n_len, vnew));
-
 
   max_unload(engine);
 

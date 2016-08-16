@@ -2,7 +2,10 @@ package shallow;
 
 import com.maxeler.maxcompiler.v2.kernelcompiler.Kernel;
 import com.maxeler.maxcompiler.v2.kernelcompiler.KernelParameters;
+import com.maxeler.maxcompiler.v2.kernelcompiler.stdlib.core.Count;
+import com.maxeler.maxcompiler.v2.kernelcompiler.stdlib.core.Count.Counter;
 import com.maxeler.maxcompiler.v2.kernelcompiler.stdlib.core.CounterChain;
+import com.maxeler.maxcompiler.v2.kernelcompiler.stdlib.core.Stream.OffsetExpr;
 import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEType;
 import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEVar;
 
@@ -13,24 +16,60 @@ class shallowKernel extends Kernel {
 	protected shallowKernel(KernelParameters parameters) {
 		super(parameters);
 
-		int m = 16, n = 16;
+		int m = 64, n = 64, itmax = 10;
 
-		DFEVar p = io.input("p", type);
-		DFEVar u = io.input("u", type);
-		DFEVar v = io.input("v", type);
-		DFEVar pold = io.input("pold", type);
-		DFEVar uold = io.input("uold", type);
-		DFEVar vold = io.input("vold", type);
+        OffsetExpr plength = stream.makeOffsetAutoLoop("plength");
+
+		// Carry over variables from the previous loop iteration
+		DFEVar carriedp = type.newInstance(this);
+		DFEVar carriedu = type.newInstance(this);
+		DFEVar carriedv = type.newInstance(this);
+		DFEVar carriedpold = type.newInstance(this);
+		DFEVar carrieduold = type.newInstance(this);
+		DFEVar carriedvold = type.newInstance(this);
+
+		CounterChain tickchain = control.count.makeCounterChain();
+		CounterChain arraychain = control.count.makeCounterChain();
+
+		DFEVar looplength = plength.getDFEVar(getKernel(), dfeUInt(32));
+
+		DFEVar tick = tickchain.addCounter(((itmax - 1) * looplength) + (m * n), 1);
+		DFEVar cycle = arraychain.addCounter(itmax, 1);
+		DFEVar k = arraychain.addCounter(plength.getDFEVar(getKernel(), dfeUInt(32)), 1);
+
+		DFEVar enable = k < m * n;
+
+		// Set the i & j counters so that they don't count when waiting for
+		// the loop carried values
+		Count.Params jparams =  control.count.makeParams(32).withMax(n)
+		    .withInc(1).withEnable(enable);
+		Counter jcounter = control.count.makeCounter(jparams);
+		DFEVar j = jcounter.getCount();
+
+		Count.Params iparams = control.count.makeParams(32).withMax(m).withInc(1).withEnable(jcounter.getWrap());
+		Counter icounter = control.count.makeCounter(iparams);
+		DFEVar i = icounter.getCount();
+
+		// We only need to read the inputs from the CPU on the first iteration
+		DFEVar pcpu = io.input("p", type, tick < m * n);
+		DFEVar ucpu = io.input("u", type, tick < m * n);
+		DFEVar vcpu = io.input("v", type, tick < m * n);
+		DFEVar poldcpu = io.input("pold", type, tick < m * n);
+		DFEVar uoldcpu = io.input("uold", type, tick < m * n);
+		DFEVar voldcpu = io.input("vold", type, tick < m * n);
 		DFEVar fsdx = io.scalarInput("fsdx", type);
 		DFEVar fsdy = io.scalarInput("fsdy", type);
 		DFEVar tdt = io.scalarInput("tdt", type);
 		DFEVar dx = io.scalarInput("dx", type);
 		DFEVar dy = io.scalarInput("dy", type);
+		DFEVar alpha = io.scalarInput("alpha", type);
 
-		CounterChain chain = control.count.makeCounterChain();
-		DFEVar i = chain.addCounter(m, 1);
-		DFEVar j = chain.addCounter(n, 1);
-		DFEVar k = control.count.simpleCounter(m * n);
+		DFEVar p = cycle.eq(0) ? pcpu : carriedp;
+		DFEVar u = cycle.eq(0) ? ucpu : carriedu;
+		DFEVar v = cycle.eq(0) ? vcpu : carriedv;
+		DFEVar pold = cycle.eq(0) ? poldcpu : carriedpold;
+		DFEVar uold = cycle.eq(0) ? uoldcpu : carrieduold;
+		DFEVar vold = cycle.eq(0) ? voldcpu : carriedvold;
 
 		DFEVar cu = 0.5 * (p + stream.offset(p, -n)) * u;
 		DFEVar cv = 0.5 * (p + stream.offset(p, -1)) * v;
@@ -53,9 +92,11 @@ class shallowKernel extends Kernel {
 	    	         j.eq(0) ? stream.offset(z, n -1) :
 	    	         z;
 
-	    DFEVar tdts8 = tdt / 8.0;
-	    DFEVar tdtsdx = tdt / dx;
-	    DFEVar tdtsdy = tdt / dy;
+	    // tdt doubles after the first iteration
+	    DFEVar tdtval = tick >= m * n ? tdt + tdt : tdt;
+	    DFEVar tdts8 = tdtval / 8.0;
+	    DFEVar tdtsdx = tdtval / dx;
+	    DFEVar tdtsdy = tdtval / dy;
 
 	    DFEVar unew = uold + tdts8 * (stream.offset(z_b, 1) + z_b) *
 	                  (stream.offset(cv_b, 1) + stream.offset(cv_b, -n + 1) + stream.offset(cv_b, -n) + cv_b) -
@@ -81,10 +122,21 @@ class shallowKernel extends Kernel {
     	                i.eq(m - 1) ? stream.offset(pnew, -n * (m - 1)) :
     	                pnew;
 
-		io.output("unew", unew_b, type);
-		io.output("vnew", vnew_b, type);
-		io.output("pnew", pnew_b, type);
-	}
+    	// alpha only applies after the first iteration
+    	DFEVar alphaval = tick >= m * n ? alpha : 0.0;
 
+    	// Carry the values forward for the next loop
+    	carriedp <== stream.offset(pnew_b, -plength);
+    	carriedu <== stream.offset(unew_b, -plength);
+    	carriedv <== stream.offset(vnew_b, -plength);
+    	carriedpold <== stream.offset(p + alphaval * (pnew_b - 2.0 * p + pold), -plength);
+    	carrieduold <== stream.offset(u + alphaval * (unew_b - 2.0 * u + uold), -plength);
+    	carriedvold <== stream.offset(v + alphaval * (vnew_b - 2.0 * v + vold), -plength);
+
+    	// Only send the outputs on the last iteration
+        io.output("unew", unew_b, type, cycle.eq(itmax - 1));
+	    io.output("vnew", vnew_b, type, cycle.eq(itmax - 1));
+	    io.output("pnew", pnew_b, type, cycle.eq(itmax - 1));
+	}
 }
 
