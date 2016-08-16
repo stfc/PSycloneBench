@@ -231,8 +231,8 @@ int main() {
     c1 = wtime();
 
     // Compute capital u, capital v, z and h
-    for (i = 0; i < n; ++i) {
-       for (j = 0; j < m; ++j) {
+    for (i = 0; i < m; ++i) {
+       for (j = 0; j < n; ++j) {
          cu[i + 1][j] = 0.5 * (p[i + 1][j] + p[i][j]) * u[i + 1][j];
          cv[i][j + 1] = 0.5 * (p[i][j + 1] + p[i][j]) * v[i][j + 1];
          z[i + 1][j + 1] = (fsdx * (v[i + 1][j + 1] - v[i][j + 1]) - fsdy *
