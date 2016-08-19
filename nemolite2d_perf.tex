@@ -1402,7 +1402,9 @@ directives used for the multi-core CPU.
 The introduction of these directives proved to be simpler than
 producing the OpenMP version of NEMOLite2D {\bf - Jeremy to clarify
   whether this is true}.  Consequently we only show the performance of
-{\bf xxx} versions of the code in Figure~\ref{FIG_gpu_opt_stages}.
+{\bf xxx} versions of the code in
+Figure~\ref{FIG_gpu_opt_stages}. {\bf discuss performance drop in
+  OpenACC version c.f. CUDA.}
 
 \begin{figure}
 \centering
@@ -1547,7 +1549,7 @@ vectorisation which gives a performance increase of a factor of two.
 
 We have investigated the application of the \psykal\ separation of
 concerns approach to the domain of shared-memory parallel,
-finite-difference ocean models. This approach enables the
+finite-difference shallow-water models. This approach enables the
 computational science (performance) related aspects of a computer
 model to be kept separate from the natural (oceanographic) science
 aspects.
@@ -1555,15 +1557,42 @@ aspects.
 We have used a new and un-optimised, two-dimension model extracted
 from the NEMO ocean model for this work. As a consequence of this, the
 introduction of the \psykal\ separation of concerns followed by
-suitable transformations of the PSy Layer is found to improve
+suitable transformations of the PSy Layer is actually found to improve
 performance. This is in contrast to our previous
 experience~\cite{shallow_psykal} with tackling the Shallow code which
 has had been optimised over the course of several years. In that case
-we were able to recover\ldots
+we were able to recover more than 90\% of the performance of the
+original for the Gnu, Intel, Cray and IBM compilers on both Intel and
+IBM Power CPUs.
 
 The application of code transformations to the middle/PSy layer is key
-to the performance of the \psykal\ version of a code.
+to the performance of the \psykal\ version of a code. For both
+NEMLite2D and Shallow we have found that for serial performance, the
+most important transformation is that of in-lining the kernel source
+at the call site. However, for the more complex NEMOLite2D code the
+Cray compiler also had to be coerced into performing SIMD
+vectorisation through the use of souce-code directives.
 
+In this work we have also demonstrated the introduction of parallelism
+into the PSy layer with both OpenMP and OpenACC directives. In both
+cases we were able to leave the natural-science parts of the code
+unchanged. For OpenMP we achieved a parallel efficiency of $\sim70\%$
+on 12 threads by enclosing the body of the (single) PSy layer routine
+within a single PARALLEL region. Removal of unecessary synchronisation
+points through use of the NOWAIT clause boosted 12-thread performance
+by approximately 10\% with the Gnu and Cray compilers. The
+\psykal\ re-structuring of this (admittedly small) code was not found
+to pose any problems for the introduction of performant OpenMP.
+
+{\bf Some words about how good the OpenACC, \psykal\ version is compared
+to the CUDA version.}
+
+Having demonstrated that the \psykal\ separation of concerns may be
+applied to finite-difference codes with minimal performance loss, our
+next step will be to consider the automatic generation of the PSy
+layer. In future work we will analyse the performance of a
+domain-specific compiler that performs this task. This compiler
+(which we have named `PSyclone') is currently under development.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
