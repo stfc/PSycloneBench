@@ -331,11 +331,12 @@ In a previous paper~\cite{shallow_psykal} we introduced a possible
 approach to tackling this problem which we term \psykal\ (discussed
 below). In that work we considered the implications for serial
 performance of the extensive code re-structuring required by the
-approach when applied to a shallow-water model. We found that although
-the re-structuring did initially incur a sizeable performance penalty,
-it was possible to transform the resulting code to recover performance
-while obeying the \psykal\ separation of concerns. In this work we
-move to looking at parallel performance within the \psykal\ approach.
+approach when applied to the `Shallow' shallow-water model. We found
+that although the re-structuring did initially incur a sizeable
+performance penalty, it was possible to transform the resulting code
+to recover performance while obeying the \psykal\ separation of
+concerns. In this work we move to looking at parallel performance
+within the \psykal\ approach.
 
 % needed in second column of first page if using \IEEEpubid
 %\IEEEpubidadjcol
@@ -355,9 +356,9 @@ that specify parallelism in both approaches are similar in terms of
 where they are placed in the code and in their semantics. However, the
 \psykal\ approach supports the specification of more than one kernel
 in a parallel region of code, compared with one for OP2, giving more
-scope for optimisation. Another difference is that the description
-metadata is provided with a kernel in the \psykal\ approach whereas it
-is provided as part of the kernel call in OP2.
+scope for optimisation. In addition, the metadata describing a kernel
+is included with the kernel code in the \psykal\ approach whereas it
+is provided as a part of the kernel call in OP2.
 
 While the \psykal\ approach is general, we are currently applying it to
 Atmosphere and Ocean models written in Fortran where domain
@@ -378,13 +379,14 @@ layer. The Kernel layer implements the science that the Algorithm
 layer calls, as a set of subroutines. These kernels operate on fields
 that are local to the process doing the computation. (Depending on the
 type of kernel, these may be a set of elements, a single column of
-elements, or a set of columns.). Again the scientist is responsible
-for writing this layer and there is no parallelism specified here,
-but, depending on the complexity of the Kernels, there may be input
-from an HPC expert and/or some coding rules to help ensure the kernels
-compile into efficient code.  In an alternative approach, kernels are
-generated from a high-level specification~\cite{firedrake,fenics},
-potentially allowing them to be optimised automatically~\cite{coffee}.
+elements, or a set of columns.) Again the scientist is responsible for
+writing this layer and there is no parallelism specified here, but,
+depending on the complexity of the Kernels, there may be input from an
+HPC expert and/or some coding rules to help ensure that the kernels
+compile into efficient code.  In an alternative
+approach~\cite{firedrake,fenics}, kernels are generated from a
+high-level specification, potentially allowing them to be optimised
+automatically~\cite{coffee}.
 
 The PSy layer sits in-between the Algorithm and Kernel layers and its
 functional role is to link the algorithm calls to the associated
@@ -395,7 +397,7 @@ including any distributed-memory operations resulting from the
 decomposition of the simulation domain, such as halo swaps and
 reductions.
 
-As the PSy layer iterates over columns, the single core performance
+As the PSy layer iterates over columns, the single-core performance
 can be optimised by applying transformations such as loop fusion and
 loop blocking. Additionally, the potential parallelism within this
 iteration space can also be exploited and optimised. The PSy layer can
@@ -408,8 +410,8 @@ optimisations to the PSy layer manually. The development of a tool to
 automate this process will be the subject of a future paper.
 
 Clearly the separation of code into distinct layers may have an effect
-on performance. This overhead, how to get back to the performance
-of a hand-optimised code, and potentially improve on it, will be
+on performance. This overhead, how to get back to the performance of a
+parallel, hand-optimised code, and potentially improve on it, will be
 discussed in the remainder of this paper.
 
 \subsection{The `NEMOLite2D' Program}
@@ -460,13 +462,13 @@ takes a semi-implicit form.  The Coriolis force can be set in explicit
 or implicit form. The advection term is computed with a first-order
 upwind scheme.
 
-The order of the model computation is as follows:
+The sequence of the model computation is as follows:
 \begin{enumerate}
 \item Set the initial conditions (water depth, sea surface height, velocity)
 \item integrate the continuity equation for the new sea surface height
 \item update the different terms in the right hand side of the momentum equations; advection, Coriolis forcing (if set in explicit form), pressure gradient, and horizontal viscosity
 \item update the velocity vectors by summing up the values in 3), and implicitly with the bottom friction and Coriolis forcing (if set in implicit form)
-\item apply the boundary conditions on the open-  and solid-boundary cells.
+\item apply the boundary conditions on the open- and solid-boundary cells.
 \end{enumerate}
 
 Since any real oceanographic computational model must output results,
@@ -490,7 +492,8 @@ the PSy layer) and a call to the I/O system
 gives us a single PSy-layer routine which consists of applying each of
 the kernels to all of the points requiring an update on the model
 mesh. In its basic, unoptimised (`vanilla') form, this PSy-layer
-routine then contains a doubly-nested loop around each kernel call.
+routine then contains a doubly-nested loop (over the two dimensions of
+the model grid) around each kernel call.
 
 \begin{figure}
 \centering
@@ -672,7 +675,7 @@ with the \psykal\ approach, we are only permitted to optimise the middle
 (PSy) layer which, for this section comprises calls to two kernels,
 one for each of the $x$ and $y$ components of momentum. These kernels
 are relatively large; each comprises roughly 85 lines of Fortran
-(excluding variable declarations).
+executable statements.
 
 From our previous work~\cite{shallow_psykal} on a similar code we know
 that kernel in-lining is critical to obtaining performance with both
@@ -898,12 +901,12 @@ threads. This leaves the innermost ($i$) loop available for SIMD
 vectorisation by the compiler.
 
 The loop nest dealing with the application of the Flather boundary
-condition to the y-component of velocity has a loop-carried dependency
-in $j$ which appears to prevent its being executed in
+condition to the y-component of velocity ($v$) has a loop-carried
+dependency in $j$ which appears to prevent its being executed in
 parallel.\footnote{Only once this work was complete did we establish
-  that boundary conditions are enforced such that it can be executed
-  in parallel.}  This was therefore left unchanged and executed on
-thread 0 only.
+  that boundary conditions are enforced such that it can safely be
+  executed in parallel.}  This was therefore left unchanged and
+executed on thread 0 only.
 
 \subsubsection{Single PARALLEL region}
 \label{sec_single_parallel}
@@ -916,7 +919,7 @@ for as long as possible using an OpenMP PARALLEL region.  We therefore
 enclosed the whole of the PSy layer (in this code, a single
 subroutine) within a single PARALLEL region. The directive preceeding
 each loop nest to be parallelised was then changed to an OpenMP DO. We
-ensured that the v-Flather loop nest was executed in serial (by the
+ensured that the $v$-Flather loop nest was executed in serial (by the
 first thread to encounter it) by enclosing it within an OpenMP SINGLE
 section.
 
@@ -934,8 +937,8 @@ OpenMP-parallel loop to initialise newly-allocated arrays to some
 value, {\it e.g.} zero.
 
 Since data arrays are managed within the GOcean Library this
-optimisation can again be implemented without changing user code ({\it
-  i.e.} the Application and Kernel layers).
+optimisation can again be implemented without changing the
+natural-science code ({\it i.e.} the Application and Kernel layers).
 
 \subsubsection{Minimise thread synchronisation}
 \label{sec_synch}
@@ -956,15 +959,15 @@ reduced the number of barriers from eleven down to four.
 \subsubsection{Amortize serial region}
 \label{sec_amortize}
 
-As previously mentioned, the v-Flather section has to be executed in
+As previously mentioned, the $v$-Flather section was executed in
 serial becuase of a loop-carried dependence in $j$. (In principle we
 could choose to parallelise the inner, $i$ loop but that would inhibit
 its SIMD vectorisation.) This introduces a load-imbalance between the
 threads. We attempt to mitigate this by moving this serial section to
-before the (parallel) u-Flather section. Since these two sections are
+before the (parallel) $u$-Flather section. Since these two sections are
 independent, the aim is that the thread that performs the serial,
-v-Flather computation then performs a smaller share of the following
-u-Flather loop. In practice, this requires that some form of dynamic
+$v$-Flather computation then performs a smaller share of the following
+$u$-Flather loop. In practice, this requires that some form of dynamic
 thread scheduling is used.
 
 \subsubsection{Thread scheduling}
@@ -974,8 +977,8 @@ In order to investigate how thread scheduling affects performance we
 used the `runtime' argument to the OpenMP SCHEDULE qualifier for all
 of our OpenMP parallel loops. The actual schedule to use can then be
 set at run-time using the OMP\_SCHEDULE environment variable. We
-experimented with using the standard static, dynamic and guided (with varying
-chunk size) OpenMP schedules.
+experimented with using the standard static, dynamic and guided (with
+varying chunk size) OpenMP schedules.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
@@ -1055,11 +1058,9 @@ performance of the original version of NEMOLite2D, the next logical
 step is to examine the necessary code transformations in detail.  We
 do this for the $256^{2}$ case since this fits within cache on the Ivy
 Bridge CPUs we are using here.  Table~\ref{TABLE_opt_breakdown} shows
-detailed performance figures for this case after each transformation has been
-applied to the code. The same data is visualised in
-Figure~\ref{FIG_opt_stages_256} where the performance of the \psykal\
-version for a given compiler/CPU is given relative to the performance
-of the original with the same compiler/CPU.
+detailed performance figures for this case after each transformation
+has been applied to the code. The same data is visualised in
+Figure~\ref{FIG_opt_stages_256}.
 
 Looking at the results for the Gnu compiler (and the Ivy Bridge CPU)
 first, all of the steps-up in performance correspond to kernel
@@ -1203,13 +1204,12 @@ In order to inform our choice of domain size,
 Figure~\ref{FIG_omp_domain_size} shows the scaling behaviour of the
 most performant, Intel-compiled version of NEMOLite2D. Although it is
 common for production runs of NEMO to use MPI sub-domains of $20
-\times 20$ ({\bf do we have/need a reference for that?}), it is clear
-from Figure~\ref{FIG_omp_domain_size} that the limited quantity of
-parallelism in the $32 \times 32$ domain inhibits scaling. Therefore,
-to fully test the performance of our OpenMP implementations we have
-chosen to examine results for the $256 \times 256$ domain and these
-are shown in Figures~\ref{FIG_gnu_omp_256}, \ref{FIG_intel_omp_256}
-and \ref{FIG_cray_omp_256}.
+\times 20$, it is clear from Figure~\ref{FIG_omp_domain_size} that the
+limited quantity of parallelism in the $32 \times 32$ domain inhibits
+scaling. Therefore, to fully test the performance of our OpenMP
+implementations we have chosen to examine results for the $256 \times
+256$ domain and these are shown in Figures~\ref{FIG_gnu_omp_256},
+\ref{FIG_intel_omp_256} and \ref{FIG_cray_omp_256}.
 
 \begin{figure}
 \centering
@@ -1226,11 +1226,12 @@ and \ref{FIG_cray_omp_256}.
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{omp_scaling_256_gnu}
-\caption{Performance of the OpenMP-parallel version of \psykal\
-  NEMOLite2D for the Gnu compiler on a single Intel Ivy Bridge
-  socket. The corresponding parallel efficiencies are shown using open
-  symbols and dashed lines. The 24-thread runs employed hyperthreading
-  and the optimal OpenMP schedule is given in parentheses.}
+\caption{Performance of the OpenMP-parallel version of
+  \psykal\ NEMOLite2D for the $256^2$ domain with the Gnu compiler on
+  a single Intel Ivy Bridge socket. The corresponding parallel
+  efficiencies are shown using open symbols and dashed lines. The
+  24-thread runs employed hyperthreading and the optimal OpenMP
+  schedule is given in parentheses.}
 \label{FIG_gnu_omp_256}
 \end{figure}
 
@@ -1238,7 +1239,7 @@ The simplest OpenMP implementation (black lines, circle symbols) fails
 to scale well for any of the compilers. For the Intel and Gnu
 versions, parallel efficiency is already less than 50\% on just four
 threads. The Cray version however does better and is about 45\%
-efficient on eight threads.
+efficient on eight threads (Figure~\ref{FIG_cray_omp_256}).
 
 With the move to a single PARALLEL region, the situation
 is greatly improved with all three executables now scaling out to at
@@ -1302,26 +1303,27 @@ Gnu-compiled binary is only 6\% slower than that produced by the Intel
 compiler and is 13\% {\em faster} that that of the Cray compiler. In
 part this situation comes about because of the effect that adding the
 OpenMP compiler flag has on the optimisations performed by the
-compiler.  In particular, the Cray compiler no-longer vectorises the
+compiler.  In particular, the Cray compiler no longer vectorises the
 key Momentum section, despite the directive added during the serial
-optimisation work.
+optimisation work. This defficiency has been reported to Cray.
 
 Since NEMO and similar finite-difference codes tend to be
 memory-bandwidth bound, we checked the sensitivity of our performance
 results to this quantity by benchmarking using two sockets of Intel
-Ivy Bridge ({\it i.e.} using a complete node of Archer). For this
-configuration we ensured that threads were evenly shared over the two
-sockets. The performance obtained for the $256^2$ case with the `early
-SINGLE' version of the code is compared with the single-socket
-performance in Figure~\ref{FIG_omp_2socks}. Surprisingly, doubling the
-available memory bandwidth in this way has little effect on
-performance - the two-socket performance figures track those from a
-single socket very closely. The only significant difference in
-performance is at 24 threads where, in addition to the difference in
-available memory bandwidth, the single-socket configuration is using
-hyperthreading while the two-socket case is not.  The discrepancy in
-the performance of the Cray- and Intel-compiled binaries at this
-thread count is under investigation by Cray.
+Ivy Bridge ({\it i.e.} using a complete node of ARCHER, a Cray
+XC30). For this configuration we ensured that threads were evenly
+shared over the two sockets. The performance obtained for the $256^2$
+case with the `early SINGLE' version of the code is compared with the
+single-socket performance in
+Figure~\ref{FIG_omp_2socks}. Surprisingly, doubling the available
+memory bandwidth in this way has little effect on performance - the
+two-socket performance figures track those from a single socket very
+closely. The only significant difference in performance is at 24
+threads where, in addition to the difference in available memory
+bandwidth, the single-socket configuration is using hyperthreading
+while the two-socket case is not.  The discrepancy in the performance
+of the Cray- and Intel-compiled binaries at this thread count is under
+investigation by Cray.
 
 \begin{figure}
 \centering
@@ -1390,7 +1392,14 @@ qualifiers.
 
 \subsubsection{OpenACC Version}
 
-The introduction of OpenACC directives proved to be simpler than
+The advantage of the \psykal\ re-structuring becomes apparent if we
+wish to run NEMOLite2D on different hardware, \textit{e.g.} a
+GPU. This is because the necessary code modifications are, by design,
+limited to the middle PSy layer. In order to port the Fortran
+NEMOLite2D to GPU we used OpenACC directives as opposed to the OpenMP
+directives used for the multi-core CPU.
+
+The introduction of these directives proved to be simpler than
 producing the OpenMP version of NEMOLite2D {\bf - Jeremy to clarify
   whether this is true}.  Consequently we only show the performance of
 {\bf xxx} versions of the code in Figure~\ref{FIG_gpu_opt_stages}.
@@ -1436,7 +1445,7 @@ than the OpenMP version on the CPU. {\bf Can we relate this to the
 
 \subsection{Performance Analysis with the Roofline Model}
 
-Although we have investigated how the performance of the \psykal
+Although we have investigated how the performance of the \psykal\
 version of NEMOLite2D compares with that or the original, we have not
 addressed how efficient the original actually is. In order to do so we
 use the Roofline Model~\cite{roofline} which provides a relatively
@@ -1463,14 +1472,16 @@ single cache-line and thus only count once.
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{roofline}
-\caption{Comparison of the performance achieved by NEMOLite2D and
-  Shallow on the E5-1620 CPU. Results for the former are for the
-  $256^2$ domain since that gave the best performance.}
+\caption{Comparison of the performance achieved by kernels from
+  NEMOLite2D and Shallow on a roof-line plot for the E5-1620
+  CPU. Results for the former are for the $256^2$ domain since that
+  gave the best performance. See the text for a discussion of the
+  different CPU ceilings (dashed lines).}
 \label{FIG_roofline}
 \end{figure}
 
 In Figure~\ref{FIG_roofline} we show the performance of kernels from
-both Shallow and NEMOLite2D on the roofline model for the E5-1620 CPU.
+both Shallow and NEMOLite2D on the roofline model XSfor the E5-1620 CPU.
 This demonstrates that the Shallow kernel is achieving a performance
 roughly consistent with saturating the available memory bandwidth. In
 contrast, the kernel taken from NEMOLite2D is struggling to reach a
@@ -1490,16 +1501,16 @@ rate-limiting or on the critical path. Using the details of the Intel
 Ivy Bridge microarchitecture published by Fog~\cite{fog_microarch,
   fog_instructions} we have constructed performance estimates of the
 NEMOLite2D kernel. By ignoring all Instruction-Level Parallelism
-(i.e. assuming that all nodes in the DAG are executed in serial) we
-get a lower-bound performance estimate of $0.6391 \times CLOCK\_SPEED$
-FLOPS which gives 2.46~GFLOPS at a clock speed of
+(ILP), \textit{i.e.} assuming that all nodes in the DAG are executed
+in serial, we get a lower-bound performance estimate of $0.6391 \times
+CLOCK\_SPEED$ FLOPS which gives 2.46~GFLOPS at a clock speed of
 3.85~GHz.
 
 Alternatively, we may construct an upper bound by assuming the
 out-of-order execution engine of the Ivy Bridge core is able to
 perfectly schedule and pipeline all operations such that those that go
 to different execution ports are always run in parallel. In the Ivy
-Bridge core floating-point multiplication and division operations go
+Bridge core, floating-point multiplication and division operations go
 to port 0 while addition and subtraction go to port
 1~\cite{fog_instructions}. Therefore we sum the cost of all
 multiplication and division operations in the DAG and compare that
@@ -1517,7 +1528,7 @@ might have been assumed by its low AI. Therefore, although the
 performance of this kernel is clearly sub-optimal, this is due to the
 balance of floating-point operations that it contains. Improving this
 is outside the scope of the current work since here we are focused on
-the \psykal separation of concerns and the introduction of parallelism
+the \psykal\ separation of concerns and the introduction of parallelism
 in the PSy layer.
 
 Enabling SIMD vectorisation for this kernel does not significantly
@@ -1528,8 +1539,8 @@ found to produce a slightly more performant version. The poor
 efficiency of the SIMD version is highlighted by the fact that the
 corresponding kernel performance no longer falls within the bounds of
 our performance estimate. This is because we have incorporated the
-effect of SSE by assuming perfect vectorisation which gives a
-performance increase of a factor of two.
+effect of SSE into that estimate by simply assuming perfect
+vectorisation which gives a performance increase of a factor of two.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
