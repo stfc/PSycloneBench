@@ -209,7 +209,8 @@
 %
 % paper title
 % can use linebreaks \\ within to get better formatting as desired
-\title{Something about Performance, 2D Component of NEMO. (TBC)}
+\title{Portable Multi- and Many-Core Performance for Finite Difference Codes;
+  Application to the Free-Surface Component of NEMO.}
 %
 % author names and IEEE memberships
 % use \thanks{} to gain access to the first footnote area
@@ -543,15 +544,13 @@ done via user-supplied kernels.
 \section{Methodology}
 \label{sec_methodology}
 
-Our aim in this work is to achieve portable performance. Consequently,
-we have performed tests with the hardware and compilers listed in
-Table~\ref{TABLE_compilers}. Where a compiler is available on a given
-piece of hardware, the version number used in this work is specified.
-%The Intel Haswell-based system (Xeon E5-1620 v2) has a clock speed of
-%3.7~GHz and 10~MB of last-level cache. 
-The Intel Ivy Bridge-based
-system (Xeon E5-2697) has a clock speed of 2.7~GHz and a last-level
-cache of 30~MB. 
+Our aim in this work is to achieve portable performance, especially
+between multi-core CPU and many-core GPU systems. Consequently, we
+have performed tests on both an Intel Ivy Bridge CPU (E5-2697 at
+2.7~GHz) and on an NVIDIA Tesla K40 GPU.  On the Intel-based system we
+have used the Gnu, Intel and Cray Fortran compilers (versions 4.9.1,
+15.0.0.090 and 8.3.3, respectively). The code that made use of the GPU
+was compiled using version 15.10 of the PGI compiler.
 
 We first describe the code transformations performed for the serial
 version of NEMOLite2D.  We then move on to the construction of
@@ -563,35 +562,8 @@ which seeks to auto-generate a performant PSy layer.
 
 \subsection{Transformations of Serial NEMOLite2D}
 
-% An example of a floating table. Note that, for IEEE style tables, the 
-% \caption command should come BEFORE the table. Table text will default to
-% \footnotesize as IEEE normally uses this smaller font for tables.
-%
-\begin{table}[!t]
-% increase table row spacing, adjust to taste
-\renewcommand{\arraystretch}{1.3}
-\caption{The matrix of compilers and hardware used in this work. The
-  use of a compiler on a given system is indicated by the specification
-  of the version of the compiler in the relevent element. No entry
-  indicates that a compiler was not available/used on that system.}
-\label{TABLE_compilers}
-\centering
-\begin{tabular}{|l|c|c|c|c|c|}
-\hline
-                 & \multicolumn{5}{c|}{Compiler}            \\
-\hline
-                 & Gnu   & Intel       & Cray    & IBM    &  PGI \\
-\hline
-%Intel Haswell    & 4.8.2 & 14.0.0      &         &        &  \\
-Intel Ivy Bridge & 4.9.1 & 15.0.0.090  & 8.3.3   &        &  \\
-IBM Power 8      &       &             &         &        &  \\
-NVIDIA Tesla K40 &       &             &         &        &  {\bf Jeremy} \\
-\hline
-\end{tabular}
-\end{table}
-
 In Table~\ref{TABLE_compiler_flags} we give the optimisation flags
-used with each compiler. For the IBM, Gnu and Intel compilers, we
+used with each compiler. For the Gnu and Intel compilers, we
 include flags to encourage in-lining of kernel bodies. The Intel flag
 ``-xHost'' enables the highest-level of SIMD vectorisation supported
 by the host CPU (AVX in this case). The Intel flag ``-fast'' and Cray
@@ -610,8 +582,7 @@ Compiler  &  Flags                                    & Notes \\
 Gnu       & -Ofast -mtune=native -finline-limit=50000 &   \\
 Intel     & -O3 -fast -fno-inline-factor -xHost       &   \\
 Cray      & -O3 -O ipa5 -h wp                         &   \\
-IBM       & -O5 -qinline=auto:level=10                &   \\
-PGI       & {\bf Jeremy to supply}                    &   \\
+PGI       & -acc -ta=tesla,cc35,nordc -Mcuda=maxregcount:80,loadcache:L1 &   \\
 \hline
 \end{tabular}
 \end{table}
