@@ -356,9 +356,10 @@ performance of the extensive code re-structuring required by the
 approach when applied to the `Shallow' shallow-water model. We found
 that although the re-structuring did initially incur a sizeable
 performance penalty, it was possible to transform the resulting code
-to recover performance while obeying the \psykal\ separation of
-concerns. In this work we move to looking at parallel performance
-within the \psykal\ approach.
+to recover performance (for a variety of CPU/compiler combinations)
+while obeying the \psykal\ separation of concerns. In this work we
+move to looking at portable parallel performance within the
+\psykal\ approach.
 
 % needed in second column of first page if using \IEEEpubid
 %\IEEEpubidadjcol
@@ -582,7 +583,7 @@ Compiler  &  Flags                                    & Notes \\
 Gnu       & -Ofast -mtune=native -finline-limit=50000 &   \\
 Intel     & -O3 -fast -fno-inline-factor -xHost       &   \\
 Cray      & -O3 -O ipa5 -h wp                         &   \\
-PGI       & -acc -ta=tesla,cc35,nordc -Mcuda=maxregcount:80,loadcache:L1 &   \\
+PGI       & -acc -ta=tesla,cc35,nordc -Mcuda=maxregcount:80,loadcache:L1 & \\
 \hline
 \end{tabular}
 \end{table}
@@ -1389,7 +1390,9 @@ wish to run NEMOLite2D on different hardware, \textit{e.g.} a
 GPU. This is because the necessary code modifications are, by design,
 limited to the middle PSy layer. In order to port the Fortran
 NEMOLite2D to GPU we used OpenACC directives as opposed to the OpenMP
-directives used for the multi-core CPU.
+directives used for the multi-core CPU. We also experimented with
+using CUDA directly in order to quantify any performance penalty
+incurred.
 
 The introduction of these directives proved to be simpler than
 producing the OpenMP version of NEMOLite2D {\bf - Jeremy to clarify
@@ -1475,7 +1478,7 @@ single cache-line and thus only count once.
 \end{figure}
 
 In Figure~\ref{FIG_roofline} we show the performance of kernels from
-both Shallow and NEMOLite2D on the roofline model XSfor the E5-1620 CPU.
+both Shallow and NEMOLite2D on the roofline model for the E5-1620 CPU.
 This demonstrates that the Shallow kernel is achieving a performance
 roughly consistent with saturating the available memory bandwidth. In
 contrast, the kernel taken from NEMOLite2D is struggling to reach a
@@ -1556,6 +1559,15 @@ has had been optimised over the course of several years. In that case
 we were able to recover more than 90\% of the performance of the
 original for the Gnu, Intel, Cray and IBM compilers on both Intel and
 IBM Power CPUs.
+
+Investigation of the absolute serial performance of the NEMLite2D code
+using the roofline model revealed that it was still significantly
+below any of the traditional roofline ceilings. We have developed a
+code-analysis tool~\cite{habakkuk} that is capable of providing more
+accurate ceilings by analysing the nature of the floating point
+computations performed by a kernel. In future work we aim to extend
+this tool such that it can be applied to code parallelised using
+OpenMP.
 
 The application of code transformations to the middle/PSy layer is key
 to the performance of the \psykal\ version of a code. For both
