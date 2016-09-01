@@ -551,7 +551,7 @@ have performed tests on both an Intel Ivy Bridge CPU (E5-2697 at
 2.7~GHz) and on an NVIDIA Tesla K40 GPU.  On the Intel-based system we
 have used the Gnu, Intel and Cray Fortran compilers (versions 4.9.1,
 15.0.0.090 and 8.3.3, respectively). The code that made use of the GPU
-was compiled using version 15.10 of the PGI compiler.
+was compiled using version 15.5 of the PGI compiler.
 
 We first describe the code transformations performed for the serial
 version of NEMOLite2D.  We then move on to the construction of
@@ -1404,7 +1404,10 @@ Figure~\ref{FIG_gpu_opt_stages}. {\bf discuss performance drop in
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{gpu_opt_stages}
-\caption{Performance of the various GPU implementations of NEMOLite2D.}
+\caption{Performance of the \psykal\ (OpenACC) and CUDA GPU
+  implementations of NEMOLite2D. The performance for the OpenACC
+  version of the original code is not shown since it is identical to
+  that of the \psykal\ version.}
 \label{FIG_gpu_opt_stages}
 \end{figure}
 
@@ -1424,7 +1427,7 @@ the execution of the kernel itself.
 \centering
 \includegraphics[width=\picwidth]{cpu_cf_gpu}
 \caption{Performance of the best OpenMP-parallel version of \psykal\
-  NEMOLite2D (on a single Intel Ivy Bridge socket) compared with the best GPU implementation. {\bf This should really be best OpenACC version as that's what PSyclone can support.}}
+  NEMOLite2D (on a single Intel Ivy Bridge socket) compared with the \psykal\ GPU implementation (using OpenACC).}
 \label{FIG_cpu_cf_gpu}
 \end{figure}
 
@@ -1592,11 +1595,13 @@ to pose any problems for the introduction of performant OpenMP.
 to the CUDA version.}
 
 Having demonstrated that the \psykal\ separation of concerns may be
-applied to finite-difference codes with minimal performance loss, our
-next step will be to consider the automatic generation of the PSy
-layer. In future work we will analyse the performance of a
-domain-specific compiler that performs this task. This compiler
-(which we have named `PSyclone') is currently under development.
+applied to 2D finite-difference codes with minimal performance loss,
+our next steps will be; 1) to consider the automatic generation of the
+PSy layer and 2) to look at extending the approach to the full NEMO
+model (i.e. three dimensions). In future work we will analyse the
+performance of a domain-specific compiler that performs the automatic
+generation of the PSy layer. This compiler (which we have named
+`PSyclone') is currently under development.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

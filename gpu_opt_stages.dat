@@ -1,14 +1,24 @@
-=cluster; Original code (OpenACC); Original code (CUDA)
+=cluster; PSyKAl (OpenACC); Original code (CUDA)
 font=Helvetica
 fontsz=12
 =norotate
 =table;
 xlabel=Problem size
 ylabel=Performance (M points per second)
-64;	3.26E+01;    3.28E+01
-128;	8.56E+01;    9.23E+01
-256;	1.65E+02;    2.03E+02
-512;	2.10E+02;    2.81E+02
-1024;	2.28E+02;    3.15E+02
-2048;	2.30E+02;    3.25E+02
-4096;	2.15E+02;    3.12E+02
+64;	3.24E+01;   3.28E+01
+128;	8.97E+01;   9.23E+01
+256;	1.94E+02;   2.03E+02
+512;	2.63E+02;   2.81E+02
+1024;	2.87E+02;   3.15E+02
+2048;	2.89E+02;   3.25E+02
+4096;	2.84E+02;   3.12E+02
+
+# OpenACC with previous version of PGI compiler
+#3.26E+01; 
+#8.56E+01; 
+#1.65E+02; 
+#2.10E+02; 
+#2.28E+02; 
+#2.30E+02; 
+#2.15E+02;
+
