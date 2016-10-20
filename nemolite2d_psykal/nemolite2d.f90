@@ -1,5 +1,5 @@
 program gocean2d
-  use dl_timer, only: timer_start, timer_stop, timer_init, timer_report
+  use dl_timer, only: timer_start, timer_stop, timer_init, timer_report, i_def64
   use grid_mod
   use field_mod
   use initialisation_mod, only: initialisation
@@ -90,7 +90,7 @@ program gocean2d
 
   ! Start timer for time-stepping section
   CALL timer_start(itimer0, label='Time-stepping', &
-                   num_repeats=(nitend-nit000+1) )
+                   num_repeats=INT(nitend-nit000+1,kind=i_def64) )
 
   !! time stepping 
   do istp = nit000, nitend, 1

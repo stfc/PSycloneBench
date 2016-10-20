@@ -102,7 +102,7 @@ nemolite2d_8arrays: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel_8arr
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_8arrays.exe
 
 # The generated code depends on the generated Psy middle-layer
-nemolite2d_gen: time_step_mod.o nemolite2d_gen.o psy.o infrastructure_mod.o${MODULES}
+nemolite2d_gen: time_step_mod.o nemolite2d_gen.o psy.o infrastructure_mod.o ${MODULES}
 	${MAKE} MODULE_LIST="nemolite2d_gen.o psy.o infrastructure_mod.o ${MODULES} time_step_mod.o ${API_LIB}" LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen.exe
 
 nemolite2d_gen_omp:

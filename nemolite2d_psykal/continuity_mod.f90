@@ -69,7 +69,7 @@ contains
                                       hu, hv, un, vn, area_t)
     use global_parameters_mod, only: ALIGNMENT
     use kind_params_mod
-    use dl_timer, only: timer_start, timer_stop
+    use dl_timer, only: timer_start, timer_stop, i_def64
     implicit none
     integer, intent(in) :: nx, ny, M, N
     real(wp), intent(in) :: rdt
@@ -82,7 +82,8 @@ contains
     real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     !> For timing
     integer, save :: idxt
-    integer :: nrepeat, ic
+    integer :: ic
+    integer(i_def64) :: nrepeat
 !DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
@@ -131,7 +132,7 @@ contains
                                             sshn_t, sshn_u, sshn_v, &
                                             hu, hv, un, vn, area_t)
     use kind_params_mod
-    use dl_timer, only: timer_start, timer_stop
+    use dl_timer, only: timer_start, timer_stop, i_def64
     implicit none
     integer, intent(in) :: nx, ny, M, N
     real(wp), intent(in) :: rdt
@@ -144,7 +145,7 @@ contains
     real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     !> For timing
     integer, save :: idxt
-    integer :: nrepeat, ic
+    integer(i_def64) :: nrepeat
 
     !nrepeat = 100 
     nrepeat = 1

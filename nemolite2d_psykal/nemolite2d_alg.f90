@@ -31,6 +31,7 @@ program gocean2d
   ! time stepping index
   integer :: istp 
   integer :: itimer0
+  integer(i_def64) :: nrepeat
 
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
   ! points immediately to the North and East of a T point all have the
@@ -76,7 +77,8 @@ program gocean2d
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
 
   ! Start timer for time-stepping section
-  CALL timer_start('Time-stepping', itimer0, (nitend-nit000+1) )
+  nrepeat = nitend - nit000 + 1
+  CALL timer_start(itimer0, label='Time-stepping', num_repeats=nrepeat)
 
   !! time stepping 
   do istp = nit000, nitend, 1
