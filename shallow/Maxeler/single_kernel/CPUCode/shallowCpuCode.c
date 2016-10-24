@@ -151,10 +151,10 @@ int main(void)
     printf(" time step                           %f\n", dt);
     printf(" time filter parameter               %f\n", alpha);
 
-    printf("psi initial CHECKSUM = %e\n", compute_checksum(1, m_len, 1, n_len, psi));
-    printf("p initial CHECKSUM = %e\n", compute_checksum(0, m, 0, n, p));
-    printf("u initial CHECKSUM = %e\n", compute_checksum(1, m_len, 0, n, u));
-    printf("v initial CHECKSUM = %e\n", compute_checksum(0, m, 1, n_len, v));
+    printf("psi initial CHECKSUM = %.17g\n", compute_checksum(1, m_len, 1, n_len, psi));
+    printf("p initial CHECKSUM = %.17g\n", compute_checksum(0, m, 0, n, p));
+    printf("u initial CHECKSUM = %.17g\n", compute_checksum(1, m_len, 0, n, u));
+    printf("v initial CHECKSUM = %.17g\n", compute_checksum(0, m, 1, n_len, v));
   }
 
   max_file_t *maxfile = shallow_init();
@@ -192,11 +192,11 @@ int main(void)
            itmax, ctime, tcyc);
 
   // End of time loop
-  printf("P CHECKSUM after %d steps = %e\n",
+  printf("P CHECKSUM after %d steps = %.17g\n",
           itmax, compute_checksum(0, m, 0, n, pnew));
-  printf("U CHECKSUM after %d steps = %e\n",
+  printf("U CHECKSUM after %d steps = %.17g\n",
           itmax, compute_checksum(1, m_len, 0, n, unew));
-  printf("V CHECKSUM after %d steps = %e\n",
+  printf("V CHECKSUM after %d steps = %.17g\n",
           itmax, compute_checksum(0, m, 1, n_len, vnew));
 
   max_unload(engine);

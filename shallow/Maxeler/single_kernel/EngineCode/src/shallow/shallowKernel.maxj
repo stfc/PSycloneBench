@@ -33,16 +33,19 @@ class shallowKernel extends Kernel {
 
 		DFEVar looplength = plength.getDFEVar(getKernel(), dfeUInt(32));
 
+		// tick is the global tick count since the start of the simulation
 		DFEVar tick = tickchain.addCounter(((itmax - 1) * looplength) + (m * n), 1);
-		DFEVar cycle = arraychain.addCounter(itmax, 1);
-		DFEVar k = arraychain.addCounter(plength.getDFEVar(getKernel(), dfeUInt(32)), 1);
+		// iter is the current iteration (0 .. itmax - 1)
+		DFEVar iter = arraychain.addCounter(itmax, 1);
+		// itertick is the tick within the current iteration (0 .. looplength - 1)
+		DFEVar itertick = arraychain.addCounter(looplength, 1);
 
-		DFEVar enable = k < m * n;
+		debug.simPrintf(tick.eq(0), "Loop length: %d\n", looplength);
 
-		// Set the i & j counters so that they don't count when waiting for
-		// the loop carried values
+		// i & j are set up to represent the position within the arrays for the current
+		// iteration. They don't count when waiting for the loop carried values
 		Count.Params jparams =  control.count.makeParams(32).withMax(n)
-		    .withInc(1).withEnable(enable);
+		    .withInc(1).withEnable(itertick < m * n);
 		Counter jcounter = control.count.makeCounter(jparams);
 		DFEVar j = jcounter.getCount();
 
@@ -64,12 +67,12 @@ class shallowKernel extends Kernel {
 		DFEVar dy = io.scalarInput("dy", type);
 		DFEVar alpha = io.scalarInput("alpha", type);
 
-		DFEVar p = cycle.eq(0) ? pcpu : carriedp;
-		DFEVar u = cycle.eq(0) ? ucpu : carriedu;
-		DFEVar v = cycle.eq(0) ? vcpu : carriedv;
-		DFEVar pold = cycle.eq(0) ? poldcpu : carriedpold;
-		DFEVar uold = cycle.eq(0) ? uoldcpu : carrieduold;
-		DFEVar vold = cycle.eq(0) ? voldcpu : carriedvold;
+		DFEVar p = iter.eq(0) ? pcpu : carriedp;
+		DFEVar u = iter.eq(0) ? ucpu : carriedu;
+		DFEVar v = iter.eq(0) ? vcpu : carriedv;
+		DFEVar pold = iter.eq(0) ? poldcpu : carriedpold;
+		DFEVar uold = iter.eq(0) ? uoldcpu : carrieduold;
+		DFEVar vold = iter.eq(0) ? voldcpu : carriedvold;
 
 		DFEVar cu = 0.5 * (p + stream.offset(p, -n)) * u;
 		DFEVar cv = 0.5 * (p + stream.offset(p, -1)) * v;
@@ -78,7 +81,7 @@ class shallowKernel extends Kernel {
 		DFEVar h =  p + 0.25 * (stream.offset(u, n) * stream.offset(u, n) + u *
                          u + stream.offset(v, 1) * stream.offset(v, 1) + v * v);
 
-		DFEVar h_b = k.eq(n * m - 1) ? stream.offset(h, -n * m + 1) :
+		DFEVar h_b = itertick.eq(n * m - 1) ? stream.offset(h, -n * m + 1) :
 			         j.eq(n - 1) ?  stream.offset(h, -n + 1)  :
 			         i.eq(m - 1) ? stream.offset(h, -n * (m - 1)) :
 			         h;
@@ -87,7 +90,7 @@ class shallowKernel extends Kernel {
 	    DFEVar cv_b = j.eq(0) ? stream.offset(cv, n -1) :
 	    	          i.eq(0) ? stream.offset(cv, n * (m -1)) :
 	    			  cv;
-	    DFEVar z_b = k.eq(0) ? stream.offset(z, n * m - 1) :
+	    DFEVar z_b = itertick.eq(0) ? stream.offset(z, n * m - 1) :
 	    	         i.eq(0) ? stream.offset(z, n * (m -1)) :
 	    	         j.eq(0) ? stream.offset(z, n -1) :
 	    	         z;
@@ -107,17 +110,17 @@ class shallowKernel extends Kernel {
 	    DFEVar pnew = pold - tdtsdx * (stream.offset(cu_b, n) - cu_b) -
 	                         tdtsdy * (stream.offset(cv_b, 1) - cv_b);
 
-	    DFEVar unew_b = k.eq(n - 1) ? stream.offset(unew, (n * (m - 2)) + 1) :
+	    DFEVar unew_b = itertick.eq(n - 1) ? stream.offset(unew, (n * (m - 2)) + 1) :
 	    	            j.eq(n - 1) ? stream.offset(unew, -n + 1) :
 	    	            i.eq(0) ? stream.offset(unew, n * (m - 1)) :
 	    	            unew;
 
-	    DFEVar vnew_b = k.eq(0) ? stream.offset(vnew, n - 1) :
+	    DFEVar vnew_b = itertick.eq(0) ? stream.offset(vnew, n - 1) :
 		    	        j.eq(0) ? stream.offset(vnew, n - 1) :
 		    	        i.eq(m -1) ? stream.offset(vnew, -n * (m - 1)) :
 		    	        vnew;
 
-		DFEVar pnew_b = k.eq(n * m - 1) ? stream.offset(pnew, (-n * m) + 1) :
+		DFEVar pnew_b = itertick.eq(n * m - 1) ? stream.offset(pnew, (-n * m) + 1) :
 	                    j.eq(n - 1) ? stream.offset(pnew, -n + 1) :
     	                i.eq(m - 1) ? stream.offset(pnew, -n * (m - 1)) :
     	                pnew;
@@ -134,9 +137,9 @@ class shallowKernel extends Kernel {
     	carriedvold <== stream.offset(v + alphaval * (vnew_b - 2.0 * v + vold), -plength);
 
     	// Only send the outputs on the last iteration
-        io.output("unew", unew_b, type, cycle.eq(itmax - 1));
-	    io.output("vnew", vnew_b, type, cycle.eq(itmax - 1));
-	    io.output("pnew", pnew_b, type, cycle.eq(itmax - 1));
+        io.output("unew", unew_b, type, iter.eq(itmax - 1));
+	    io.output("vnew", vnew_b, type, iter.eq(itmax - 1));
+	    io.output("pnew", pnew_b, type, iter.eq(itmax - 1));
 	}
 }
 
