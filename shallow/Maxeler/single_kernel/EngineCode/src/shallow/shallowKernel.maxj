@@ -18,7 +18,7 @@ class shallowKernel extends Kernel {
 
 		int m = 64, n = 64, itmax = 10;
 
-        OffsetExpr plength = stream.makeOffsetAutoLoop("plength");
+		OffsetExpr plength = stream.makeOffsetAutoLoop("plength");
 
 		// Carry over variables from the previous loop iteration
 		DFEVar carriedp = type.newInstance(this);
@@ -75,71 +75,87 @@ class shallowKernel extends Kernel {
 		DFEVar vold = iter.eq(0) ? voldcpu : carriedvold;
 
 		DFEVar cu = 0.5 * (p + stream.offset(p, -n)) * u;
+		DFEVar cu_b =
+			i.eq(0) ? stream.offset(cu, n * (m -1)) :
+			cu;
+
 		DFEVar cv = 0.5 * (p + stream.offset(p, -1)) * v;
+		DFEVar cv_l =
+			j.eq(0) ? stream.offset(cv, n -1) :
+			cv;
+		DFEVar cv_b =
+			i.eq(0) ? stream.offset(cv_l, n * (m -1)) :
+			cv_l;
+
 		DFEVar z = (fsdx * (v - stream.offset(v, -n)) - fsdy * (u - stream.offset(u, -1))) /
-		           (stream.offset(p, -n - 1) + stream.offset(p, -1) + p + stream.offset(p, -n));
-		DFEVar h =  p + 0.25 * (stream.offset(u, n) * stream.offset(u, n) + u *
-                         u + stream.offset(v, 1) * stream.offset(v, 1) + v * v);
+			(stream.offset(p, -n - 1) + stream.offset(p, -1) + p + stream.offset(p, -n));
+		DFEVar z_l =
+			j.eq(0) ? stream.offset(z, n -1) :
+			z;
+		DFEVar z_b =
+			i.eq(0) ? stream.offset(z_l, n * (m -1)) :
+			z_l;
 
-		DFEVar h_b = itertick.eq(n * m - 1) ? stream.offset(h, -n * m + 1) :
-			         j.eq(n - 1) ?  stream.offset(h, -n + 1)  :
-			         i.eq(m - 1) ? stream.offset(h, -n * (m - 1)) :
-			         h;
-	    DFEVar cu_b = i.eq(0) ? stream.offset(cu, n * (m -1)) :
-	    	          cu;
-	    DFEVar cv_b = j.eq(0) ? stream.offset(cv, n -1) :
-	    	          i.eq(0) ? stream.offset(cv, n * (m -1)) :
-	    			  cv;
-	    DFEVar z_b = itertick.eq(0) ? stream.offset(z, n * m - 1) :
-	    	         i.eq(0) ? stream.offset(z, n * (m -1)) :
-	    	         j.eq(0) ? stream.offset(z, n -1) :
-	    	         z;
+		DFEVar h =
+			p + 0.25 * (stream.offset(u, n) * stream.offset(u, n) + u *
+			u + stream.offset(v, 1) * stream.offset(v, 1) + v * v);
+		DFEVar h_l =
+			j.eq(n - 1) ?  stream.offset(h, -n + 1)  :
+			h;
+		DFEVar h_b =
+			i.eq(m - 1) ? stream.offset(h_l, -n * (m - 1)) :
+			h_l;
 
-	    // tdt doubles after the first iteration
-	    DFEVar tdtval = tick >= m * n ? tdt + tdt : tdt;
-	    DFEVar tdts8 = tdtval / 8.0;
-	    DFEVar tdtsdx = tdtval / dx;
-	    DFEVar tdtsdy = tdtval / dy;
+		// tdt doubles after the first iteration
+		DFEVar tdtval = tick >= m * n ? tdt + tdt : tdt;
+		DFEVar tdts8 = tdtval / 8.0;
+		DFEVar tdtsdx = tdtval / dx;
+		DFEVar tdtsdy = tdtval / dy;
 
-	    DFEVar unew = uold + tdts8 * (stream.offset(z_b, 1) + z_b) *
-	                  (stream.offset(cv_b, 1) + stream.offset(cv_b, -n + 1) + stream.offset(cv_b, -n) + cv_b) -
-	                  tdtsdx * (h_b - stream.offset(h_b, -n));
-	    DFEVar vnew = vold - tdts8 * (stream.offset(z_b, n) + z_b) *
-	                  (stream.offset(cu_b, n) + cu_b + stream.offset(cu_b, -1) + stream.offset(cu_b, n -1)) -
-	                  tdtsdy * (h_b - stream.offset(h_b, -1));
-	    DFEVar pnew = pold - tdtsdx * (stream.offset(cu_b, n) - cu_b) -
-	                         tdtsdy * (stream.offset(cv_b, 1) - cv_b);
+		DFEVar unew = uold + tdts8 * (stream.offset(z_b, 1) + z_b) *
+			(stream.offset(cv_b, 1) + stream.offset(cv_b, -n + 1) + stream.offset(cv_b, -n) + cv_b) -
+			tdtsdx * (h_b - stream.offset(h_b, -n));
+		DFEVar unew_l =
+			j.eq(n - 1) ? stream.offset(unew, -n + 1) :
+			unew;
+		DFEVar unew_b =
+			i.eq(0) ? stream.offset(unew_l, n * (m - 1)) :
+			unew_l;
 
-	    DFEVar unew_b = itertick.eq(n - 1) ? stream.offset(unew, (n * (m - 2)) + 1) :
-	    	            j.eq(n - 1) ? stream.offset(unew, -n + 1) :
-	    	            i.eq(0) ? stream.offset(unew, n * (m - 1)) :
-	    	            unew;
+		DFEVar vnew = vold - tdts8 * (stream.offset(z_b, n) + z_b) *
+			(stream.offset(cu_b, n) + cu_b + stream.offset(cu_b, -1) + stream.offset(cu_b, n -1)) -
+			tdtsdy * (h_b - stream.offset(h_b, -1));
+		DFEVar vnew_r =
+			j.eq(0) ? stream.offset(vnew, n - 1) :
+			vnew;
+		DFEVar vnew_b =
+			i.eq(m -1) ? stream.offset(vnew_r, -n * (m - 1)) :
+			vnew_r;
 
-	    DFEVar vnew_b = itertick.eq(0) ? stream.offset(vnew, n - 1) :
-		    	        j.eq(0) ? stream.offset(vnew, n - 1) :
-		    	        i.eq(m -1) ? stream.offset(vnew, -n * (m - 1)) :
-		    	        vnew;
+		DFEVar pnew = pold - tdtsdx * (stream.offset(cu_b, n) - cu_b) -
+			tdtsdy * (stream.offset(cv_b, 1) - cv_b);
+		DFEVar pnew_l =
+			j.eq(n - 1) ? stream.offset(pnew, -n + 1) :
+			pnew;
+		DFEVar pnew_b =
+			i.eq(m - 1) ? stream.offset(pnew_l, -n * (m - 1)) :
+			pnew_l;
 
-		DFEVar pnew_b = itertick.eq(n * m - 1) ? stream.offset(pnew, (-n * m) + 1) :
-	                    j.eq(n - 1) ? stream.offset(pnew, -n + 1) :
-    	                i.eq(m - 1) ? stream.offset(pnew, -n * (m - 1)) :
-    	                pnew;
+		// alpha only applies after the first iteration
+		DFEVar alphaval = tick >= m * n ? alpha : 0.0;
 
-    	// alpha only applies after the first iteration
-    	DFEVar alphaval = tick >= m * n ? alpha : 0.0;
+		// Carry the values forward for the next loop
+		carriedp <== stream.offset(pnew_b, -plength);
+		carriedu <== stream.offset(unew_b, -plength);
+		carriedv <== stream.offset(vnew_b, -plength);
+		carriedpold <== stream.offset(p + alphaval * (pnew_b - 2.0 * p + pold), -plength);
+		carrieduold <== stream.offset(u + alphaval * (unew_b - 2.0 * u + uold), -plength);
+		carriedvold <== stream.offset(v + alphaval * (vnew_b - 2.0 * v + vold), -plength);
 
-    	// Carry the values forward for the next loop
-    	carriedp <== stream.offset(pnew_b, -plength);
-    	carriedu <== stream.offset(unew_b, -plength);
-    	carriedv <== stream.offset(vnew_b, -plength);
-    	carriedpold <== stream.offset(p + alphaval * (pnew_b - 2.0 * p + pold), -plength);
-    	carrieduold <== stream.offset(u + alphaval * (unew_b - 2.0 * u + uold), -plength);
-    	carriedvold <== stream.offset(v + alphaval * (vnew_b - 2.0 * v + vold), -plength);
-
-    	// Only send the outputs on the last iteration
-        io.output("unew", unew_b, type, iter.eq(itmax - 1));
-	    io.output("vnew", vnew_b, type, iter.eq(itmax - 1));
-	    io.output("pnew", pnew_b, type, iter.eq(itmax - 1));
+		// Only send the outputs on the last iteration
+		io.output("unew", unew_b, type, iter.eq(itmax - 1));
+		io.output("vnew", vnew_b, type, iter.eq(itmax - 1));
+		io.output("pnew", pnew_b, type, iter.eq(itmax - 1));
 	}
 }
 
