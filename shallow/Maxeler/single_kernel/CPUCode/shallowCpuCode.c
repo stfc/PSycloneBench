@@ -54,7 +54,7 @@ void free_array(double** array) {
 
 int main(void)
 {
-  int m = 63, n = 63; // Global domain size
+  int m = 127, n = 127; // Global domain size
   int itmax = 10; // Number of timesteps
   bool l_out = true; // Produce output
   int m_len = m + 1, n_len = n + 1;
@@ -162,6 +162,7 @@ int main(void)
 
   shallow_actions_t run_scalar;
   run_scalar.param_len = m_len * n_len;
+  run_scalar.param_n = n_len;
   run_scalar.param_itmax = itmax;
   run_scalar.param_fsdx = fsdx;
   run_scalar.param_fsdy = fsdy;
@@ -172,6 +173,9 @@ int main(void)
   run_scalar.instream_p = p[0];
   run_scalar.instream_u = u[0];
   run_scalar.instream_v = v[0];
+  run_scalar.instream_pb = p[m_len - 2];
+  run_scalar.instream_ub = u[m_len - 2];
+  run_scalar.instream_vb = v[m_len - 2];
   run_scalar.instream_pold = pold[0];
   run_scalar.instream_uold = uold[0];
   run_scalar.instream_vold = vold[0];

@@ -23,6 +23,9 @@ public class shallowManager {
 			link("p",   IODestination.CPU),
 			link("u",   IODestination.CPU),
 			link("v",   IODestination.CPU),
+			link("pb",   IODestination.CPU),
+			link("ub",   IODestination.CPU),
+			link("vb",   IODestination.CPU),
 			link("pold",   IODestination.CPU),
 			link("uold",   IODestination.CPU),
 			link("vold",   IODestination.CPU),
@@ -43,6 +46,7 @@ public class shallowManager {
 		int        size = type.sizeInBytes();
 
 		InterfaceParam len = engine_interface.addParam("len", CPUTypes.INT);
+		InterfaceParam n = engine_interface.addParam("n", CPUTypes.INT);
 		InterfaceParam itmax = engine_interface.addParam("itmax", CPUTypes.INT);
 		InterfaceParam fsdx = engine_interface.addParam("fsdx", type);
 		InterfaceParam fsdy = engine_interface.addParam("fsdy", type);
@@ -60,6 +64,9 @@ public class shallowManager {
 		engine_interface.setStream("p", type, len * size);
 		engine_interface.setStream("u", type, len * size);
 		engine_interface.setStream("v", type, len * size);
+		engine_interface.setStream("pb", type, 2 * n * size);
+		engine_interface.setStream("ub", type, 2 * n * size);
+		engine_interface.setStream("vb", type, 2 * n * size);
 		engine_interface.setStream("pold", type, len * size);
 		engine_interface.setStream("uold", type, len * size);
 		engine_interface.setStream("vold", type, len * size);
