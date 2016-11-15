@@ -1,0 +1,55 @@
+\documentclass[12pt]{article}
+\usepackage[pdftex]{graphicx}
+% and their extensions so you won't have to specify these with
+% every instance of \includegraphics
+\DeclareGraphicsExtensions{.pdf,.jpeg,.png}
+\usepackage{url}
+
+\newcommand{\psykal}{{PS}y{KA}l}
+
+\begin{document}
+
+\title{Analysing the Performance of Shallow-Water Models with the
+ Roofline Model}
+
+\author{A.~.R.~Porter and R.~W.~Ford}
+
+\maketitle
+
+\section{Introduction}
+
+Shallow implementation of Sadourny~\cite{sadourny75}.
+
+\section{The Roofline Model and its Limitations}
+
+\subsection{What the Roofline Model (RFM) is}
+
+Arithmetic intensity and MAX(memory bandwidth, FLOPS)
+
+\subsection{Approaches to constructing a RFM}
+
+Theoretical limits versus experimentally-measured values (STREAM and
+LINPACK).
+
+Measuring Arithmetic Intensity. Hardware Performance Counters (access,
+reliability, difficulty of interpretation) or eye-balling the code
+(error prone and time consuming).
+
+\subsection{Basic Assumptions}
+\subsection{When the assumptions break down}
+
+All FLOPs are not equal. For instance, on Ivy Bridge a division costs
+approximately eight times as much as a multiplication.
+Instruction-level parallelism - operations despatched to different
+execution ports can be executed in parallel.
+
+\section{How to remove some of the assumptions}
+
+Parse the (Fortran) source code.
+
+\section{Conclusions}
+
+\bibliographystyle{unsrt}
+\bibliography{habakkuk}
+
+\end{document}
