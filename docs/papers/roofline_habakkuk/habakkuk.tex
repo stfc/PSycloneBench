@@ -19,6 +19,7 @@
 \section{Introduction}
 
 Shallow implementation of Sadourny~\cite{sadourny75}.
+NEMOLite2D.
 
 \section{The Roofline Model and its Limitations}
 
@@ -45,7 +46,39 @@ execution ports can be executed in parallel.
 
 \section{How to remove some of the assumptions}
 
-Parse the (Fortran) source code.
+Parse the (Fortran) source code.  Construct a Directed Acyclic Graph
+to represent the source.  Use the properties of the DAG to
+characterise the processed source.  At its simplest, this can just be
+a count of FLOPs and memory (array) accesses.  Can then be extended to
+allow for caching of consecutive array accesses as in stencil
+operations in a direct-addressed model.
+
+\subsubsection{Scheduling}
+
+Obtaining a performance estimate by simply counting all of the FLOPs
+that must be performed is equivalent to assuming that they are all
+executed sequentially. However, a core a current CPU is likely to have
+support for Instruction Level Parallelism.
+
+\subsection{Single Instruction Multiple Data}
+
+\subsection{Multi-core Performance}
+
+So far we have considered only single-core performance. In reality,
+any application seeking to achieve good performance will run in
+parallel on multiple CPU cores.  If we restrict ourselves to running a
+single process/thread per core then clearly that thread will have
+exclusive use of that core's registers and execution units. Resources
+shared between cores such as L2 cache or bandwidth to main memory will
+however be shared by the executing threads.
+
+\section{Results}
+
+\subsection{Shallow}
+
+\subsection{NEMOLite2D}
+
+\subsection{Tracer Advection in NEMO}
 
 \section{Conclusions}
 
