@@ -85,31 +85,28 @@ class shallowKernel extends Kernel {
 
 		DFEVar cu_b =
 			i.eq(0) ? calc_cu(pb, ub, n, n) :
-			calc_cu(p, u, -n, 0);
+			calc_cu(p, u, n, 0);
 
-	 	DFEVar cv_l =
-	 		j.eq(0) ? calc_cv(p, v, n - 1) :
-	 		calc_cv(p, v, 0);
-	 	DFEVar cv_b1 =
-	 		i.eq(0) ? calc_cv(pb, vb, n) :
-	 		cv_l;
+		DFEVar cv_l =
+			j.eq(0) ? calc_cv(p, v, n - 1) :
+			calc_cv(p, v, 0);
+		DFEVar cv_b1 =
+			i.eq(0) ? calc_cv(pb, vb, n) :
+			cv_l;
+		DFEVar cv_b =
+			j.eq(0) ? calc_cv(p, v, n - 1) :
+			cv_b1;
 
-	 	DFEVar cv_b =
-	 		j.eq(0) ? calc_cv(p, v, n - 1) :
-	 		cv_b1;
+		DFEVar z = calc_z(p, u, v, fsdx, fsdy, n, 0);
+		DFEVar z_l =
+			j.eq(0) ? stream.offset(z, n -1) :
+			z;
+		DFEVar z_b =
+			itertick.eq(0) ?  calc_z(pb, ub, vb, fsdx, fsdy, n, 2 * n - 1) :
+			i.eq(0) ? calc_z(pb, ub, vb, fsdx, fsdy, n, n) :
+			z_l ;
 
-	 	DFEVar z = calc_z(v, u, p, fsdx, fsdy, n);
-	 	DFEVar z_l =
-	 		j.eq(0) ? stream.offset(z, n -1) :
-	 		z;
-	 	DFEVar z_b = itertick.eq(0) ? (fsdx * (stream.offset(vb, n + n - 1) - stream.offset(vb, n - 1)) - fsdy * ( stream.offset(ub, n + n - 1) - stream.offset(ub, n - 1 + n - 1))) /
-	 		(stream.offset(pb, n - 1 + n - 1) + stream.offset(pb, -1 + n - 1) + stream.offset(pb, n - 1) + stream.offset(pb, n + n - 1)) :
-	 		i.eq(0) ? (fsdx * (stream.offset(vb, n) - vb) - fsdy * ( stream.offset(ub, n) - stream.offset(ub, n - 1))) /
-	 		(stream.offset(pb, n - 1) + stream.offset(pb, -1) + pb + stream.offset(pb, n)) : z_l ;
-
-		DFEVar h =
-			p + 0.25 * (stream.offset(u, n) * stream.offset(u, n) + u *
-			u + stream.offset(v, 1) * stream.offset(v, 1) + v * v);
+		DFEVar h = calc_h(p, u, v, n);
 		DFEVar h_l =
 			j.eq(n - 1) ?  stream.offset(h, -n + 1)  :
 			h;
@@ -177,15 +174,19 @@ class shallowKernel extends Kernel {
 		io.output("pnew", pnew_b, type, iter.eq(itmax - 1));
 	}
 
-	DFEVar calc_cu(DFEVar p, DFEVar u, int poffset, int uoffset) {
-		return 0.5 * (p + stream.offset(p, poffset)) * stream.offset(u, uoffset);
+	DFEVar calc_cu(DFEVar p, DFEVar u, int width, int offset) {
+		return 0.5 * (stream.offset(p, offset) + stream.offset(p, -width + offset)) * stream.offset(u, offset);
 	}
 	DFEVar calc_cv(DFEVar p, DFEVar v, int offset) {
 		return 0.5 * (stream.offset(p, offset) + stream.offset(p, offset - 1)) * stream.offset(v, offset);
 	}
-	DFEVar calc_z(DFEVar v, DFEVar u, DFEVar p, DFEVar fsdx, DFEVar fsdy, int offset) {
-		return (fsdx * (v - stream.offset(v, -offset)) - fsdy * (u - stream.offset(u, -1))) /
-			(stream.offset(p, -offset - 1) + stream.offset(p, -1) + p + stream.offset(p, -offset));
+	DFEVar calc_z(DFEVar p, DFEVar u, DFEVar v, DFEVar fsdx, DFEVar fsdy, int width, int offset) {
+		return (fsdx * (stream.offset(v, offset) - stream.offset(v, -width + offset)) - fsdy * (stream.offset(u, offset) - stream.offset(u, -1 + offset))) /
+		(stream.offset(p, -width - 1 + offset) + stream.offset(p, -1 + offset) + stream.offset(p, offset) + stream.offset(p, -width + offset));
+	}
+	DFEVar calc_h(DFEVar p, DFEVar u, DFEVar v, int width) {
+		return stream.offset(p, 0) + 0.25 * (stream.offset(u, width) * stream.offset(u, width) + stream.offset(u, 0) *
+			stream.offset(u, 0) + stream.offset(v, 1) * stream.offset(v, 1) + stream.offset(v, 0) * stream.offset(v, 0));
 	}
 
 }
