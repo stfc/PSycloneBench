@@ -173,9 +173,9 @@ int main(void)
   run_scalar.instream_p = p[0];
   run_scalar.instream_u = u[0];
   run_scalar.instream_v = v[0];
-  run_scalar.instream_pb = p[m_len - 2];
-  run_scalar.instream_ub = u[m_len - 2];
-  run_scalar.instream_vb = v[m_len - 2];
+  run_scalar.instream_pb = p[m_len - 3];
+  run_scalar.instream_ub = u[m_len - 3];
+  run_scalar.instream_vb = v[m_len - 3];
   run_scalar.instream_pold = pold[0];
   run_scalar.instream_uold = uold[0];
   run_scalar.instream_vold = vold[0];

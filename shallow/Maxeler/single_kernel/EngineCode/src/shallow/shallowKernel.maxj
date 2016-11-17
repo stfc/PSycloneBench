@@ -60,9 +60,9 @@ class shallowKernel extends Kernel {
 		DFEVar pcpu = io.input("p", type, tick < m * n);
 		DFEVar ucpu = io.input("u", type, tick < m * n);
 		DFEVar vcpu = io.input("v", type, tick < m * n);
-		DFEVar pbcpu = io.input("pb", type, tick < 2 * n);
-		DFEVar ubcpu = io.input("ub", type, tick < 2 * n);
-		DFEVar vbcpu = io.input("vb", type, tick < 2 * n);
+		DFEVar pbcpu = io.input("pb", type, tick < 3 * n);
+		DFEVar ubcpu = io.input("ub", type, tick < 3 * n);
+		DFEVar vbcpu = io.input("vb", type, tick < 3 * n);
 		DFEVar poldcpu = io.input("pold", type, tick < m * n);
 		DFEVar uoldcpu = io.input("uold", type, tick < m * n);
 		DFEVar voldcpu = io.input("vold", type, tick < m * n);
@@ -84,14 +84,14 @@ class shallowKernel extends Kernel {
 		DFEVar vold = iter.eq(0) ? voldcpu : carriedvold;
 
 		DFEVar cu_b =
-			i.eq(0) ? calc_cu(pb, ub, n, n) :
+			i.eq(0) ? calc_cu(pb, ub, n, 2 * n) :
 			calc_cu(p, u, n, 0);
 
 		DFEVar cv_l =
 			j.eq(0) ? calc_cv(p, v, n - 1) :
 			calc_cv(p, v, 0);
 		DFEVar cv_b1 =
-			i.eq(0) ? calc_cv(pb, vb, n) :
+			i.eq(0) ? calc_cv(pb, vb, 2 * n) :
 			cv_l;
 		DFEVar cv_b =
 			j.eq(0) ? calc_cv(p, v, n - 1) :
@@ -102,8 +102,8 @@ class shallowKernel extends Kernel {
 			j.eq(0) ? stream.offset(z, n -1) :
 			z;
 		DFEVar z_b =
-			itertick.eq(0) ?  calc_z(pb, ub, vb, fsdx, fsdy, n, 2 * n - 1) :
-			i.eq(0) ? calc_z(pb, ub, vb, fsdx, fsdy, n, n) :
+			itertick.eq(0) ?  calc_z(pb, ub, vb, fsdx, fsdy, n, 3 * n - 1) :
+			i.eq(0) ? calc_z(pb, ub, vb, fsdx, fsdy, n, 2 * n) :
 			z_l ;
 
 		DFEVar h = calc_h(p, u, v, n);
@@ -128,7 +128,7 @@ class shallowKernel extends Kernel {
 			unew;
 		DFEVar unew_bl =
 			i.eq(0) ? stream.offset(uold,n * (m - 1))  + tdts8 * (stream.offset(z_b, 1) + stream.offset(z_b, 0)) *
-			(stream.offset(cv_b, n * (m - 1) + 1) + stream.offset(cv_b, n * (m - 1) -n + 1) + stream.offset(cv_b, n * (m - 1)-n) + stream.offset(cv_b, n * (m - 1))) -
+			(calc_cv(pb, vb, 2 * n + 1) + calc_cv(pb, vb, n + 1) + calc_cv(pb, vb, n) + calc_cv(pb, vb, 2 * n)) -
 			tdtsdx * (stream.offset(h_b, n * (m - 1)) - stream.offset(h_b, n * (m - 1)-n)) :
 			unew_l;
 		DFEVar unew_b =
@@ -161,9 +161,9 @@ class shallowKernel extends Kernel {
 		carriedp <== stream.offset(pnew_b, -plength);
 		carriedu <== stream.offset(unew_b, -plength);
 		carriedv <== stream.offset(vnew_b, -plength);
-		carriedpb <== stream.offset(pnew_b, -(plength - (n * m) + 2 * n));
-		carriedub <== stream.offset(unew_b, -(plength - (n * m) + 2 * n));
-		carriedvb <== stream.offset(vnew_b, -(plength - (n * m) + 2 * n));
+		carriedpb <== stream.offset(pnew_b, -(plength - (n * m) + 3 * n));
+		carriedub <== stream.offset(unew_b, -(plength - (n * m) + 3 * n));
+		carriedvb <== stream.offset(vnew_b, -(plength - (n * m) + 3 * n));
 		carriedpold <== stream.offset(p + alphaval * (pnew_b - 2.0 * p + pold), -plength);
 		carrieduold <== stream.offset(u + alphaval * (unew_b - 2.0 * u + uold), -plength);
 		carriedvold <== stream.offset(v + alphaval * (vnew_b - 2.0 * v + vold), -plength);

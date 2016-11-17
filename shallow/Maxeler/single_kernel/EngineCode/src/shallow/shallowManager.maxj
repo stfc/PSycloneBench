@@ -64,9 +64,9 @@ public class shallowManager {
 		engine_interface.setStream("p", type, len * size);
 		engine_interface.setStream("u", type, len * size);
 		engine_interface.setStream("v", type, len * size);
-		engine_interface.setStream("pb", type, 2 * n * size);
-		engine_interface.setStream("ub", type, 2 * n * size);
-		engine_interface.setStream("vb", type, 2 * n * size);
+		engine_interface.setStream("pb", type, 3 * n * size);
+		engine_interface.setStream("ub", type, 3 * n * size);
+		engine_interface.setStream("vb", type, 3 * n * size);
 		engine_interface.setStream("pold", type, len * size);
 		engine_interface.setStream("uold", type, len * size);
 		engine_interface.setStream("vold", type, len * size);
