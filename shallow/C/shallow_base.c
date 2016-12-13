@@ -75,8 +75,8 @@ double compute_checksum(int minx, int maxx, int miny, int maxy, double** field) 
   int i, j;
   double sum = 0.0;
 
-  for (i = minx; i < maxx; ++i) {
-    for (j = miny; j < maxy; ++j) {
+  for (j = miny; j < maxy; ++j) {
+    for (i = minx; i < maxx; ++i) {
       sum += fabs(field[i][j]);
     }
   }
@@ -104,7 +104,7 @@ double** allocate_array(int rows, int cols) {
 void print_array(int rows, int cols, double** array) {
   for (int i = 0; i < rows; ++i) {
     for (int j = 0; j < cols; ++j) {
-      printf("%e ", array[i][j]);
+      printf("%.16g", array[i][j]);
     }
     printf("\n");
   }
@@ -218,10 +218,10 @@ int main() {
     printf(" time step                           %f\n", dt);
     printf(" time filter parameter               %f\n", alpha);
 
-    printf("psi initial CHECKSUM = %e\n", compute_checksum(1, m_len, 1, n_len, psi));
-    printf("p initial CHECKSUM = %e\n", compute_checksum(0, m, 0, n, p));
-    printf("u initial CHECKSUM = %e\n", compute_checksum(1, m_len, 0, n, u));
-    printf("v initial CHECKSUM = %e\n", compute_checksum(0, m, 1, n_len, v));
+    printf("psi initial CHECKSUM = %.16g\n", compute_checksum(1, m_len, 1, n_len, psi));
+    printf("p initial CHECKSUM = %.16g\n", compute_checksum(0, m, 0, n, p));
+    printf("u initial CHECKSUM = %.16gn", compute_checksum(1, m_len, 0, n, u));
+    printf("v initial CHECKSUM = %.16g\n", compute_checksum(0, m, 1, n_len, v));
   }
 
   tstart = wtime();
@@ -333,11 +333,11 @@ int main() {
   }
 
   // End of time loop
-  printf("P CHECKSUM after %d steps = %e\n",
+  printf("P CHECKSUM after %d steps = %.16g\n",
           itmax, compute_checksum(0, m, 0, n, pnew));
-  printf("U CHECKSUM after %d steps = %e\n",
+  printf("U CHECKSUM after %d steps = %.16g\n",
           itmax, compute_checksum(1, m_len, 0, n, unew));
-  printf("V CHECKSUM after %d steps = %e\n",
+  printf("V CHECKSUM after %d steps = %.16g\n",
           itmax, compute_checksum(0, m, 1, n_len, vnew));
 
   // Output p, u, v fields and run times.
