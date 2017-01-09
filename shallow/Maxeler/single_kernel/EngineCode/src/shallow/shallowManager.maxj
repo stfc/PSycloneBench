@@ -26,6 +26,9 @@ public class shallowManager {
 			link("pb",   IODestination.CPU),
 			link("ub",   IODestination.CPU),
 			link("vb",   IODestination.CPU),
+			link("pbend",   IODestination.CPU),
+			link("ubend",   IODestination.CPU),
+			link("vbend",   IODestination.CPU),
 			link("pold",   IODestination.CPU),
 			link("uold",   IODestination.CPU),
 			link("vold",   IODestination.CPU),
@@ -67,6 +70,9 @@ public class shallowManager {
 		engine_interface.setStream("pb", type, 3 * n * size);
 		engine_interface.setStream("ub", type, 3 * n * size);
 		engine_interface.setStream("vb", type, 3 * n * size);
+		engine_interface.setStream("pbend", type, len * size);
+		engine_interface.setStream("ubend", type, len * size);
+		engine_interface.setStream("vbend", type, len * size);
 		engine_interface.setStream("pold", type, len * size);
 		engine_interface.setStream("uold", type, len * size);
 		engine_interface.setStream("vold", type, len * size);

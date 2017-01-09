@@ -1,4 +1,5 @@
 #include <math.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -54,12 +55,13 @@ void free_array(double** array) {
 
 int main(void)
 {
-  int m = 127, n = 127; // Global domain size
-  int itmax = 10; // Number of timesteps
+  int m = 255, n = 255; // Global domain size
+  int itmax = 4000; // Number of timesteps
   bool l_out = true; // Produce output
   int m_len = m + 1, n_len = n + 1;
 
   double **u, **v, **p;
+  double **uend, **vend, **pend;
   double **unew, **vnew, **pnew;
   double **uold, **vold, **pold;
   double **cu, **cv, **z, **h, **psi;
@@ -68,6 +70,9 @@ int main(void)
   u = allocate_array(m_len, n_len);
   v = allocate_array(m_len, n_len);
   p = allocate_array(m_len, n_len);
+  uend = allocate_array(m_len, n_len);
+  vend = allocate_array(m_len, n_len);
+  pend = allocate_array(m_len, n_len);
   unew = allocate_array(m_len, n_len);
   vnew = allocate_array(m_len, n_len);
   pnew = allocate_array(m_len, n_len);
@@ -157,6 +162,15 @@ int main(void)
     printf("v initial CHECKSUM = %.16g\n", compute_checksum(0, m, 1, n_len, v));
   }
 
+  // Set the last three rows to mirror the first three
+  memset(uend[0], 0, m_len * n_len * sizeof(double));
+  memset(vend[0], 0, m_len * n_len * sizeof(double));
+  memset(pend[0], 0, m_len * n_len * sizeof(double));
+  memcpy(uend[m_len - 3], u[0], 3 * m_len * sizeof(double));
+  memcpy(vend[m_len - 3], v[0], 3 * m_len * sizeof(double));
+  memcpy(pend[m_len - 3], p[0], 3 * m_len * sizeof(double));
+
+
   max_file_t *maxfile = shallow_init();
   max_engine_t *engine = max_load(maxfile, "*");
 
@@ -173,6 +187,9 @@ int main(void)
   run_scalar.instream_p = p[0];
   run_scalar.instream_u = u[0];
   run_scalar.instream_v = v[0];
+  run_scalar.instream_pbend = pend[0];
+  run_scalar.instream_ubend = uend[0];
+  run_scalar.instream_vbend = vend[0];
   run_scalar.instream_pb = p[m_len - 3];
   run_scalar.instream_ub = u[m_len - 3];
   run_scalar.instream_vb = v[m_len - 3];
