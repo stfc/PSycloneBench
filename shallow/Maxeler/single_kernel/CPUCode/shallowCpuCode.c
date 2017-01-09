@@ -7,6 +7,7 @@
 
 #include "Maxfiles.h"
 #include "MaxSLiCInterface.h"
+#include "mpcx_power.h"
 
 double compute_checksum(int minx, int maxx, int miny, int maxy, double** field) {
   int i, j;
@@ -170,6 +171,12 @@ int main(void)
   memcpy(vend[m_len - 3], v[0], 3 * m_len * sizeof(double));
   memcpy(pend[m_len - 3], p[0], 3 * m_len * sizeof(double));
 
+  // Initialise the power me
+  int ret = power_init("shallow", 1, "power measurement");
+  if (ret < 0) {
+    printf("Failed to start power measurement");
+    return -1;
+  }
 
   max_file_t *maxfile = shallow_init();
   max_engine_t *engine = max_load(maxfile, "*");
@@ -200,17 +207,21 @@ int main(void)
   run_scalar.outstream_vnew = vnew[0];
   run_scalar.outstream_pnew = pnew[0];
 
+  power_start(100, 50);
   tstart = wtime();
 
   shallow_run(engine, &run_scalar);
 
-   c2 = wtime();
-   ctime = c2 - tstart;
-   tcyc = ctime / itmax;
+  c2 = wtime();
+  ctime = c2 - tstart;
+  tcyc = ctime / itmax;
 
-   printf("\n");
-   printf(" No. of steps = %d, total time = %f, time per cycle = %f (s)\n",
+  double kj = power_finish("shallow");
+
+  printf("\n");
+  printf(" No. of steps = %d, total time = %f, time per cycle = %f (s)\n",
            itmax, ctime, tcyc);
+  printf("Total energy usage = %fkJ\n", kj);
 
   // End of time loop
   printf("P CHECKSUM after %d steps = %.16g\n",
