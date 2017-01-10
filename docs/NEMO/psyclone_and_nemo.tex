@@ -188,6 +188,38 @@ to introduce \psyclone\ to NEMO would be option (2). This is dependent
 on it being possible to construct a formal description of the majority
 of k loops (i.e. the values to use for the loop bounds) within NEMO.
 
+\section{NEMO Performance/Maintenance Issues that \psyclone\ Could Help With}
+
+This section contains a list of those issues that have been
+highlighted at various NEMO HPC and HPC subgroup meetings that
+\psyclone\ and the PSyKAl separation of concerns will help to address:
+
+\begin{enumerate}
+
+\item Removal of unecessary halo swaps - PSyclone only generates calls to
+  perform halo swaps when they are necessary for correctness.
+
+\item Ability to experiment with collecting of multiple halo swaps
+  
+\item Aiding loop vectorisation through compiler directives
+
+\item Cache-blocking of loops to better utilise memory bandwidth
+
+\item Support for OpenACC so that NEMO can run on GPU-based systems
+
+\item Support for OpenMP so that NEMO can run in hybrid OpenMP/MPI mode
+  
+\end{enumerate}
+
+For invasive and repetitive code changes (such as re-structuring loops
+for cache blocking) the PSyclone approach is particularly
+valuable. This is because such changes are then implemented as a
+PSyclone transformation which only affects the generated code - the
+oceanographer does not have to worry about the resulting code
+complexity (potentially a nested loop with depth six). Tuning of the
+cache blocking itself can also be easily done by an HPC expert since
+the PSyclone tool would apply any changes to the whole code base.
+
 \section{Incremental introduction of \psyclone\ to NEMO}
 
 One of the key advantages of the \psyclone\ system is that it is
