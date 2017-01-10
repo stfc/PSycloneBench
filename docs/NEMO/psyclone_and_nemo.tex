@@ -68,12 +68,14 @@ that may themselves require different optimisations. \psyclone\ aims
 to address this problem by keeping the optimisation space fully
 separate from the science code.
 
-\psyclone\ is currently being developed as part of the GungHo project
-and forms a component of the Dynamo (the prototype dynamical core)
-build system. \psyclone\ can currently generate correct sequential code
-for Dynamo and supports transformations such as loop colouring, loop
-fusion, OpenMP and module inlining. We are currently working
-on OpenACC transformations and are about to start work on MPI support.
+\psyclone\ is being developed as part of the GungHo project
+and forms a component of the LFRic (the prototype Met Office
+atmosphere model implementing GungHo science) build
+system. \psyclone\ can currently generate correct sequential and
+MPI-parallel code for Dynamo and supports transformations such as loop
+colouring, loop fusion, OpenMP and module inlining. We plan to
+introduce support for OpenACC along similar lines to the OpenMP
+transformations.
 
 Dynamo uses Finite Elements on a grid that is formally
 unstructured in the horizontal but structured in the vertical.  In
@@ -102,7 +104,7 @@ amortising the cost of the indirection associated with the
 unstructured mesh.
 
 We believe that there are three possible places in which to locate the
-k loop in NEMO:
+$k$ loop in NEMO:
 
 \begin{enumerate}
 
@@ -186,7 +188,7 @@ vectorisation.
 We believe therefore that the least intrusive and most performant way
 to introduce \psyclone\ to NEMO would be option (2). This is dependent
 on it being possible to construct a formal description of the majority
-of k loops (i.e. the values to use for the loop bounds) within NEMO.
+of $k$ loops (i.e. the values to use for the loop bounds) within NEMO.
 
 \section{NEMO Performance/Maintenance Issues that \psyclone\ Could Help With}
 
@@ -223,7 +225,7 @@ the PSyclone tool would apply any changes to the whole code base.
 \section{Incremental introduction of \psyclone\ to NEMO}
 
 One of the key advantages of the \psyclone\ system is that it is
-possible for it to co-exist with existing code structures including
+possible for it to co-exist with existing code structures, including
 infrastructure that makes use of MPI.
 
 As a first step, a section of code must be re-worked to have the
