@@ -29,7 +29,6 @@ of directives and halo swap calls. This separation also improves the
 readability and modularity of code and thus greatly aids with
 maintenance.
 
-
 The role of \psyclone\ is to generate the PSy layer (and modify the
 Algorithm layer). This role is split into two parts: correctness and
 performance. The correctness aspect of \psyclone\ is often underplayed
@@ -89,18 +88,22 @@ shallow-water models, one of which was the 2D, free-surface component
 of NEMO. After restructuring these programs according to the
 \psykal\ separation of concerns we were able to show that the
 performance of the original code could be recovered with optimisations
-restricted to the PSy layer. We also demonstrated that this code could
-run efficiently on multi-core architectures using OpenMP directives
-and GPU architectures using OpenACC, again with optimisations
-restricted to the PSy layer.
+restricted to the PSy layer.\cite{psykal_shallow} We also demonstrated
+that this code could run efficiently on multi-core architectures using
+OpenMP directives and GPU architectures using OpenACC, again with
+optimisations restricted to the PSy layer.
 
 The question now is, would this approach be valuable and applicable
-for the full NEMO code?  Key to this is the fact that the full NEMO
-code is a combination of both 3D and 2D components and thus we have to
-decide how the loop over levels (the ``k-loop'') might fit within the
-\psyclone\ framework. In Dynamo this loop over levels is not managed by
-\psyclone\ but instead is performed within each kernel as a way of
-amortising the cost of the indirection associated with the
+for the full NEMO code? We expand on this in the rest of this document.
+
+\section{Managing the Iteration Space}
+
+In contrast to the codes tackled in GOcean, the full NEMO code
+contains a combination of both 3D and 2D components and thus we have
+to decide how the loop over levels (the ``k-loop'') might fit within
+the \psyclone\ framework. In Dynamo this loop over levels is not
+managed by \psyclone\ but instead is performed within each kernel as a
+way of amortising the cost of the indirection associated with the
 unstructured mesh.
 
 We believe that there are three possible places in which to locate the
@@ -571,7 +574,7 @@ Package 2.
 
 \begin{thebibliography}{1}
 
-\bibitem{psykal_shallow} A.~R.~Porter, R.~W.~Ford, M.~Ashworth, G.~D.~Riley and M.~Modani, ``Towards Compiler-Agnostic Performance in Finite-Difference Codes'', to appear in the Proceedings of ParCo 2015.
+\bibitem{psykal_shallow} A.~R.~Porter, R.~W.~Ford, M.~Ashworth, G.~D.~Riley and M.~Modani, ``Towards Compiler-Agnostic Performance in Finite-Difference Codes'', in ``Parallel Computing: On the Road to Exascale'', editors Gerhard R. Joubert and Hugh Leather and Mark Parsons and Frans Peters and Mark Sawyer, 27, 647-658 (2016) IOS Press, (Amsterdam, New York, Tokyo)
 
 \end{thebibliography}
 
