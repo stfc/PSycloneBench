@@ -5,7 +5,7 @@ all: figs ${BASE_NAME}.tex bibliography
 
 bibliography: ${BASE_NAME}.bbl
 
-${BASE_NAME}.bbl: ${BASE_NAME}.aux ../shallow_perf.bib
+${BASE_NAME}.bbl: ${BASE_NAME}.aux ../shallow_performance/shallow_perf.bib
 	bibtex ${BASE_NAME}
 
 ${BASE_NAME}.aux: ${BASE_NAME}.tex
@@ -17,7 +17,7 @@ FIG_FILES = slowdown_summary.pdf
 figs: ${FIG_FILES}
 
 %.pdf: %.dat
-	../bargraph.pl $< > $*.eps
+	./bargraph.pl $< > $*.eps
 	epstopdf $*.eps
 	rm $*.eps
 
