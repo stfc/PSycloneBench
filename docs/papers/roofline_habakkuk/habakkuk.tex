@@ -57,8 +57,8 @@ operations in a direct-addressed model.
 
 Obtaining a performance estimate by simply counting all of the FLOPs
 that must be performed is equivalent to assuming that they are all
-executed sequentially. However, a core a current CPU is likely to have
-support for Instruction Level Parallelism.
+executed sequentially. However, a core on any recent generation of CPU
+is likely to have support for Instruction Level Parallelism.
 
 \subsection{Single Instruction Multiple Data}
 
@@ -69,7 +69,7 @@ any application seeking to achieve good performance will run in
 parallel on multiple CPU cores.  If we restrict ourselves to running a
 single process/thread per core then clearly that thread will have
 exclusive use of that core's registers and execution units. Resources
-shared between cores such as L2 cache or bandwidth to main memory will
+shared between cores (such as L2 cache or bandwidth to main memory) will
 however be shared by the executing threads.
 
 \section{Results}

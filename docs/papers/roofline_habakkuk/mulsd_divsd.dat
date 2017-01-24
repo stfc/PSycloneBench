@@ -1,0 +1,15 @@
+=cluster; MULSD only; MULSD and 1 DIVSD
+xlabel=Number of MULSDs
+ylabel=Duration (cycles)
+=table
+=norotate
+=nocommas
+1	1.02  8.19
+2	2.00  8.20
+4	4.10  8.00
+6	6.10  8.00
+7	7.14  13.01
+8	8.10  13.02
+9       9.17  13.02
+10     10.19  13.03
+

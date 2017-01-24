@@ -10,7 +10,7 @@ habakkuk.aux: habakkuk.tex
 	pdflatex $<
 
 # List of figures that are GENERATED from .dat files of the same name
-FIG_FILES = 
+FIG_FILES = mulsd_divsd.pdf
 
 # Plots generated from Grace (xmgrace) - i.e. .agr files
 GRACE_PLOTS = 
