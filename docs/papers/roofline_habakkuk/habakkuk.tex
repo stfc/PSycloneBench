@@ -58,7 +58,19 @@ operations in a direct-addressed model.
 Obtaining a performance estimate by simply counting all of the FLOPs
 that must be performed is equivalent to assuming that they are all
 executed sequentially. However, a core on any recent generation of CPU
-is likely to have support for Instruction Level Parallelism.
+is likely to have support for Instruction Level Parallelism. For
+instance, in Intel Ivybridge micro-architecture a core has six
+execution ports to which micro-operations are
+despatched. Floating-point multiplication and division is handled by
+port 0 while addition is handled by port 1.
+
+\begin{figure}
+\includegraphics[width=130mm]{mulsd_divsd}
+\caption{Cost in cycles on an Intel E5-1620 v.2 CPU of the inner-loop
+  body as a function of number of independent MULSD and DIVSD
+  instructions.}
+\label{FIG_mul_div_overlap}
+\end{figure}
 
 \subsection{Single Instruction Multiple Data}
 
