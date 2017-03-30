@@ -42,7 +42,7 @@ contains
                                  ssha%data, ssha_u%data, ssha_v%data,   &
                                  sshn_t%data, sshn_u%data, sshn_v%data, &
                                  hu%data, hv%data, ht%data,             &
-                                 ua%data, va%data, un%data, vn%data)
+                                 ua%data, va%data, un%data, vn%data, un%grid)
 
     ua%data_on_device     = .TRUE.
     va%data_on_device     = .TRUE.
@@ -70,10 +70,11 @@ contains
                                      tmask,                      &
                                      ssha, ssha_u, ssha_v,       &
                                      sshn_t, sshn_u, sshn_v,     &
-                                     hu, hv, ht, ua, va, un, vn)
+                                     hu, hv, ht, ua, va, un, vn, grid)
     use dl_timer
     use model_mod,           only: rdt, cbfr, visc
     use physical_params_mod, only: g, omega, d2r
+    use grid_mod
 !    use continuity_mod,      only: continuity_code
 !    use boundary_conditions_mod
     implicit none
@@ -91,6 +92,7 @@ contains
     real(wp), dimension(nx,ny), intent(in)    :: dy_t, dy_u, dy_v
     real(wp), dimension(nx,ny), intent(in)    :: gphiu, gphiv
     integer,  dimension(nx,ny), intent(in)    :: tmask
+    type(grid_type), intent(in) :: grid
     ! Locals
     integer :: it, ji, jj, jiu, jiv
     integer :: idxt
@@ -108,7 +110,11 @@ contains
     ! Locals for BCs
     real(wp) :: amp_tide, omega_tide, rtime
 
+    integer, dimension(:,:), pointer :: tmaskptr
+
 !    call timer_start('Continuity',idxt)
+    tmaskptr => grid%get_tmask()
+
 
 ! Copy data to GPU. We use pcopyin so that if the data is already
 ! on the GPU then that copy is used.
@@ -118,7 +124,7 @@ contains
 !$acc        dy_t, dy_u, dy_v, gphiu, gphiv, &
 !$acc        sshn_t, sshn_u, sshn_v,         &
 !$acc        ssha, ssha_u, ssha_v,           &
-!$acc        ht, hu, hv, ua, va, un, vn, rdt)
+!$acc        ht, hu, hv, ua, va, un, vn, rdt, tmaskptr)
 
 !$acc parallel present(ssha, sshn_t, sshn_u, sshn_v, &
 !$acc                  hu, hv, un, vn, area_t, rdt)
@@ -417,19 +423,18 @@ contains
 ! This loop only writes to ssha and subsequent loop does not use
 ! this field therefore we need not block.
 
-
-!$acc parallel present(tmask, ua)
+!$acc parallel present(tmaskptr, ua)
 !$acc loop collapse(2)
     do jj = 1, N+1, 1
        do ji = 1, M, 1
-!          call bc_solid_u_code(ji, jj, &
-!                               ua, va%grid%tmask)
+          call bc_solid_u_code(ji, jj, &
+                               ua, tmaskptr)
 
 !> \todo It's more compiler-friendly to separately compare these two
 !! integer masks with zero but that's a kernel-level optimisation.
-          if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
-             ua(ji,jj) = 0._wp
-          end if
+!          if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
+!             ua(ji,jj) = 0._wp
+!          end if
 
        end do
     end do
@@ -617,5 +622,18 @@ contains
                     rdt / e12t(ji,jj)
 
   end subroutine continuity_code
+
+  subroutine bc_solid_u_code(ji, jj, ua, tmask)
+    implicit none
+!$acc routine seq
+    integer,                  intent(in)    :: ji, jj
+    integer,  dimension(:,:), intent(in)    :: tmask
+    real(wp), dimension(:,:), intent(inout) :: ua
+
+    if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
+       ua(ji,jj) = 0._wp
+    end if
+
+  end subroutine bc_solid_u_code
 
 end module time_step_mod
