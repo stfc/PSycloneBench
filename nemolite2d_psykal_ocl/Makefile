@@ -1,18 +1,24 @@
+# You must define:
+#
+#   CC - the C compiler
+#   OPENCL_INCLUDE - root of path to search for OpenCL headers
+#
+# Optionally:
+#
+#   CFLAGS - flags to pass to the C compiler
 
 # The targets that this Makefile supports
 EXECS = nemolite2d
 
 all: $(EXECS)
 
-COMMON_MODULES = continuity_kern.o
+COMMON_MODULES =
+# continuity_kern.o
 
 # Normal targets
 .PHONY: nemolite2d
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
-
-${API_LIB}: ${API_DIR}/*.?90
-	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS} ${OMPFLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
 
 nemolite2d.o: $(COMMON_MODULES)
 
@@ -21,10 +27,10 @@ nemolite2d.o: $(COMMON_MODULES)
 # Generic rules
 
 %.exe: $(MODULE_LIST)
-	$(CC) -o $@ $(MODULE_LIST) $(LDFLAGS)
+	$(CC) -o $@ $(MODULE_LIST) ${OPENCL_LIBS} $(LDFLAGS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) ${OMPFLAGS} -c $<
+	$(CC) $(CFLAGS) ${OPENCL_INCLUDE} -c $<
 
 clean: 
 	rm -f *.o *~
