@@ -49,7 +49,7 @@
 //   }
 
 // }
-
+#ifdef __OPENCL_VERSION__
 __kernel void continuity_code(int width,                     
 			      __global double *ssha,
 			      __global double *sshn,
@@ -61,6 +61,19 @@ __kernel void continuity_code(int width,
 			      __global double *vn,
 			      double rdt,
 			      __global double *e12t){
+#else
+void continuity_code(int width,                     
+			       double *ssha,
+			       double *sshn,
+			       double *sshn_u,
+			       double *sshn_v,
+			       double* hu,
+			       double *hv,
+			       double *un,
+			       double *vn,
+			      double rdt,
+			       double *e12t){
+#endif
     /* Locals */
     double rtmp1, rtmp2, rtmp3, rtmp4;
     int idx, idxim1, idxjm1;

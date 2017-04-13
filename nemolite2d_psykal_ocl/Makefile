@@ -12,8 +12,7 @@ EXECS = nemolite2d
 
 all: $(EXECS)
 
-COMMON_MODULES =
-# continuity_kern.o
+COMMON_MODULES = continuity_kern.o
 
 # Normal targets
 .PHONY: nemolite2d

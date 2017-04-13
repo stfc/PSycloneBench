@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
-/* NVIDIA only support OpenCL 1.2 */
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+/* Header for the C version of the kernel */
+#include "continuity.h"
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -130,6 +130,16 @@ void check_status(char *text, cl_int err){
   }
 }
 
+/** Compute a checksum for a double precision array of nx*ny values */
+double checksum(double *array, int nx, int ny){
+  int i;
+  double sum = 0.0;
+  for(i=0; i<nx*ny; i++){
+    sum += array[i];
+  }
+  return sum;
+}
+
 int main(){
   /** The version of OpenCL supported by the selected device */
   int cl_version;
@@ -166,6 +176,8 @@ int main(){
   cl_double *e12t;
   cl_double dep_const = 2.0;
   cl_double dx = 0.5, dy = 0.5;
+  /** For computing checksums for validation */
+  double sum;
   ji = 1;
   jj = 1;
   rdt = 0.5;
@@ -254,6 +266,8 @@ int main(){
   
   /* Create Command Queue with properties set to NULL */
   if(cl_version == 12){
+    /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
+     to call the ...WithProperties version of this routine */
     command_queue = clCreateCommandQueue(context,
 					 *device,
 					 0, &ret);
@@ -377,37 +391,68 @@ int main(){
   }
 
   /* Copy data to device synchronously */
-  clEnqueueWriteBuffer(command_queue, ssha_device, 1, 0,
-		       (size_t)buff_size, (void *)ssha, 0, NULL, &event);
+  ret = clEnqueueWriteBuffer(command_queue, ssha_device, 1, 0,
+			     (size_t)buff_size, (void *)ssha, 0,
+			     NULL, &event);
+  check_status("clEnqueueWriteBuffer", ret);
+  ret = clEnqueueWriteBuffer(command_queue, sshn_device, 1, 0,
+			     (size_t)buff_size, (void *)sshn, 0,
+			     NULL, &event);
+  check_status("clEnqueueWriteBuffer", ret);
+  ret = clEnqueueWriteBuffer(command_queue, sshn_u_device, 1, 0,
+			     (size_t)buff_size, (void *)sshn_u, 0,
+			     NULL, &event);
+  check_status("clEnqueueWriteBuffer", ret);
+  ret = clEnqueueWriteBuffer(command_queue, sshn_v_device, 1, 0,
+			     (size_t)buff_size, (void *)sshn_v, 0,
+			     NULL, &event);
+  check_status("clEnqueueWriteBuffer", ret);
+  ret = clEnqueueWriteBuffer(command_queue, hu_device, 1, 0,
+			     (size_t)buff_size, (void *)hu, 0,
+			     NULL, &event);
+  check_status("clEnqueueWriteBuffer", ret);
+  ret = clEnqueueWriteBuffer(command_queue, hv_device, 1, 0,
+			     (size_t)buff_size, (void *)hv, 0,
+			     NULL, &event);
+  check_status("clEnqueueWriteBuffer", ret);
+  ret = clEnqueueWriteBuffer(command_queue, un_device, 1, 0,
+			     (size_t)buff_size, (void *)un, 0,
+			     NULL, &event);
+  check_status("clEnqueueWriteBuffer", ret);
+  ret = clEnqueueWriteBuffer(command_queue, vn_device, 1, 0,
+			     (size_t)buff_size, (void *)vn, 0,
+			     NULL, &event);
+  check_status("clEnqueueWriteBuffer", ret);
+  ret = clEnqueueWriteBuffer(command_queue, e12t_device, 1, 0,
+			     (size_t)buff_size, (void *)e12t, 0,
+			     NULL, &event);
+  check_status("clEnqueueWriteBuffer", ret);
 
   /*------------------------------------------------------------*/
   /* Run the kernel */
   size_t global_size[2] = {nx, ny}; 
   clEnqueueNDRangeKernel(command_queue, kernel, 2, 0,
 			 global_size, NULL, 0,0,0);
-  /*
+  
+  /* Run the kernel on the CPU */
   for(jj=1;jj<ny;jj++){
     for(ji=1;ji<nx;ji++){
-      continuity_code(ji,jj, nx,                     
+      continuity_code(nx,                     
 		      ssha, sshn, sshn_u, sshn_v, hu, hv,
 		      un, vn, rdt, e12t);
     }
   }
-  */
+  sum = checksum(ssha, nx, ny);
+  fprintf(stdout, "Checksum on CPU = %e\n", &sum);
 
   /* Copy data back from device, synchronously */
   clEnqueueReadBuffer(command_queue, ssha_device, 1, 0,
 		      (size_t)buff_size, (void *)ssha, 0, NULL, NULL);
+  check_status("clEnqueueReadBuffer", ret);
 
   /* Compute and output a checksum */
-  double *sshaptr = &(ssha[0]);
-  double sum = 0.0;
-  for(jj=0;jj<ny;jj++){
-    for(ji=0;ji<nx;ji++){
-      sum += *(sshaptr++);
-    }
-  }
-  fprintf(stdout, "Checksum = %e\n", &sum);
+  sum = checksum(ssha, nx, ny);
+  fprintf(stdout, "Checksum from OpenCL = %e\n", &sum);
 
   /* Clean up */
   ret = clFlush(command_queue);
