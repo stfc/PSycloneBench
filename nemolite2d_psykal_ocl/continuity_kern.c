@@ -73,8 +73,9 @@ void continuity_code(int ji, int jj,
     rtmp3 = (sshn_v[idx] + hv[idx]) * vn[idx];
     rtmp4 = (sshn_v[idxjm1] + hv[idxjm1]) * vn[idxjm1];
 
-    //ssha[idx] = sshn[idx] + (rtmp2 - rtmp1 + rtmp4 - rtmp3) *
-    //  rdt / e12t[idx];
-    ssha[idx] = (double)idx;
+    ssha[idx] = sshn[idx] + (rtmp2 - rtmp1 + rtmp4 - rtmp3) *
+      rdt / e12t[idx];
+    // Following line is for testing only
+    //ssha[idx] = (double)idx;
 
   }

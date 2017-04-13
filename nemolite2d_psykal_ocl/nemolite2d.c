@@ -464,6 +464,14 @@ int main(){
   ret = clReleaseKernel(kernel);
   ret = clReleaseProgram(program);
   ret = clReleaseMemObject(ssha_device);
+  ret = clReleaseMemObject(sshn_device);
+  ret = clReleaseMemObject(sshn_u_device);
+  ret = clReleaseMemObject(sshn_v_device);
+  ret = clReleaseMemObject(hu_device);
+  ret = clReleaseMemObject(hv_device);
+  ret = clReleaseMemObject(un_device);
+  ret = clReleaseMemObject(vn_device);
+  ret = clReleaseMemObject(e12t_device);
 
   ret = clReleaseCommandQueue(command_queue);
   ret = clReleaseContext(context);
