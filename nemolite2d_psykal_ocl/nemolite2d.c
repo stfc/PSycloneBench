@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/* NVIDIA only support OpenCL 1.2 */
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
@@ -10,6 +13,7 @@
 #define MAX_SOURCE_SIZE (0x100000)
 /** Maximum number of OpenCL devices we will query */
 #define MAX_DEVICES 4
+#define VERBOSE 1
 
 const char* OCL_GetErrorString(cl_int error)
 {
@@ -120,9 +124,14 @@ void check_status(char *text, cl_int err){
     fprintf(stderr, "Hit error: %s: %s\n", text, OCL_GetErrorString(err));
     exit(1);
   }
+  if(VERBOSE){
+    fprintf(stdout, "Called %s OK\n", text); 
+  }
 }
 
 int main(){
+  /** The version of OpenCL supported by the selected device */
+  int cl_version;
   cl_device_id device_ids[MAX_DEVICES];
   cl_device_id *device;
   int idev;
@@ -181,7 +190,7 @@ int main(){
   ret = clGetPlatformIDs(MAX_DEVICES, platform_ids, &ret_num_platforms);
   check_status("clGetPlatformIDs", ret);
   fprintf(stdout, "Have %d platforms.\n", ret_num_platforms);
-  char result_str[128];
+  char result_str[128], version_str[128];
   cl_device_type device_type;
   size_t result_len;
   for(idev=0;idev<ret_num_platforms;idev++){
@@ -202,31 +211,49 @@ int main(){
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_TYPE,
 			  (size_t)(sizeof(cl_device_type)), &device_type,
 				   &result_len);
-    fprintf(stdout, "Device %d is: %s and is of type %d\n",
-	    idev, result_str, (int)(device_type));
+    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_VERSION,
+			  (size_t)128, &version_str, &result_len);
+    fprintf(stdout, "Device %d is: %s, type=%d, version=%s\n",
+	    idev, result_str, (int)(device_type), version_str);
   }
   /* Choose device 0 */
   idev = 0;
   device = &(device_ids[idev]);
 
+  /* Check what version of OpenCL is supported */
+  if(strstr(version_str, "OpenCL 1.2")){
+    cl_version = 12;
+  }
+  else if(strstr(version_str, "OpenCL 2.0")){
+    cl_version = 20;
+  }
+  else{
+    fprintf(stderr, "Unsupported OpenCL version: %s\n", version_str);
+    exit(1);
+  }
+  
   /* Create OpenCL context for just 1 device */
   cl_context_properties cl_props[3];
   /* The list of properties for this context is zero terminated */
   cl_props[0] = CL_CONTEXT_PLATFORM;
   cl_props[1] = (cl_context_properties)(platform_ids[0]);
   cl_props[2] = 0;
-  context = clCreateContext(cl_props, 1, &(device_ids[idev]), NULL, NULL, &ret);
+  context = clCreateContext(cl_props, 1, device, NULL, NULL, &ret);
   check_status("clCreateContext", ret);
-  //context = clCreateContextFromType(NULL, device_type,
-  //				    NULL, NULL, &ret);
-  //check_status("clCreateContextFromType", ret);
-  fprintf(stdout, "Successfully created a context!\n");
   
   /* Create Command Queue with properties set to NULL */
-  command_queue = clCreateCommandQueueWithProperties(context,
-						     *device,
-						     NULL, &ret);
-  check_status("clCreateCommandQueueWithProperties", ret);
+  if(cl_version == 12){
+    command_queue = clCreateCommandQueue(context,
+					 *device,
+					 NULL, &ret);
+    check_status("clCreateCommandQueue", ret);
+  }
+  else if(cl_version == 20){
+    command_queue = clCreateCommandQueueWithProperties(context,
+						       *device,
+						       NULL, &ret);
+    check_status("clCreateCommandQueueWithProperties", ret);
+  }
 
   /* Create Kernel Program from the source */
   program = clCreateProgramWithSource(context, 1, (const char **)&source_str,
@@ -238,7 +265,7 @@ int main(){
   check_status("clBuildProgram", ret);
 
   /* Create OpenCL Kernel */
-  kernel = clCreateKernel(program, "continuity", &ret);
+  kernel = clCreateKernel(program, "continuity_code", &ret);
   check_status("clCreateKernel", ret);
 
   /* Create Device Memory Buffers */
