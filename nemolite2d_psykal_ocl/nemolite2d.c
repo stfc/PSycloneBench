@@ -115,9 +115,9 @@ const char* OCL_GetErrorString(cl_int error)
     }
 }
 
-void check_status(cl_int err){
+void check_status(char *text, cl_int err){
   if(err != CL_SUCCESS){
-    fprintf(stderr, "Hit error: %s\n", OCL_GetErrorString(err));
+    fprintf(stderr, "Hit error: %s: %s\n", text, OCL_GetErrorString(err));
     exit(1);
   }
 }
@@ -179,82 +179,97 @@ int main(){
   
   /* Get Platform and Device Info */
   ret = clGetPlatformIDs(MAX_DEVICES, platform_ids, &ret_num_platforms);
-  check_status(ret);
+  check_status("clGetPlatformIDs", ret);
   fprintf(stdout, "Have %d platforms.\n", ret_num_platforms);
   char result_str[128];
+  cl_device_type device_type;
   size_t result_len;
   for(idev=0;idev<ret_num_platforms;idev++){
     ret = clGetPlatformInfo(platform_ids[idev],
 			    CL_PLATFORM_NAME,
 			    (size_t)128, (void *)result_str, &result_len);
-    fprintf(stdout, "Platform %d is: %s\n", idev, result_str);
+    fprintf(stdout, "Platform %d (id=%d) is: %s\n",
+	    idev, platform_ids[idev], result_str);
   }
 
-  ret = clGetDeviceIDs(platform_ids[2], CL_DEVICE_TYPE_DEFAULT, MAX_DEVICES,
+  ret = clGetDeviceIDs(platform_ids[0], CL_DEVICE_TYPE_DEFAULT, MAX_DEVICES,
 		       device_ids, &ret_num_devices);
-  check_status(ret);
+  check_status("clGetDeviceIDs", ret);
   fprintf(stdout, "Have %d devices\n", ret_num_devices);
   for (idev=0; idev<ret_num_devices; idev++){
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_NAME,
 			  (size_t)128, result_str, &result_len);
-    fprintf(stdout, "Device %d is: %s\n", idev, result_str);
+    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_TYPE,
+			  (size_t)(sizeof(cl_device_type)), &device_type,
+				   &result_len);
+    fprintf(stdout, "Device %d is: %s and is of type %d\n",
+	    idev, result_str, (int)(device_type));
   }
   /* Choose device 0 */
-  idev = 1;
+  idev = 0;
   device = &(device_ids[idev]);
 
-  /* Create OpenCL context */
-  context = clCreateContext( NULL, 1, &(device_ids[idev]), NULL, NULL, &ret);
-  check_status(ret);
-
+  /* Create OpenCL context for just 1 device */
+  cl_context_properties cl_props[3];
+  /* The list of properties for this context is zero terminated */
+  cl_props[0] = CL_CONTEXT_PLATFORM;
+  cl_props[1] = (cl_context_properties)(platform_ids[0]);
+  cl_props[2] = 0;
+  context = clCreateContext(cl_props, 1, &(device_ids[idev]), NULL, NULL, &ret);
+  check_status("clCreateContext", ret);
+  //context = clCreateContextFromType(NULL, device_type,
+  //				    NULL, NULL, &ret);
+  //check_status("clCreateContextFromType", ret);
+  fprintf(stdout, "Successfully created a context!\n");
+  
   /* Create Command Queue with properties set to NULL */
   command_queue = clCreateCommandQueueWithProperties(context,
 						     *device,
 						     NULL, &ret);
-  check_status(ret);
+  check_status("clCreateCommandQueueWithProperties", ret);
 
   /* Create Kernel Program from the source */
   program = clCreateProgramWithSource(context, 1, (const char **)&source_str,
 				      (const size_t *)&source_size, &ret);
-  check_status(ret);
+  check_status("clCreateProgramWithSource", ret);
 
   /* Build Kernel Program */
   ret = clBuildProgram(program, 1, &(device_ids[idev]), NULL, NULL, NULL);
-  check_status(ret);
+  check_status("clBuildProgram", ret);
 
   /* Create OpenCL Kernel */
   kernel = clCreateKernel(program, "continuity", &ret);
-  check_status(ret);
+  check_status("clCreateKernel", ret);
 
   /* Create Device Memory Buffers */
   buff_size = nx*ny*sizeof(cl_double);
   ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                           NULL, &ret);
-  check_status(ret);
+  check_status("clCreateBuffer", ret);
   sshn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                           NULL, &ret);
-  check_status(ret);
+  check_status("clCreateBuffer", ret);
   sshn_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                           NULL, &ret);
-  check_status(ret);
+  check_status("clCreateBuffer", ret);
   sshn_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                           NULL, &ret);
-  check_status(ret);
+  check_status("clCreateBuffer", ret);
   hu_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                           NULL, &ret);
-  check_status(ret);
+  check_status("clCreateBuffer", ret);
   hv_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                           NULL, &ret);
-  check_status(ret);
+  check_status("clCreateBuffer", ret);
   un_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                           NULL, &ret);
-  check_status(ret);
+  check_status("clCreateBuffer", ret);
   vn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                           NULL, &ret);
-  check_status(ret);
+  check_status("clCreateBuffer", ret);
   e12t_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                           NULL, &ret);
-  check_status(ret);
+  check_status("clCreateBuffer", ret);
 
   fprintf(stdout, "Created device buffers OK\n");
 
