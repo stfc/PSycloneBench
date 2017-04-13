@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 /* NVIDIA only support OpenCL 1.2 */
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
@@ -191,6 +192,7 @@ int main(){
   check_status("clGetPlatformIDs", ret);
   fprintf(stdout, "Have %d platforms.\n", ret_num_platforms);
   char result_str[128], version_str[128];
+  cl_device_fp_config fp_config;
   cl_device_type device_type;
   size_t result_len;
   for(idev=0;idev<ret_num_platforms;idev++){
@@ -213,8 +215,17 @@ int main(){
 				   &result_len);
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_VERSION,
 			  (size_t)128, &version_str, &result_len);
+    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_DOUBLE_FP_CONFIG,
+			  (size_t)(sizeof(cl_device_fp_config)),
+			  &fp_config, &result_len);
     fprintf(stdout, "Device %d is: %s, type=%d, version=%s\n",
 	    idev, result_str, (int)(device_type), version_str);
+    if((int)fp_config == 0){
+      fprintf(stdout, "             double precision NOT supported\n");
+    }
+    else{
+      fprintf(stdout, "             double precision supported\n");
+    }
   }
   /* Choose device 0 */
   idev = 0;
@@ -245,7 +256,7 @@ int main(){
   if(cl_version == 12){
     command_queue = clCreateCommandQueue(context,
 					 *device,
-					 NULL, &ret);
+					 0, &ret);
     check_status("clCreateCommandQueue", ret);
   }
   else if(cl_version == 20){
@@ -261,7 +272,19 @@ int main(){
   check_status("clCreateProgramWithSource", ret);
 
   /* Build Kernel Program */
-  ret = clBuildProgram(program, 1, &(device_ids[idev]), NULL, NULL, NULL);
+  ret = clBuildProgram(program, 1, device, NULL, NULL, NULL);
+  if(ret == CL_BUILD_PROGRAM_FAILURE){
+    char *build_log;
+    size_t log_size;
+    clGetProgramBuildInfo(program, *device, CL_PROGRAM_BUILD_LOG,
+			  0, NULL, &log_size);
+    build_log = malloc(log_size+1);
+    clGetProgramBuildInfo(program, *device, CL_PROGRAM_BUILD_LOG,
+			  log_size, build_log, NULL);
+    build_log[log_size] = '\0';
+    fprintf(stderr, "%s\n", build_log);
+    exit(1);
+  }
   check_status("clBuildProgram", ret);
 
   /* Create OpenCL Kernel */
@@ -302,16 +325,27 @@ int main(){
 
   /* Set OpenCL Kernel Parameters */
   ret = clSetKernelArg(kernel, 0, sizeof(cl_int), (void *)&nx);
+  check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&ssha_device);
+  check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&sshn_device);
+  check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&sshn_u_device);
-  ret = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *)&sshn_v_device);
-  ret = clSetKernelArg(kernel, 6, sizeof(cl_mem), (void *)&hu_device);
-  ret = clSetKernelArg(kernel, 7, sizeof(cl_mem), (void *)&hv_device);
-  ret = clSetKernelArg(kernel, 8, sizeof(cl_mem), (void *)&un_device);
-  ret = clSetKernelArg(kernel, 9, sizeof(cl_mem), (void *)&vn_device);
-  ret = clSetKernelArg(kernel, 10, sizeof(cl_double), (void *)&rdt);
-  ret = clSetKernelArg(kernel, 11, sizeof(cl_mem), (void *)&e12t_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void *)&sshn_v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *)&hu_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kernel, 6, sizeof(cl_mem), (void *)&hv_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kernel, 7, sizeof(cl_mem), (void *)&un_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kernel, 8, sizeof(cl_mem), (void *)&vn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kernel, 9, sizeof(cl_double), (void *)&rdt);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kernel, 10, sizeof(cl_mem), (void *)&e12t_device);
+  check_status("clSetKernelArg", ret);
 
 
   /*------------------------------------------------------------*/

@@ -51,16 +51,16 @@
 // }
 
 __kernel void continuity_code(int width,                     
-			    __global double *ssha,
-			    __global double *sshn,
-			    __global double *sshn_u,
-			    __global double *sshn_v,
-			    __global double* hu,
-			    __global double *hv,
-			    __global double *un,
-			    __global double *vn,
-			    double rdt,
-			    __global double *e12t){
+			      __global double *ssha,
+			      __global double *sshn,
+			      __global double *sshn_u,
+			      __global double *sshn_v,
+			      __global double* hu,
+			      __global double *hv,
+			      __global double *un,
+			      __global double *vn,
+			      double rdt,
+			      __global double *e12t){
     /* Locals */
     double rtmp1, rtmp2, rtmp3, rtmp4;
     int idx, idxim1, idxjm1;
