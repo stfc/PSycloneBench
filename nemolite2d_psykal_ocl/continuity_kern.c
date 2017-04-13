@@ -30,26 +30,8 @@
   end type continuity
 */
 
-
-// void invoke_continuity(*ssha, *sshn, *sshn_u, *sshn_v, *hu, *hv, *un, *vn){
-//   //use model_mod, only: rdt
-//   //type(r2d_field),     intent(in) :: hu, hv, un, vn
-//   /* Locals */
-//   int ji, jj;
-
-//   for(jj = ssha%internal%ystart, ssha%internal%ystop){
-//     for(ji = ssha%internal%xstart, ssha%internal%xstop){
-
-//       continuity_code(ji, jj,
-// 		      ssha->data, sshn->data,
-// 		      sshn_u->data, sshn_v->data,
-// 		      hu->data, hv->data, un->data, vn->data,
-// 		      rdt, ssha->grid.area_t);
-//     }
-//   }
-
-// }
 #ifdef __OPENCL_VERSION__
+/** Interface to OpenCL version of kernel */
 __kernel void continuity_code(int width,                     
 			      __global double *ssha,
 			      __global double *sshn,
@@ -61,25 +43,29 @@ __kernel void continuity_code(int width,
 			      __global double *vn,
 			      double rdt,
 			      __global double *e12t){
+    int ji = get_global_id(0);
+    int jj = get_global_id(1);
 #else
-void continuity_code(int width,                     
-			       double *ssha,
-			       double *sshn,
-			       double *sshn_u,
-			       double *sshn_v,
-			       double* hu,
-			       double *hv,
-			       double *un,
-			       double *vn,
-			      double rdt,
-			       double *e12t){
+
+/** Interface to standard C version of kernel */
+void continuity_code(int ji, int jj,
+		     int width,                     
+		     double *ssha,
+		     double *sshn,
+		     double *sshn_u,
+		     double *sshn_v,
+		     double* hu,
+		     double *hv,
+		     double *un,
+		     double *vn,
+		     double rdt,
+		     double *e12t){
 #endif
     /* Locals */
     double rtmp1, rtmp2, rtmp3, rtmp4;
-    int idx, idxim1, idxjm1;
-    int ji = 1, jj = 1;
+    int idxim1, idxjm1;
+    int idx = jj*width + ji;
 
-    idx = jj*width + ji;
     idxim1 = idx - 1;
     idxjm1 = idx - width;
     rtmp1 = (sshn_u[idx] + hu[idx]) * un[idx];
@@ -87,7 +73,8 @@ void continuity_code(int width,
     rtmp3 = (sshn_v[idx] + hv[idx]) * vn[idx];
     rtmp4 = (sshn_v[idxjm1] + hv[idxjm1]) * vn[idxjm1];
 
-    ssha[idx] = sshn[idx] + (rtmp2 - rtmp1 + rtmp4 - rtmp3) *
-      rdt / e12t[idx];
+    //ssha[idx] = sshn[idx] + (rtmp2 - rtmp1 + rtmp4 - rtmp3) *
+    //  rdt / e12t[idx];
+    ssha[idx] = (double)idx;
 
   }

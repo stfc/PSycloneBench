@@ -131,11 +131,14 @@ void check_status(char *text, cl_int err){
 }
 
 /** Compute a checksum for a double precision array of nx*ny values */
-double checksum(double *array, int nx, int ny){
-  int i;
+double checksum(double *array, int nx, int ny, int xstart, int ystart){
+  int i, j, jidx;
   double sum = 0.0;
-  for(i=0; i<nx*ny; i++){
-    sum += array[i];
+  for(j=ystart; j<ny; j++){
+    jidx = j*nx;
+    for(i=xstart; i<nx; i++){
+      sum += array[i+jidx];
+    }
   }
   return sum;
 }
@@ -178,8 +181,6 @@ int main(){
   cl_double dx = 0.5, dy = 0.5;
   /** For computing checksums for validation */
   double sum;
-  ji = 1;
-  jj = 1;
   rdt = 0.5;
 
   /*------------------------------------------------------------*/
@@ -383,7 +384,7 @@ int main(){
       un[idx] = ji;
       vn[idx] = jj;
       sshn_u[idx] = 0.0;
-      sshn_v[idx] = 0.0;
+      sshn_v[idx] = 2.0;
       sshn[idx] = 1.0;
       e12t[idx] = dx*dy;
       ssha[idx] = 0.0;
@@ -437,13 +438,15 @@ int main(){
   /* Run the kernel on the CPU */
   for(jj=1;jj<ny;jj++){
     for(ji=1;ji<nx;ji++){
-      continuity_code(nx,                     
+      continuity_code(ji, jj, nx,                     
 		      ssha, sshn, sshn_u, sshn_v, hu, hv,
 		      un, vn, rdt, e12t);
     }
   }
-  sum = checksum(ssha, nx, ny);
-  fprintf(stdout, "Checksum on CPU = %e\n", &sum);
+  printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx+1], ssha[nx+2]);
+
+  sum = checksum(ssha, nx, ny, 1, 1);
+  fprintf(stdout, "Checksum on CPU = %e\n", sum);
 
   /* Copy data back from device, synchronously */
   clEnqueueReadBuffer(command_queue, ssha_device, 1, 0,
@@ -451,8 +454,9 @@ int main(){
   check_status("clEnqueueReadBuffer", ret);
 
   /* Compute and output a checksum */
-  sum = checksum(ssha, nx, ny);
-  fprintf(stdout, "Checksum from OpenCL = %e\n", &sum);
+  sum = checksum(ssha, nx, ny, 1, 1);
+  printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx+1], ssha[nx+2]);
+  fprintf(stdout, "Checksum from OpenCL = %e\n", sum);
 
   /* Clean up */
   ret = clFlush(command_queue);
