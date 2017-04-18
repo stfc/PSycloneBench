@@ -1,6 +1,15 @@
 #include <stdio.h>
+#include <math.h>
 
-  /*
+#define PI 3.1415926535897932
+// Acceleration due to gravity (ms^-2)
+#define G 9.80665
+// Earth rotation speed (s^(-1))
+#define OMEGA 7.292116e-05
+// Degree to radian
+#define d2r PI/180.0
+
+/*
   type, extends(kernel_type) :: momentum_u
      type(arg), dimension(18) :: meta_args =  &
           (/ arg(READWRITE, CU, POINTWISE),  & ! ua
@@ -121,7 +130,8 @@
 
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */
-__kernel void momentum_u_code(__global double *ua,
+__kernel void momentum_u_code(int width
+			      __global double *ua,
 			      __global double *un,
 			      __global double *vn,
 			      __global double *hu,
@@ -138,16 +148,20 @@ __kernel void momentum_u_code(__global double *ua,
 			      __global double *e2u,
 			      __global double *e2t,
 			      __global double *e12u,
-			      __global double *gphiu){
+			      __global double *gphiu
+			      double rdt, double cbfr, double visc){
+  int ji = get_global_id(0);
+  int jj = get_global_id(1);
 #else
 /** Interface to standard C version of kernel */
-void momentum_u_code(int ji, int jj,
+void momentum_u_code(int ji, int jj, int width,
 		     double *ua, double *un, double *vn,
 		     double *hu, double *hv, double *ht, double *ssha_u,
 		     double *sshn, double *sshn_u, double *sshn_v,
 		     int *tmask,
 		     double *e1u, double *e1v, double *e1t,
-		     double *e2u, double *e2t, double *e12u, double *gphiu){
+		     double *e2u, double *e2t, double *e12u, double *gphiu,
+		     double rdt, double cbfr, double visc){
 #endif
   //    use physical_params_mod
   //  use model_mod, only: rdt, cbfr, visc
@@ -158,46 +172,55 @@ void momentum_u_code(int ji, int jj,
   double dudx_e, dudx_w;
   double dudy_s, dudy_n;
   double uu_e, uu_n, uu_s, uu_w;
+  
+  int idxim1, idxjm1, idxip1, idxjp1, idxip1jm1;
+  int idx = jj*width + ji;
 
-  if(tmask(ji,jj) + tmask(ji+1,jj) <= 0) return; // jump over non-computational domain
-  if(tmask(ji,jj) <= 0 || tmask(ji+1,jj) <= 0) return; // jump over boundary u
+  idxim1 = idx - 1;
+  idxip1 = idx + 1;
+  idxjm1 = idx - width;
+  idxjp1 = idx + width;
+  idxip1jm1 = idx - width + 1;
 
-  u_e  = 0.5 * (un(ji,jj) + un(ji+1,jj)) * e2t(ji+1,jj);   // add length scale.
-  depe = ht(ji+1,jj) + sshn(ji+1,jj);
+  if(tmask[idx] + tmask[idxip1] <= 0) return; // jump over non-computational domain
+  if(tmask[idx] <= 0 || tmask[idxip1] <= 0) return; // jump over boundary u
 
-  u_w  = 0.5 * (un(ji,jj) + un(ji-1,jj)) * e2t(ji,jj);   // add length scale
-  depw = ht(ji,jj) + sshn(ji,jj);
+  u_e  = 0.5 * (un[idx] + un[idxip1]) * e2t[idxip1];   // add length scale.
+  depe = ht[idxip1] + sshn[idxip1];
 
-  v_sc = 0.5 * (vn(ji,jj-1) + vn(ji+1,jj-1));
-  v_s  = 0.5 * v_sc * (e1v(ji,jj-1) + e1v(ji+1,jj-1));
-  deps = 0.5 * (hv(ji,jj-1) + sshn_v(ji,jj-1) + hv(ji+1,jj-1) +
-		sshn_v(ji+1,jj-1));
+  u_w  = 0.5 * (un[idx] + un[idxim1]) * e2t[idx];   // add length scale
+  depw = ht[idx] + sshn[idx];
 
-  v_nc = 0.5 * (vn(ji,jj) + vn(ji+1,jj));
-  v_n  = 0.5 * v_nc * (e1v(ji,jj) + e1v(ji+1,jj));
-  depn = 0.5 * (hv(ji,jj) + sshn_v(ji,jj) + hv(ji+1,jj) +
-		sshn_v(ji+1,jj));
+  v_sc = 0.5 * (vn[idxjm1] + vn[idxip1jm1]);
+  v_s  = 0.5 * v_sc * (e1v[idxjm1] + e1v[idxip1jm1]);
+  deps = 0.5 * (hv[idxjm1] + sshn_v[idxjm1] + hv[idxip1jm1] +
+		sshn_v[idxip1jm1]);
+
+  v_nc = 0.5 * (vn[idx] + vn[idxip1]);
+  v_n  = 0.5 * v_nc * (e1v[idx] + e1v[idxip1]);
+  depn = 0.5 * (hv[idx] + sshn_v[idx] + hv[idxip1] +
+		sshn_v[idxip1]);
 
   // -advection (currently first order upwind)
-  uu_w = (0.5 - SIGN(0.5, u_w)) * un(ji,jj) +
-    (0.5 + SIGN(0.5, u_w)) * un(ji-1,jj) ;
-  uu_e = (0.5 + SIGN(0.5, u_e)) * un(ji,jj) +
-    (0.5 - SIGN(0.5, u_e)) * un(ji+1,jj) ;
+  uu_w = (0.5 - copysign(0.5, u_w)) * un[idx] +
+    (0.5 + copysign(0.5, u_w)) * un[idxim1] ;
+  uu_e = (0.5 + copysign(0.5, u_e)) * un[idx] +
+    (0.5 - copysign(0.5, u_e)) * un[idxip1] ;
 
-  if(tmask(ji,jj-1) <=0 || tmask(ji+1,jj-1) <= 0){
-    uu_s = (0.5_wp - SIGN(0.5, v_s)) * un(ji,jj);
+  if(tmask[idxjm1] <=0 || tmask[idxip1jm1] <= 0){
+    uu_s = (0.5 - copysign(0.5, v_s)) * un[idx];
   }
   else{
-    uu_s = (0.5 - SIGN(0.5, v_s)) * un(ji,jj) +
-      (0.5 + SIGN(0.5, v_s)) * un(ji,jj-1) ;
+    uu_s = (0.5 - copysign(0.5, v_s)) * un[idx] +
+      (0.5 + copysign(0.5, v_s)) * un[idxjm1] ;
   }
 
-  if(tmask(ji,jj+1) <=0 || tmask(ji+1,jj+1) <= 0){
-    uu_n = (0.5 + SIGN(0.5, v_n)) * un(ji,jj);
+  if(tmask[idxjp1] <=0 || tmask[idxjp1+1] <= 0){
+    uu_n = (0.5 + copysign(0.5, v_n)) * un[idx];
   }
   else{
-    uu_n = (0.5 + SIGN(0.5, v_n)) * un(ji,jj) +
-      (0.5 - SIGN(0.5, v_n)) * un(ji,jj+1);
+    uu_n = (0.5 + copysign(0.5, v_n)) * un[idx] +
+      (0.5 - copysign(0.5, v_n)) * un[idxjp1];
   }
 
   adv = uu_w * u_w * depw - uu_e * u_e * depe +
@@ -205,43 +228,41 @@ void momentum_u_code(int ji, int jj,
 
   // -viscosity
 
-  dudx_e = (un(ji+1,jj) - un(ji,  jj)) / e1t(ji+1,jj) * 
-    (ht(ji+1,jj) + sshn(ji+1,jj));
-  dudx_w = (un(ji,  jj) - un(ji-1,jj)) / e1t(ji,  jj) * 
-    (ht(ji,  jj) + sshn(ji,  jj));
-  if(tmask(ji,jj-1) <=0 || tmask(ji+1,jj-1) <= 0){
+  dudx_e = (un[idxip1] - un[idx]) / e1t[idxip1]*(ht[idxip1] + sshn[idxip1]);
+  dudx_w = (un[idx] - un[idxim1]) / e1t[idx]*(ht[idx] + sshn[idx]);
+  if(tmask[idxjm1] <=0 || tmask[idxip1jm1] <= 0){
     dudy_s = 0.0; // slip boundary
   }
   else{
-    dudy_s = (un(ji,jj) - un(ji,jj-1)) / (e2u(ji,jj) + e2u(ji,jj-1)) * 
-      (hu(ji,jj) + sshn_u(ji,jj) + hu(ji,jj-1) + sshn_u(ji,jj-1));
+    dudy_s = (un[idx] - un[idxjm1]) / (e2u[idx] + e2u[idxjm1]) * 
+      (hu[idx] + sshn_u[idx] + hu[idxjm1] + sshn_u[idxjm1]);
   }
 
-  if(tmask(ji,jj+1) <= 0 || tmask(ji+1,jj+1) <= 0){
+  if(tmask[idxjp1] <= 0 || tmask[idxjp1+1] <= 0){
     dudy_n = 0.0; // slip boundary
   }
   else{
-    dudy_n = (un(ji,jj+1) - un(ji,jj)) / (e2u(ji,jj) + e2u(ji,jj+1)) * 
-      (hu(ji,jj) + sshn_u(ji,jj) + hu(ji,jj+1) + sshn_u(ji,jj+1));
+    dudy_n = (un[idxjp1] - un[idx]) / (e2u[idx] + e2u[idxjp1]) * 
+      (hu[idx] + sshn_u[idx] + hu[idxjp1] + sshn_u[idxjp1]);
   }
 
-  vis = (dudx_e - dudx_w ) * e2u(ji,jj)  + 
-    (dudy_n - dudy_s ) * e1u(ji,jj) * 0.5;
+  vis = (dudx_e - dudx_w ) * e2u[idx]  + 
+    (dudy_n - dudy_s ) * e1u[idx] * 0.5;
   vis = visc * vis;   // visc will be an array visc(1:jpijglou) 
   // for variable viscosity, such as turbulent viscosity
 
   // -Coriolis' force (can be implemented implicitly)
-  cor = 0.5 * (2. * omega * SIN(gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * 
-    e12u(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj));
+  cor = 0.5 * (2. * OMEGA * sin(gphiu[idx] * d2r) * (v_sc + v_nc)) * 
+    e12u[idx] * (hu[idx] + sshn_u[idx]);
 
   // -pressure gradient
-  hpg = -g * (hu(ji,jj) + sshn_u(ji,jj)) * e2u(ji,jj) * 
-    (sshn(ji+1,jj) - sshn(ji,jj));
+  hpg = -G * (hu[idx] + sshn_u[idx]) * e2u[idx] * 
+    (sshn[idxip1] - sshn[idx]);
 
   // -linear bottom friction (implemented implicitly.
-  ua(ji,jj) = (un(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj)) + rdt * 
-                 (adv + vis + cor + hpg) / e12u(ji,jj)) / 
-    (hu(ji,jj) + ssha_u(ji,jj)) / (1.0 + cbfr * rdt) ;
+  ua[idx] = (un[idx] * (hu[idx] + sshn_u[idx]) + rdt * 
+                 (adv + vis + cor + hpg) / e12u[idx]) / 
+    (hu[idx] + ssha_u[idx]) / (1.0 + cbfr * rdt) ;
 
 }
  
@@ -280,7 +301,8 @@ void momentum_u_code(int ji, int jj,
 
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */
-__kernel void momentum_v_code(__global double *va,
+__kernel void momentum_v_code(int width,
+			      __global double *va,
 			      __global double *un,
 			      __global double *vn, 
 			      __global double *hu,
@@ -297,15 +319,19 @@ __kernel void momentum_v_code(__global double *va,
 			      __global double *e2v,
 			      __global double *e2t,
 			      __global double *e12v,
-			      __global double *gphiv){
+			      __global double *gphiv,
+			      double rdt, double cbfr, double visc){
+  int ji = get_global_id(0);
+  int jj = get_global_id(1);
 #else
 /** Interface to standard C version of kernel */
-void momentum_v_code(int ji, int jj, 
+void momentum_v_code(int ji, int jj, int width,
 		     double *va, double *un, double *vn, 
 		     double *hu, double *hv, double *ht, double *ssha_v, 
 		     double *sshn, double *sshn_u, double *sshn_v, 
 		     int *tmask, double *e1v, double *e1t, double *e2u,
-		     double *e2v, double *e2t, double *e12v, double *gphiv){
+		     double *e2v, double *e2t, double *e12v, double *gphiv,
+		     double rdt, double cbfr, double visc){
 #endif
 
   //use physical_params_mod
@@ -315,47 +341,57 @@ void momentum_v_code(int ji, int jj,
   double depe, depw, deps, depn;
   double hpg, adv, cor, vis;
   double dvdx_e, dvdx_w, dvdy_n, dvdy_s;
+  
+  int idxim1, idxjm1, idxip1, idxjp1, idxip1jm1, idxim1jp1;
+  int idx = jj*width + ji;
 
-  if(tmask(ji,jj) + tmask(ji+1,jj) <= 0)  return; // jump over non-computatinal domain
-  if(tmask(ji,jj) <= 0 || tmask(ji,jj+1) <= 0) return; // jump over v boundary cells
+  idxim1 = idx - 1;
+  idxip1 = idx + 1;
+  idxjm1 = idx - width;
+  idxjp1 = idx + width;
+  idxip1jm1 = idx - width + 1;
+  idxim1jp1 = idx + width - 1;
+
+  if(tmask[idx] + tmask[idxip1] <= 0)  return; // jump over non-computatinal domain
+  if(tmask[idx] <= 0 || tmask[idxjp1] <= 0) return; // jump over v boundary cells
 
   // kernel v adv 
-  v_n  = 0.5 * (vn(ji,jj) + vn(ji,jj+1)) * e1t(ji,jj+1); // add length scale.
-  depn = ht(ji,jj+1) + sshn(ji,jj+1);
+  v_n  = 0.5 * (vn[idx] + vn[idxjp1]) * e1t[idxjp1]; // add length scale.
+  depn = ht[idxjp1] + sshn[idxjp1];
 
-  v_s  = 0.5 * (vn(ji,jj) + vn(ji,jj-1)) * e1t(ji,jj); // add length scale
-  deps = ht(ji,jj) + sshn(ji,jj);
+  v_s  = 0.5 * (vn[idx] + vn[idxjm1]) * e1t[idx]; // add length scale
+  deps = ht[idx] + sshn[idx];
 
-  u_wc = 0.5 * (un(ji-1,jj) + un(ji-1,jj+1));
-  u_w  = 0.5 * u_wc * (e2u(ji-1,jj) + e2u(ji-1,jj+1));
-  depw = 0.50 * (hu(ji-1,jj) + sshn_u(ji-1,jj) + 
-		 hu(ji-1,jj+1) + sshn_u(ji-1,jj+1));
+  u_wc = 0.5 * (un[idxim1] + un[idxim1jp1]);
+  u_w  = 0.5 * u_wc * (e2u[idxim1] + e2u[idxim1jp1]);
+  depw = 0.50 * (hu[idxim1] + sshn_u[idxim1] + 
+		 hu[idxim1jp1] + sshn_u[idxim1jp1]);
 
-  u_ec = 0.5 * (un(ji,jj) + un(ji,jj+1));
-  u_e  = 0.5 * u_ec * (e2u(ji,jj) + e2u(ji,jj+1));
-  depe = 0.50 * (hu(ji,jj) + sshn_u(ji,jj) + 
-		 hu(ji,jj+1) + sshn_u(ji,jj+1));
+  u_ec = 0.5 * (un[idx] + un[idxjp1]);
+  u_e  = 0.5 * u_ec * (e2u[idx] + e2u[idxjp1]);
+  depe = 0.50 * (hu[idx] + sshn_u[idx] + 
+		 hu[idxjp1] + sshn_u[idxjp1]);
 
   // -advection (currently first order upwind)
-  vv_s = (0.5 - SIGN(0.5, v_s)) * vn(ji,jj)              +  
-    (0.5 + SIGN(0.5, v_s)) * vn(ji,jj-1) ;
-  vv_n = (0.5 + SIGN(0.5, v_n)) * vn(ji,jj)              +  
-    (0.5 - SIGN(0.5, v_n)) * vn(ji,jj+1) ;
+  vv_s = (0.5 - copysign(0.5, v_s)) * vn[idx] +  
+    (0.5 + copysign(0.5, v_s)) * vn[idxjm1] ;
+  vv_n = (0.5 + copysign(0.5, v_n)) * vn[idx] +  
+    (0.5 - copysign(0.5, v_n)) * vn[idxjp1] ;
 
-  if(tmask(ji-1,jj) <= 0 || tmask(ji-1,jj+1) <= 0){
-    vv_w = (0.5 - SIGN(0.5, u_w)) * vn(ji,jj);
+  if(tmask[idxim1] <= 0 || tmask[idxim1jp1] <= 0){
+    vv_w = (0.5 - copysign(0.5, u_w)) * vn[idx];
   }
   else{
-    vv_w = (0.5 - SIGN(0.5, u_w)) * vn(ji,jj) +  
-      (0.5 + SIGN(0.5, u_w)) * vn(ji-1,jj) ;
+    vv_w = (0.5 - copysign(0.5, u_w)) * vn[idx] +  
+      (0.5 + copysign(0.5, u_w)) * vn[idxim1] ;
   }
 
-  if(tmask(ji+1,jj) <= 0 || tmask(ji+1,jj+1) <= 0){
-    vv_e = (0.5 + SIGN(0.5, u_e)) * vn(ji,jj);
+  if(tmask[idxip1] <= 0 || tmask[idxjp1+1] <= 0){
+    vv_e = (0.5 + copysign(0.5, u_e)) * vn[idx];
   }
   else{
-    vv_e = (0.5 + SIGN(0.5, u_e)) * vn(ji,jj) +
-      (0.5 - SIGN(0.5, u_e)) * vn(ji+1,jj);
+    vv_e = (0.5 + copysign(0.5, u_e)) * vn[idx] +
+      (0.5 - copysign(0.5, u_e)) * vn[idxip1];
   }
 
   adv = vv_w * u_w * depw - vv_e * u_e * depe + 
@@ -364,44 +400,44 @@ void momentum_v_code(int ji, int jj,
   // -viscosity
 
     
-  dvdy_n = (vn(ji,jj+1) - vn(ji,  jj)) / e2t(ji,jj+1) * 
-    (ht(ji,jj+1) + sshn(ji,jj+1));
-  dvdy_s = (vn(ji,  jj) - vn(ji,jj-1)) / e2t(ji,  jj) * 
-    (ht(ji,  jj) + sshn(ji,  jj));
+  dvdy_n = (vn[idxjp1] - vn[idx]) / e2t[idxjp1] * 
+    (ht[idxjp1] + sshn[idxjp1]);
+  dvdy_s = (vn[idx] - vn[idxjm1]) / e2t[idx] * 
+    (ht[idx] + sshn[idx]);
 
-  if(tmask(ji-1,jj) <= 0 || tmask(ji-1,jj+1) <= 0){
+  if(tmask[idxim1] <= 0 || tmask[idxim1jp1] <= 0){
     dvdx_w = 0.0; // slip boundary
   }
   else{
-    dvdx_w = (vn(ji,jj) - vn(ji-1,jj)) / (e1v(ji,jj) + e1v(ji-1,jj)) * 
-      (hv(ji,jj) + sshn_v(ji,jj) + hv(ji-1,jj) + sshn_v(ji-1,jj));
+    dvdx_w = (vn[idx] - vn[idxim1]) / (e1v[idx] + e1v[idxim1]) * 
+      (hv[idx] + sshn_v[idx] + hv[idxim1] + sshn_v[idxim1]);
   }
 
-  if(tmask(ji+1,jj) <= 0 || tmask(ji+1,jj+1) <= 0){
+  if(tmask[idxip1] <= 0 || tmask[idxjp1+1] <= 0){
     dvdx_e = 0.0; // slip boundary
   }
   else{
-    dvdx_e = (vn(ji+1,jj) - vn(ji,jj)) / (e1v(ji,jj) + e1v(ji+1,jj)) * 
-      (hv(ji,jj) + sshn_v(ji,jj) + hv(ji+1,jj) + sshn_v(ji+1,jj));
+    dvdx_e = (vn[idxip1] - vn[idx]) / (e1v[idx] + e1v[idxip1]) * 
+      (hv[idx] + sshn_v[idx] + hv[idxip1] + sshn_v[idxip1]);
   }
 
-  vis = (dvdy_n - dvdy_s ) * e1v(ji,jj)  + 
-    (dvdx_e - dvdx_w ) * e2v(ji,jj) * 0.5  ;
+  vis = (dvdy_n - dvdy_s ) * e1v[idx]  + 
+    (dvdx_e - dvdx_w ) * e2v[idx] * 0.5  ;
 
   vis = visc * vis;   // visc will be a array visc(1:jpijglou) 
   // for variable viscosity, such as turbulent viscosity
 
   // -Coriolis' force (can be implemented implicitly)
-  cor = -0.5*(2. * omega * SIN(gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * 
-    e12v(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj));
+  cor = -0.5*(2. * OMEGA * sin(gphiv[idx] * d2r) * (u_ec + u_wc)) * 
+    e12v[idx] * (hv[idx] + sshn_v[idx]);
 
   // -pressure gradient
-  hpg = -g * (hv(ji,jj) + sshn_v(ji,jj)) * e1v(ji,jj) * 
-    (sshn(ji,jj+1) - sshn(ji,jj));
+  hpg = -G * (hv[idx] + sshn_v[idx]) * e1v[idx] * 
+    (sshn[idxjp1] - sshn[idx]);
 
   // -linear bottom friction (implemented implicitly.
-  va(ji,jj) = (vn(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj)) + 
-	       rdt * (adv + vis + cor + hpg) / e12v(ji,jj) ) / 
-    ((hv(ji,jj) + ssha_v(ji,jj))) / (1.0 + cbfr * rdt) ;
+  va[idx] = (vn[idx] * (hv[idx] + sshn_v[idx]) + 
+	       rdt * (adv + vis + cor + hpg) / e12v[idx] ) / 
+    ((hv[idx] + ssha_v[idx])) / (1.0 + cbfr * rdt) ;
 
 }

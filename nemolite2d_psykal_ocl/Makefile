@@ -6,6 +6,7 @@
 # Optionally:
 #
 #   CFLAGS - flags to pass to the C compiler
+#   LDFLAGS - flags to pass to the C linker
 
 # The targets that this Makefile supports
 EXECS = nemolite2d
