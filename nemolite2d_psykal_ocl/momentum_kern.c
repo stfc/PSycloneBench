@@ -1,5 +1,7 @@
-#include <stdio.h>
+#ifndef __OPENCL_VERSION__
+// This header isn't available in OpenCL
 #include <math.h>
+#endif
 
 #define PI 3.1415926535897932
 // Acceleration due to gravity (ms^-2)
@@ -8,6 +10,13 @@
 #define OMEGA 7.292116e-05
 // Degree to radian
 #define d2r PI/180.0
+
+// Although C99 has copysign(), this isn't necessarily available in
+// OpenCL
+//double sign(double a, double b){
+//  if(b < 0.0)return -1.0*a;
+//  return a;
+//}
 
 /*
   type, extends(kernel_type) :: momentum_u
@@ -130,7 +139,7 @@
 
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */
-__kernel void momentum_u_code(int width
+__kernel void momentum_u_code(int width,
 			      __global double *ua,
 			      __global double *un,
 			      __global double *vn,
@@ -148,7 +157,7 @@ __kernel void momentum_u_code(int width
 			      __global double *e2u,
 			      __global double *e2t,
 			      __global double *e12u,
-			      __global double *gphiu
+			      __global double *gphiu,
 			      double rdt, double cbfr, double visc){
   int ji = get_global_id(0);
   int jj = get_global_id(1);

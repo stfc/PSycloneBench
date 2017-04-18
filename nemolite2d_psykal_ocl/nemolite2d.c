@@ -188,6 +188,10 @@ int main(){
   /* Create OpenCL Kernels */
   cont_kernel = build_kernel(&context, device,
 			     "./continuity_kern.c", "continuity_code");
+  momu_kernel = build_kernel(&context, device,
+			     "./momentum_kern.c", "momentum_u_code");
+  momv_kernel = build_kernel(&context, device,
+			     "./momentum_kern.c", "momentum_v_code");
 
   /* Create Device Memory Buffers */
   buff_size = nx*ny*sizeof(cl_double);
@@ -276,30 +280,179 @@ int main(){
   check_status("clCreateBuffer", ret);
   fprintf(stdout, "Created device buffers OK\n");
 
-  /* Set OpenCL Kernel Parameters */
-  ret = clSetKernelArg(cont_kernel, 0, sizeof(cl_int), (void *)&nx);
+  /* Set OpenCL Kernel Parameters for Continuity */
+  int arg_idx = 0;
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)&nx);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, 1, sizeof(cl_mem), (void *)&ssha_device);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&ssha_device);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, 2, sizeof(cl_mem), (void *)&sshn_device);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_device);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, 3, sizeof(cl_mem), (void *)&sshn_u_device);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_u_device);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, 4, sizeof(cl_mem), (void *)&sshn_v_device);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_v_device);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, 5, sizeof(cl_mem), (void *)&hu_device);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&hu_device);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, 6, sizeof(cl_mem), (void *)&hv_device);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&hv_device);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, 7, sizeof(cl_mem), (void *)&un_device);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&un_device);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, 8, sizeof(cl_mem), (void *)&vn_device);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&vn_device);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, 9, sizeof(cl_double), (void *)&rdt);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_double),
+		       (void *)&rdt);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, 10, sizeof(cl_mem), (void *)&e12t_device);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e12t_device);
+  check_status("clSetKernelArg", ret);
+  fprintf(stdout, "Set %d arguments for Continuity kernel\n", arg_idx);
+
+  /* Set OpenCL Kernel Parameters for Momentum-u */
+  arg_idx = 0;
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_int), (void *)&nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&ua_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&un_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&vn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&hu_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&hv_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&ht_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&ssha_u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&tmask_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e1u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e1v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e1t_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e2u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e2t_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e12u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&gphiu_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_double),
+		       (void *)&rdt);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_double),
+		       (void *)&cbfr);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_double),
+		       (void *)&visc);
+  check_status("clSetKernelArg", ret);
+  fprintf(stdout, "Set %d arguments for Momentum-u kernel\n", arg_idx);
+  
+  arg_idx = 0;
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_int), (void *)&nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&va_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&un_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&vn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&hu_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&hv_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&ht_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&ssha_v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&tmask_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e1v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e1t_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e2u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e2v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e2t_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e12v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&gphiv_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_double),
+		       (void *)&rdt);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_double),
+		       (void *)&cbfr);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_double),
+		       (void *)&visc);
   check_status("clSetKernelArg", ret);
 
+  fprintf(stdout, "Set %d arguments for Momentum-v kernel\n", arg_idx);
 
   /*------------------------------------------------------------*/
   /* Field initialisation on host */
@@ -474,10 +627,17 @@ int main(){
   check_status("clEnqueueWriteBuffer", ret);
 
   /*------------------------------------------------------------*/
-  /* Run the kernel */
+  /* Run the kernels */
   size_t global_size[2] = {nx, ny}; 
-  clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
+  ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
 			 global_size, NULL, 0,0,0);
+  check_status("clEnqueueNDRangeKernel", ret);
+  ret = clEnqueueNDRangeKernel(command_queue, momu_kernel, 2, 0,
+			 global_size, NULL, 0,0,0);
+  check_status("clEnqueueNDRangeKernel", ret);
+  ret = clEnqueueNDRangeKernel(command_queue, momv_kernel, 2, 0,
+			 global_size, NULL, 0,0,0);
+  check_status("clEnqueueNDRangeKernel", ret);
   
   /* Run the kernels on the CPU */
   for(jj=1;jj<ny;jj++){
@@ -490,6 +650,15 @@ int main(){
   for(jj=1;jj<ny;jj++){
     for(ji=1;ji<nx-1;ji++){
       momentum_u_code(ji, jj, nx,                     
+		      ua, un, vn, hu, hv, ht,
+		      ssha_u, sshn, sshn_u, sshn_v, tmask,
+		      e1u, e1v, e1t, e2u, e2t, e12u, gphiu,
+		      rdt, cbfr, visc);
+    }
+  }
+  for(jj=1;jj<ny-1;jj++){
+    for(ji=1;ji<nx;ji++){
+      momentum_v_code(ji, jj, nx,                     
 		      va, un, vn, hu, hv, ht,
 		      ssha_v, sshn, sshn_u, sshn_v, tmask,
 		      e1v, e1t, e2u, e2v, e2t, e12v, gphiv,
@@ -500,16 +669,30 @@ int main(){
 
   sum = checksum(ssha, nx, ny, 1, 1);
   fprintf(stdout, "ssha checksum on CPU = %e\n", sum);
+  sum = checksum(ua, nx-1, ny, 1, 1);
+  fprintf(stdout, "ua checksum on CPU = %e\n", sum);
+  sum = checksum(va, nx, ny-1, 1, 1);
+  fprintf(stdout, "va checksum on CPU = %e\n", sum);
 
   /* Copy data back from device, synchronously */
   clEnqueueReadBuffer(command_queue, ssha_device, 1, 0,
 		      (size_t)buff_size, (void *)ssha, 0, NULL, NULL);
+  check_status("clEnqueueReadBuffer", ret);
+  clEnqueueReadBuffer(command_queue, ua_device, 1, 0,
+		      (size_t)buff_size, (void *)ua, 0, NULL, NULL);
+  check_status("clEnqueueReadBuffer", ret);
+  clEnqueueReadBuffer(command_queue, va_device, 1, 0,
+		      (size_t)buff_size, (void *)va, 0, NULL, NULL);
   check_status("clEnqueueReadBuffer", ret);
 
   /* Compute and output a checksum */
   sum = checksum(ssha, nx, ny, 1, 1);
   printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx+1], ssha[nx+2]);
   fprintf(stdout, "ssha checksum from OpenCL = %e\n", sum);
+  sum = checksum(ua, nx-1, ny, 1, 1);
+  fprintf(stdout, "ua checksum from OpenCL = %e\n", sum);
+  sum = checksum(va, nx, ny-1, 1, 1);
+  fprintf(stdout, "va checksum from OpenCL = %e\n", sum);
 
   /* Clean up */
   ret = clFlush(command_queue);

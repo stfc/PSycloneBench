@@ -1,3 +1,4 @@
+/** Contains prototypes for the C versions of the Momentum kernels */
 #ifndef _MOM_KERNEL_INCLUDE
 #define _MOM_KERNEL_INCLUDE
 void momentum_u_code(int ji, int jj, int width,

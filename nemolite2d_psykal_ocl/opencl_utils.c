@@ -124,6 +124,7 @@ void check_status(char *text, cl_int err){
   }
 }
 
+/** Creates an OpenCL kernel for the supplied context and device */
 cl_kernel build_kernel(cl_context *context, cl_device_id *device,
 		       char *filename, char *kernel_name){
   FILE *fp;
@@ -167,7 +168,7 @@ cl_kernel build_kernel(cl_context *context, cl_device_id *device,
   check_status("clBuildProgram", ret);
 
   /* Create OpenCL Kernel */
-  kernel = clCreateKernel(program, "continuity_code", &ret);
+  kernel = clCreateKernel(program, kernel_name, &ret);
   check_status("clCreateKernel", ret);
 
   /* Clean up */
