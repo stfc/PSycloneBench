@@ -70,7 +70,14 @@ int main(){
   cl_kernel cont_kernel = NULL;
   cl_kernel momu_kernel = NULL;
   cl_kernel momv_kernel = NULL;
-  
+  cl_kernel bc_ssh_kernel = NULL;
+  cl_kernel bc_solid_u_kernel  = NULL;
+  cl_kernel bc_solid_v_kernel  = NULL;
+  cl_kernel bc_flather_v_kernel  = NULL;
+  cl_kernel copy_kernel  = NULL;
+  cl_kernel next_sshu_kernel  = NULL;
+  cl_kernel next_sshv_kernel  = NULL;
+
   cl_platform_id platform_ids[MAX_DEVICES];
   cl_uint ret_num_devices;
   cl_uint ret_num_platforms;
@@ -80,6 +87,8 @@ int main(){
 
   cl_int nx = 128;
   cl_int ny = 128;
+  /** Our time-step index (passed into BCs kernel) */
+  cl_int istep = 1;
   int ji, jj, idx;
   int buff_size;
   /** Sea-surface height */
@@ -192,6 +201,8 @@ int main(){
 			     "./momentum_kern.c", "momentum_u_code");
   momv_kernel = build_kernel(&context, device,
 			     "./momentum_kern.c", "momentum_v_code");
+  bc_ssh_kernel = build_kernel(&context, device,
+  			       "./boundary_conditions_kern.c", "bc_ssh_code");
 
   /* Create Device Memory Buffers */
   buff_size = nx*ny*sizeof(cl_double);
@@ -453,6 +464,26 @@ int main(){
   check_status("clSetKernelArg", ret);
 
   fprintf(stdout, "Set %d arguments for Momentum-v kernel\n", arg_idx);
+
+  /* Set kernel arguments for bc_ssh */
+  arg_idx = 0;
+  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_int),
+		       (void *)&nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_int),
+		       (void *)&istep);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&ssha_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&tmask_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_double),
+		       (void *)&rdt);
+  check_status("clSetKernelArg", ret);
+
+  fprintf(stdout, "Set %d arguments for bc-ssh kernel\n", arg_idx);
 
   /*------------------------------------------------------------*/
   /* Field initialisation on host */

@@ -1,22 +1,9 @@
 #ifndef __OPENCL_VERSION__
-// This header isn't available in OpenCL
+// This header isn't available/required in OpenCL
 #include <math.h>
 #endif
 
-#define PI 3.1415926535897932
-// Acceleration due to gravity (ms^-2)
-#define G 9.80665
-// Earth rotation speed (s^(-1))
-#define OMEGA 7.292116e-05
-// Degree to radian
-#define d2r PI/180.0
-
-// Although C99 has copysign(), this isn't necessarily available in
-// OpenCL
-//double sign(double a, double b){
-//  if(b < 0.0)return -1.0*a;
-//  return a;
-//}
+#include "physical_params.h"
 
 /*
   type, extends(kernel_type) :: momentum_u

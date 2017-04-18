@@ -16,7 +16,7 @@ all: $(EXECS)
 COMMON_MODULES = opencl_utils.o
 
 # Source files containing (OpenCL) kernels
-KERNEL_MODULES = continuity_kern.o momentum_kern.o
+KERNEL_MODULES = continuity_kern.o momentum_kern.o boundary_conditions_kern.o
 
 # Normal targets
 .PHONY: nemolite2d
