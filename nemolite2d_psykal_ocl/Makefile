@@ -12,14 +12,17 @@ EXECS = nemolite2d
 
 all: $(EXECS)
 
-COMMON_MODULES = opencl_utils.o continuity_kern.o
+COMMON_MODULES = opencl_utils.o
+
+# Source files containing (OpenCL) kernels
+KERNEL_MODULES = continuity_kern.o momentum_kern.o
 
 # Normal targets
 .PHONY: nemolite2d
 nemolite2d: 
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} ${KERNEL_MODULES}" nemolite2d.exe
 
-nemolite2d.o: $(COMMON_MODULES)
+nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
 
 # Interdependencies between modules, alphabetical order
 
