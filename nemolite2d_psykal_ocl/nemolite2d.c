@@ -73,6 +73,7 @@ int main(){
   cl_kernel bc_ssh_kernel = NULL;
   cl_kernel bc_solid_u_kernel  = NULL;
   cl_kernel bc_solid_v_kernel  = NULL;
+  cl_kernel bc_flather_u_kernel  = NULL;
   cl_kernel bc_flather_v_kernel  = NULL;
   cl_kernel copy_kernel  = NULL;
   cl_kernel next_sshu_kernel  = NULL;
@@ -203,6 +204,20 @@ int main(){
 			     "./momentum_kern.c", "momentum_v_code");
   bc_ssh_kernel = build_kernel(&context, device,
   			       "./boundary_conditions_kern.c", "bc_ssh_code");
+  bc_ssh_kernel = build_kernel(&context, device,
+  			       "./boundary_conditions_kern.c", "bc_ssh_code");
+  bc_solid_u_kernel = build_kernel(&context, device,
+				   "./boundary_conditions_kern.c",
+				   "bc_solid_u_code");
+  bc_solid_v_kernel = build_kernel(&context, device,
+				   "./boundary_conditions_kern.c",
+				   "bc_solid_v_code");
+  bc_flather_u_kernel = build_kernel(&context, device,
+				     "./boundary_conditions_kern.c",
+				     "bc_flather_u_code");
+  bc_flather_v_kernel = build_kernel(&context, device,
+				     "./boundary_conditions_kern.c",
+				     "bc_flather_v_code");
 
   /* Create Device Memory Buffers */
   buff_size = nx*ny*sizeof(cl_double);
@@ -396,6 +411,7 @@ int main(){
   check_status("clSetKernelArg", ret);
   fprintf(stdout, "Set %d arguments for Momentum-u kernel\n", arg_idx);
   
+  /* Set OpenCL Kernel Parameters for Momentum-v */
   arg_idx = 0;
   ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_int), (void *)&nx);
   check_status("clSetKernelArg", ret);
@@ -484,6 +500,74 @@ int main(){
   check_status("clSetKernelArg", ret);
 
   fprintf(stdout, "Set %d arguments for bc-ssh kernel\n", arg_idx);
+
+  /* Set OpenCL Kernel Parameters for bc_solid_u kernel */
+  arg_idx = 0;
+  ret = clSetKernelArg(bc_solid_u_kernel, arg_idx++, sizeof(cl_int),
+		       (void *)&nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_solid_u_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&ua_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_solid_u_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&tmask_device);
+  check_status("clSetKernelArg", ret);
+
+  fprintf(stdout, "Set %d arguments for bc_solid_u kernel\n", arg_idx);
+
+  /* Set OpenCL Kernel Parameters for bc_solid_v kernel */
+  arg_idx = 0;
+  ret = clSetKernelArg(bc_solid_v_kernel, arg_idx++, sizeof(cl_int),
+		       (void *)&nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_solid_v_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&va_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_solid_v_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&tmask_device);
+  check_status("clSetKernelArg", ret);
+
+  fprintf(stdout, "Set %d arguments for bc_solid_v kernel\n", arg_idx);
+
+  /* Set OpenCL Kernel Parameters for bc_flather_u kernel */
+  arg_idx = 0;
+  ret = clSetKernelArg(bc_flather_u_kernel, arg_idx++, sizeof(cl_int),
+		       (void *)&nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_flather_u_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&ua_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_flather_u_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&hu_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_flather_u_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_flather_u_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&tmask_device);
+  check_status("clSetKernelArg", ret);
+
+  fprintf(stdout, "Set %d arguments for bc_flather_u kernel\n", arg_idx);
+
+  /* Set OpenCL Kernel Parameters for bc_flather_v kernel */
+  arg_idx = 0;
+  ret = clSetKernelArg(bc_flather_v_kernel, arg_idx++, sizeof(cl_int),
+		       (void *)&nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_flather_v_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&va_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_flather_v_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&hv_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_flather_v_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(bc_flather_v_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&tmask_device);
+  check_status("clSetKernelArg", ret);
+
+  fprintf(stdout, "Set %d arguments for bc_flather_v kernel\n", arg_idx);
 
   /*------------------------------------------------------------*/
   /* Field initialisation on host */
@@ -667,6 +751,21 @@ int main(){
 			 global_size, NULL, 0,0,0);
   check_status("clEnqueueNDRangeKernel", ret);
   ret = clEnqueueNDRangeKernel(command_queue, momv_kernel, 2, 0,
+			 global_size, NULL, 0,0,0);
+  check_status("clEnqueueNDRangeKernel", ret);
+  ret = clEnqueueNDRangeKernel(command_queue, bc_ssh_kernel, 2, 0,
+			 global_size, NULL, 0,0,0);
+  check_status("clEnqueueNDRangeKernel", ret);
+  ret = clEnqueueNDRangeKernel(command_queue, bc_solid_u_kernel, 2, 0,
+			 global_size, NULL, 0,0,0);
+  check_status("clEnqueueNDRangeKernel", ret);
+  ret = clEnqueueNDRangeKernel(command_queue, bc_solid_v_kernel, 2, 0,
+			 global_size, NULL, 0,0,0);
+  check_status("clEnqueueNDRangeKernel", ret);
+  ret = clEnqueueNDRangeKernel(command_queue, bc_flather_u_kernel, 2, 0,
+			 global_size, NULL, 0,0,0);
+  check_status("clEnqueueNDRangeKernel", ret);
+  ret = clEnqueueNDRangeKernel(command_queue, bc_flather_v_kernel, 2, 0,
 			 global_size, NULL, 0,0,0);
   check_status("clEnqueueNDRangeKernel", ret);
   
