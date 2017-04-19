@@ -770,7 +770,18 @@ int main(){
   ret = clEnqueueNDRangeKernel(command_queue, bc_flather_v_kernel, 2, 0,
 			 global_size, NULL, 0,0,0);
   check_status("clEnqueueNDRangeKernel", ret);
-  
+
+  /* Copy 'after' fields to 'now' fields */
+  ret = clEnqueueCopyBuffer(command_queue, ua_device, un_device, 0, 0,
+			    buff_size,0, NULL, NULL);
+  check_status("clEnqueueCopyBuffer", ret);
+  ret = clEnqueueCopyBuffer(command_queue, va_device, vn_device, 0, 0,
+			    buff_size,0, NULL, NULL);
+  check_status("clEnqueueCopyBuffer", ret);
+  ret = clEnqueueCopyBuffer(command_queue, ssha_device, sshn_device, 0, 0,
+			    buff_size,0, NULL, NULL);
+  check_status("clEnqueueCopyBuffer", ret);
+
   /* Run the kernels on the CPU */
   for(jj=1;jj<ny;jj++){
     for(ji=1;ji<nx;ji++){
@@ -835,6 +846,10 @@ int main(){
 			va, hv, sshn_v, tmask);
     }
   }
+  /* Copy 'after' fields to 'now' fields */
+  memcpy(un, ua, buff_size);
+  memcpy(vn, va, buff_size);
+  memcpy(sshn, ssha, buff_size);
   
   printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx+1], ssha[nx+2]);
 
