@@ -74,9 +74,20 @@
   end subroutine invoke_next_sshu
 */
 
-void next_sshu_code(int ji, int jj, int width,
+#ifdef __OPENCL_VERSION__
+__kernel void next_sshu_code(int width,
+			     __global double *sshn_u,
+			     __global double *sshn,
+			     __global int *tmask,
+			     __global double *e12t,
+			     __global double *e12u){
+  int ji = get_global_id(0);
+  int jj = get_global_id(1);
+#else
+  void next_sshu_code(int ji, int jj, int width,
 		    double *sshn_u, double *sshn,
 		    int *tmask, double *e12t, double *e12u){
+#endif
   double rtmp1;
   int idx = jj*width + ji;
   int idxip1 = idx + 1;
@@ -117,9 +128,20 @@ void next_sshu_code(int ji, int jj, int width,
   end subroutine invoke_next_sshv
   */
   
+#ifdef __OPENCL_VERSION__
+__kernel void next_sshv_code(int width,
+			     __global double *sshn_v,
+			     __global double *sshn,
+			     __global int *tmask,
+			     __global double *e12t,
+			     __global double *e12v){
+  int ji = get_global_id(0);
+  int jj = get_global_id(1);
+#else
 void next_sshv_code(int ji, int jj, int width,
 		    double *sshn_v, double *sshn, int *tmask,
 		    double *e12t, double *e12v){
+#endif
   double rtmp1;
   int idx = jj*width + ji;
   int idxjp1 = idx + width;
