@@ -6,6 +6,7 @@
 #include "continuity.h"
 #include "momentum.h"
 #include "boundary_conditions.h"
+#include "time_update.h"
 
 #include "opencl_utils.h"
 
@@ -850,7 +851,20 @@ int main(){
   memcpy(un, ua, buff_size);
   memcpy(vn, va, buff_size);
   memcpy(sshn, ssha, buff_size);
-  
+
+  for(jj=1;jj<ny;jj++){
+    for(ji=1;ji<nx-1;ji++){
+      next_sshu_code(ji, jj, nx,
+		     sshn_u, sshn, tmask, e12t, e12u);
+    }
+  }
+  for(jj=1;jj<ny-1;jj++){
+    for(ji=1;ji<nx;ji++){
+      next_sshv_code(ji, jj, nx,
+		     sshn_v, sshn, tmask, e12t, e12v);
+    }
+  }
+
   printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx+1], ssha[nx+2]);
 
   sum = checksum(ssha, nx, ny, 1, 1);

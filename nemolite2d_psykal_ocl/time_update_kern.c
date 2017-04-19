@@ -1,13 +1,4 @@
-module time_update_mod
-  use kind_params_mod
-  use kernel_mod
-  use argument_mod
-  use grid_mod
-  use field_mod
-  implicit none
-
-  !=======================================
-
+/*
   type, extends(kernel_type) :: next_sshu
      type(arg), dimension(5) :: meta_args =  &
           (/ arg(READWRITE, CU, POINTWISE),  &
@@ -33,9 +24,9 @@ module time_update_mod
   contains
     procedure, nopass :: code => next_sshu_code
   end type next_sshu
+*/
 
-  !=======================================
-
+/*
   type, extends(kernel_type) :: next_sshv
      type(arg), dimension(5) :: meta_args =  &
           (/ arg(READWRITE, CV, POINTWISE),  &
@@ -61,11 +52,9 @@ module time_update_mod
   contains
     procedure, nopass :: code => next_sshv_code
   end type next_sshv
+*/
 
-contains
-
-  !================================================
-
+/*
   subroutine invoke_next_sshu(sshn_u, sshn)
     implicit none
     type(r2d_field), intent(inout) :: sshn_u
@@ -83,35 +72,31 @@ contains
     end do
 
   end subroutine invoke_next_sshu
+*/
 
-  !================================================
+void next_sshu_code(int ji, int jj, int width,
+		    double *sshn_u, double *sshn,
+		    int *tmask, double *e12t, double *e12u){
+  double rtmp1;
+  int idx = jj*width + ji;
+  int idxip1 = idx + 1;
 
-  subroutine next_sshu_code(ji,jj, sshn_u, sshn, &
-                            tmask,e12t,e12u)
-    implicit none
-    integer,                  intent(in)    :: ji, jj
-    integer,  dimension(:,:), intent(in)    :: tmask
-    real(wp), dimension(:,:), intent(in)    :: e12t, e12u
-    real(wp), dimension(:,:), intent(inout) :: sshn_u
-    real(wp), dimension(:,:), intent(in)    :: sshn
-    ! Locals
-    real(wp) :: rtmp1
+  if(tmask[idx] + tmask[idxip1] <= 0)return; // jump over non-computational domain
 
-    if(tmask(ji,jj) + tmask(ji+1,jj) <= 0)  return   !jump over non-computational domain
+  if(tmask[idx] * tmask[idxip1] > 0){
+    rtmp1 = e12t[idx] * sshn[idx] + e12t[idxip1] * sshn[idxip1];
+    sshn_u[idx] = 0.5 * rtmp1 / e12u[idx] ;
+  }
+  else if(tmask[idx] <= 0){
+    sshn_u[idx] = sshn[idxip1];
+  }
+  else if(tmask[idxip1] <= 0){
+      sshn_u[idx] = sshn[idx];
+  }
 
-    IF(tmask(ji,jj) * tmask(ji+1,jj) > 0) THEN
-      rtmp1 = e12t(ji,jj) * sshn(ji,jj) + e12t(ji+1,jj) * sshn(ji+1,jj)
-      sshn_u(ji,jj) = 0.5_wp * rtmp1 / e12u(ji,jj) 
-    ELSE IF(tmask(ji,jj) <= 0) THEN
-      sshn_u(ji,jj) = sshn(ji+1,jj)
-    ELSE IF(tmask(ji+1,jj) <= 0) THEN
-      sshn_u(ji,jj) = sshn(ji,jj)
-    END IF
-
-  end subroutine next_sshu_code
+}
     
-  !================================================
-
+  /*
   subroutine invoke_next_sshv(sshn_v, sshn)
     implicit none
     type(r2d_field), intent(inout) :: sshn_v
@@ -130,32 +115,25 @@ contains
     end do
 
   end subroutine invoke_next_sshv
-
-  !================================================
-
-  subroutine next_sshv_code(ji, jj, &
-                            sshn_v, sshn, tmask, e12t, e12v)
-    implicit none
-    integer,                  intent(in)    :: ji, jj
-    integer,  dimension(:,:), intent(in)    :: tmask
-    real(wp), dimension(:,:), intent(in)    :: e12t, e12v
-    real(wp), dimension(:,:), intent(inout) :: sshn_v
-    real(wp), dimension(:,:), intent(in)    :: sshn
-    ! Locals
-    real(wp) :: rtmp1
-
-    if(tmask(ji,jj) + tmask(ji,jj+1) <= 0)  return !jump over non-computational domain
-    if(tmask(ji,jj) * tmask(ji,jj+1) > 0) then
-      rtmp1 = e12t(ji,jj) * sshn(ji,jj) + e12t(ji,jj+1) * sshn(ji,jj+1)
-      sshn_v(ji,jj) = 0.5_wp * rtmp1 / e12v(ji,jj) 
-    else if(tmask(ji,jj) <= 0) then
-      sshn_v(ji,jj) = sshn(ji,jj+1)
-    else if(tmask(ji,jj+1) <= 0) then
-      sshn_v(ji,jj) = sshn(ji,jj)
-    end if
-
-  end subroutine next_sshv_code
-
-  !================================================
-
-end module time_update_mod
+  */
+  
+void next_sshv_code(int ji, int jj, int width,
+		    double *sshn_v, double *sshn, int *tmask,
+		    double *e12t, double *e12v){
+  double rtmp1;
+  int idx = jj*width + ji;
+  int idxjp1 = idx + width;
+    
+  if((tmask[idx] + tmask[idxjp1]) <= 0)return; //jump over non-computational domain
+  if((tmask[idx] * tmask[idxjp1]) > 0){
+    rtmp1 = e12t[idx] * sshn[idx] + e12t[idxjp1] * sshn[idxjp1];
+    sshn_v[idx] = 0.5 * rtmp1 / e12v[idx] ;
+  }
+  else if(tmask[idx] <= 0){
+    sshn_v[idx] = sshn[idxjp1];
+  }
+  else if(tmask[idxjp1] <= 0){
+    sshn_v[idx] = sshn[idx];
+  }
+  
+}
