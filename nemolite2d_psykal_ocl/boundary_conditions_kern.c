@@ -175,7 +175,7 @@ void bc_ssh_code(int ji, int jj, int width,
   double amp_tide, omega_tide, rtime;
 
   amp_tide   = 0.2;
-  omega_tide = 2.0 * 3.14159 / (12.42 * 3600.);
+  omega_tide = 2.0 * 3.14159 / (12.42 * 3600.0);
   rtime = (double)istep * rdt;
 
   if(tmask[idx] <= 0) return;

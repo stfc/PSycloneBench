@@ -338,7 +338,7 @@ void momentum_v_code(int ji, int jj, int width,
   double hpg, adv, cor, vis;
   double dvdx_e, dvdx_w, dvdy_n, dvdy_s;
   
-  int idxim1, idxjm1, idxip1, idxjp1, idxip1jm1, idxim1jp1;
+  int idxim1, idxjm1, idxip1, idxjp1, idxim1jp1;
   int idx = jj*width + ji;
 
   idxim1 = idx - 1;

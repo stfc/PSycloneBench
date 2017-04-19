@@ -33,6 +33,26 @@ double checksum(double *array, int nx, int ny, int xstart, int ystart){
   return sum;
 }
 
+void write_field(int nx, int ny, int xstart, int ystart, double *field){
+
+  int ji, jj, idx;
+  FILE *fp = fopen("field.dat", "w");
+  if(!fp){
+    fprintf(stderr, "write_field: failed to open file field.dat\n");
+    return;
+  }
+
+  idx = 0;
+  for(jj=ystart; jj<ny; jj++){
+    for(ji=xstart; ji<nx; ji++){
+      fprintf(fp, "%d %e\n", ji, field[idx++]);
+    }
+    fprintf(fp, "\n");
+  }
+
+  fclose(fp);
+}
+
 int main(){
   /** The version of OpenCL supported by the selected device */
   int cl_version;
@@ -79,7 +99,6 @@ int main(){
   cl_kernel bc_solid_v_kernel  = NULL;
   cl_kernel bc_flather_u_kernel  = NULL;
   cl_kernel bc_flather_v_kernel  = NULL;
-  cl_kernel copy_kernel  = NULL;
   cl_kernel next_sshu_kernel  = NULL;
   cl_kernel next_sshv_kernel  = NULL;
 
@@ -958,6 +977,8 @@ int main(){
 
   printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx+1], ssha[nx+2]);
 
+  write_field(nx, ny, 1, 1, ssha);
+  
   sum = checksum(ssha, nx, ny, 1, 1);
   fprintf(stdout, "ssha checksum on CPU = %e\n", sum);
   sum = checksum(ua, nx-1, ny, 1, 1);
@@ -991,6 +1012,8 @@ int main(){
   ret = clFlush(command_queue);
   ret = clFinish(command_queue);
   ret = clReleaseKernel(cont_kernel);
+  ret = clReleaseKernel(momu_kernel);
+  ret = clReleaseKernel(momv_kernel);
   ret = clReleaseProgram(program);
   ret = clReleaseMemObject(ssha_device);
   ret = clReleaseMemObject(sshn_device);
@@ -1006,4 +1029,3 @@ int main(){
   ret = clReleaseContext(context);
 
 }
-
