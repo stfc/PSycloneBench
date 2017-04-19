@@ -13,7 +13,7 @@ EXECS = nemolite2d
 
 all: $(EXECS)
 
-COMMON_MODULES = opencl_utils.o
+COMMON_MODULES = opencl_utils.o timing.o
 
 # Source files containing (OpenCL) kernels
 KERNEL_MODULES = continuity_kern.o momentum_kern.o \

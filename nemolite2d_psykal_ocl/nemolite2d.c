@@ -9,6 +9,7 @@
 #include "time_update.h"
 
 #include "opencl_utils.h"
+#include "timing.h"
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -92,7 +93,9 @@ int main(){
   cl_int nx = 128;
   cl_int ny = 128;
   /** Our time-step index (passed into BCs kernel) */
-  cl_int istep = 1;
+  cl_int istep;
+  /** Number of time-steps to do */
+  cl_int nsteps = 3;
   int ji, jj, idx;
   int buff_size;
   /** Sea-surface height */
@@ -113,9 +116,13 @@ int main(){
   cl_double visc = 100.0;
   /** Coefficient of bottom friction */
   cl_double cbfr = 0.001;
-  
+
+  TimerInit();
+
   /*------------------------------------------------------------*/
   /* OpenCL initialisation */
+
+  TimerStart("OCL Init");
   
   /* Get Platform and Device Info */
   ret = clGetPlatformIDs(MAX_DEVICES, platform_ids, &ret_num_platforms);
@@ -624,7 +631,8 @@ int main(){
 
   fprintf(stdout, "Set %d arguments for next_sshv kernel\n", arg_idx);
 
-		
+  TimerStop();
+
   /*------------------------------------------------------------*/
   /* Field initialisation on host */
   
@@ -696,7 +704,10 @@ int main(){
     tmask[ji] = -1;
   }
   
+  /*------------------------------------------------------------*/
   /* Copy data to device synchronously */
+  TimerStart("Write buffers to device");
+  
   ret = clEnqueueWriteBuffer(command_queue, ssha_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha, 0,
 			     NULL, &event);
@@ -797,135 +808,153 @@ int main(){
 			     NULL, &event);
   check_status("clEnqueueWriteBuffer", ret);
 
+  TimerStop();
+  
   /*------------------------------------------------------------*/
   /* Run the kernels */
-  size_t global_size[2] = {nx, ny}; 
-  ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
-			 global_size, NULL, 0,0,0);
-  check_status("clEnqueueNDRangeKernel", ret);
-  ret = clEnqueueNDRangeKernel(command_queue, momu_kernel, 2, 0,
-			 global_size, NULL, 0,0,0);
-  check_status("clEnqueueNDRangeKernel", ret);
-  ret = clEnqueueNDRangeKernel(command_queue, momv_kernel, 2, 0,
-			 global_size, NULL, 0,0,0);
-  check_status("clEnqueueNDRangeKernel", ret);
-  ret = clEnqueueNDRangeKernel(command_queue, bc_ssh_kernel, 2, 0,
-			 global_size, NULL, 0,0,0);
-  check_status("clEnqueueNDRangeKernel", ret);
-  ret = clEnqueueNDRangeKernel(command_queue, bc_solid_u_kernel, 2, 0,
-			 global_size, NULL, 0,0,0);
-  check_status("clEnqueueNDRangeKernel", ret);
-  ret = clEnqueueNDRangeKernel(command_queue, bc_solid_v_kernel, 2, 0,
-			 global_size, NULL, 0,0,0);
-  check_status("clEnqueueNDRangeKernel", ret);
-  ret = clEnqueueNDRangeKernel(command_queue, bc_flather_u_kernel, 2, 0,
-			 global_size, NULL, 0,0,0);
-  check_status("clEnqueueNDRangeKernel", ret);
-  ret = clEnqueueNDRangeKernel(command_queue, bc_flather_v_kernel, 2, 0,
-			 global_size, NULL, 0,0,0);
-  check_status("clEnqueueNDRangeKernel", ret);
+  size_t global_size[2] = {nx, ny};
 
-  /* Copy 'after' fields to 'now' fields */
-  ret = clEnqueueCopyBuffer(command_queue, ua_device, un_device, 0, 0,
-			    buff_size,0, NULL, NULL);
-  check_status("clEnqueueCopyBuffer", ret);
-  ret = clEnqueueCopyBuffer(command_queue, va_device, vn_device, 0, 0,
-			    buff_size,0, NULL, NULL);
-  check_status("clEnqueueCopyBuffer", ret);
-  ret = clEnqueueCopyBuffer(command_queue, ssha_device, sshn_device, 0, 0,
-			    buff_size,0, NULL, NULL);
-  check_status("clEnqueueCopyBuffer", ret);
-
-  /* Update of sshu and sshv fields */
-  ret = clEnqueueNDRangeKernel(command_queue, next_sshu_kernel, 2, 0,
-			 global_size, NULL, 0,0,0);
-  check_status("clEnqueueNDRangeKernel", ret);
+  TimerStart("Time-stepping, OpenCL");
   
-  ret = clEnqueueNDRangeKernel(command_queue, next_sshv_kernel, 2, 0,
-			 global_size, NULL, 0,0,0);
-  check_status("clEnqueueNDRangeKernel", ret);
+  for(istep=1; istep<nsteps; istep++){
+    
+    ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
+				 global_size, NULL, 0,0,0);
+    check_status("clEnqueueNDRangeKernel", ret);
+    ret = clEnqueueNDRangeKernel(command_queue, momu_kernel, 2, 0,
+				 global_size, NULL, 0,0,0);
+    check_status("clEnqueueNDRangeKernel", ret);
+    ret = clEnqueueNDRangeKernel(command_queue, momv_kernel, 2, 0,
+				 global_size, NULL, 0,0,0);
+    check_status("clEnqueueNDRangeKernel", ret);
+    ret = clEnqueueNDRangeKernel(command_queue, bc_ssh_kernel, 2, 0,
+				 global_size, NULL, 0,0,0);
+    check_status("clEnqueueNDRangeKernel", ret);
+    ret = clEnqueueNDRangeKernel(command_queue, bc_solid_u_kernel, 2, 0,
+				 global_size, NULL, 0,0,0);
+    check_status("clEnqueueNDRangeKernel", ret);
+    ret = clEnqueueNDRangeKernel(command_queue, bc_solid_v_kernel, 2, 0,
+				 global_size, NULL, 0,0,0);
+    check_status("clEnqueueNDRangeKernel", ret);
+    ret = clEnqueueNDRangeKernel(command_queue, bc_flather_u_kernel, 2, 0,
+				 global_size, NULL, 0,0,0);
+    check_status("clEnqueueNDRangeKernel", ret);
+    ret = clEnqueueNDRangeKernel(command_queue, bc_flather_v_kernel, 2, 0,
+				 global_size, NULL, 0,0,0);
+    check_status("clEnqueueNDRangeKernel", ret);
 
+    /* Copy 'after' fields to 'now' fields */
+    ret = clEnqueueCopyBuffer(command_queue, ua_device, un_device, 0, 0,
+			      buff_size,0, NULL, NULL);
+    check_status("clEnqueueCopyBuffer", ret);
+    ret = clEnqueueCopyBuffer(command_queue, va_device, vn_device, 0, 0,
+			      buff_size,0, NULL, NULL);
+    check_status("clEnqueueCopyBuffer", ret);
+    ret = clEnqueueCopyBuffer(command_queue, ssha_device, sshn_device, 0, 0,
+			      buff_size,0, NULL, NULL);
+    check_status("clEnqueueCopyBuffer", ret);
+
+    /* Update of sshu and sshv fields */
+    ret = clEnqueueNDRangeKernel(command_queue, next_sshu_kernel, 2, 0,
+				 global_size, NULL, 0,0,0);
+    check_status("clEnqueueNDRangeKernel", ret);
+  
+    ret = clEnqueueNDRangeKernel(command_queue, next_sshv_kernel, 2, 0,
+				 global_size, NULL, 0,0,0);
+    check_status("clEnqueueNDRangeKernel", ret);
+  }
+
+  TimerStop();
+  
   /* Run the kernels on the CPU */
-  for(jj=1;jj<ny;jj++){
-    for(ji=1;ji<nx;ji++){
-      continuity_code(ji, jj, nx,                     
-		      ssha, sshn, sshn_u, sshn_v, hu, hv,
-		      un, vn, rdt, e12t);
-    }
-  }
-  for(jj=1;jj<ny;jj++){
-    for(ji=1;ji<nx-1;ji++){
-      momentum_u_code(ji, jj, nx,                     
-		      ua, un, vn, hu, hv, ht,
-		      ssha_u, sshn, sshn_u, sshn_v, tmask,
-		      e1u, e1v, e1t, e2u, e2t, e12u, gphiu,
-		      rdt, cbfr, visc);
-    }
-  }
-  for(jj=1;jj<ny-1;jj++){
-    for(ji=1;ji<nx;ji++){
-      momentum_v_code(ji, jj, nx,                     
-		      va, un, vn, hu, hv, ht,
-		      ssha_v, sshn, sshn_u, sshn_v, tmask,
-		      e1v, e1t, e2u, e2v, e2t, e12v, gphiv,
-		      rdt, cbfr, visc);
-    }
-  }
-  for(jj=1;jj<ny;jj++){
-    for(ji=1;ji<nx;ji++){
-      bc_ssh_code(ji, jj, nx,
-		  istep, ssha, tmask, rdt);
-    }
-  }
-  /* Upper loop limit for jj should encompass whole domain here (i.e. be
-     greater than any of the limits for the previous loops) */
-  for(jj=0;jj<ny;jj++){
-    for(ji=0;ji<nx;ji++){
-      bc_solid_u_code(ji, jj, nx,
-		      ua, tmask);
-    }
-  }
-  /* Upper loop limit for ji should encompass whole domain here (i.e. be
-     greater than any of the limits for the previous loops) */
-  for(jj=0;jj<ny;jj++){
-    for(ji=0;ji<nx;ji++){
-      bc_solid_v_code(ji, jj, nx,
-		      va, tmask);
-    }
-  }
-  /* Upper loop limit for jj should encompass whole domain here (i.e. be
-     greater than any of the limits for the previous loops) */
-  for(jj=0;jj<ny;jj++){
-    for(ji=0;ji<nx;ji++){
-      bc_flather_u_code(ji, jj, nx,
-			ua, hu, sshn_u, tmask);
-    }
-  }
-  /* Upper loop limit for ji should encompass whole domain here (i.e. be
-     greater than any of the limits for the previous loops) */
-  for(jj=0;jj<ny;jj++){
-    for(ji=0;ji<nx;ji++){
-      bc_flather_v_code(ji, jj, nx,
-			va, hv, sshn_v, tmask);
-    }
-  }
-  /* Copy 'after' fields to 'now' fields */
-  memcpy(un, ua, buff_size);
-  memcpy(vn, va, buff_size);
-  memcpy(sshn, ssha, buff_size);
 
-  for(jj=1;jj<ny;jj++){
-    for(ji=1;ji<nx-1;ji++){
-      next_sshu_code(ji, jj, nx,
-		     sshn_u, sshn, tmask, e12t, e12u);
+  TimerStart("Time-stepping, C");
+  
+  for(istep=1; istep<nsteps; istep++){
+    
+    for(jj=1;jj<ny;jj++){
+      for(ji=1;ji<nx;ji++){
+	continuity_code(ji, jj, nx,                     
+			ssha, sshn, sshn_u, sshn_v, hu, hv,
+			un, vn, rdt, e12t);
+      }
+    }
+    for(jj=1;jj<ny;jj++){
+      for(ji=1;ji<nx-1;ji++){
+	momentum_u_code(ji, jj, nx,                     
+			ua, un, vn, hu, hv, ht,
+			ssha_u, sshn, sshn_u, sshn_v, tmask,
+			e1u, e1v, e1t, e2u, e2t, e12u, gphiu,
+			rdt, cbfr, visc);
+      }
+    }
+    for(jj=1;jj<ny-1;jj++){
+      for(ji=1;ji<nx;ji++){
+	momentum_v_code(ji, jj, nx,                     
+			va, un, vn, hu, hv, ht,
+			ssha_v, sshn, sshn_u, sshn_v, tmask,
+			e1v, e1t, e2u, e2v, e2t, e12v, gphiv,
+			rdt, cbfr, visc);
+      }
+    }
+    for(jj=1;jj<ny;jj++){
+      for(ji=1;ji<nx;ji++){
+	bc_ssh_code(ji, jj, nx,
+		    istep, ssha, tmask, rdt);
+      }
+    }
+    /* Upper loop limit for jj should encompass whole domain here (i.e. be
+       greater than any of the limits for the previous loops) */
+    for(jj=0;jj<ny;jj++){
+      for(ji=0;ji<nx;ji++){
+	bc_solid_u_code(ji, jj, nx,
+			ua, tmask);
+      }
+    }
+    /* Upper loop limit for ji should encompass whole domain here (i.e. be
+       greater than any of the limits for the previous loops) */
+    for(jj=0;jj<ny;jj++){
+      for(ji=0;ji<nx;ji++){
+	bc_solid_v_code(ji, jj, nx,
+			va, tmask);
+      }
+    }
+    /* Upper loop limit for jj should encompass whole domain here (i.e. be
+       greater than any of the limits for the previous loops) */
+    for(jj=0;jj<ny;jj++){
+      for(ji=0;ji<nx;ji++){
+	bc_flather_u_code(ji, jj, nx,
+			  ua, hu, sshn_u, tmask);
+      }
+    }
+    /* Upper loop limit for ji should encompass whole domain here (i.e. be
+       greater than any of the limits for the previous loops) */
+    for(jj=0;jj<ny;jj++){
+      for(ji=0;ji<nx;ji++){
+	bc_flather_v_code(ji, jj, nx,
+			  va, hv, sshn_v, tmask);
+      }
+    }
+    /* Copy 'after' fields to 'now' fields */
+    memcpy(un, ua, buff_size);
+    memcpy(vn, va, buff_size);
+    memcpy(sshn, ssha, buff_size);
+
+    for(jj=1;jj<ny;jj++){
+      for(ji=1;ji<nx-1;ji++){
+	next_sshu_code(ji, jj, nx,
+		       sshn_u, sshn, tmask, e12t, e12u);
+      }
+    }
+    for(jj=1;jj<ny-1;jj++){
+      for(ji=1;ji<nx;ji++){
+	next_sshv_code(ji, jj, nx,
+		       sshn_v, sshn, tmask, e12t, e12v);
+      }
     }
   }
-  for(jj=1;jj<ny-1;jj++){
-    for(ji=1;ji<nx;ji++){
-      next_sshv_code(ji, jj, nx,
-		     sshn_v, sshn, tmask, e12t, e12v);
-    }
-  }
+
+  TimerStop();
 
   printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx+1], ssha[nx+2]);
 
@@ -955,6 +984,8 @@ int main(){
   fprintf(stdout, "ua checksum from OpenCL = %e\n", sum);
   sum = checksum(va, nx, ny-1, 1, 1);
   fprintf(stdout, "va checksum from OpenCL = %e\n", sum);
+
+  TimerReport();
 
   /* Clean up */
   ret = clFlush(command_queue);
