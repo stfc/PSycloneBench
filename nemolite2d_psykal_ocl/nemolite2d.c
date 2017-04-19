@@ -5,6 +5,8 @@
 /* Headers for the C versions of the kernels */
 #include "continuity.h"
 #include "momentum.h"
+#include "boundary_conditions.h"
+
 #include "opencl_utils.h"
 
 #ifdef __APPLE__
@@ -795,6 +797,45 @@ int main(){
 		      rdt, cbfr, visc);
     }
   }
+  for(jj=1;jj<ny;jj++){
+    for(ji=1;ji<nx;ji++){
+      bc_ssh_code(ji, jj, nx,
+		  istep, ssha, tmask, rdt);
+    }
+  }
+  /* Upper loop limit for jj should encompass whole domain here (i.e. be
+     greater than any of the limits for the previous loops) */
+  for(jj=0;jj<ny;jj++){
+    for(ji=0;ji<nx;ji++){
+      bc_solid_u_code(ji, jj, nx,
+		      ua, tmask);
+    }
+  }
+  /* Upper loop limit for ji should encompass whole domain here (i.e. be
+     greater than any of the limits for the previous loops) */
+  for(jj=0;jj<ny;jj++){
+    for(ji=0;ji<nx;ji++){
+      bc_solid_v_code(ji, jj, nx,
+		      va, tmask);
+    }
+  }
+  /* Upper loop limit for jj should encompass whole domain here (i.e. be
+     greater than any of the limits for the previous loops) */
+  for(jj=0;jj<ny;jj++){
+    for(ji=0;ji<nx;ji++){
+      bc_flather_u_code(ji, jj, nx,
+			ua, hu, sshn_u, tmask);
+    }
+  }
+  /* Upper loop limit for ji should encompass whole domain here (i.e. be
+     greater than any of the limits for the previous loops) */
+  for(jj=0;jj<ny;jj++){
+    for(ji=0;ji<nx;ji++){
+      bc_flather_v_code(ji, jj, nx,
+			va, hv, sshn_v, tmask);
+    }
+  }
+  
   printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx+1], ssha[nx+2]);
 
   sum = checksum(ssha, nx, ny, 1, 1);
