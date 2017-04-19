@@ -345,7 +345,6 @@ void momentum_v_code(int ji, int jj, int width,
   idxip1 = idx + 1;
   idxjm1 = idx - width;
   idxjp1 = idx + width;
-  idxip1jm1 = idx - width + 1;
   idxim1jp1 = idx + width - 1;
 
   if(tmask[idx] + tmask[idxip1] <= 0)  return; // jump over non-computatinal domain

@@ -20,12 +20,14 @@
 /** Maximum number of OpenCL devices we will query */
 #define MAX_DEVICES 4
 
-/** Compute a checksum for a double precision array of nx*ny values */
-double checksum(double *array, int nx, int ny, int xstart, int ystart){
+/** Compute a checksum for a double precision array of unknown no. of rows
+    but with each row containing width entries */
+double checksum(double *array, int width,
+		int nx, int ny, int xstart, int ystart){
   int i, j, jidx;
   double sum = 0.0;
   for(j=ystart; j<ny; j++){
-    jidx = j*nx;
+    jidx = j*width;
     for(i=xstart; i<nx; i++){
       sum += array[i+jidx];
     }
@@ -33,12 +35,13 @@ double checksum(double *array, int nx, int ny, int xstart, int ystart){
   return sum;
 }
 
-void write_field(int nx, int ny, int xstart, int ystart, double *field){
+void write_field(char *filename, int nx, int ny,
+		 int xstart, int ystart, double *field){
 
   int ji, jj, idx;
-  FILE *fp = fopen("field.dat", "w");
+  FILE *fp = fopen(filename, "w");
   if(!fp){
-    fprintf(stderr, "write_field: failed to open file field.dat\n");
+    fprintf(stderr, "write_field: failed to open file %s\n", filename);
     return;
   }
 
@@ -107,14 +110,17 @@ int main(){
   cl_uint ret_num_platforms;
   cl_int ret;
   cl_event event;
-  cl_command_queue_properties queue_properties;
-
+  //cl_command_queue_properties queue_properties;
+  /** Problem size */
   cl_int nx = 128;
   cl_int ny = 128;
+  /* Extend domain by one in each dimension to allow for staggering */
+  nx += 1;
+  ny += 1;
   /** Our time-step index (passed into BCs kernel) */
   cl_int istep;
   /** Number of time-steps to do */
-  cl_int nsteps = 3;
+  cl_int nsteps = 1;
   int ji, jj, idx;
   int buff_size;
   /** Sea-surface height */
@@ -682,6 +688,11 @@ int main(){
   gphiu = malloc(buff_size);
   gphiv = malloc(buff_size);
 
+  int xstart = 1;
+  int xstop = nx - 1;
+  int ystart = 1;
+  int ystop = ny - 1;
+
   for(jj=0;jj<ny;jj++){
     for(ji=0;ji<nx;ji++){
       idx = jj*nx + ji;
@@ -716,7 +727,9 @@ int main(){
     // West solid boundary
     tmask[idx] = 0;
     // East solid boundary
-    tmask[idx+nx-1] = 0;
+    for(ji=xstop-1; ji<nx; ji++){
+      tmask[idx+ji] = 0;
+    }
   }
   // Southern open boundary
   for(ji=0;ji<nx;ji++){
@@ -831,11 +844,11 @@ int main(){
   
   /*------------------------------------------------------------*/
   /* Run the kernels */
-  size_t global_size[2] = {nx, ny};
+  size_t global_size[2] = {xstop, ystop};
 
   TimerStart("Time-stepping, OpenCL");
   
-  for(istep=1; istep<nsteps; istep++){
+  for(istep=1; istep<=nsteps; istep++){
     
     ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
 				 global_size, NULL, 0,0,0);
@@ -889,17 +902,17 @@ int main(){
 
   TimerStart("Time-stepping, C");
   
-  for(istep=1; istep<nsteps; istep++){
+  for(istep=1; istep<=nsteps; istep++){
     
-    for(jj=1;jj<ny;jj++){
-      for(ji=1;ji<nx;ji++){
+    for(jj=ystart; jj<ystop; jj++){
+      for(ji=xstart; ji<xstop; ji++){
 	continuity_code(ji, jj, nx,                     
 			ssha, sshn, sshn_u, sshn_v, hu, hv,
 			un, vn, rdt, e12t);
       }
     }
-    for(jj=1;jj<ny;jj++){
-      for(ji=1;ji<nx-1;ji++){
+    for(jj=ystart; jj<ystop; jj++){
+      for(ji=xstart; ji<xstop-1; ji++){
 	momentum_u_code(ji, jj, nx,                     
 			ua, un, vn, hu, hv, ht,
 			ssha_u, sshn, sshn_u, sshn_v, tmask,
@@ -907,8 +920,8 @@ int main(){
 			rdt, cbfr, visc);
       }
     }
-    for(jj=1;jj<ny-1;jj++){
-      for(ji=1;ji<nx;ji++){
+    for(jj=ystart; jj<ystop-1; jj++){
+      for(ji=xstart; ji<xstop; ji++){
 	momentum_v_code(ji, jj, nx,                     
 			va, un, vn, hu, hv, ht,
 			ssha_v, sshn, sshn_u, sshn_v, tmask,
@@ -916,40 +929,40 @@ int main(){
 			rdt, cbfr, visc);
       }
     }
-    for(jj=1;jj<ny;jj++){
-      for(ji=1;ji<nx;ji++){
+    for(jj=ystart; jj<ystop; jj++){
+      for(ji=xstart; ji<xstop; ji++){
 	bc_ssh_code(ji, jj, nx,
 		    istep, ssha, tmask, rdt);
       }
     }
     /* Upper loop limit for jj should encompass whole domain here (i.e. be
        greater than any of the limits for the previous loops) */
-    for(jj=0;jj<ny;jj++){
-      for(ji=0;ji<nx;ji++){
+    for(jj=ystart-1; jj<ystop+1; jj++){
+      for(ji=xstart-1; ji<xstop; ji++){
 	bc_solid_u_code(ji, jj, nx,
 			ua, tmask);
       }
     }
     /* Upper loop limit for ji should encompass whole domain here (i.e. be
        greater than any of the limits for the previous loops) */
-    for(jj=0;jj<ny;jj++){
-      for(ji=0;ji<nx;ji++){
+    for(jj=ystart-1; jj<ystop; jj++){
+      for(ji=xstart-1; ji<xstop+1; ji++){
 	bc_solid_v_code(ji, jj, nx,
 			va, tmask);
       }
     }
     /* Upper loop limit for jj should encompass whole domain here (i.e. be
        greater than any of the limits for the previous loops) */
-    for(jj=0;jj<ny;jj++){
-      for(ji=0;ji<nx;ji++){
+    for(jj=ystart-1; jj<ystop+1; jj++){
+      for(ji=xstart-1; ji<xstop; ji++){
 	bc_flather_u_code(ji, jj, nx,
 			  ua, hu, sshn_u, tmask);
       }
     }
     /* Upper loop limit for ji should encompass whole domain here (i.e. be
        greater than any of the limits for the previous loops) */
-    for(jj=0;jj<ny;jj++){
-      for(ji=0;ji<nx;ji++){
+    for(jj=ystart-1; jj<ystop; jj++){
+      for(ji=xstart-1; ji<xstop+1; ji++){
 	bc_flather_v_code(ji, jj, nx,
 			  va, hv, sshn_v, tmask);
       }
@@ -959,14 +972,14 @@ int main(){
     memcpy(vn, va, buff_size);
     memcpy(sshn, ssha, buff_size);
 
-    for(jj=1;jj<ny;jj++){
-      for(ji=1;ji<nx-1;ji++){
+    for(jj=ystart; jj<ystop; jj++){
+      for(ji=xstart; ji<xstop-1; ji++){
 	next_sshu_code(ji, jj, nx,
 		       sshn_u, sshn, tmask, e12t, e12u);
       }
     }
-    for(jj=1;jj<ny-1;jj++){
-      for(ji=1;ji<nx;ji++){
+    for(jj=ystart; jj<ystop-1; jj++){
+      for(ji=xstart;ji<xstop; ji++){
 	next_sshv_code(ji, jj, nx,
 		       sshn_v, sshn, tmask, e12t, e12v);
       }
@@ -975,15 +988,16 @@ int main(){
 
   TimerStop();
 
-  printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx+1], ssha[nx+2]);
+  printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx*ystart+xstart],
+	 ssha[nx*ystart+xstart+1]);
 
-  write_field(nx, ny, 1, 1, ssha);
+  write_field("ssha_cpu.dat", nx, ny, 1, 1, ssha);
   
-  sum = checksum(ssha, nx, ny, 1, 1);
+  sum = checksum(ssha, nx, xstop, ystop, xstart, ystart);
   fprintf(stdout, "ssha checksum on CPU = %e\n", sum);
-  sum = checksum(ua, nx-1, ny, 1, 1);
+  sum = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
   fprintf(stdout, "ua checksum on CPU = %e\n", sum);
-  sum = checksum(va, nx, ny-1, 1, 1);
+  sum = checksum(va, nx, xstop, ystop-1, xstart, ystart);
   fprintf(stdout, "va checksum on CPU = %e\n", sum);
 
   /* Copy data back from device, synchronously */
@@ -998,12 +1012,16 @@ int main(){
   check_status("clEnqueueReadBuffer", ret);
 
   /* Compute and output a checksum */
-  sum = checksum(ssha, nx, ny, 1, 1);
-  printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx+1], ssha[nx+2]);
+  sum = checksum(ssha, nx, xstop, ystop, xstart, ystart);
+  printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx*ystart+xstart],
+	 ssha[nx*ystart+xstart+1]);
+
+  write_field("ssha_ocl.dat", nx, ny, 1, 1, ssha);
+
   fprintf(stdout, "ssha checksum from OpenCL = %e\n", sum);
-  sum = checksum(ua, nx-1, ny, 1, 1);
+  sum = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
   fprintf(stdout, "ua checksum from OpenCL = %e\n", sum);
-  sum = checksum(va, nx, ny-1, 1, 1);
+  sum = checksum(va, nx, xstop, ystop-1, xstart, ystart);
   fprintf(stdout, "va checksum from OpenCL = %e\n", sum);
 
   TimerReport();
@@ -1014,16 +1032,40 @@ int main(){
   ret = clReleaseKernel(cont_kernel);
   ret = clReleaseKernel(momu_kernel);
   ret = clReleaseKernel(momv_kernel);
+  ret = clReleaseKernel(bc_ssh_kernel);
+  ret = clReleaseKernel(bc_solid_u_kernel);
+  ret = clReleaseKernel(bc_solid_v_kernel);
+  ret = clReleaseKernel(bc_flather_u_kernel);
+  ret = clReleaseKernel(bc_flather_v_kernel);
+  ret = clReleaseKernel(next_sshu_kernel);
+  ret = clReleaseKernel(next_sshv_kernel);
+
   ret = clReleaseProgram(program);
+  ret = clReleaseMemObject(ssha_u_device);
+  ret = clReleaseMemObject(ssha_v_device);
   ret = clReleaseMemObject(ssha_device);
   ret = clReleaseMemObject(sshn_device);
   ret = clReleaseMemObject(sshn_u_device);
   ret = clReleaseMemObject(sshn_v_device);
+  ret = clReleaseMemObject(ht_device);
   ret = clReleaseMemObject(hu_device);
   ret = clReleaseMemObject(hv_device);
+  ret = clReleaseMemObject(ua_device);
+  ret = clReleaseMemObject(va_device);
   ret = clReleaseMemObject(un_device);
   ret = clReleaseMemObject(vn_device);
+  ret = clReleaseMemObject(e1u_device);
+  ret = clReleaseMemObject(e1v_device);
+  ret = clReleaseMemObject(e1t_device);
+  ret = clReleaseMemObject(e2u_device);
+  ret = clReleaseMemObject(e2v_device);
+  ret = clReleaseMemObject(e2t_device);
+  ret = clReleaseMemObject(e12u_device);
+  ret = clReleaseMemObject(e12v_device);
   ret = clReleaseMemObject(e12t_device);
+  ret = clReleaseMemObject(gphiu_device);
+  ret = clReleaseMemObject(gphiv_device);
+  ret = clReleaseMemObject(tmask_device);
 
   ret = clReleaseCommandQueue(command_queue);
   ret = clReleaseContext(context);

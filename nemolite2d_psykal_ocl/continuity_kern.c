@@ -68,6 +68,7 @@ void continuity_code(int ji, int jj,
 
     idxim1 = idx - 1;
     idxjm1 = idx - width;
+
     rtmp1 = (sshn_u[idx] + hu[idx]) * un[idx];
     rtmp2 = (sshn_u[idxim1] + hu[idxim1]) * un[idxim1];
     rtmp3 = (sshn_v[idx] + hv[idx]) * vn[idx];
@@ -77,5 +78,4 @@ void continuity_code(int ji, int jj,
       rdt / e12t[idx];
     // Following line is for testing only
     //ssha[idx] = (double)idx;
-
   }
