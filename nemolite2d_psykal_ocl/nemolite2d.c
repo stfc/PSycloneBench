@@ -35,9 +35,28 @@ double checksum(double *array, int width,
   return sum;
 }
 
+void write_ifield(char *filename, int nx, int ny,
+		 int xstart, int ystart, int *field){
+  int ji, jj, idx;
+  FILE *fp = fopen(filename, "w");
+  if(!fp){
+    fprintf(stderr, "write_ifield: failed to open file %s\n", filename);
+    return;
+  }
+
+  idx = 0;
+  for(jj=ystart; jj<ny; jj++){
+    for(ji=xstart; ji<nx; ji++){
+      fprintf(fp, "%d %d\n", ji, field[idx++]);
+    }
+    fprintf(fp, "\n");
+  }
+
+  fclose(fp);
+}
+
 void write_field(char *filename, int nx, int ny,
 		 int xstart, int ystart, double *field){
-
   int ji, jj, idx;
   FILE *fp = fopen(filename, "w");
   if(!fp){
@@ -161,8 +180,8 @@ int main(){
     ret = clGetPlatformInfo(platform_ids[idev],
 			    CL_PLATFORM_NAME,
 			    (size_t)128, (void *)result_str, &result_len);
-    fprintf(stdout, "Platform %d (id=%d) is: %s\n",
-	    idev, platform_ids[idev], result_str);
+    fprintf(stdout, "Platform %d (id=%ld) is: %s\n",
+	    idev, (long)(platform_ids[idev]), result_str);
   }
 
   ret = clGetDeviceIDs(platform_ids[0], CL_DEVICE_TYPE_DEFAULT, MAX_DEVICES,
@@ -725,16 +744,30 @@ int main(){
   for(jj=0;jj<ny;jj++){
     idx = jj*nx;
     // West solid boundary
-    tmask[idx] = 0;
+    for(ji=0; ji<xstart; ji++){
+      tmask[idx+ji] = 0;
+    }
     // East solid boundary
-    for(ji=xstop-1; ji<nx; ji++){
+    for(ji=xstop; ji<nx; ji++){
       tmask[idx+ji] = 0;
     }
   }
   // Southern open boundary
-  for(ji=0;ji<nx;ji++){
-    tmask[ji] = -1;
+  for(jj=0; jj<ystart; jj++){
+    idx = jj*nx;
+    for(ji=0;ji<nx;ji++){
+      tmask[idx + ji] = -1;
+    }
   }
+  // North solid boundary
+  for(jj=ystop; jj<ny; jj++){
+    idx = jj*nx;
+    for(ji=0;ji<nx;ji++){
+      tmask[idx + ji] = 0;
+    }
+  }
+  
+  write_ifield("tmask.dat", nx, ny, 0, 0, tmask);
   
   /*------------------------------------------------------------*/
   /* Copy data to device synchronously */
@@ -844,7 +877,7 @@ int main(){
   
   /*------------------------------------------------------------*/
   /* Run the kernels */
-  size_t global_size[2] = {xstop, ystop};
+  size_t global_size[2] = {nx, ny};
 
   TimerStart("Time-stepping, OpenCL");
   

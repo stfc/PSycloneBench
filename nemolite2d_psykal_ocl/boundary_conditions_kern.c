@@ -184,13 +184,13 @@ void bc_ssh_code(int ji, int jj, int width,
     ssha[idx] = amp_tide * sin(omega_tide * rtime);
   }
   else if(tmask[idx+width] < 0){
-      ssha[idx] = amp_tide * sin(omega_tide * rtime);
+    ssha[idx] = amp_tide * sin(omega_tide * rtime);
   }
   else if(tmask[idx+1] < 0){
-      ssha[idx] = amp_tide * sin(omega_tide * rtime);
+    ssha[idx] = amp_tide * sin(omega_tide * rtime);
   }
   else if(tmask[idx-1] < 0){
-      ssha[idx] = amp_tide * sin(omega_tide * rtime);
+    ssha[idx] = amp_tide * sin(omega_tide * rtime);
   }
 }
   
