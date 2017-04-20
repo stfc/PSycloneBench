@@ -66,6 +66,8 @@ void continuity_code(int ji, int jj,
     int idxim1, idxjm1;
     int idx = jj*width + ji;
 
+    if(jj == 0)return;
+
     idxim1 = idx - 1;
     idxjm1 = idx - width;
 

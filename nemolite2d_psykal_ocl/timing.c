@@ -15,7 +15,7 @@
 /** Maximum number of timed regions in code */
 #define NUM_TIMERS 40
 /** Set to 1 to switch on timing output for each individual PE */
-static int PER_PROCESS_TIMING=0;
+#define PER_PROCESS_TIMING 0
 
 /*=====================================================*/
 

@@ -85,6 +85,7 @@ int main(){
   cl_command_queue command_queue = NULL;
 
   /* Buffers on the device */
+  cl_mem timestep_device = NULL;
   cl_mem ssha_device = NULL;
   cl_mem ssha_u_device = NULL;
   cl_mem ssha_v_device = NULL;
@@ -128,7 +129,6 @@ int main(){
   cl_uint ret_num_devices;
   cl_uint ret_num_platforms;
   cl_int ret;
-  cl_event event;
   //cl_command_queue_properties queue_properties;
   /** Problem size */
   cl_int nx = 128;
@@ -138,6 +138,7 @@ int main(){
   ny += 1;
   /** Our time-step index (passed into BCs kernel) */
   cl_int istep;
+  cl_double istepf;
   /** Number of time-steps to do */
   cl_int nsteps = 1;
   int ji, jj, idx;
@@ -258,8 +259,6 @@ int main(){
 			     "./momentum_kern.c", "momentum_v_code");
   bc_ssh_kernel = build_kernel(&context, device,
   			       "./boundary_conditions_kern.c", "bc_ssh_code");
-  bc_ssh_kernel = build_kernel(&context, device,
-  			       "./boundary_conditions_kern.c", "bc_ssh_code");
   bc_solid_u_kernel = build_kernel(&context, device,
 				   "./boundary_conditions_kern.c",
 				   "bc_solid_u_code");
@@ -280,6 +279,12 @@ int main(){
 				  "next_sshv_code");
 
   /* Create Device Memory Buffers */
+
+  /* This buffer will hold the current time-step index as a double */
+  timestep_device = clCreateBuffer(context, CL_MEM_READ_WRITE,
+				   sizeof(cl_double), NULL, &ret);
+  check_status("clCreateBuffer", ret);
+
   buff_size = nx*ny*sizeof(cl_double);
   ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			       NULL, &ret);
@@ -354,7 +359,7 @@ int main(){
   check_status("clCreateBuffer", ret);
 
   tmask_device = clCreateBuffer(context, CL_MEM_READ_WRITE,
-				nx*ny*sizeof(cl_int), NULL, &ret);
+				(size_t)(nx*ny*sizeof(cl_int)), NULL, &ret);
   check_status("clCreateBuffer", ret);
 
   /* Coriolis parameters */
@@ -546,8 +551,8 @@ int main(){
   ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_int),
 		       (void *)&nx);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_int),
-		       (void *)&istep);
+  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&timestep_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_mem),
 		       (void *)&ssha_device);
@@ -775,102 +780,102 @@ int main(){
   
   ret = clEnqueueWriteBuffer(command_queue, ssha_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, ssha_u_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha_u, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, ssha_v_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha_v, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, sshn_device, 1, 0,
 			     (size_t)buff_size, (void *)sshn, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, sshn_u_device, 1, 0,
 			     (size_t)buff_size, (void *)sshn_u, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, sshn_v_device, 1, 0,
 			     (size_t)buff_size, (void *)sshn_v, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, hu_device, 1, 0,
 			     (size_t)buff_size, (void *)hu, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, hv_device, 1, 0,
 			     (size_t)buff_size, (void *)hv, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, ht_device, 1, 0,
 			     (size_t)buff_size, (void *)ht, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, un_device, 1, 0,
 			     (size_t)buff_size, (void *)un, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, vn_device, 1, 0,
 			     (size_t)buff_size, (void *)vn, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, ua_device, 1, 0,
 			     (size_t)buff_size, (void *)ua, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, va_device, 1, 0,
 			     (size_t)buff_size, (void *)va, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, e1u_device, 1, 0,
 			     (size_t)buff_size, (void *)e1u, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, e1v_device, 1, 0,
 			     (size_t)buff_size, (void *)e1v, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, e1t_device, 1, 0,
 			     (size_t)buff_size, (void *)e1t, 0,
-			     NULL, &event);
+			     NULL, NULL);
   ret = clEnqueueWriteBuffer(command_queue, e2u_device, 1, 0,
 			     (size_t)buff_size, (void *)e2u, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, e2v_device, 1, 0,
 			     (size_t)buff_size, (void *)e2v, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, e2t_device, 1, 0,
 			     (size_t)buff_size, (void *)e2t, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, e12u_device, 1, 0,
 			     (size_t)buff_size, (void *)e12t, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, e12v_device, 1, 0,
 			     (size_t)buff_size, (void *)e12t, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, e12t_device, 1, 0,
 			     (size_t)buff_size, (void *)e12t, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, gphiu_device, 1, 0,
 			     (size_t)buff_size, (void *)gphiu, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, gphiv_device, 1, 0,
 			     (size_t)buff_size, (void *)gphiv, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, tmask_device, 1, 0,
 			     (size_t)(nx*ny*sizeof(cl_int)), (void *)tmask, 0,
-			     NULL, &event);
+			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
 
   TimerStop();
@@ -882,9 +887,18 @@ int main(){
   TimerStart("Time-stepping, OpenCL");
   
   for(istep=1; istep<=nsteps; istep++){
-    
+
+    /* Copy over the current time-step index to the device. This is
+       required by the boundary conditions (and is a foreshadowing of
+       e.g. forcing fields read from disk) */
+    istepf = (cl_double)istep;
+    ret = clEnqueueWriteBuffer(command_queue, timestep_device, 1, 0,
+			       sizeof(cl_double), (void *)&istepf, 0,
+			       NULL, NULL);
+    check_status("clEnqueueNDRangeKernel", ret);
+
     ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
-				 global_size, NULL, 0,0,0);
+    				 global_size, NULL, 0,0,0);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, momu_kernel, 2, 0,
 				 global_size, NULL, 0,0,0);
@@ -893,7 +907,7 @@ int main(){
 				 global_size, NULL, 0,0,0);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_ssh_kernel, 2, 0,
-				 global_size, NULL, 0,0,0);
+    				 global_size, NULL, 0,0,0);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_solid_u_kernel, 2, 0,
 				 global_size, NULL, 0,0,0);
@@ -939,9 +953,9 @@ int main(){
     
     for(jj=ystart; jj<ystop; jj++){
       for(ji=xstart; ji<xstop; ji++){
-	continuity_code(ji, jj, nx,                     
-			ssha, sshn, sshn_u, sshn_v, hu, hv,
-			un, vn, rdt, e12t);
+    	continuity_code(ji, jj, nx,
+    			ssha, sshn, sshn_u, sshn_v, hu, hv,
+    			un, vn, rdt, e12t);
       }
     }
     for(jj=ystart; jj<ystop; jj++){
@@ -964,8 +978,8 @@ int main(){
     }
     for(jj=ystart; jj<ystop; jj++){
       for(ji=xstart; ji<xstop; ji++){
-	bc_ssh_code(ji, jj, nx,
-		    istep, ssha, tmask, rdt);
+    	bc_ssh_code(ji, jj, nx,
+    		    &istepf, ssha, tmask, rdt);
       }
     }
     /* Upper loop limit for jj should encompass whole domain here (i.e. be
@@ -1021,10 +1035,10 @@ int main(){
 
   TimerStop();
 
-  printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx*ystart+xstart],
+  printf("CPU: ssha[1,1] [1,2] = %e, %e\n", ssha[nx*ystart+xstart],
 	 ssha[nx*ystart+xstart+1]);
 
-  write_field("ssha_cpu.dat", nx, ny, 1, 1, ssha);
+  write_field("ssha_cpu.dat", nx, ny, 0, 0, ssha);
   
   sum = checksum(ssha, nx, xstop, ystop, xstart, ystart);
   fprintf(stdout, "ssha checksum on CPU = %e\n", sum);
@@ -1046,10 +1060,10 @@ int main(){
 
   /* Compute and output a checksum */
   sum = checksum(ssha, nx, xstop, ystop, xstart, ystart);
-  printf("ssha[1,1] [1,2] = %e, %e\n", ssha[nx*ystart+xstart],
+  printf("OCL:  ssha[1,1] [1,2] = %e, %e\n", ssha[nx*ystart+xstart],
 	 ssha[nx*ystart+xstart+1]);
 
-  write_field("ssha_ocl.dat", nx, ny, 1, 1, ssha);
+  write_field("ssha_ocl.dat", nx, ny, 0, 0, ssha);
 
   fprintf(stdout, "ssha checksum from OpenCL = %e\n", sum);
   sum = checksum(ua, nx, xstop-1, ystop, xstart, ystart);

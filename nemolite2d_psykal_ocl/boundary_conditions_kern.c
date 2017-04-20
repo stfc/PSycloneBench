@@ -160,7 +160,7 @@
 
 #ifdef __OPENCL_VERSION__
 __kernel void bc_ssh_code(int width,
-			  int istep,
+			  __global double *istep,
 			  __global double *ssha,
 			  __global int *tmask,
 			  double rdt){
@@ -168,7 +168,7 @@ __kernel void bc_ssh_code(int width,
   int jj = get_global_id(1);
 #else
 void bc_ssh_code(int ji, int jj, int width,
-		 int istep, double *ssha, int *tmask, double rdt){
+		 double *istep, double *ssha, int *tmask, double rdt){
 #endif
   int idx = jj*width + ji;
 
@@ -176,10 +176,16 @@ void bc_ssh_code(int ji, int jj, int width,
 
   amp_tide   = 0.2;
   omega_tide = 2.0 * 3.14159 / (12.42 * 3600.0);
-  rtime = (double)istep * rdt;
+  rtime = *istep * rdt;
 
+#ifdef __OPENCL_VERSION__
+  int nrow = (int)get_global_size(1);
+  if(ji==0 || ji > (width-2))return;
+  if(jj==0 || jj > (nrow-2))return;
+#endif
+  
   if(tmask[idx] <= 0) return;
-
+  
   if(tmask[idx-width] < 0){
     ssha[idx] = amp_tide * sin(omega_tide * rtime);
   }
