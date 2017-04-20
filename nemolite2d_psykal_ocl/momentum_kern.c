@@ -171,6 +171,12 @@ void momentum_u_code(int ji, int jj, int width,
   
   int idxim1, idxjm1, idxip1, idxjp1, idxip1jm1;
   int idx = jj*width + ji;
+  
+#ifdef __OPENCL_VERSION__
+  int nrow = (int)get_global_size(1);
+  if(ji==0 || ji > (width-3))return;
+  if(jj==0 || jj > (nrow-2))return;
+#endif
 
   idxim1 = idx - 1;
   idxip1 = idx + 1;
@@ -330,8 +336,6 @@ void momentum_v_code(int ji, int jj, int width,
 		     double rdt, double cbfr, double visc){
 #endif
 
-  //use physical_params_mod
-  //use model_mod, only: rdt, cbfr, visc
   double u_e, u_w, v_n, v_s;
   double u_ec, u_wc, vv_e, vv_n, vv_s, vv_w;
   double depe, depw, deps, depn;
@@ -340,7 +344,13 @@ void momentum_v_code(int ji, int jj, int width,
   
   int idxim1, idxjm1, idxip1, idxjp1, idxim1jp1;
   int idx = jj*width + ji;
-
+  
+#ifdef __OPENCL_VERSION__
+  int nrow = (int)get_global_size(1);
+  if(ji==0 || ji > (width-2))return;
+  if(jj==0 || jj > (nrow-2))return;
+#endif
+  
   idxim1 = idx - 1;
   idxip1 = idx + 1;
   idxjm1 = idx - width;

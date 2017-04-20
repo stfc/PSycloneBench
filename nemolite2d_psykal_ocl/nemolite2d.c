@@ -150,17 +150,17 @@ int main(){
   cl_double *e1u, *e1v, *e1t, *e2u, *e2v, *e2t, *e12t, *e12u, *e12v;
   /** T-point mask */
   cl_int *tmask;
-  cl_double dep_const = 2.0;
+  cl_double dep_const = 100.0;
   /** Horizontal grid resolution */
-  cl_double dx = 0.5, dy = 0.5;
+  cl_double dx = 1000.0, dy = 1000.0;
   /** For computing checksums for validation */
-  double sum;
-  /** Reciprocal of the time step */
-  cl_double rdt = 0.5;
+  double cpu_sum[3], ocl_sum[3];
+  /** Time step (s) */
+  cl_double rdt = 20.0;
   /** horiz. kinematic viscosity coeff. */
-  cl_double visc = 100.0;
+  cl_double visc = 0.1;
   /** Coefficient of bottom friction */
-  cl_double cbfr = 0.001;
+  cl_double cbfr = 0.00015;
 
   TimerInit();
 
@@ -723,10 +723,10 @@ int main(){
       hu[idx] = dep_const;
       hv[idx] = dep_const;
       ht[idx] = dep_const;
-      un[idx] = ji;
-      vn[idx] = jj;
+      un[idx] = 0.1;
+      vn[idx] = 0.1;
       sshn_u[idx] = 0.0;
-      sshn_v[idx] = 2.0;
+      sshn_v[idx] = 0.0;
       sshn[idx] = 0.0;
       ssha[idx] = 0.0;
       // Grid properties
@@ -854,11 +854,11 @@ int main(){
 			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, e12u_device, 1, 0,
-			     (size_t)buff_size, (void *)e12t, 0,
+			     (size_t)buff_size, (void *)e12u, 0,
 			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, e12v_device, 1, 0,
-			     (size_t)buff_size, (void *)e12t, 0,
+			     (size_t)buff_size, (void *)e12v, 0,
 			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, e12t_device, 1, 0,
@@ -895,7 +895,7 @@ int main(){
     ret = clEnqueueWriteBuffer(command_queue, timestep_device, 1, 0,
 			       sizeof(cl_double), (void *)&istepf, 0,
 			       NULL, NULL);
-    check_status("clEnqueueNDRangeKernel", ret);
+    check_status("clEnqueueWriteBuffer", ret);
 
     ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
     				 global_size, NULL, 0,0,0);
@@ -909,6 +909,8 @@ int main(){
     ret = clEnqueueNDRangeKernel(command_queue, bc_ssh_kernel, 2, 0,
     				 global_size, NULL, 0,0,0);
     check_status("clEnqueueNDRangeKernel", ret);
+
+    /* Apply boundary conditions */
     ret = clEnqueueNDRangeKernel(command_queue, bc_solid_u_kernel, 2, 0,
 				 global_size, NULL, 0,0,0);
     check_status("clEnqueueNDRangeKernel", ret);
@@ -1039,13 +1041,12 @@ int main(){
 	 ssha[nx*ystart+xstart+1]);
 
   write_field("ssha_cpu.dat", nx, ny, 0, 0, ssha);
+  write_field("ua_cpu.dat", nx, ny, 0, 0, ua);
+  write_field("va_cpu.dat", nx, ny, 0, 0, va);
   
-  sum = checksum(ssha, nx, xstop, ystop, xstart, ystart);
-  fprintf(stdout, "ssha checksum on CPU = %e\n", sum);
-  sum = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
-  fprintf(stdout, "ua checksum on CPU = %e\n", sum);
-  sum = checksum(va, nx, xstop, ystop-1, xstart, ystart);
-  fprintf(stdout, "va checksum on CPU = %e\n", sum);
+  cpu_sum[0] = checksum(ssha, nx, xstop, ystop, xstart, ystart);
+  cpu_sum[1] = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
+  cpu_sum[2] = checksum(va, nx, xstop, ystop-1, xstart, ystart);
 
   /* Copy data back from device, synchronously */
   clEnqueueReadBuffer(command_queue, ssha_device, 1, 0,
@@ -1059,17 +1060,22 @@ int main(){
   check_status("clEnqueueReadBuffer", ret);
 
   /* Compute and output a checksum */
-  sum = checksum(ssha, nx, xstop, ystop, xstart, ystart);
+  ocl_sum[0] = checksum(ssha, nx, xstop, ystop, xstart, ystart);
   printf("OCL:  ssha[1,1] [1,2] = %e, %e\n", ssha[nx*ystart+xstart],
 	 ssha[nx*ystart+xstart+1]);
 
   write_field("ssha_ocl.dat", nx, ny, 0, 0, ssha);
+  write_field("ua_ocl.dat", nx, ny, 0, 0, ua);
+  write_field("va_ocl.dat", nx, ny, 0, 0, va);
 
-  fprintf(stdout, "ssha checksum from OpenCL = %e\n", sum);
-  sum = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
-  fprintf(stdout, "ua checksum from OpenCL = %e\n", sum);
-  sum = checksum(va, nx, xstop, ystop-1, xstart, ystart);
-  fprintf(stdout, "va checksum from OpenCL = %e\n", sum);
+  fprintf(stdout, "ssha checksums (CPU, OpenCL) = %e, %e. Diff = %e\n",
+          cpu_sum[0], ocl_sum[0], cpu_sum[0]-ocl_sum[0]);
+  ocl_sum[1] = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
+  fprintf(stdout, "ua checksums (CPU, OpenCL) = %e, %e. Diff = %e\n",
+          cpu_sum[1], ocl_sum[1], cpu_sum[1]-ocl_sum[1]);
+  ocl_sum[2] = checksum(va, nx, xstop, ystop-1, xstart, ystart);
+  fprintf(stdout, "va checksums (CPU, OpenCL) = %e, %e. Diff = %e\n",
+          cpu_sum[2], ocl_sum[2], cpu_sum[2]-ocl_sum[2]);
 
   TimerReport();
 
