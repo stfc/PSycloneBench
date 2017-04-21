@@ -160,15 +160,18 @@
 
 #ifdef __OPENCL_VERSION__
 __kernel void bc_ssh_code(int width,
-			  __global double *istep,
+			  int istep,
 			  __global double *ssha,
 			  __global int *tmask,
 			  double rdt){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
+  int nrow = (int)get_global_size(1);
+  if(ji==0 || ji > (width-2))return;
+  if(jj==0 || jj > (nrow-2))return;
 #else
 void bc_ssh_code(int ji, int jj, int width,
-		 double *istep, double *ssha, int *tmask, double rdt){
+		 int istep, double *ssha, int *tmask, double rdt){
 #endif
   int idx = jj*width + ji;
 
@@ -176,13 +179,7 @@ void bc_ssh_code(int ji, int jj, int width,
 
   amp_tide   = 0.2;
   omega_tide = 2.0 * 3.14159 / (12.42 * 3600.0);
-  rtime = *istep * rdt;
-
-#ifdef __OPENCL_VERSION__
-  int nrow = (int)get_global_size(1);
-  if(ji==0 || ji > (width-2))return;
-  if(jj==0 || jj > (nrow-2))return;
-#endif
+  rtime = istep * rdt;
   
   if(tmask[idx] <= 0) return;
   
@@ -232,6 +229,7 @@ __kernel void bc_solid_u_code(int width,
 			      __global int *tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
+  if(ji > (width-2))return;
 #else
   void bc_solid_u_code(int ji, int jj, int width, double *ua, int *tmask){
 #endif
@@ -267,6 +265,8 @@ __kernel void bc_solid_v_code(int width,
 			      __global double *va, __global int *tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
+  int nrow = (int)get_global_size(1);
+  if(jj > (nrow-2))return;
 #else
 void bc_solid_v_code(int ji, int jj, int width, double *va, int *tmask){
 #endif
@@ -313,6 +313,7 @@ __kernel void bc_flather_u_code(int width,
 				__global int *tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
+  if(ji > (width-2))return;
 #else
 void bc_flather_u_code(int ji, int jj, int width,
 		       double *ua, double *hu, double *sshn_u, int *tmask){
@@ -371,6 +372,8 @@ __kernel void bc_flather_v_code(int width,
 				__global int *tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
+  int nrow = (int)get_global_size(1);
+  if(jj > (nrow-2))return;
 #else
 void bc_flather_v_code(int ji, int jj, int width,
 		       double *va, double *hv, double *sshn_v, int *tmask){
@@ -393,25 +396,3 @@ void bc_flather_v_code(int ji, int jj, int width,
   }
 
 }
-
-/*
-  void setup_vmask_code(ji, jj, vmask, tmask){
-    integer, intent(in) :: ji, jj
-    integer,  dimension(:,:), intent(inout) :: vmask
-    integer,  dimension(:,:), intent(in) :: tmask
-    integer :: jiv
-
-       vmask[idx] = 0;
-
-if(tmask[idx] + tmask(ji,jj+1) <= -1) return;
-    
-    IF(tmask[idx] < 0) THEN
-  jiv = jj + 1;
-    ELSE IF(tmask(ji,jj+1) < 0) THEN
-    jiv = jj - 1 ;
-    END IF
-
-    vmask(ji,jiv) = 1;
-
-	  }
-*/

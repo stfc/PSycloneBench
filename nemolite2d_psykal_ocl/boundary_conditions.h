@@ -2,7 +2,7 @@
 #define _BOUNDARY_CONDITIONS_INCLUDE
 
 void bc_ssh_code(int ji, int jj, int width,
-		 double *istep, double *ssha, int *tmask, double rdt);
+		 int istep, double *ssha, int *tmask, double rdt);
 
 void bc_solid_u_code(int ji, int jj, int width, double *ua, int *tmask);
 void bc_solid_v_code(int ji, int jj, int width, double *va, int *tmask);

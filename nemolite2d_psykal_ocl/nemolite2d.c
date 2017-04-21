@@ -85,7 +85,6 @@ int main(){
   cl_command_queue command_queue = NULL;
 
   /* Buffers on the device */
-  cl_mem timestep_device = NULL;
   cl_mem ssha_device = NULL;
   cl_mem ssha_u_device = NULL;
   cl_mem ssha_v_device = NULL;
@@ -138,9 +137,8 @@ int main(){
   ny += 1;
   /** Our time-step index (passed into BCs kernel) */
   cl_int istep;
-  cl_double istepf;
   /** Number of time-steps to do */
-  cl_int nsteps = 1;
+  cl_int nsteps = 3;
   int ji, jj, idx;
   int buff_size;
   /** Sea-surface height */
@@ -279,11 +277,6 @@ int main(){
 				  "next_sshv_code");
 
   /* Create Device Memory Buffers */
-
-  /* This buffer will hold the current time-step index as a double */
-  timestep_device = clCreateBuffer(context, CL_MEM_READ_WRITE,
-				   sizeof(cl_double), NULL, &ret);
-  check_status("clCreateBuffer", ret);
 
   buff_size = nx*ny*sizeof(cl_double);
   ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
@@ -551,9 +544,10 @@ int main(){
   ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_int),
 		       (void *)&nx);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&timestep_device);
-  check_status("clSetKernelArg", ret);
+  arg_idx++; // Skip time-step argument here - do in time-stepping loop
+  /* ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_int), */
+  /* 		       (void *)&istep); */
+  /* check_status("clSetKernelArg", ret); */
   ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_mem),
 		       (void *)&ssha_device);
   check_status("clSetKernelArg", ret);
@@ -723,8 +717,8 @@ int main(){
       hu[idx] = dep_const;
       hv[idx] = dep_const;
       ht[idx] = dep_const;
-      un[idx] = 0.1;
-      vn[idx] = 0.1;
+      un[idx] = 0.0;
+      vn[idx] = 0.0;
       sshn_u[idx] = 0.0;
       sshn_v[idx] = 0.0;
       sshn[idx] = 0.0;
@@ -873,10 +867,13 @@ int main(){
 			     (size_t)buff_size, (void *)gphiv, 0,
 			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
+  cl_event copy_event, kern_event;
   ret = clEnqueueWriteBuffer(command_queue, tmask_device, 1, 0,
 			     (size_t)(nx*ny*sizeof(cl_int)), (void *)tmask, 0,
-			     NULL, NULL);
+			     NULL, &copy_event);
   check_status("clEnqueueWriteBuffer", ret);
+  ret = clWaitForEvents(1, &copy_event);
+  check_status("clWaitForEvents", ret);
 
   TimerStop();
   
@@ -891,11 +888,9 @@ int main(){
     /* Copy over the current time-step index to the device. This is
        required by the boundary conditions (and is a foreshadowing of
        e.g. forcing fields read from disk) */
-    istepf = (cl_double)istep;
-    ret = clEnqueueWriteBuffer(command_queue, timestep_device, 1, 0,
-			       sizeof(cl_double), (void *)&istepf, 0,
-			       NULL, NULL);
-    check_status("clEnqueueWriteBuffer", ret);
+    ret = clSetKernelArg(bc_ssh_kernel, 1, sizeof(cl_int),
+			 (void *)&istep);
+    check_status("clSetKernelArg", ret);
 
     ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
     				 global_size, NULL, 0,0,0);
@@ -906,7 +901,7 @@ int main(){
     ret = clEnqueueNDRangeKernel(command_queue, momv_kernel, 2, 0,
 				 global_size, NULL, 0,0,0);
     check_status("clEnqueueNDRangeKernel", ret);
-    ret = clEnqueueNDRangeKernel(command_queue, bc_ssh_kernel, 2, 0,
+    ret = clEnqueueNDRangeKernel(command_queue, bc_ssh_kernel, 2, NULL,
     				 global_size, NULL, 0,0,0);
     check_status("clEnqueueNDRangeKernel", ret);
 
@@ -915,13 +910,13 @@ int main(){
 				 global_size, NULL, 0,0,0);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_solid_v_kernel, 2, 0,
-				 global_size, NULL, 0,0,0);
+    				 global_size, NULL, 0,0,0);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_flather_u_kernel, 2, 0,
 				 global_size, NULL, 0,0,0);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_flather_v_kernel, 2, 0,
-				 global_size, NULL, 0,0,0);
+    				 global_size, NULL, 0,0,0);
     check_status("clEnqueueNDRangeKernel", ret);
 
     /* Copy 'after' fields to 'now' fields */
@@ -941,9 +936,11 @@ int main(){
     check_status("clEnqueueNDRangeKernel", ret);
   
     ret = clEnqueueNDRangeKernel(command_queue, next_sshv_kernel, 2, 0,
-				 global_size, NULL, 0,0,0);
+				 global_size, NULL, 0,0,&kern_event);
     check_status("clEnqueueNDRangeKernel", ret);
   }
+  ret = clWaitForEvents(1, &kern_event);
+  check_status("clWaitForEvents", ret);
 
   TimerStop();
   
@@ -981,7 +978,7 @@ int main(){
     for(jj=ystart; jj<ystop; jj++){
       for(ji=xstart; ji<xstop; ji++){
     	bc_ssh_code(ji, jj, nx,
-    		    &istepf, ssha, tmask, rdt);
+    		    istep, ssha, tmask, rdt);
       }
     }
     /* Upper loop limit for jj should encompass whole domain here (i.e. be
@@ -996,8 +993,8 @@ int main(){
        greater than any of the limits for the previous loops) */
     for(jj=ystart-1; jj<ystop; jj++){
       for(ji=xstart-1; ji<xstop+1; ji++){
-	bc_solid_v_code(ji, jj, nx,
-			va, tmask);
+    	bc_solid_v_code(ji, jj, nx,
+    			va, tmask);
       }
     }
     /* Upper loop limit for jj should encompass whole domain here (i.e. be
@@ -1012,8 +1009,8 @@ int main(){
        greater than any of the limits for the previous loops) */
     for(jj=ystart-1; jj<ystop; jj++){
       for(ji=xstart-1; ji<xstop+1; ji++){
-	bc_flather_v_code(ji, jj, nx,
-			  va, hv, sshn_v, tmask);
+    	bc_flather_v_code(ji, jj, nx,
+    			  va, hv, sshn_v, tmask);
       }
     }
     /* Copy 'after' fields to 'now' fields */
@@ -1048,7 +1045,8 @@ int main(){
   cpu_sum[1] = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
   cpu_sum[2] = checksum(va, nx, xstop, ystop-1, xstart, ystart);
 
-  /* Copy data back from device, synchronously */
+  /* Copy data back from device, synchronously. Ensure we don't start the
+   copy until the last kernel has finished. */
   clEnqueueReadBuffer(command_queue, ssha_device, 1, 0,
 		      (size_t)buff_size, (void *)ssha, 0, NULL, NULL);
   check_status("clEnqueueReadBuffer", ret);
@@ -1056,8 +1054,11 @@ int main(){
 		      (size_t)buff_size, (void *)ua, 0, NULL, NULL);
   check_status("clEnqueueReadBuffer", ret);
   clEnqueueReadBuffer(command_queue, va_device, 1, 0,
-		      (size_t)buff_size, (void *)va, 0, NULL, NULL);
+		      (size_t)buff_size, (void *)va, 0, NULL, &copy_event);
   check_status("clEnqueueReadBuffer", ret);
+
+  clWaitForEvents(1, &copy_event);
+  check_status("clWaitForEvents", ret);
 
   /* Compute and output a checksum */
   ocl_sum[0] = checksum(ssha, nx, xstop, ystop, xstart, ystart);
@@ -1068,6 +1069,7 @@ int main(){
   write_field("ua_ocl.dat", nx, ny, 0, 0, ua);
   write_field("va_ocl.dat", nx, ny, 0, 0, va);
 
+  fprintf(stdout, "After %d time-steps:\n", nsteps);
   fprintf(stdout, "ssha checksums (CPU, OpenCL) = %e, %e. Diff = %e\n",
           cpu_sum[0], ocl_sum[0], cpu_sum[0]-ocl_sum[0]);
   ocl_sum[1] = checksum(ua, nx, xstop-1, ystop, xstart, ystart);

@@ -174,7 +174,7 @@ void momentum_u_code(int ji, int jj, int width,
   
 #ifdef __OPENCL_VERSION__
   int nrow = (int)get_global_size(1);
-  if(ji==0 || ji > (width-3))return;
+  if(ji==0 || ji > (width-2))return;
   if(jj==0 || jj > (nrow-2))return;
 #endif
 
@@ -403,7 +403,6 @@ void momentum_v_code(int ji, int jj, int width,
     vv_s * v_s * deps - vv_n * v_n * depn;
 
   // -viscosity
-
     
   dvdy_n = (vn[idxjp1] - vn[idx]) / e2t[idxjp1] * 
     (ht[idxjp1] + sshn[idxjp1]);
@@ -444,5 +443,4 @@ void momentum_v_code(int ji, int jj, int width,
   va[idx] = (vn[idx] * (hv[idx] + sshn_v[idx]) + 
 	       rdt * (adv + vis + cor + hpg) / e12v[idx] ) / 
     ((hv[idx] + ssha_v[idx])) / (1.0 + cbfr * rdt) ;
-
 }
