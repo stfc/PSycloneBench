@@ -322,44 +322,44 @@ int main(){
   check_status("clCreateBuffer", ret);
   
   /* Mesh scale factors */
-  e1t_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+  e1t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			      NULL, &ret);
   check_status("clCreateBuffer", ret);
-  e1u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+  e1u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			      NULL, &ret);
   check_status("clCreateBuffer", ret);
-  e1v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+  e1v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			      NULL, &ret);
   check_status("clCreateBuffer", ret);
-  e2u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+  e2u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			      NULL, &ret);
   check_status("clCreateBuffer", ret);
-  e2v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+  e2v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			      NULL, &ret);
   check_status("clCreateBuffer", ret);
-  e2t_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+  e2t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			      NULL, &ret);
   check_status("clCreateBuffer", ret);
-  e12t_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+  e12t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
                           NULL, &ret);
   check_status("clCreateBuffer", ret);
-  e12u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-                          NULL, &ret);
-  check_status("clCreateBuffer", ret);
-
-  e12v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+  e12u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
                           NULL, &ret);
   check_status("clCreateBuffer", ret);
 
-  tmask_device = clCreateBuffer(context, CL_MEM_READ_WRITE,
+  e12v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+                          NULL, &ret);
+  check_status("clCreateBuffer", ret);
+
+  tmask_device = clCreateBuffer(context, CL_MEM_READ_ONLY,
 				(size_t)(nx*ny*sizeof(cl_int)), NULL, &ret);
   check_status("clCreateBuffer", ret);
 
   /* Coriolis parameters */
-  gphiu_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+  gphiu_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 				NULL, &ret);
   check_status("clCreateBuffer", ret);
-  gphiv_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+  gphiv_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 				NULL, &ret);
   check_status("clCreateBuffer", ret);
   fprintf(stdout, "Created device buffers OK\n");
@@ -401,143 +401,32 @@ int main(){
   fprintf(stdout, "Set %d arguments for Continuity kernel\n", arg_idx);
 
   /* Set OpenCL Kernel Parameters for Momentum-u */
-  arg_idx = 0;
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_int), (void *)&nx);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&ua_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&un_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&vn_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&hu_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&hv_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&ht_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&ssha_u_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_u_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_v_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&tmask_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e1u_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e1v_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e1t_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e2u_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e2t_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e12u_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&gphiu_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_double),
-		       (void *)&rdt);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_double),
-		       (void *)&cbfr);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momu_kernel, arg_idx++, sizeof(cl_double),
-		       (void *)&visc);
-  check_status("clSetKernelArg", ret);
-  fprintf(stdout, "Set %d arguments for Momentum-u kernel\n", arg_idx);
-  
-  /* Set OpenCL Kernel Parameters for Momentum-v */
-  arg_idx = 0;
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_int), (void *)&nx);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&va_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&un_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&vn_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&hu_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&hv_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&ht_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&ssha_v_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_u_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_v_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&tmask_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e1v_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e1t_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e2u_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e2v_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e2t_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e12v_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&gphiv_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_double),
-		       (void *)&rdt);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_double),
-		       (void *)&cbfr);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(momv_kernel, arg_idx++, sizeof(cl_double),
-		       (void *)&visc);
-  check_status("clSetKernelArg", ret);
+  set_args_momu(momu_kernel,
+		&nx,
+		&ua_device, &un_device, &vn_device,
+		&hu_device, &hv_device, &ht_device,
+		&ssha_u_device, &sshn_device,
+		&sshn_u_device, &sshn_v_device,
+		&tmask_device,
+		&e1u_device, &e1v_device,
+		&e1t_device, &e2u_device,
+		&e2t_device, &e12u_device,
+		&gphiu_device,
+		&rdt, &cbfr, &visc);
 
-  fprintf(stdout, "Set %d arguments for Momentum-v kernel\n", arg_idx);
+  /* Set OpenCL Kernel Parameters for Momentum-v */
+  set_args_momv(momv_kernel,
+		&nx,
+		&va_device, &un_device, &vn_device,
+		&hu_device, &hv_device, &ht_device,
+		&ssha_v_device, &sshn_device,
+		&sshn_u_device, &sshn_v_device,
+		&tmask_device,
+		&e1v_device, &e1t_device,
+		&e2u_device, &e2v_device,
+		&e2t_device, &e12v_device,
+		&gphiv_device,
+		&rdt, &cbfr, &visc);
 
   /* Set kernel arguments for bc_ssh */
   arg_idx = 0;

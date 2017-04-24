@@ -1,6 +1,173 @@
 #ifndef __OPENCL_VERSION__
 // This header isn't available/required in OpenCL
 #include <math.h>
+#include <stdio.h>
+#include "opencl_utils.h"
+
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
+
+void set_args_momu(cl_kernel kern,
+		   cl_int *nx,
+		   cl_mem *ua_device,
+		   cl_mem *un_device,
+		   cl_mem *vn_device,
+		   cl_mem *hu_device,
+		   cl_mem *hv_device,
+		   cl_mem *ht_device,
+		   cl_mem *ssha_u_device,
+		   cl_mem *sshn_device,
+		   cl_mem *sshn_u_device,
+		   cl_mem *sshn_v_device,
+		   cl_mem *tmask_device,
+		   cl_mem *e1u_device, cl_mem *e1v_device,
+		   cl_mem *e1t_device, cl_mem *e2u_device,
+		   cl_mem *e2t_device, cl_mem *e12u_device,
+		   cl_mem *gphiu_device,
+		   cl_double *rdt, cl_double *cbfr, cl_double *visc){
+  cl_int ret;
+  cl_int arg_idx = 0;
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)ua_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)un_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)vn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)hu_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)hv_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)ht_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)ssha_u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)sshn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)sshn_u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)sshn_v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)tmask_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)e1u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)e1v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)e1t_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)e2u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)e2t_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)e12u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)gphiu_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double),
+		       (void *)rdt);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double),
+		       (void *)cbfr);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double),
+		       (void *)visc);
+  check_status("clSetKernelArg", ret);
+  fprintf(stdout, "Set %d arguments for Momentum-u kernel\n", arg_idx);
+}
+
+void set_args_momv(cl_kernel kern,
+		   cl_int *nx,
+		   cl_mem *va_device,
+		   cl_mem *un_device,
+		   cl_mem *vn_device,
+		   cl_mem *hu_device,
+		   cl_mem *hv_device,
+		   cl_mem *ht_device,
+		   cl_mem *ssha_v_device,
+		   cl_mem *sshn_device,
+		   cl_mem *sshn_u_device,
+		   cl_mem *sshn_v_device,
+		   cl_mem *tmask_device,
+		   cl_mem *e1v_device, cl_mem *e1t_device,
+		   cl_mem *e2u_device, cl_mem *e2v_device,
+		   cl_mem *e2t_device, cl_mem *e12v_device,
+		   cl_mem *gphiv_device,
+		   cl_double *rdt, cl_double *cbfr, cl_double *visc){
+  cl_int ret;
+  cl_int arg_idx = 0;
+
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)va_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)un_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)vn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)hu_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)hv_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)ht_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)ssha_v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)sshn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)sshn_u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)sshn_v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)tmask_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)e1v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)e1t_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)e2u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)e2v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)e2t_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)e12v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)gphiv_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double), (void *)rdt);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double), (void *)cbfr);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double), (void *)visc);
+  check_status("clSetKernelArg", ret);
+
+  fprintf(stdout, "Set %d arguments for Momentum-v kernel\n", arg_idx);
+
+}
+
 #endif
 
 #include "physical_params.h"
