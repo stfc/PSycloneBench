@@ -138,7 +138,7 @@ int main(){
   /** Our time-step index (passed into BCs kernel) */
   cl_int istep;
   /** Number of time-steps to do */
-  cl_int nsteps = 100;
+  cl_int nsteps = 2000;
   int ji, jj, idx;
   int buff_size;
   /** Sea-surface height */
@@ -629,50 +629,14 @@ int main(){
   fprintf(stdout, "Set %d arguments for bc_flather_v kernel\n", arg_idx);
   
   /* Set OpenCL Kernel Parameters for next_sshu kernel */
-  arg_idx = 0;
-  ret = clSetKernelArg(next_sshu_kernel, arg_idx++, sizeof(cl_int),
-		       (void *)&nx);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_u_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&tmask_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e12t_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e12u_device);
-  check_status("clSetKernelArg", ret);
-
-  fprintf(stdout, "Set %d arguments for next_sshu kernel\n", arg_idx);
+  set_args_next_sshv(next_sshu_kernel,
+		     &nx, &sshn_u_device, &sshn_device, &tmask_device,
+		     &e12t_device, &e12u_device);
   
   /* Set OpenCL Kernel Parameters for next_sshv kernel */
-  arg_idx = 0;
-  ret = clSetKernelArg(next_sshv_kernel, arg_idx++, sizeof(cl_int),
-		       (void *)&nx);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_v_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&tmask_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e12t_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshv_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e12v_device);
-  check_status("clSetKernelArg", ret);
-
-  fprintf(stdout, "Set %d arguments for next_sshv kernel\n", arg_idx);
+  set_args_next_sshv(next_sshv_kernel,
+		     &nx, &sshn_v_device, &sshn_device, &tmask_device,
+		     &e12t_device, &e12v_device);
 
   TimerStop();
 

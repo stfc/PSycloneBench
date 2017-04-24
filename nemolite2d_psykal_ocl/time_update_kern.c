@@ -1,3 +1,73 @@
+#ifndef __OPENCL_VERSION__
+#include <stdio.h>
+#include "opencl_utils.h"
+
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
+
+void set_args_next_sshv(cl_kernel kern,
+			cl_int *nx,
+			cl_mem *sshn_v_device,
+			cl_mem *sshn_device,
+			cl_mem *tmask_device,
+			cl_mem *e12t_device,
+			cl_mem *e12v_device){
+  cl_int ret;
+  int arg_idx = 0;
+
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int),
+		       (void *)nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)sshn_v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)sshn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)tmask_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)e12t_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
+		       (void *)e12v_device);
+  check_status("clSetKernelArg", ret);
+
+  fprintf(stdout, "Set %d arguments for next_sshv kernel\n", arg_idx);
+
+}
+
+void set_args_next_sshu(cl_kernel kern,
+			cl_int *nx,
+			cl_mem *sshn_u_device,
+			cl_mem *sshn_device,
+			cl_mem *tmask_device,
+			cl_mem *e12t_device,
+			cl_mem *e12u_device){
+  cl_int ret;
+  int arg_idx = 0;
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)sshn_u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)sshn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)tmask_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)e12t_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)e12u_device);
+  check_status("clSetKernelArg", ret);
+
+  fprintf(stdout, "Set %d arguments for next_sshu kernel\n", arg_idx);
+}
+
+#endif
+
 /*
   type, extends(kernel_type) :: next_sshu
      type(arg), dimension(5) :: meta_args =  &
@@ -24,54 +94,6 @@
   contains
     procedure, nopass :: code => next_sshu_code
   end type next_sshu
-*/
-
-/*
-  type, extends(kernel_type) :: next_sshv
-     type(arg), dimension(5) :: meta_args =  &
-          (/ arg(READWRITE, CV, POINTWISE),  &
-             arg(READ,      CV, POINTWISE),  &
-             arg(READ,      GRID_MASK_T),    &
-             arg(READ,      GRID_AREA_T),    &
-             arg(READ,      GRID_AREA_V)     &
-           /)
-
-     !> We update only those points within the internal region
-     !! of the simulated domain.
-     integer :: ITERATES_OVER = INTERNAL_PTS
-
-     !> Although the staggering of variables used in an Arakawa
-     !! C grid is well defined, the way in which they are indexed is
-     !! an implementation choice. This can be thought of as choosing
-     !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel assumes that the U,V and F points that
-     !! share the same index as a given T point are those immediately
-     !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
-
-  contains
-    procedure, nopass :: code => next_sshv_code
-  end type next_sshv
-*/
-
-/*
-  subroutine invoke_next_sshu(sshn_u, sshn)
-    implicit none
-    type(r2d_field), intent(inout) :: sshn_u
-    type(r2d_field), intent(in)    :: sshn
-    ! Locals
-    integer :: ji, jj
-
-    do jj = sshn_u%internal%ystart, sshn_u%internal%ystop, 1
-      do ji = sshn_u%internal%xstart, sshn_u%internal%xstop, 1
-
-        call next_sshu_code(ji, jj, sshn_u%data, sshn%data, &
-                            sshn_u%grid%tmask, &
-                            sshn_u%grid%area_t, sshn_u%grid%area_u)
-      end do
-    end do
-
-  end subroutine invoke_next_sshu
 */
 
 #ifdef __OPENCL_VERSION__
@@ -106,27 +128,34 @@ __kernel void next_sshu_code(int width,
   }
 
 }
-    
-  /*
-  subroutine invoke_next_sshv(sshn_v, sshn)
-    implicit none
-    type(r2d_field), intent(inout) :: sshn_v
-    type(r2d_field), intent(in)    :: sshn
-    ! Locals
-    integer :: ji, jj
 
-    do jj = sshn_v%internal%ystart, sshn_v%internal%ystop, 1
-      do ji = sshn_v%internal%xstart, sshn_v%internal%xstop, 1
+/*
+  type, extends(kernel_type) :: next_sshv
+     type(arg), dimension(5) :: meta_args =  &
+          (/ arg(READWRITE, CV, POINTWISE),  &
+             arg(READ,      CV, POINTWISE),  &
+             arg(READ,      GRID_MASK_T),    &
+             arg(READ,      GRID_AREA_T),    &
+             arg(READ,      GRID_AREA_V)     &
+           /)
 
-        call next_sshv_code(ji, jj,  &
-                            sshn_v%data, sshn%data, &
-                            sshn_v%grid%tmask,      &
-                            sshn_v%grid%area_t, sshn_v%grid%area_v)
-      end do
-    end do
+     !> We update only those points within the internal region
+     !! of the simulated domain.
+     integer :: ITERATES_OVER = INTERNAL_PTS
 
-  end subroutine invoke_next_sshv
-  */
+     !> Although the staggering of variables used in an Arakawa
+     !! C grid is well defined, the way in which they are indexed is
+     !! an implementation choice. This can be thought of as choosing
+     !! which grid-point types have the same (i,j) index as a T
+     !! point. This kernel assumes that the U,V and F points that
+     !! share the same index as a given T point are those immediately
+     !! to the North and East of it.
+     integer :: index_offset = OFFSET_NE
+
+  contains
+    procedure, nopass :: code => next_sshv_code
+  end type next_sshv
+*/
   
 #ifdef __OPENCL_VERSION__
 __kernel void next_sshv_code(int width,
