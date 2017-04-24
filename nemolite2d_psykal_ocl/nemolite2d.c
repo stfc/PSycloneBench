@@ -138,7 +138,7 @@ int main(){
   /** Our time-step index (passed into BCs kernel) */
   cl_int istep;
   /** Number of time-steps to do */
-  cl_int nsteps = 3;
+  cl_int nsteps = 100;
   int ji, jj, idx;
   int buff_size;
   /** Sea-surface height */
@@ -939,6 +939,8 @@ int main(){
 				 global_size, NULL, 0,0,&kern_event);
     check_status("clEnqueueNDRangeKernel", ret);
   }
+
+  /* Block on the execution of the last kernel */
   ret = clWaitForEvents(1, &kern_event);
   check_status("clWaitForEvents", ret);
 
@@ -1034,9 +1036,6 @@ int main(){
 
   TimerStop();
 
-  printf("CPU: ssha[1,1] [1,2] = %e, %e\n", ssha[nx*ystart+xstart],
-	 ssha[nx*ystart+xstart+1]);
-
   write_field("ssha_cpu.dat", nx, ny, 0, 0, ssha);
   write_field("ua_cpu.dat", nx, ny, 0, 0, ua);
   write_field("va_cpu.dat", nx, ny, 0, 0, va);
@@ -1045,15 +1044,14 @@ int main(){
   cpu_sum[1] = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
   cpu_sum[2] = checksum(va, nx, xstop, ystop-1, xstart, ystart);
 
-  /* Copy data back from device, synchronously. Ensure we don't start the
-   copy until the last kernel has finished. */
-  clEnqueueReadBuffer(command_queue, ssha_device, 1, 0,
+  /* Copy data back from device, synchronously. */
+  clEnqueueReadBuffer(command_queue, ssha_device, CL_TRUE, 0,
 		      (size_t)buff_size, (void *)ssha, 0, NULL, NULL);
   check_status("clEnqueueReadBuffer", ret);
-  clEnqueueReadBuffer(command_queue, ua_device, 1, 0,
+  clEnqueueReadBuffer(command_queue, ua_device, CL_TRUE, 0,
 		      (size_t)buff_size, (void *)ua, 0, NULL, NULL);
   check_status("clEnqueueReadBuffer", ret);
-  clEnqueueReadBuffer(command_queue, va_device, 1, 0,
+  clEnqueueReadBuffer(command_queue, va_device, CL_TRUE, 0,
 		      (size_t)buff_size, (void *)va, 0, NULL, &copy_event);
   check_status("clEnqueueReadBuffer", ret);
 
@@ -1062,8 +1060,6 @@ int main(){
 
   /* Compute and output a checksum */
   ocl_sum[0] = checksum(ssha, nx, xstop, ystop, xstart, ystart);
-  printf("OCL:  ssha[1,1] [1,2] = %e, %e\n", ssha[nx*ystart+xstart],
-	 ssha[nx*ystart+xstart+1]);
 
   write_field("ssha_ocl.dat", nx, ny, 0, 0, ssha);
   write_field("ua_ocl.dat", nx, ny, 0, 0, ua);

@@ -8,7 +8,7 @@
 #endif
 
 #define MAX_SOURCE_SIZE (0x100000)
-#define VERBOSE 1
+#define VERBOSE 0
 
 const char* OCL_GetErrorString(cl_int error)
 {
