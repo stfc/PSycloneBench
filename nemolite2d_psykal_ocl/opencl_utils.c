@@ -176,3 +176,21 @@ cl_kernel build_kernel(cl_context *context, cl_device_id *device,
 
   return kernel;
 }
+
+/** Returns the duration of the supplied OpenCL event in nanoseconds.
+ Requires OpenCL profiling to have been enabled on the queue that performed
+ the operation to which the event corresponds. */
+cl_ulong duration_ns(cl_event event){
+  cl_ulong start_time, end_time;
+  cl_int ret;
+
+  ret = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START,
+				sizeof(cl_ulong), (void*)&start_time, NULL);
+  check_status("clGetEventProfilingInfo", ret);
+
+  ret = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END,
+				sizeof(cl_ulong), (void*)&end_time, NULL);
+  check_status("clGetEventProfilingInfo", ret);
+
+  return (end_time - start_time);
+}

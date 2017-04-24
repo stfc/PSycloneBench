@@ -83,6 +83,8 @@ int main(){
   int idev;
   cl_context context = NULL;
   cl_command_queue command_queue = NULL;
+  cl_command_queue_properties queue_properties = 0;
+  cl_bool profiling_enabled = 0;
 
   /* Buffers on the device */
   cl_mem ssha_device = NULL;
@@ -113,6 +115,7 @@ int main(){
 
   cl_program program = NULL;
 
+  /* Our OpenCL kernel objects */
   cl_kernel cont_kernel = NULL;
   cl_kernel momu_kernel = NULL;
   cl_kernel momv_kernel = NULL;
@@ -128,13 +131,12 @@ int main(){
   cl_uint ret_num_devices;
   cl_uint ret_num_platforms;
   cl_int ret;
-  //cl_command_queue_properties queue_properties;
-  /** Problem size */
+
+  /** Default problem size. May be overridden by setting
+      NEMOLITE2D_N{X,Y} environment variables. */
+  char *env_string;
   cl_int nx = 128;
   cl_int ny = 128;
-  /* Extend domain by one in each dimension to allow for staggering */
-  nx += 1;
-  ny += 1;
   /** Our time-step index (passed into BCs kernel) */
   cl_int istep;
   /** Number of time-steps to do */
@@ -161,6 +163,31 @@ int main(){
   cl_double cbfr = 0.00015;
 
   TimerInit();
+
+  /*------------------------------------------------------------*/
+  /* Run-time configuration of the benchmark */
+  if(getenv("NEMOLITE2D_PROFILING")){
+    profiling_enabled = CL_TRUE;
+    /* We create the OpenCL command queue with profiling enabled */
+    queue_properties = CL_QUEUE_PROFILING_ENABLE;
+  }
+  if(env_string = getenv("NEMOLITE2D_NX")){
+    if(sscanf(env_string, "%d", &nx) != 1){
+      fprintf(stderr, "Error parsing NEMOLITE2D_NX environment variable (%s)\n",
+	      env_string);
+      exit(1);
+    }
+  }
+  if(env_string = getenv("NEMOLITE2D_NY")){
+    if(sscanf(env_string, "%d", &ny) != 1){
+      fprintf(stderr, "Error parsing NEMOLITE2D_NY environment variable (%s)\n",
+	      env_string);
+      exit(1);
+    }
+  }
+  /* Extend domain by one in each dimension to allow for staggering */
+  nx += 1;
+  ny += 1;
 
   /*------------------------------------------------------------*/
   /* OpenCL initialisation */
@@ -238,40 +265,51 @@ int main(){
      to call the ...WithProperties version of this routine */
     command_queue = clCreateCommandQueue(context,
 					 *device,
-					 0, &ret);
+					 queue_properties, &ret);
     check_status("clCreateCommandQueue", ret);
   }
   else if(cl_version == 20){
     command_queue = clCreateCommandQueueWithProperties(context,
 						       *device,
-						       NULL, &ret);
+						       &queue_properties, &ret);
     check_status("clCreateCommandQueueWithProperties", ret);
   }
 
-  /* Create OpenCL Kernels */
+  /* Create OpenCL Kernels and associated event objects (latter used
+   to obtain detailed timing information). */
+  cl_event cont_evt;
   cont_kernel = build_kernel(&context, device,
 			     "./continuity_kern.c", "continuity_code");
+  cl_event momu_evt;
   momu_kernel = build_kernel(&context, device,
 			     "./momentum_kern.c", "momentum_u_code");
+  cl_event momv_evt;
   momv_kernel = build_kernel(&context, device,
 			     "./momentum_kern.c", "momentum_v_code");
+  cl_event bcssh_evt;
   bc_ssh_kernel = build_kernel(&context, device,
   			       "./boundary_conditions_kern.c", "bc_ssh_code");
+  cl_event solidu_evt;
   bc_solid_u_kernel = build_kernel(&context, device,
 				   "./boundary_conditions_kern.c",
 				   "bc_solid_u_code");
+  cl_event solidv_evt;
   bc_solid_v_kernel = build_kernel(&context, device,
 				   "./boundary_conditions_kern.c",
 				   "bc_solid_v_code");
+  cl_event flatheru_evt;
   bc_flather_u_kernel = build_kernel(&context, device,
 				     "./boundary_conditions_kern.c",
 				     "bc_flather_u_code");
+  cl_event flatherv_evt;
   bc_flather_v_kernel = build_kernel(&context, device,
 				     "./boundary_conditions_kern.c",
 				     "bc_flather_v_code");
+  cl_event next_sshu_evt;
   next_sshu_kernel = build_kernel(&context, device,
 				  "./time_update_kern.c",
 				  "next_sshu_code");
+  cl_event next_sshv_evt;
   next_sshv_kernel = build_kernel(&context, device,
 				  "./time_update_kern.c",
 				  "next_sshv_code");
@@ -624,14 +662,15 @@ int main(){
   /*------------------------------------------------------------*/
   /* Copy data to device synchronously */
   TimerStart("Write buffers to device");
-  
+  cl_event ssha_write;
   ret = clEnqueueWriteBuffer(command_queue, ssha_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha, 0,
-			     NULL, NULL);
+			     NULL, &ssha_write);
   check_status("clEnqueueWriteBuffer", ret);
+  cl_event sshau_write;
   ret = clEnqueueWriteBuffer(command_queue, ssha_u_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha_u, 0,
-			     NULL, NULL);
+			     NULL, &sshau_write);
   check_status("clEnqueueWriteBuffer", ret);
   ret = clEnqueueWriteBuffer(command_queue, ssha_v_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha_v, 0,
@@ -720,12 +759,12 @@ int main(){
 			     (size_t)buff_size, (void *)gphiv, 0,
 			     NULL, NULL);
   check_status("clEnqueueWriteBuffer", ret);
-  cl_event copy_event, kern_event;
+  cl_event tmask_write;
   ret = clEnqueueWriteBuffer(command_queue, tmask_device, 1, 0,
 			     (size_t)(nx*ny*sizeof(cl_int)), (void *)tmask, 0,
-			     NULL, &copy_event);
+			     NULL, &tmask_write);
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clWaitForEvents(1, &copy_event);
+  ret = clWaitForEvents(1, &tmask_write);
   check_status("clWaitForEvents", ret);
 
   TimerStop();
@@ -746,30 +785,30 @@ int main(){
     check_status("clSetKernelArg", ret);
 
     ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
-    				 global_size, NULL, 0,0,0);
+    				 global_size, NULL, 0, 0, &cont_evt);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, momu_kernel, 2, 0,
-				 global_size, NULL, 0,0,0);
+				 global_size, NULL, 0, 0, &momu_evt);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, momv_kernel, 2, 0,
-				 global_size, NULL, 0,0,0);
+				 global_size, NULL, 0, 0, &momv_evt);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_ssh_kernel, 2, NULL,
-    				 global_size, NULL, 0,0,0);
+    				 global_size, NULL, 0,0, &bcssh_evt);
     check_status("clEnqueueNDRangeKernel", ret);
 
     /* Apply boundary conditions */
     ret = clEnqueueNDRangeKernel(command_queue, bc_solid_u_kernel, 2, 0,
-				 global_size, NULL, 0,0,0);
+				 global_size, NULL, 0,0, &solidu_evt);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_solid_v_kernel, 2, 0,
-    				 global_size, NULL, 0,0,0);
+    				 global_size, NULL, 0,0, &solidv_evt);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_flather_u_kernel, 2, 0,
-				 global_size, NULL, 0,0,0);
+				 global_size, NULL, 0,0, &flatheru_evt);
     check_status("clEnqueueNDRangeKernel", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_flather_v_kernel, 2, 0,
-    				 global_size, NULL, 0,0,0);
+    				 global_size, NULL, 0,0, &flatherv_evt);
     check_status("clEnqueueNDRangeKernel", ret);
 
     /* Copy 'after' fields to 'now' fields */
@@ -785,16 +824,16 @@ int main(){
 
     /* Update of sshu and sshv fields */
     ret = clEnqueueNDRangeKernel(command_queue, next_sshu_kernel, 2, 0,
-				 global_size, NULL, 0,0,0);
+				 global_size, NULL, 0, 0, &next_sshu_evt);
     check_status("clEnqueueNDRangeKernel", ret);
   
     ret = clEnqueueNDRangeKernel(command_queue, next_sshv_kernel, 2, 0,
-				 global_size, NULL, 0,0,&kern_event);
+				 global_size, NULL, 0, 0, &next_sshv_evt);
     check_status("clEnqueueNDRangeKernel", ret);
   }
 
   /* Block on the execution of the last kernel */
-  ret = clWaitForEvents(1, &kern_event);
+  ret = clWaitForEvents(1, &next_sshv_evt);
   check_status("clWaitForEvents", ret);
 
   TimerStop();
@@ -893,32 +932,39 @@ int main(){
   write_field("ua_cpu.dat", nx, ny, 0, 0, ua);
   write_field("va_cpu.dat", nx, ny, 0, 0, va);
   
+  /* Dump final fields computed on CPU */
   cpu_sum[0] = checksum(ssha, nx, xstop, ystop, xstart, ystart);
   cpu_sum[1] = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
   cpu_sum[2] = checksum(va, nx, xstop, ystop-1, xstart, ystart);
 
   /* Copy data back from device, synchronously. */
+  cl_event read_events[3];
   clEnqueueReadBuffer(command_queue, ssha_device, CL_TRUE, 0,
-		      (size_t)buff_size, (void *)ssha, 0, NULL, NULL);
+		      (size_t)buff_size, (void *)ssha, 0, NULL,
+		      &(read_events[0]));
   check_status("clEnqueueReadBuffer", ret);
   clEnqueueReadBuffer(command_queue, ua_device, CL_TRUE, 0,
-		      (size_t)buff_size, (void *)ua, 0, NULL, NULL);
+		      (size_t)buff_size, (void *)ua, 0, NULL,
+		      &(read_events[1]));
   check_status("clEnqueueReadBuffer", ret);
   clEnqueueReadBuffer(command_queue, va_device, CL_TRUE, 0,
-		      (size_t)buff_size, (void *)va, 0, NULL, &copy_event);
+		      (size_t)buff_size, (void *)va, 0, NULL,
+		      &(read_events[2]));
   check_status("clEnqueueReadBuffer", ret);
 
-  clWaitForEvents(1, &copy_event);
+  clWaitForEvents(3, read_events);
   check_status("clWaitForEvents", ret);
 
   /* Compute and output a checksum */
   ocl_sum[0] = checksum(ssha, nx, xstop, ystop, xstart, ystart);
 
+  /* Dump final fields computed on OpenCL device */
   write_field("ssha_ocl.dat", nx, ny, 0, 0, ssha);
   write_field("ua_ocl.dat", nx, ny, 0, 0, ua);
   write_field("va_ocl.dat", nx, ny, 0, 0, va);
 
-  fprintf(stdout, "After %d time-steps:\n", nsteps);
+  fprintf(stdout, "After %d time-steps for %d x %d domain:\n",
+	  nsteps, nx-1, ny-1);
   fprintf(stdout, "ssha checksums (CPU, OpenCL) = %e, %e. Diff = %e\n",
           cpu_sum[0], ocl_sum[0], cpu_sum[0]-ocl_sum[0]);
   ocl_sum[1] = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
@@ -928,6 +974,18 @@ int main(){
   fprintf(stdout, "va checksums (CPU, OpenCL) = %e, %e. Diff = %e\n",
           cpu_sum[2], ocl_sum[2], cpu_sum[2]-ocl_sum[2]);
 
+  /* Extract profiling info from the OpenCL runtime. Note that this will
+     be the time taken during the most recent execution of each kernel. */
+  if(profiling_enabled){
+    fprintf(stdout, "Time spent in Continuity kern = %e us\n",
+  	    duration_ns(cont_evt)*0.001);
+    fprintf(stdout, "Time spent in Momentum-u kern = %e us\n",
+            duration_ns(momu_evt)*0.001);
+    fprintf(stdout, "Time spent in Momentum-v kern = %e us\n",
+            duration_ns(momv_evt)*0.001);
+  }
+
+  /* Generate report on host timings */
   TimerReport();
 
   /* Clean up */

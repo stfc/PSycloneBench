@@ -14,4 +14,5 @@ void check_status(char *text, cl_int err);
 cl_kernel build_kernel(cl_context *context, cl_device_id *device,
 		       char *filename, char *kernel_name);
 
+cl_ulong duration_ns(cl_event event);
 #endif
