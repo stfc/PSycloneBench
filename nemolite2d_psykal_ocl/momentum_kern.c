@@ -255,63 +255,27 @@ void set_args_momv(cl_kernel kern,
   end type momentum_v
 */
 
-/*
-  subroutine invoke_momentum_u(ua_fld, un_fld, vn_fld, &
-                               hu_fld, hv_fld, ht_fld, ssha_u_fld, &
-                               sshn_t_fld, sshn_u_fld, sshn_v_fld)
-    implicit none
-    type(r2d_field), intent(inout) :: ua_fld
-    type(r2d_field), intent(in) :: un_fld, vn_fld
-    type(r2d_field), intent(in) :: hu_fld, hv_fld, ht_fld
-    type(r2d_field), intent(in) :: ssha_u_fld, sshn_t_fld, &
-                                        sshn_u_fld, sshn_v_fld
-    ! Locals
-    integer :: ji, jj
-
-    do jj = ua_fld%internal%ystart, ua_fld%internal%ystop, 1
-      do ji = ua_fld%internal%xstart, ua_fld%internal%xstop, 1
-
-        call momentum_u_code(ji, jj, &
-                             ua_fld%data, un_fld%data, vn_fld%data, &
-                             hu_fld%data, hv_fld%data, ht_fld%data, &
-                             ssha_u_fld%data, sshn_t_fld%data,      &
-                             sshn_u_fld%data, sshn_v_fld%data, &
-                             ua_fld%grid%tmask,  &
-                             ua_fld%grid%dx_u,   &
-                             ua_fld%grid%dx_v,   &
-                             ua_fld%grid%dx_t,   &
-                             ua_fld%grid%dy_u,   &
-                             ua_fld%grid%dy_t,   &
-                             ua_fld%grid%area_u, &
-                             ua_fld%grid%gphiu)
-      end do
-   end do
-
-  end subroutine invoke_momentum_u
-
-*/
-
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */
 __kernel void momentum_u_code(int width,
 			      __global double *ua,
-			      __global double *un,
-			      __global double *vn,
-			      __global double *hu,
-			      __global double *hv,
-			      __global double *ht,
-			      __global double *ssha_u,
-			      __global double *sshn,
-			      __global double *sshn_u,
-			      __global double *sshn_v,
-			      __global int *tmask,
-			      __global double *e1u,
-			      __global double *e1v,
-			      __global double *e1t,
-			      __global double *e2u,
-			      __global double *e2t,
-			      __global double *e12u,
-			      __global double *gphiu,
+			      const __global double *un,
+			      const __global double *vn,
+			      const __global double *hu,
+			      const __global double *hv,
+			      const __global double *ht,
+			      const __global double *ssha_u,
+			      const __global double *sshn,
+			      const __global double *sshn_u,
+			      const __global double *sshn_v,
+			      const __global int *tmask,
+			      const __global double *e1u,
+			      const __global double *e1v,
+			      const __global double *e1t,
+			      const __global double *e2u,
+			      const __global double *e2t,
+			      const __global double *e12u,
+			      const __global double *gphiu,
 			      double rdt, double cbfr, double visc){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
@@ -326,8 +290,6 @@ void momentum_u_code(int ji, int jj, int width,
 		     double *e2u, double *e2t, double *e12u, double *gphiu,
 		     double rdt, double cbfr, double visc){
 #endif
-  //    use physical_params_mod
-  //  use model_mod, only: rdt, cbfr, visc
   double u_e, u_w, v_n, v_s;
   double v_nc, v_sc;
   double depe, depw, deps, depn;
@@ -340,9 +302,9 @@ void momentum_u_code(int ji, int jj, int width,
   int idx = jj*width + ji;
   
 #ifdef __OPENCL_VERSION__
-  int nrow = (int)get_global_size(1);
-  if(ji==0 || ji > (width-2))return;
-  if(jj==0 || jj > (nrow-2))return;
+  //  int nrow = (int)get_global_size(1);
+  //if(ji==0 || ji > (width-2))return;
+  //if(jj==0 || jj > (nrow-2))return;
 #endif
 
   idxim1 = idx - 1;
@@ -434,61 +396,28 @@ void momentum_u_code(int ji, int jj, int width,
     (hu[idx] + ssha_u[idx]) / (1.0 + cbfr * rdt) ;
 
 }
- 
-/*
-  subroutine invoke_momentum_v(va_fld, un_fld, vn_fld, 
-                               hu_fld, hv_fld, ht_fld, ssha_v_fld, 
-                               sshn_t_fld, sshn_u_fld, sshn_v_fld)
-    implicit none
-    type(r2d_field), intent(inout) :: va_fld
-    type(r2d_field), intent(in) :: un_fld, vn_fld
-    type(r2d_field), intent(in) :: hu_fld, hv_fld, ht_fld
-    type(r2d_field), intent(in) :: ssha_v_fld, sshn_t_fld, 
-                                   sshn_u_fld, sshn_v_fld
-    ! Locals
-    integer :: ji, jj
-
-    do jj = va_fld%internal%ystart, va_fld%internal%ystop, 1
-      do ji = va_fld%internal%xstart, va_fld%internal%xstop, 1
-
-        call momentum_v_code(ji, jj, 
-                             va_fld%data, un_fld%data, vn_fld%data, 
-                             hu_fld%data, hv_fld%data, ht_fld%data, 
-                             ssha_v_fld%data, sshn_t_fld%data,      
-                             sshn_u_fld%data, sshn_v_fld%data,      
-                             va_fld%grid%tmask, va_fld%grid%dx_v,   
-                             va_fld%grid%dx_t, 
-                             va_fld%grid%dy_u, va_fld%grid%dy_v,    
-                             va_fld%grid%dy_t,     
-                             va_fld%grid%area_v, va_fld%grid%gphiv)
-
-      end do
-   end do
-
-  end subroutine invoke_momentum_v
-*/
 
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */
 __kernel void momentum_v_code(int width,
 			      __global double *va,
-			      __global double *un,
-			      __global double *vn, 
-			      __global double *hu,
-			      __global double *hv,
-			      __global double *ht,
-			      __global double *ssha_v, 
-			      __global double *sshn,
-			      __global double *sshn_u,
-			      __global double *sshn_v, 
-			      __global int *tmask,
-			      __global double *e1v,
-			      __global double *e1t,
-			      __global double *e2u,
-			      __global double *e2v,
-			      __global double *e2t,
-			      __global double *e12v,
-			      __global double *gphiv,
+			      const __global double *un,
+			      const __global double *vn, 
+			      const __global double *hu,
+			      const __global double *hv,
+			      const __global double *ht,
+			      const __global double *ssha_v, 
+			      const __global double *sshn,
+			      const __global double *sshn_u,
+			      const __global double *sshn_v, 
+			      const __global int *tmask,
+			      const __global double *e1v,
+			      const __global double *e1t,
+			      const __global double *e2u,
+			      const __global double *e2v,
+			      const __global double *e2t,
+			      const __global double *e12v,
+			      const __global double *gphiv,
 			      double rdt, double cbfr, double visc){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
@@ -513,9 +442,9 @@ void momentum_v_code(int ji, int jj, int width,
   int idx = jj*width + ji;
   
 #ifdef __OPENCL_VERSION__
-  int nrow = (int)get_global_size(1);
-  if(ji==0 || ji > (width-2))return;
-  if(jj==0 || jj > (nrow-2))return;
+  //int nrow = (int)get_global_size(1);
+  //if(ji==0 || ji > (width-2))return;
+  //if(jj==0 || jj > (nrow-2))return;
 #endif
   
   idxim1 = idx - 1;
