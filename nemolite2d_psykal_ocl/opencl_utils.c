@@ -152,7 +152,8 @@ cl_kernel build_kernel(cl_context *context, cl_device_id *device,
   check_status("clCreateProgramWithSource", ret);
 
   /* Build Kernel Program */
-  ret = clBuildProgram(program, 1, device, NULL, NULL, NULL);
+  char *build_options = "-cl-mad-enable -cl-fast-relaxed-math";
+  ret = clBuildProgram(program, 1, device, build_options, NULL, NULL);
   if(ret == CL_BUILD_PROGRAM_FAILURE){
     char *build_log;
     size_t log_size;
@@ -163,6 +164,7 @@ cl_kernel build_kernel(cl_context *context, cl_device_id *device,
 			  log_size, build_log, NULL);
     build_log[log_size] = '\0';
     fprintf(stderr, "%s\n", build_log);
+    free(build_log);
     exit(1);
   }
   check_status("clBuildProgram", ret);

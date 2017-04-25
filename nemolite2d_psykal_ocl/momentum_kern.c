@@ -10,6 +10,7 @@
 #include <CL/cl.h>
 #endif
 
+/** Set the arguments for the OpenCL kernel */
 void set_args_momu(cl_kernel kern,
 		   cl_int *nx,
 		   cl_mem *ua_device,

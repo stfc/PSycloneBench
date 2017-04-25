@@ -135,8 +135,8 @@ int main(){
   /** Default problem size. May be overridden by setting
       NEMOLITE2D_N{X,Y} environment variables. */
   char *env_string;
-  cl_int nx = 128;
-  cl_int ny = 128;
+  cl_int nx = 127;
+  cl_int ny = 127;
   /** Our time-step index (passed into BCs kernel) */
   cl_int istep;
   /** Number of time-steps to do */
