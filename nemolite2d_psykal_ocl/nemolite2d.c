@@ -819,7 +819,7 @@ int main(){
   /* Run the kernels */
 
   // Thread block size 
-  int BLOCK_SIZE = 32;
+  int BLOCK_SIZE = 16;
   size_t global_size[2] = {nx, ny};
   size_t local_size[2] = {BLOCK_SIZE, 1};
 
@@ -835,31 +835,31 @@ int main(){
     check_status("clSetKernelArg", ret);
 
     ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
-    				 global_size, local_size, 0, NULL, &cont_evt);
-    check_status("clEnqueueNDRangeKernel", ret);
+    				 global_size, NULL, 0, NULL, &cont_evt);
+    check_status("clEnqueueNDRangeKernel(Continuity)", ret);
     ret = clEnqueueNDRangeKernel(command_queue, momu_kernel, 2, 0,
 				 global_size, NULL, 0, NULL, &momu_evt);
-    check_status("clEnqueueNDRangeKernel", ret);
+    check_status("clEnqueueNDRangeKernel(Mom-u)", ret);
     ret = clEnqueueNDRangeKernel(command_queue, momv_kernel, 2, 0,
 				 global_size, NULL, 0, NULL, &momv_evt);
-    check_status("clEnqueueNDRangeKernel", ret);
+    check_status("clEnqueueNDRangeKernel(Mom-v)", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_ssh_kernel, 2, NULL,
     				 global_size, NULL, 0,0, &bcssh_evt);
-    check_status("clEnqueueNDRangeKernel", ret);
+    check_status("clEnqueueNDRangeKernel(bc-ssh)", ret);
 
     /* Apply boundary conditions */
     ret = clEnqueueNDRangeKernel(command_queue, bc_solid_u_kernel, 2, 0,
 				 global_size, NULL, 0,0, &solidu_evt);
-    check_status("clEnqueueNDRangeKernel", ret);
+    check_status("clEnqueueNDRangeKernel(bc-solid-u)", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_solid_v_kernel, 2, 0,
     				 global_size, NULL, 0,0, &solidv_evt);
-    check_status("clEnqueueNDRangeKernel", ret);
+    check_status("clEnqueueNDRangeKernel(bc-solid-v)", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_flather_u_kernel, 2, 0,
 				 global_size, NULL, 0,0, &flatheru_evt);
-    check_status("clEnqueueNDRangeKernel", ret);
+    check_status("clEnqueueNDRangeKernel(bc-flather-u)", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_flather_v_kernel, 2, 0,
     				 global_size, NULL, 0,0, &flatherv_evt);
-    check_status("clEnqueueNDRangeKernel", ret);
+    check_status("clEnqueueNDRangeKernel(bc-flather-v)", ret);
 
     /* Copy 'after' fields to 'now' fields */
     ret = clEnqueueCopyBuffer(command_queue, ua_device, un_device, 0, 0,
@@ -875,11 +875,11 @@ int main(){
     /* Update of sshu and sshv fields */
     ret = clEnqueueNDRangeKernel(command_queue, next_sshu_kernel, 2, 0,
 				 global_size, NULL, 0, 0, &next_sshu_evt);
-    check_status("clEnqueueNDRangeKernel", ret);
+    check_status("clEnqueueNDRangeKernel(next-sshu)", ret);
   
     ret = clEnqueueNDRangeKernel(command_queue, next_sshv_kernel, 2, 0,
 				 global_size, NULL, 0, 0, &next_sshv_evt);
-    check_status("clEnqueueNDRangeKernel", ret);
+    check_status("clEnqueueNDRangeKernel(next-sshv)", ret);
   }
 
   /* Block on the execution of the last kernel */
