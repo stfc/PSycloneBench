@@ -179,7 +179,7 @@ int main(){
     /* We create the OpenCL command queue with profiling enabled */
     queue_properties = CL_QUEUE_PROFILING_ENABLE;
   }
-  if(env_string = getenv("NEMOLITE2D_NSTEPS")){
+  if( (env_string = getenv("NEMOLITE2D_NSTEPS")) ){
     if(sscanf(env_string, "%d", &nsteps) != 1){
       fprintf(stderr,
 	      "Error parsing NEMOLITE2D_NSTEPS environment variable (%s)\n",
@@ -192,14 +192,14 @@ int main(){
       exit(1);
     }
   }
-  if(env_string = getenv("NEMOLITE2D_NX")){
+  if( (env_string = getenv("NEMOLITE2D_NX")) ){
     if(sscanf(env_string, "%d", &nx) != 1){
       fprintf(stderr, "Error parsing NEMOLITE2D_NX environment variable (%s)\n",
 	      env_string);
       exit(1);
     }
   }
-  if(env_string = getenv("NEMOLITE2D_NY")){
+  if( (env_string = getenv("NEMOLITE2D_NY")) ){
     if(sscanf(env_string, "%d", &ny) != 1){
       fprintf(stderr, "Error parsing NEMOLITE2D_NY environment variable (%s)\n",
 	      env_string);
