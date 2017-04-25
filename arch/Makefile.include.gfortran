@@ -1,25 +1,28 @@
 # Build settings for gfortran compiler
 F90 = gfortran
 
-NETCDF_INC = /usr/include
-NETCDF_LIB = /usr/lib64
+NETCDF_INC = ${HOME}/MyInstalls/GCC/gcc_4.9.3/include
+NETCDF_LIB = ${HOME}/MyInstalls/GCC/gcc_4.9.3/lib64
 
-TIMER_LIB = ${HOME}/MyInstalls/lib/dl_timer_lib.a
-TIMER_INC = ${HOME}/MyInstalls/include
+TIMER_LIB = ${HOME}/MyInstalls/GCC/gcc_5.3.1/lib/dl_timer_lib.a
+TIMER_INC = ${HOME}/MyInstalls/GCC/gcc_5.3.1/include
 
 F90FLAGS = -Wall -Wsurprising -Wuninitialized
-F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g -O0
-#F90FLAGS +=  -faggressive-function-elimination
-#F90FLAGS += -Ofast -mtune=native -finline-limit=50000
+#F90FLAGS += -O0
+#F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g
+F90FLAGS += -faggressive-function-elimination
+F90FLAGS += -Ofast -mtune=native -finline-limit=50000 -fopt-info-all=gnu_opt_report.txt
+F90FLAGS += -march=core2 -mtune=core2
 # f2py does not break long lines so tell gfortran not to
 # limit the length of a line
 F90FLAGS += -ffree-line-length-none
 #F90FLAGS = -O3
 
-OMPFLAGS = -fopenmp
+OMPFLAGS = 
+OMPFLAGS += -fopenmp
 
 F90FLAGS += -I${NETCDF_INC}
-LDFLAGS += -L${NETCDF_LIB} -lnetcdff -lnetcdf
+#LDFLAGS += -L${NETCDF_LIB} -lnetcdff -lnetcdf
 
 AR = ar
 

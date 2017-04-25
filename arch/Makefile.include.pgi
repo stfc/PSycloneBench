@@ -4,6 +4,9 @@ F90 = pgf90
 NETCDF_INC = /usr/include
 NETCDF_LIB = /usr/lib64
 
+TIMER_LIB = ${HOME}/MyInstalls/PGI/15.7/lib/dl_timer_lib.a
+TIMER_INC = ${HOME}/MyInstalls/PGI/15.7/include
+
 #F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g -O0
 
 F90FLAGS += -O3
