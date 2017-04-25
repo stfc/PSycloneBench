@@ -35,6 +35,8 @@ double checksum(double *array, int width,
   return sum;
 }
 
+/** Write the supplied integer field data to the specified file. Data
+    formatted for use with gnuplot's splot command. */
 void write_ifield(char *filename, int nx, int ny,
 		 int xstart, int ystart, int *field){
   int ji, jj, idx;
@@ -55,6 +57,8 @@ void write_ifield(char *filename, int nx, int ny,
   fclose(fp);
 }
 
+/** Write the supplied double-precision field data to the specified
+    file. Data formatted for use with gnuplot's splot command. */
 void write_field(char *filename, int nx, int ny,
 		 int xstart, int ystart, double *field){
   int ji, jj, idx;
@@ -75,6 +79,9 @@ void write_field(char *filename, int nx, int ny,
   fclose(fp);
 }
 
+/** Top-level driver program. Queries the hardware to find OpenCL devices,
+    creates OpenCL kernels and runs them. Also runs the same kernels on
+    the CPU and compares the results. */
 int main(){
   /** The version of OpenCL supported by the selected device */
   int cl_version;
