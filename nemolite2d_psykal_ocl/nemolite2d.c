@@ -139,7 +139,8 @@ int main(){
   cl_int ny = 127;
   /** Our time-step index (passed into BCs kernel) */
   cl_int istep;
-  /** Number of time-steps to do */
+  /** Number of time-steps to do. May be overridden by setting
+      NEMOLITE2D_NSTEPS environment variable. */
   cl_int nsteps = 2000;
   int ji, jj, idx;
   int buff_size;
@@ -170,6 +171,19 @@ int main(){
     profiling_enabled = CL_TRUE;
     /* We create the OpenCL command queue with profiling enabled */
     queue_properties = CL_QUEUE_PROFILING_ENABLE;
+  }
+  if(env_string = getenv("NEMOLITE2D_NSTEPS")){
+    if(sscanf(env_string, "%d", &nsteps) != 1){
+      fprintf(stderr,
+	      "Error parsing NEMOLITE2D_NSTEPS environment variable (%s)\n",
+	      env_string);
+      exit(1);
+    }
+    if(nsteps < 1){
+      fprintf(stderr, "Error, NEMOLITE2D_NSTEPS must be >= 1 but got %d\n",
+	      nsteps);
+      exit(1);
+    }
   }
   if(env_string = getenv("NEMOLITE2D_NX")){
     if(sscanf(env_string, "%d", &nx) != 1){
@@ -819,17 +833,14 @@ int main(){
   /* Run the kernels */
 
   // Thread block size 
-  int BLOCK_SIZE = 16;
   size_t global_size[2] = {nx, ny};
-  size_t local_size[2] = {BLOCK_SIZE, 1};
+  size_t local_size[2] = {64, 1};
 
   TimerStart("Time-stepping, OpenCL");
   
   for(istep=1; istep<=nsteps; istep++){
 
-    /* Copy over the current time-step index to the device. This is
-       required by the boundary conditions (and is a foreshadowing of
-       e.g. forcing fields read from disk) */
+    /* Update the time-step index argument to the bc-ssh kernel */
     ret = clSetKernelArg(bc_ssh_kernel, 1, sizeof(cl_int),
 			 (void *)&istep);
     check_status("clSetKernelArg", ret);
@@ -837,11 +848,17 @@ int main(){
     ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
     				 global_size, NULL, 0, NULL, &cont_evt);
     check_status("clEnqueueNDRangeKernel(Continuity)", ret);
+
+    /* Experimentation on a K20c showed that this work-group size was
+       optimal for that device */
+    local_size[0] = 64;
+    local_size[1] = 1;
+    if (local_size[0] > nx) local_size[0] = nx;
     ret = clEnqueueNDRangeKernel(command_queue, momu_kernel, 2, 0,
-				 global_size, NULL, 0, NULL, &momu_evt);
+				 global_size, local_size, 0, NULL, &momu_evt);
     check_status("clEnqueueNDRangeKernel(Mom-u)", ret);
     ret = clEnqueueNDRangeKernel(command_queue, momv_kernel, 2, 0,
-				 global_size, NULL, 0, NULL, &momv_evt);
+				 global_size, local_size, 0, NULL, &momv_evt);
     check_status("clEnqueueNDRangeKernel(Mom-v)", ret);
     ret = clEnqueueNDRangeKernel(command_queue, bc_ssh_kernel, 2, NULL,
     				 global_size, NULL, 0,0, &bcssh_evt);
