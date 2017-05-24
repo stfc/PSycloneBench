@@ -10,13 +10,17 @@ habakkuk.aux: habakkuk.tex
 	pdflatex $<
 
 # List of figures that are GENERATED from .dat files of the same name
-FIG_FILES = mulsd_divsd.pdf
+# using bargraph.pl
+FIG_FILES = mulsd_divsd.pdf continuity_opt.pdf
 
 # Plots generated from Grace (xmgrace) - i.e. .agr files
-GRACE_PLOTS = 
+GRACE_PLOTS = nemolite2d_kernel_perf.pdf nemolite2d_cont_perf.pdf
 
 # Plots generated from gnuplot
-GNU_PLOTS =
+GNU_PLOTS = roofline_archer.pdf \
+            roofline_desktop.pdf \
+            roofline_desktop_cont_limits.pdf \
+            roofline_desktop_mom_limits.pdf
 
 figs: ${FIG_FILES} ${GRACE_PLOTS} ${GNU_PLOTS}
 

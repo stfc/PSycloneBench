@@ -1,0 +1,140 @@
+=cluster;No SSE ;SSE ;Align ;No divide
+#;AVX ;AVX align ;AVX align all ;AVX no peel;AVX 8 arrays
+font=Helvetica
+fontsz=12
+=norotate
+# stretch the graph vertically
+yscale=1.2
+xscale=1.3
+horizline=0.1276*20.5
+#extraops=set object 1001 rect from graph 0.0, graph 0.0 to graph 0.2, graph 0.2 back fc rgb "white" fs solid noborder
+extraops=set label "Main Memory" at 0.8,0.1276*20.5-0.25 center
+horizline=0.1276*46.7
+extraops=set label "L3" at 0.5,0.1276*46.7+0.25 right
+horizline=0.1276*65.0
+extraops=set label "L2" at 0.5,0.1276*65.0-0.25 right
+=table;
+xlabel=Side length of square simulation domain (no. of grid points)
+ylabel=Performance (GFLOPS)
+#       /------------------- SSE --------------------------\          
+#      no-vec    SSE    Align    No divide
+20;    3.190;	3.983;	5.248; 6.139
+32;    3.075;	4.384;	5.256; 6.214	
+52;    3.409;	4.981;	5.660; 6.591	
+64;    3.459;	5.103;	5.613; 6.254	
+128;   3.592;	5.443;	5.709; 6.114	
+256;   3.862;	5.617;	5.775; 5.955	
+512;   2.934;	2.608;	2.628; 2.616	
+1024;  2.805;	2.480;	2.489; 2.486	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# /--------------- AVX ---------\
+# AVX   align   alignall nopeel AVX 8 arr
+#3.489;	4.032;	4.146;	4.976  ;4.093	  
+#3.834;	5.366;	5.333;	5.405  ;5.598	  
+#4.262;	5.564;	5.328;	5.796  ;5.636	  
+#4.646;	5.498;	5.913;	6.183  ;5.321	  
+#5.087;	6.042;	6.326;	6.444  ;5.405	  
+#2.771;	2.733;	2.653;	2.643  ;1.960	  
+#2.645;	2.580;	2.576;	2.579  ;1.886
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
