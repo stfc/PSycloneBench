@@ -265,7 +265,7 @@
 
 \begin{abstract}
 
-We present an approach which we call \psykal\ that aims to achieve
+We present an approach which we call \psykal\ that is designed to achieve
 portable performance for parallel, finite-difference Ocean models.  In
 \psykal\ the code related to the underlying science is formally
 separated from code related to parallelisation and single-core
@@ -285,14 +285,14 @@ both OpenMP and OpenACC; in both cases we were able to leave the
 natural-science parts of the code unchanged while achieving good
 performance on both multi-core CPUs and GPUs. In quantifying whether
 or not the obtained performance is `good' we also consider the
-limitations of the basic roofline model and attempt to improve on it
+limitations of the basic roofline model and improve on it
 by generating kernel-specific CPU ceilings.
 
 \end{abstract}
 
 % Note that keywords are not normally used for peerreview papers.
 \begin{IEEEkeywords}
-Performance, Code-generation, Finite-difference, NEMO, OpenMP, OpenACC
+Performance, Code-generation, Finite-difference, NEMO, OpenMP, OpenACC, roofline
 \end{IEEEkeywords}
 
 % For peer review papers, you can put extra information on the cover
@@ -353,13 +353,13 @@ In a previous paper~\cite{shallow_psykal} we introduced a possible
 approach to tackling this problem which we term \psykal\ (discussed
 below). In that work we considered the implications for serial
 performance of the extensive code re-structuring required by the
-approach when applied to the `Shallow' shallow-water model. We found
-that although the re-structuring did initially incur a sizeable
-performance penalty, it was possible to transform the resulting code
-to recover performance (for a variety of CPU/compiler combinations)
-while obeying the \psykal\ separation of concerns. In this work we
-move to looking at portable parallel performance within the
-\psykal\ approach.
+approach when applied to the `Shallow' shallow-water model
+(https://puma.nerc.ac.uk/trac/GOcean). We found that although the
+re-structuring did initially incur a sizeable performance penalty, it
+was possible to transform the resulting code to recover performance
+(for a variety of CPU/compiler combinations) while obeying the
+\psykal\ separation of concerns. In this work we move to looking at
+portable parallel performance within the \psykal\ approach.
 
 % needed in second column of first page if using \IEEEpubid
 %\IEEEpubidadjcol
@@ -440,12 +440,13 @@ discussed in the remainder of this paper.
 \subsection{The `NEMOLite2D' Program}
 
 For this work we have used a program, `NEMOLite2D,' developed by
-ourselves.  NEMOLite2D is a vertically-averaged version of NEMO
-(Nucleus for European Modelling of the Ocean~\cite{nemo}), retaining
-only its dynamical part. The whole model system is represented through
-one continuity equation \eqref{continuity} (for the update of the
-sea-surface height) and two vertically-integrated momentum equations
-\eqref{momentum} (for the two velocity components, respectively).
+ourselves (https://puma.nerc.ac.uk/trac/GOcean).  NEMOLite2D is a
+vertically-averaged version of NEMO (Nucleus for European Modelling of
+the Ocean~\cite{nemo}), retaining only its dynamical part. The whole
+model system is represented through one continuity equation
+\eqref{continuity} (for the update of the sea-surface height) and two
+vertically-integrated momentum equations \eqref{momentum} (for the two
+velocity components, respectively).
 
 \begin{equation}\label{continuity}
  \frac{\partial \zeta}{\partial t} + \vec{\nabla} \cdot (\vec{U}h) = 0
@@ -1560,33 +1561,40 @@ computational science (performance) related aspects of a computer
 model to be kept separate from the natural (oceanographic) science
 aspects.
 
-We have used a new and un-optimised, two-dimension model extracted
+We have used a new and un-optimised, two-dimensional model extracted
 from the NEMO ocean model for this work. As a consequence of this, the
 introduction of the \psykal\ separation of concerns followed by
 suitable transformations of the PSy Layer is actually found to improve
 performance. This is in contrast to our previous
 experience~\cite{shallow_psykal} with tackling the Shallow code which
-has had been optimised over the course of several years. In that case
-we were able to recover more than 90\% of the performance of the
-original for the Gnu, Intel, Cray and IBM compilers on both Intel and
-IBM Power CPUs.
+has been optimised over many years. In that case we were able to
+recover (to within a few percent) the performance of the original and
+in some cases exceed it, in spite of limiting ourselves to
+transformations which replicated the structure of the original,
+optimised code.
 
-Investigation of the absolute serial performance of the NEMLite2D code
-using the roofline model revealed that it was still significantly
-below any of the traditional roofline ceilings. We have developed a
-code-analysis tool~\cite{habakkuk} that is capable of providing more
-accurate ceilings by analysing the nature of the floating point
-computations performed by a kernel. In future work we aim to extend
-this tool such that it can be applied to code parallelised using
-OpenMP.
+Investigation of the absolute serial performance of the NEMOLite2D
+code using the roofline model revealed that it was still significantly
+below any of the traditional roofline ceilings. We have developed
+Habakkuk (https://github.com/arporter/habakkuk), a code-analysis tool
+that is capable of providing more realistic ceilings by analysing the
+nature of the floating point computations performed by a kernel. The
+bounds produced by Habakkuk are in good agreement with the measured
+performance of the principal (Momentum) kernel in NEMOLite2D. In
+future work we aim to extend this tool to account for SIMD operations
+and make it applicable to code parallelised using OpenMP.
 
 The application of code transformations to the middle/PSy layer is key
 to the performance of the \psykal\ version of a code. For both
-NEMLite2D and Shallow we have found that for serial performance, the
+NEMOLite2D and Shallow we have found that for serial performance, the
 most important transformation is that of in-lining the kernel source
-at the call site. However, for the more complex NEMOLite2D code the
-Cray compiler also had to be coerced into performing SIMD
-vectorisation through the use of souce-code directives.
+at the call site, i.e. within the PSy layer. (Although we have done
+this in-lining manually for this work, our aim is that in future, such
+transformations will be performed automatically at compile-time and
+therefore do not affect the code that a scientist writes.)
+For the more complex NEMOLite2D code the Cray compiler also
+had to be coerced into performing SIMD vectorisation through the use
+of souce-code directives.
 
 In this work we have also demonstrated the introduction of parallelism
 into the PSy layer with both OpenMP and OpenACC directives. In both
@@ -1601,14 +1609,20 @@ to pose any problems for the introduction of performant OpenMP.
 Similarly, we have also demonstrated good GPU performance using OpenACC
 in a \psykal\ version of the code.
 
-Having demonstrated that the \psykal\ separation of concerns may be
-applied to 2D finite-difference codes with minimal performance loss,
-our next steps will be; 1) to consider the automatic generation of the
-PSy layer and 2) to look at extending the approach to the full NEMO
+This paper demonstrates that the \psykal\ separation of concerns may
+be applied to 2D finite-difference codes without loss of
+performance. We have also shown that the resulting code is amenable to
+efficient parallelisation on both GPU and shared-memory CPU systems.
+This then means that it is possible to achieve performance portability
+while maintaining single-source science code.
+
+Our next steps will be first, to consider the automatic generation of the
+PSy layer and second, to look at extending the approach to the full NEMO
 model (i.e. three dimensions). In future work we will analyse the
 performance of a domain-specific compiler that performs the automatic
 generation of the PSy layer. This compiler (which we have named
-`PSyclone') is currently under development.
+`PSyclone', see https://github.com/stfc/psyclone) is currently under
+development.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
