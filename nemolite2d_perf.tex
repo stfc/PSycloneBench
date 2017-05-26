@@ -761,7 +761,7 @@ of) SIMD vectorisation, an issue that we explore below.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=2.8in]{orig_summary}
+\includegraphics[width=\picwidth]{orig_summary}
 \caption{Summary of the performance of the original version of the 
 NEMOLite2D code on 
 the range of compilers and CPU-based systems under consideration.}
@@ -781,7 +781,7 @@ the $256^2$ domain.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=7.5cm]{best_psykal_summary}
+\includegraphics[width=\picwidth]{best_psykal_summary}
 \caption{Summary of the best performance achieved by any {PS}y{KA}l 
 version of NEMOLite2D with each of the compilers and CPUs under 
 consideration.}
@@ -800,7 +800,7 @@ parts of the original version (see below).
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=2.8in]{slowdown_summary}
+\includegraphics[width=\picwidth]{slowdown_summary}
 \caption{Comparison of the performance of the best {PS}y{KA}l
 version with that of the original version of the code. A negative value 
 indicates that the {PS}y{KA}l version is slower than the original.}
@@ -878,45 +878,13 @@ In-line field copies       & 5.92 & 12.5 & 11.4 \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=93mm]{opt_stages_256}
+\includegraphics[width=\picwidth]{opt_stages_256}
 \caption{Performance of the {PS}y{KA}l version of NEMOLite2D for the
   $256^{2}$ domain at each stage of optimisation. The first (black)
   bar of each cluster gives the performance of the original version of
   NEMOLite2D for that compiler/CPU combination.}
 \label{FIG_opt_stages_256}
 \end{figure}
-
-% An example of a double column floating figure using two subfigures.
-% (The subfig.sty package must be loaded for this to work.)
-% The subfigure \label commands are set within each subfloat command,
-% and the \label for the overall figure must come after \caption.
-% \hfil is used as a separator to get equal spacing.
-% Watch out that the combined width of all the subfigures on a 
-% line do not exceed the text width or a line break will occur.
-
-%
-%\begin{figure*}[!t]
-%\centering
-%\subfloat[Case I]{\includegraphics[width=2.5in]{box}%
-%\label{fig_first_case}}
-%\hfil
-%\subfloat[Case II]{\includegraphics[width=2.5in]{box}%
-%\label{fig_second_case}}
-%\caption{Simulation results.}
-%\label{fig_sim}
-%\end{figure*}
-%
-% Note that often IEEE papers with subfigures do not employ subfigure
-% captions (using the optional argument to \subfloat[]), but instead will
-% reference/describe all of them (a), (b), etc., within the main caption.
-
-% Note that IEEE does not put floats in the very first column - or typically
-% anywhere on the first page for that matter. Also, in-text middle ("here")
-% positioning is not used. Most IEEE journals use top floats exclusively.
-% Note that, LaTeX2e, unlike IEEE journals, places footnotes above bottom
-% floats. This can be corrected via the \fnbelowfloat command of the
-% stfloats package.
-
 
 \subsection{Parallel Performance}
 
