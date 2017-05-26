@@ -14,9 +14,6 @@
 %\usepackage{subfig}
 %\usepackage{rotating}
 
-%\usepackage{cite}
-%\usepackage{url}
-
 \newlength{\picwidth}
 \setlength{\picwidth}{83mm}
 
@@ -92,7 +89,7 @@ consumption becoming the overriding design constraint, CPU clock
 speeds are falling and the complex, multi-purpose compute core is
 being replaced by multiple, simpler cores. This philosophy can be seen
 at work in the rise of so-called accelerator-based machines in the Top
-500 List~\cite{top500} of supercomputers: four of the top-ten machines
+500 List~\citep{top500} of supercomputers: four of the top-ten machines
 in the June 2016 list make use of many-core processors (Intel Xeon
 Phi, NVIDIA GPU or NRCPC SW26010). Two of the remaining six machines
 are IBM BlueGene/Qs, the CPU of which has hardware support for running
@@ -104,7 +101,7 @@ and this results in increased complexity in the programming models
 that must be used. This in turn increases the burden of code
 maintenance and code development, in part because two specialisms are
 required: that of the scientific domain which a code is modelling
-({\it e.g.} oceanography) and that of computational science. The
+(\textit{e.g.} oceanography) and that of computational science. The
 situation is currently complicated still further by the existence of
 competing hardware technology; if one was to begin writing a major
 scientific application today it is unclear whether one would target
@@ -112,7 +109,7 @@ GPU, Xeon Phi, traditional CPU, FPGA or something else entirely. This
 is a problem because, generally speaking, these different technologies
 require different programming approaches.
 
-In a previous paper~\cite{shallow_psykal} we introduced a possible
+In a previous paper~\citep{shallow_psykal} we introduced a possible
 approach to tackling this problem which we term {PS}y{KA}l (discussed
 below). In that work we considered the implications for serial
 performance of the extensive code re-structuring required by the
@@ -129,9 +126,9 @@ portable parallel performance within the {PS}y{KA}l approach.
 The {PS}y{KA}l approach attempts to address the problems described in
 the previous section. It separates code into three layers; the
 Algorithm layer, the PSy layer and the Kernel layer. The approach has
-been developed in the GungHo project~\cite{GungHo}, which is creating
+been developed in the GungHo project~\citep{GungHo}, which is creating
 a new Dynamical core for the UK Met Office, and its design has been
-influenced by earlier work on OP2~\cite{OP2, PYOP2}.
+influenced by earlier work on OP2~\citep{OP2, PYOP2}.
 
 In common with OP2, the {PS}y{KA}l approach separates out the science
 code and the performance-related code into distinct layers. The calls
@@ -167,9 +164,9 @@ writing this layer and there is no parallelism specified here, but,
 depending on the complexity of the Kernels, there may be input from an
 HPC expert and/or some coding rules to help ensure that the kernels
 compile into efficient code.  In an alternative
-approach~\cite{firedrake,fenics}, kernels are generated from a
+approach~\citep{firedrake,fenics}, kernels are generated from a
 high-level specification, potentially allowing them to be optimised
-automatically~\cite{coffee}.
+automatically~\citep{coffee}.
 
 The PSy layer sits in-between the Algorithm and Kernel layers and its
 functional role is to link the algorithm calls to the associated
@@ -202,7 +199,7 @@ discussed in the remainder of this paper.
 For this work we have used a program, `NEMOLite2D,' developed by
 ourselves (https://puma.nerc.ac.uk/trac/GOcean).  NEMOLite2D is a
 vertically-averaged version of NEMO (Nucleus for European Modelling of
-the Ocean~\cite{nemo}), retaining only its dynamical part. The whole
+the Ocean~\citep{nemo}), retaining only its dynamical part. The whole
 model system is represented through one continuity equation
 \eqref{continuity} (for the update of the sea-surface height) and two
 vertically-integrated momentum equations \eqref{momentum} (for the two
@@ -227,7 +224,7 @@ The external forcing includes surface wind stress, bottom friction,
 and open-boundary barotropic forcing. A lateral-slip boundary
 condition is applied along the coast lines. The open boundary
 condition can be set as a clipped or Flather's radiation
-condition~\cite{flather76}. The bottom friction takes a semi-implicit
+condition~\citep{flather76}. The bottom friction takes a semi-implicit
 form for the sake of model stability. As done in the original version
 of NEMO, a constant or Smagorinsky horizontal viscosity coefficient is
 used for the horizontal viscosity term.
@@ -298,7 +295,7 @@ END DO
 
 As with any full oceanographic model, boundary conditions must be
 applied at the edges of the model domain. Since NEMOLite2D applies
-external boundary conditions ({\it e.g.} barotropic forcing), this is
+external boundary conditions (\textit{e.g.} barotropic forcing), this is
 done via user-supplied kernels.
 
 
@@ -389,19 +386,19 @@ Continuity  & 0.10  & 3.7   & 0.33  & 6.6  & 0.11 & 4.1  \\
 
 Beginning with the vanilla {PS}y{KA}l version, we then apply a series of
 code transformations while obeying the {PS}y{KA}l separation of concerns,
-{\it i.e.} optimisation is restricted to the middle, {PS}y layer and
+\textit{i.e.} optimisation is restricted to the middle, {PS}y layer and
 leaves the kernel and algorithm layers unchanged. The aim of these
 optimisations is to recover, as much as is possible, the performance
 of the original version of the code. The transformations we have
 performed and the reasons for them are described in the following sections.
 
-\subsubsection{Addition of {\tt safe\_address} directives}
+\subsubsection{Addition of \texttt{safe\_address} directives}
 \label{sec_safe_address}
 
 Much of the optimisations we have performed have been informed by the
 diagnostic output produced by either the Cray or Intel compilers. Many
 of the NEMOLite2D kernels contain conditional statements. These
-statements are there to check whether {\it e.g.} the current grid
+statements are there to check whether \textit{e.g.} the current grid
 point is wet or neighbours a boundary point. A compiler is better able
 to optimise such a loop if it can be sure that all array accesses
 within the body of the loop are safe for every trip, irrespective of
@@ -415,7 +412,7 @@ from "!dir$ safe_address".
 \end{verbatim}
 In order that we could safely add such directives we altered the field
 module to allocate all field-data arrays with extents greater than
-strictly required.  We were then able to safely add the {\tt safe\_address}
+strictly required.  We were then able to safely add the \texttt{safe\_address}
 before all of the loops where the Cray compiler indicated it might be
 useful (the Momentum loops and some of the BC loops).
 
@@ -431,7 +428,7 @@ one for each of the $x$ and $y$ components of momentum. These kernels
 are relatively large; each comprises roughly 85 lines of Fortran
 executable statements.
 
-From our previous work~\cite{shallow_psykal} on a similar code we know
+From our previous work~\citep{shallow_psykal} on a similar code we know
 that kernel in-lining is critical to obtaining performance with both
 the Gnu and Intel compilers. For the Gnu compiler, this is because it
 cannot perform in-lining when routines are in separate source
@@ -443,7 +440,7 @@ manually inserted at the site of the subroutine call.
 
 Although the Intel compiler does do in-lining when routines are in
 separate source files, we have found (both here and in our previous
-work~\cite{shallow_psykal}) that the number of optimisations it
+work~\citep{shallow_psykal}) that the number of optimisations it
 performs is reduced if it first has to in-line a routine. For the
 Intel-compiled Shallow code, manually inserting kernel code at the
 site of the subroutine call increased performance by about 25\%.
@@ -515,7 +512,7 @@ not to:
  conditional code which is more
  efficient if executed in scalar mode.
 \end{verbatim}
-Inserting the Cray {\tt vector always} directive persuaded the compiler
+Inserting the Cray \texttt{vector always} directive persuaded the compiler
 to vectorise the loop:
 \begin{verbatim}
  99. !dir$ vector always
@@ -553,7 +550,7 @@ found that this was due to limitations in the compiler's analysis of
 the way components of Fortran derived types were being used. Each
 GOcean field object, in addition to the array holding the local
 section of the field, contains a pointer to a GOcean grid object. If a
-kernel requires grid-related quantities ({\it e.g.} the grid spacing)
+kernel requires grid-related quantities (\textit{e.g.} the grid spacing)
 then these are obtained by passing it a reference to the appropriate
 array within the grid object. Although these grid-related quantities
 are read-only within a compute kernel, if they were referenced from the
@@ -574,9 +571,9 @@ do jj = 2, N, 1
                         ...,         &
                         ssha%grid%area_t)
 \end{verbatim}
-where {\it ssha} is the only field that is written to by the kernel.
+where \textit{ssha} is the only field that is written to by the kernel.
 We remove any potential confusion by instead obtaining the
-grid-related (read-only) quantities from a field ({\it sshn\_t} in
+grid-related (read-only) quantities from a field (\textit{sshn\_t} in
 this case) that is only read by the kernel:
 \begin{verbatim}
 do jj = 2, N, 1
@@ -621,7 +618,7 @@ always result in improved performance. Whether or not they do so
 depends both on the compiler used and the problem size. We also
 emphasise that the aim of these optimisations is to make the PSy layer
 as compiler-friendly as possible, following the lessons learned from
-our previous work with the Shallow code~\cite{shallow_psykal}. It may
+our previous work with the Shallow code~\citep{shallow_psykal}. It may
 well be that transforming the code into some other structure would
 result in better performance on a particular architecture. However,
 exploring this optimisation space is beyond the scope of the present
@@ -688,11 +685,11 @@ a so-called 'first-touch policy' whereby memory addresses that will
 generally be accessed by a given thread during program execution are
 first initialised by that thread. This is simply achieved by using an
 OpenMP-parallel loop to initialise newly-allocated arrays to some
-value, {\it e.g.} zero.
+value, \textit{e.g.} zero.
 
 Since data arrays are managed within the GOcean Library this
 optimisation can again be implemented without changing the
-natural-science code ({\it i.e.} the Application and Kernel layers).
+natural-science code (\textit{i.e.} the Application and Kernel layers).
 
 \subsubsection{Minimise thread synchronisation}
 \label{sec_synch}
@@ -701,7 +698,7 @@ By default, the OpenMP END DO directive includes an implicit barrier,
 thus causing all threads to wait until the slowest has completed the
 preceeding loop. Such synchronisation limits performance at larger
 thread counts and, for the NEMOLite2D code, is frequently unecessary.
-{\it E.g.} if a kernel does not make use of the results of a
+\textit{E.g.} if a kernel does not make use of the results of a
 preceeding kernel call then there is clearly no need for threads to
 wait between the two kernels.
 
@@ -748,7 +745,7 @@ performance on both CPU- and GPU-based systems.
 In Figure~\ref{FIG_orig_perf_summary} we plot the serial performance
 of the original version of the NEMOLite2D code for the range of
 compilers and CPUs considered here. Unlike the Shallow
-code~\cite{shallow_psykal}, the original version of NEMOLite2D has not
+code~\citep{shallow_psykal}, the original version of NEMOLite2D has not
 been optimised. Although it is still a single source file it is, in
 common with NEMO itself, logically structured with separate
 subroutines performing different parts of the physics within each time
@@ -871,7 +868,7 @@ In-line Continuity         & 4.83 & 11.8 & 11.6 \\
 In-line remaining kernels  & 5.89 & 12.0 & 11.5 \\
 In-line field copies       & 5.92 & 12.5 & 11.4 \\
 \hline
-\parbox{2.5cm}{\raggedright \%-speed-up of best {\it c.f.} original} & 34.6 & 2.39 & 42.2 \\
+\parbox{2.5cm}{\raggedright \%-speed-up of best \textit{c.f.} original} & 34.6 & 2.39 & 42.2 \\
 \hline
 \end{tabular}
 \end{table}
@@ -893,7 +890,7 @@ NEMOLite2D code; the introduction of OpenMP and OpenACC directives. In
 keeping with the {PS}y{KA}l approach we do not modify either the
 Algorithm- or Kernel-layer code.  Any code changes are restricted to
 either the PSy (middle) layer or the underlying library that manages
-{\it e.g.} the construction of field objects.
+\textit{e.g.} the construction of field objects.
 
 \subsubsection{OpenMP Version}
 
@@ -1014,7 +1011,7 @@ We have used different scales for the $y$-axes in each of the plots in
 Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
 and~\ref{FIG_cray_omp_256} in order to highlight the performance
 differences between the code versions with a given compiler. However,
-the best performance obtained on twelve threads ({\it i.e.}  without
+the best performance obtained on twelve threads (\textit{i.e.}  without
 hyperthreading) is 52.1, 55.6 and 46.3 (million points/s) for the Gnu,
 Intel and Cray compilers, respectively. This serves to emphasise the
 democratisation that the introduction of OpenMP has had; for the
@@ -1022,7 +1019,7 @@ serial case the Cray- and Intel-compiled exectables were a factor of
 two faster than the Gnu-compiled binary
 (Figure~\ref{FIG_opt_stages_256}). In the OpenMP version, the
 Gnu-compiled binary is only 6\% slower than that produced by the Intel
-compiler and is 13\% {\em faster} that that of the Cray compiler. In
+compiler and is 13\% \textit{faster} that that of the Cray compiler. In
 part this situation comes about because of the effect that adding the
 OpenMP compiler flag has on the optimisations performed by the
 compiler.  In particular, the Cray compiler no longer vectorises the
@@ -1032,7 +1029,7 @@ optimisation work. This defficiency has been reported to Cray.
 Since NEMO and similar finite-difference codes tend to be
 memory-bandwidth bound, we checked the sensitivity of our performance
 results to this quantity by benchmarking using two sockets of Intel
-Ivy Bridge ({\it i.e.} using a complete node of ARCHER, a Cray
+Ivy Bridge (\textit{i.e.} using a complete node of ARCHER, a Cray
 XC30). For this configuration we ensured that threads were evenly
 shared over the two sockets. The performance obtained for the $256^2$
 case with the `early SINGLE' version of the code is compared with the
@@ -1060,8 +1057,8 @@ investigation by Cray.
 A further complication is the choice of scheduling of the OpenMP
 threads.  We have investigated the performance of each of the
 executables (and thus the associated OpenMP run-time library) with the
-standard OpenMP {\it static}, {\it dynamic} and {\it guided}
-scheduling policies~\cite{openmp_standard}. For the Intel
+standard OpenMP \textit{static}, \textit{dynamic} and \textit{guided}
+scheduling policies~\citep{openmp_standard}. For the Intel
 compiler/run-time, static loop scheduling was found to be best for all
 versions apart from that where we have attempted to amortize the cost
 of the SINGLE section. This is to be expected since that strategy
@@ -1185,11 +1182,11 @@ some 3.4 times faster than the best OpenMP version on the CPU.
 Although we have investigated how the performance of the {PS}y{KA}l
 version of NEMOLite2D compares with that or the original, we have not
 addressed how efficient the original actually is. In order to do so we
-use the Roofline Model~\cite{roofline} which provides a relatively
+use the Roofline Model~\citep{roofline} which provides a relatively
 simple way of characterising the performance of a code in terms of
 whether it is memory-bandwidth bound or compute bound. To do so we
-follow the approach suggested in~\cite{para_pearls} and use the
-STREAM~\cite{stream} and LINPACK~\cite{linpack} benchmarks in order to
+follow the approach suggested in~\citep{para_pearls} and use the
+STREAM~\citep{stream} and LINPACK~\citep{linpack} benchmarks in order to
 get the upper bounds on the memory bandwidth and floating-point
 operations per second (FLOPS) for the test hardware. Since we are
 using an Intel Ivybridge CPU we used the Intel Math Kernel Library
@@ -1235,7 +1232,7 @@ Directed Acyclic Graph (DAG) of the data flow. This tool eases the
 laborious and error-prone process of counting memory accesses and
 FLOPs as well as providing information on those operations that are
 rate-limiting or on the critical path. Using the details of the Intel
-Ivy Bridge microarchitecture published by Fog~\cite{fog_microarch,
+Ivy Bridge microarchitecture published by Fog~\citep{fog_microarch,
   fog_instructions} we have constructed performance estimates of the
 NEMOLite2D kernel. By ignoring all Instruction-Level Parallelism
 (ILP), \textit{i.e.} assuming that all nodes in the DAG are executed
@@ -1249,7 +1246,7 @@ perfectly schedule and pipeline all operations such that those that go
 to different execution ports are always run in parallel. In the Ivy
 Bridge core, floating-point multiplication and division operations go
 to port 0 while addition and subtraction go to port
-1~\cite{fog_instructions}. Therefore we sum the cost of all
+1~\citep{fog_instructions}. Therefore we sum the cost of all
 multiplication and division operations in the DAG and compare that
 with the sum of all addition and subtraction operations. The greater
 of these two quantities is then taken to be the cost of executing the
@@ -1294,7 +1291,7 @@ from the NEMO ocean model for this work. As a consequence of this, the
 introduction of the {PS}y{KA}l separation of concerns followed by
 suitable transformations of the PSy Layer is actually found to improve
 performance. This is in contrast to our previous
-experience~\cite{shallow_psykal} with tackling the Shallow code which
+experience~\citep{shallow_psykal} with tackling the Shallow code which
 has been optimised over many years. In that case we were able to
 recover (to within a few percent) the performance of the original and
 in some cases exceed it, in spite of limiting ourselves to
