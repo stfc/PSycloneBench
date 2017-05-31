@@ -849,9 +849,10 @@ smaller kernels, it can actually hurt performance. Thus the key
 transformation is to encourage the compiler to SIMD vectorise the
 Momentum section via a compiler-specific directive (without this it
 concludes that such vectorisation would be inefficient). Of the other
-transformations, only the addition of the compiler-specific
-safe\_address directive (see Section~\ref{sec_safe_address}) was found
-to give any benefit.
+transformations, only the change to constant loop bounds and the
+addition of the compiler-specific safe\_address directive (see
+Section~\ref{sec_safe_address}) were found to (slightly) improve
+performance.
 
 \begin{table}[!t]
   \caption{Performance (millions of points updated per second) on an Intel
@@ -863,13 +864,14 @@ to give any benefit.
 \centering
 \begin{tabular}{l|c|c|c}
 \hline
-Compiler:           & Gnu & Intel & Cray  \\
+Compiler:            & Gnu & Intel & Cray  \\
 \hline
-Original         & 3.87 & 12.2 & 6.83 \\
-Vanilla {PS}y{KA}l  & 3.07 & 6.55 & 6.73 \\
-Safe-address     & --   & --   & 6.95 \\
-In-line Momentum & 4.31 & 10.7 & 6.93 \\
-SIMD Momentum    & --   & --   & 11.8 \\
+Original             & 3.87 & 12.2 & 6.83 \\
+Vanilla {PS}y{KA}l   & 2.59 & 6.27 & 6.35 \\
+Constant loop bounds & 3.07 & 6.55 & 6.73 \\
+Safe-address         & --   & --   & 6.95 \\
+In-line Momentum     & 4.31 & 10.7 & 6.93 \\
+SIMD Momentum        & --   & --   & 11.8 \\
 \parbox{2.5cm}{\raggedright Grid data from read-only objects} & 4.31 & 11.3 & 11.8 \\
 In-line Continuity         & 4.83 & 11.8 & 11.6 \\
 In-line remaining kernels  & 5.89 & 12.0 & 11.5 \\
@@ -899,7 +901,7 @@ Algorithm- or Kernel-layer code.  Any code changes are restricted to
 either the PSy (middle) layer or the underlying library that manages
 \textit{e.g.} the construction of field objects.
 
-\subsubsection{OpenMP Version}
+\subsubsection{OpenMP}
 
 As with the serial optimisations, we consider the effect of each of
 the OpenMP optimisation steps described in Section~\ref{sec_omp_steps}
@@ -916,11 +918,12 @@ of NEMOLite2D with the different compilers/run-time environments, we
 also plot the parallel efficiency in
 Figures~\ref{FIG_gnu_omp_256},~\ref{FIG_intel_omp_256}
 and~\ref{FIG_cray_omp_256} (dashed lines and open symbols). We define
-parallel efficiency (\%), $E(n)$, on a number of threads, $n$, as:
+parallel efficiency (\%), $E(n)$, on $n$ threads, as:
 \[
 E(n) = 100  \frac{P(n)}{ n P(1)}
 \]
-where $P(m)$ is the performance of the code on $m$ threads. For a
+where $P(n)$ is the performance of the code on $n$ threads,
+\textit{e.g.} grid-points updated per second. For a
 perfect, linearly-scaling code, $E(n)$ will be 100\%.
 
 Since the space to explore consists of three different compilers, six
@@ -965,7 +968,7 @@ The simplest OpenMP implementation (black lines, circle symbols) fails
 to scale well for any of the compilers. For the Intel and Gnu
 versions, parallel efficiency is already less than 50\% on just four
 threads. The Cray version however does better and is about 45\%
-efficient on eight threads (Figure~\ref{FIG_cray_omp_256}).
+efficient on eight threads (right axis, Figure~\ref{FIG_cray_omp_256}).
 
 With the move to a single PARALLEL region, the situation
 is greatly improved with all three executables now scaling out to at
@@ -1065,12 +1068,12 @@ A further complication is the choice of scheduling of the OpenMP
 threads.  We have investigated the performance of each of the
 executables (and thus the associated OpenMP run-time library) with the
 standard OpenMP \textit{static}, \textit{dynamic} and \textit{guided}
-scheduling policies~\citep{openmp_standard}. For the Intel
-compiler/run-time, static loop scheduling was found to be best for all
-versions apart from that where we have attempted to amortize the cost
-of the SINGLE section. This is to be expected since that strategy
-requires some form of dynamic loop scheduling in order to reduce the
-load imbalance introduced by the SINGLE section.
+scheduling policies. For the Intel compiler/run-time, static loop
+scheduling was found to be best for all versions apart from that where
+we have attempted to amortize the cost of the SINGLE section. This is
+to be expected since that strategy requires some form of dynamic loop
+scheduling in order to reduce the load imbalance introduced by the
+SINGLE section.
 
 In contrast, some form of dynamic scheduling gave a performance
 improvement with the Gnu compiler/run-time even for the `first-touch'
@@ -1116,7 +1119,7 @@ qualifiers.
 %\label{FIG_cray_omp_32}
 %\end{figure}
 
-\subsubsection{OpenACC Version}
+\subsubsection{OpenACC}
 
 The advantage of the {PS}y{KA}l re-structuring becomes apparent if we
 wish to run NEMOLite2D on different hardware, \textit{e.g.} a
@@ -1187,28 +1190,29 @@ some 3.4 times faster than the best OpenMP version on the CPU.
 \subsection{Performance Analysis with the Roofline Model}
 
 Although we have investigated how the performance of the {PS}y{KA}l
-version of NEMOLite2D compares with that or the original, we have not
+version of NEMOLite2D compares with that of the original, we have not
 addressed how efficient the original actually is. In order to do so we
 use the Roofline Model~\citep{roofline} which provides a relatively
 simple way of characterising the performance of a code in terms of
 whether it is memory-bandwidth bound or compute bound. To do so we
-follow the approach suggested in~\citep{para_pearls} and use the
+follow the approach suggested in~\cite{para_pearls} and use the
 STREAM~\citep{stream} and LINPACK~\citep{linpack} benchmarks in order to
 get the upper bounds on the memory bandwidth and floating-point
 operations per second (FLOPS) for the test hardware. Since we are
 using an Intel Ivybridge CPU we used the Intel Math Kernel Library
 implementation of LINPACK.
 
-A key component of the Roofline model is the Arithmetic Intensity of
-the code being executed:
-\begin{equation}
+A key component of the Roofline model is the Operational or Arithmetic
+Intensity of the code being executed:
+\[
 AI = \frac{\textrm{No. of floating-point operations}}{\textrm{Bytes fetched from memory}}
-\end{equation}
+\]
 We calculated this quantity manually by examining the
 source code and counting the number of memory references and
 arithmetic operations that it contained. In doing this counting we
-assume that any references to adjacent array elements are fetched in a
-single cache-line and thus only count once.
+assume that any references to adjacent array elements (\textit{e.g.}
+$u(i,j)$ and $u(i+1,j)$) are fetched in a single cache line and thus
+only count once.
 
 \begin{figure}
 \centering
