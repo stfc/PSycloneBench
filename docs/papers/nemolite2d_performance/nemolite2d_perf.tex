@@ -31,7 +31,7 @@
 \Author[4]{Graham}{Riley}
 
 \affil[1]{Science and Technology Facilities Council, Daresbury Laboratory, UK}
-\affil[2]{NVIDIA}
+\affil[2]{NVIDIA Corporation}
 \affil[3]{National Oceanography Centre, Liverpool, UK}
 \affil[4]{University of Manchester, Manchester, UK}
 
@@ -89,7 +89,7 @@ consumption becoming the overriding design constraint, CPU clock
 speeds are falling and the complex, multi-purpose compute core is
 being replaced by multiple, simpler cores. This philosophy can be seen
 at work in the rise of so-called accelerator-based machines in the Top
-500 List (http://www.top500.org/) of supercomputers: six of the
+500 List of supercomputers (http://www.top500.org/): six of the
 top-ten machines in the November 2016 list make use of many-core
 processors (Intel Xeon Phi, NVIDIA GPU or NRCPC SW26010). Two of the
 remaining four machines are IBM BlueGene/Qs, the CPU of which has
@@ -119,7 +119,7 @@ re-structuring did initially incur a sizeable performance penalty, it
 was possible to transform the resulting code to recover performance
 (for a variety of CPU/compiler combinations) while obeying the
 {PS}y{KA}l separation of concerns. In this work we move to looking at
-portable parallel performance within the {PS}y{KA}l approach.
+portable \textit{parallel} performance within the {PS}y{KA}l approach.
 
 \subsection{The {PS}y{KA}l Approach}
 
@@ -171,7 +171,7 @@ automatically~\citep{coffee}.
 The PSy layer sits in-between the Algorithm and Kernel layers and its
 functional role is to link the algorithm calls to the associated
 kernel subroutines. As the Algorithm layer works on logically global
-fields and Kernel layer works on local fields, the PSy layer is
+fields and the Kernel layer works on local fields, the PSy layer is
 responsible for iterating over columns. It is also responsible for
 including any distributed-memory operations resulting from the
 decomposition of the simulation domain, such as halo swaps and
@@ -182,12 +182,12 @@ can be optimised by applying transformations such as loop fusion and
 loop blocking. Additionally, the potential parallelism within this
 iteration space can also be exploited and optimised. The PSy layer can
 therefore be tailored for a particular hardware (such as multi-core,
-many-core, GPGPUs, or some combination thereof) and software (such as
-compiler, operating system, MPI implementation) configuration with no
-change to the Algorithm or Kernel layer code. This approach therefore
-offers the potential for portable performance. In this work we apply
-optimisations to the PSy layer manually. The development of a tool to
-automate this process will be the subject of a future paper.
+many-core, GPUs, or some combination thereof) and software (such as
+compiler, operating system, MPI library, \textit{etc}.) configuration
+with no change to the Algorithm or Kernel layer code. This approach
+therefore offers the potential for portable performance. In this work
+we apply optimisations to the PSy layer manually. The development of a
+tool to automate this process will be the subject of a future paper.
 
 Clearly the separation of code into distinct layers may have an effect
 on performance. This overhead, how to get back to the performance of a
@@ -218,7 +218,7 @@ velocity components, respectively).
 where $\zeta$ and $\vec{U}$ represent the sea-surface height and
 horizontal velocity vector, respectively. $h$ is the total water
 depth, $\Omega$ is the Earth rotation velocity vector.  $g$ is the
-acceleration due to gravity. $\nu$ is the kinematic viscosity coefficient.
+acceleration due to gravity and $\nu$ is the kinematic viscosity coefficient.
 
 The external forcing includes surface wind stress, bottom friction,
 and open-boundary barotropic forcing. A lateral-slip boundary
@@ -261,6 +261,19 @@ retain the I/O functionality, all of the results presented in this work
 carefully exclude the effects of I/O since it is compute performance
 that interests us here.
 
+In the Algorithm layer, fields (and grids) are treated as logically
+global objects. Therefore, as part of creating the {PS}y{KA}l version
+of NEMOLite2D, we represent fields with derived types instead of
+arrays in this layer. These types then hold information about the
+associated mesh and the extents of 'internal' and 'halo' regions as
+well as the data arrays themselves. This frees the natural scientist
+from having to consider these issues and allows for a certain degree
+of flexibility in the actual implementation (e.g. padding for
+alignment or increasing array extent to allow for other
+optimisations). The support for this is implemented as a library
+(which we term the GOcean Infrastructure) and is common to the
+{PS}y{KA}l versions of both NEMOLite2D and Shallow.
+
 In order to maximise the flexibility (and thus potential for
 optimisation) of the {PS}y{KA}l version of NEMOLite2D, we made the
 kernels as fine-grained as possible. This resulted in eight distinct
@@ -289,7 +302,8 @@ DO istep = 1, nsteps
 END DO
 \end{verbatim}
 \caption{A schematic of the top-level of the {PS}y{KA}l version of the
- NEMOLite2D code.}
+  NEMOLite2D code. The kernels listed as arguments to the \texttt{invoke}
+call specify the operations to be performed.}
 \label{FIG_psykal_nemolite2d_structure}
 \end{figure}
 
@@ -336,12 +350,12 @@ flags ``-O ipa5'' and ``-h wp'' enable inter-procedural optimisation.
 \centering
 \begin{tabular}{l|l|l}
 \hline
-Compiler  &  Flags                                    & Notes \\
+Compiler  &  Flags                                                       \\
 \hline
-Gnu       & -Ofast -mtune=native -finline-limit=50000 &   \\
-Intel     & -O3 -fast -fno-inline-factor -xHost       &   \\
-Cray      & -O3 -O ipa5 -h wp                         &   \\
-PGI       & -acc -ta=tesla,cc35,nordc -Mcuda=maxregcount:80,loadcache:L1 & \\
+Gnu       & -Ofast -mtune=native -finline-limit=50000                    \\
+Intel     & -O3 -fast -fno-inline-factor -xHost                          \\
+Cray      & -O3 -O ipa5 -h wp                                            \\
+PGI       & -acc -ta=tesla,cc35,nordc -Mcuda=maxregcount:80,loadcache:L1 \\
 \hline
 \end{tabular}
 \end{table}
@@ -405,8 +419,6 @@ within the body of the loop are safe for every trip, irrespective of
 the conditional statements. In its diagnostic output the Cray compiler
 notes this with messages of the form:
 \begin{verbatim}
-ftn-6375 ftn: VECTOR File = nemolite2d.f90,
- Line = 448 
 A loop starting at line 448 would benefit 
 from "!dir$ safe_address".
 \end{verbatim}
