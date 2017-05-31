@@ -343,12 +343,10 @@ by the host CPU (AVX in this case). The Intel flag ``-fast'' and Cray
 flags ``-O ipa5'' and ``-h wp'' enable inter-procedural optimisation.
 
 \begin{table}[!t]
-% increase table row spacing, adjust to taste
-\renewcommand{\arraystretch}{1.3}
 \caption{The compiler flags used in this work.}
 \label{TABLE_compiler_flags}
 \centering
-\begin{tabular}{l|l|l}
+\begin{tabular}{l|l}
 \hline
 Compiler  &  Flags                                                       \\
 \hline
@@ -406,6 +404,18 @@ optimisations is to recover, as much as is possible, the performance
 of the original version of the code. The transformations we have
 performed and the reasons for them are described in the following sections.
 
+\subsubsection{Constant loop bounds}
+
+In the vanilla {PS}y layer, the lower and upper bounds for each loop
+over grid points are obtained from the relevant components of the
+derived type representing the field being updated by the kernel being
+called from within the loop. In our previous
+work~\citep{shallow_psykal} we found that the Cray compiler in
+particular produced more performant code if we changed the PSy layer
+such that the array extents are looked up once at the beginning of the
+PSy routine and then used to specify the loop bounds. We have therefore
+applied that transformation to the PSy layer of NEMOLite2D.
+
 \subsubsection{Addition of \texttt{safe\_address} directives}
 \label{sec_safe_address}
 
@@ -422,13 +432,14 @@ notes this with messages of the form:
 A loop starting at line 448 would benefit 
 from "!dir$ safe_address".
 \end{verbatim}
-In order that we could safely add such directives we altered the field
-module to allocate all field-data arrays with extents greater than
-strictly required.  We were then able to safely add the \texttt{safe\_address}
-before all of the loops where the Cray compiler indicated it might be
-useful (the Momentum loops and some of the BC loops).
+In order that we could safely add such directives we altered the
+GOcean infrastructure to allocate all field-data arrays with extents
+greater than strictly required.  We were then able to safely add the
+\texttt{safe\_address} before all of the loops where the Cray compiler
+indicated it might be useful (the Momentum loops and some of the BC
+loops).
 
-\subsubsection{In-line Momentum kernel bodies into middle-layer code}
+\subsubsection{In-line Momentum kernel bodies into middle-layer}
 \label{sec_inline_mom}
 
 The profiling data in Table~\ref{TABLE_profile} shows that it is the
@@ -452,7 +463,7 @@ manually inserted at the site of the subroutine call.
 
 Although the Intel compiler does do in-lining when routines are in
 separate source files, we have found (both here and in our previous
-work~\citep{shallow_psykal}) that the number of optimisations it
+work~\citep{shallow_psykal}) that the extent of the optimisations it
 performs is reduced if it first has to in-line a routine. For the
 Intel-compiled Shallow code, manually inserting kernel code at the
 site of the subroutine call increased performance by about 25\%.
@@ -471,9 +482,7 @@ LOOP BEGIN at time_step_mod.f90(85,7)
  scalar loop cost: 1307 
  vector loop cost: 2391.000 
  estimated potential speedup: 0.540 
- lightweight vector operations: 1133 
- medium-overhead vector operations: 1 
- vectorized math library calls: 1 
+ ...
  --- end vector loop cost summary ---
 LOOP END
 \end{verbatim}
@@ -486,9 +495,7 @@ LOOP BEGIN at time_step_mod.f90(97,7)
  scalar loop cost: 1253 
  vector loop cost: 521.750 
  estimated potential speedup: 2.350 
- lightweight vector operations: 697 
- medium-overhead vector operations: 1 
- vectorized math library calls: 1 
+ ...
  --- end vector loop cost summary ---
 LOOP END
 \end{verbatim}
@@ -574,9 +581,6 @@ themselves read-only for the kernel at hand.  For instance, the call
 to the continuity kernel, which confused the Intel compiler, originally
 looked like this:
 \begin{verbatim}
-do jj = 2, N, 1
- do ji = 2, M, 1
-
    call continuity_code(ji, jj,      &
                         ssha%data,   &
                         sshn_t%data, &
@@ -588,9 +592,6 @@ We remove any potential confusion by instead obtaining the
 grid-related (read-only) quantities from a field (\textit{sshn\_t} in
 this case) that is only read by the kernel:
 \begin{verbatim}
-do jj = 2, N, 1
- do ji = 2, M, 1
-
    call continuity_code(ji, jj,      &
                         ssha%data,   &
                         sshn_t%data, &
@@ -756,14 +757,14 @@ performance on both CPU- and GPU-based systems.
 
 In Figure~\ref{FIG_orig_perf_summary} we plot the serial performance
 of the original version of the NEMOLite2D code for the range of
-compilers and CPUs considered here. Unlike the Shallow
+compilers considered here. Unlike the Shallow
 code~\citep{shallow_psykal}, the original version of NEMOLite2D has not
 been optimised. Although it is still a single source file it is, in
 common with NEMO itself, logically structured with separate
 subroutines performing different parts of the physics within each time
 step. This structuring and the heavy use of conditional statements
 favour the Intel compiler which significantly out-performs both the
-Gnu and Cray compilers. Only when the problem size falls out of cache
+Gnu and Cray compilers. Only when the problem size spills out of cache
 does the performance gap begin to narrow. The reason for the
 performance deficit of the Cray-compiled binary comes down to (a lack
 of) SIMD vectorisation, an issue that we explore below.
@@ -772,14 +773,14 @@ of) SIMD vectorisation, an issue that we explore below.
 \centering
 \includegraphics[width=\picwidth]{orig_summary}
 \caption{Summary of the performance of the original version of the 
-NEMOLite2D code on 
-the range of compilers and CPU-based systems under consideration.}
+NEMOLite2D code on an Intel Ivy Bridge CPU for
+the range of compilers under consideration.}
 \label{FIG_orig_perf_summary}
 \end{figure}
 
 Moving now the to the {PS}y{KA}l version of NEMOLite2D,
 Figure~\ref{FIG_best_psykal_perf_summary} plots the performance of the
-fastest {PS}y{KA}l version for each of the compiler/CPU combinations.
+fastest {PS}y{KA}l version for each of the compiler/problem-size combinations.
 While the Intel compiler still produces the best-performing binary,
 the Cray-compiled binary is now a very close second. In fact, the
 performance of both the Gnu- and Cray-compiled {PS}y{KA}l versions is
@@ -792,14 +793,13 @@ the $256^2$ domain.
 \centering
 \includegraphics[width=\picwidth]{best_psykal_summary}
 \caption{Summary of the best performance achieved by any {PS}y{KA}l 
-version of NEMOLite2D with each of the compilers and CPUs under 
-consideration.}
+version of NEMOLite2D for each of the compilers under consideration.}
 \label{FIG_best_psykal_perf_summary}
 \end{figure}
 
 Figure~\ref{FIG_slowdown_summary} plots the percentage difference
 between the performance of the original and the best {PS}y{KA}l versions
-of NEMOLite2D for each compiler/CPU combination. This shows that it is
+of NEMOLite2D for each compiler/problem-size combination. This shows that it is
 only the Intel-compiled binary running the $64^2$ domain that is
 slower with the {PS}y{KA}l version of the code (and then only by some
 3\%). For all other points in the space, the optimised {PS}y{KA}l version
@@ -829,8 +829,8 @@ Looking at the results for the Gnu compiler (and the Ivy Bridge CPU)
 first, all of the steps-up in performance correspond to kernel
 in-lining. None of the other transformations had any effect on the
 performance of the compiled code. In fact, simply in-lining the two
-kernels associated with the Momentum section was enough to improve
-upon the performance of the original code. 
+kernels associated with the Momentum section was sufficient to exceed
+the performance of the original code.
 
 With the Intel compiler, the single largest performance increase is
 again due to kernel in-lining (of the Momentum kernels). This is
@@ -854,11 +854,8 @@ safe\_address directive (see Section~\ref{sec_safe_address}) was found
 to give any benefit.
 
 \begin{table}[!t]
-% increase table row spacing, adjust to taste
-\renewcommand{\arraystretch}{1.3}
-% if using array.sty, it might be a good idea to tweak the value of
-% \extrarowheight as needed to properly center the text within the cells
-\caption{Performance (millions of points updated per second) for the
+  \caption{Performance (millions of points updated per second) on an Intel
+    Ivy Bridge CPU for the
   $256^2$ case after each code transformation. Where an optimisation
   utilises compiler-specific directives then performance figures for
   the other compilers are omitted.}
@@ -867,8 +864,6 @@ to give any benefit.
 \begin{tabular}{l|c|c|c}
 \hline
 Compiler:           & Gnu & Intel & Cray  \\
-\hline
-CPU:                & \multicolumn{3}{c}{Ivy Bridge}  \\
 \hline
 Original         & 3.87 & 12.2 & 6.83 \\
 Vanilla {PS}y{KA}l  & 3.07 & 6.55 & 6.73 \\
