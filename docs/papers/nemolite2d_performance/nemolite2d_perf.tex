@@ -178,8 +178,9 @@ decomposition of the simulation domain, such as halo swaps and
 reductions.
 
 As the PSy layer iterates over columns, the single-core performance
-can be optimised by applying transformations such as loop fusion and
-loop blocking. Additionally, the potential parallelism within this
+can be optimised by applying transformations such as manipulation of
+loop bounds (e.g. padding for SIMD) and kernel
+in-lining. Additionally, the potential parallelism within this
 iteration space can also be exploited and optimised. The PSy layer can
 therefore be tailored for a particular hardware (such as multi-core,
 many-core, GPUs, or some combination thereof) and software (such as
@@ -265,7 +266,7 @@ In the Algorithm layer, fields (and grids) are treated as logically
 global objects. Therefore, as part of creating the {PS}y{KA}l version
 of NEMOLite2D, we represent fields with derived types instead of
 arrays in this layer. These types then hold information about the
-associated mesh and the extents of 'internal' and 'halo' regions as
+associated mesh and the extents of `internal' and `halo' regions as
 well as the data arrays themselves. This frees the natural scientist
 from having to consider these issues and allows for a certain degree
 of flexibility in the actual implementation (e.g. padding for
@@ -274,9 +275,10 @@ optimisations). The support for this is implemented as a library
 (which we term the GOcean Infrastructure) and is common to the
 {PS}y{KA}l versions of both NEMOLite2D and Shallow.
 
-In order to maximise the flexibility (and thus potential for
-optimisation) of the {PS}y{KA}l version of NEMOLite2D, we made the
-kernels as fine-grained as possible. This resulted in eight distinct
+In re-structuring NEMOLite2D to conform to the {PS}y{KA}l separation
+of concerns we must break up the computation into multiple
+kernels. The more of these there are, the greater the potential for
+optimisation of the {PS}y layer. This re-structuring gave eight distinct
 kernels, each of which updates a single field at a single point (since
 we have chosen to use point-wise kernels). With a little bit of
 tidying/re-structuring, we found it was possible to express the
@@ -330,7 +332,7 @@ version of NEMOLite2D.  We then move on to the construction of
 parallel versions of the code using OpenMP and OpenACC. Again, we
 describe the key steps we have taken in this process in order to
 maximise the performance of the code. In both cases our aim is to
-identify those transformations which must be supported by any tool
+identify those transformations which must be supported by a tool
 which seeks to auto-generate a performant PSy layer.
 
 \subsection{Transformations of Serial NEMOLite2D}
@@ -622,9 +624,9 @@ of the kernels into the PSy layer.
 The Time-update section includes several array copies where fields for
 the current time-step become the fields at the previous time-step.
 Initially we implemented these copies as 'built-in' kernels (in the
-GOcean library) as they are specified in the algorithm layer. However,
-we obtained better performance by simply in-lining these array copies
-into the PSy layer.
+GOcean infrastructure) as they are specified in the algorithm
+layer. However, we obtained better performance by simply in-lining
+these array copies into the PSy layer.
 
 We shall see that the transformations we have just described do not
 always result in improved performance. Whether or not they do so
@@ -647,11 +649,12 @@ optimising the code.
 \subsection{Construction of OpenMP-Parallel NEMOLite2D}
 \label{sec_omp_steps}
 
-For this part of the work we began with the optimal {PS}y{KA}l version of
-the code, as obtained after applying the various transformations
-described in the previous section. As with the transformations of the
-serial code, our purpose here is to determine the functionality
-required of a tool that seeks to generate the PSy layer.
+For this part of the work we began with the optimised {PS}y{KA}l
+version of the code, as obtained after applying the various
+transformations described in the previous section. As with the
+transformations of the serial code, our purpose here is to determine
+the functionality required of a tool that seeks to generate the PSy
+layer.
 
 \subsubsection{Separate PARALLEL DOs}
 \label{sec_sep_dos}
@@ -700,7 +703,7 @@ first initialised by that thread. This is simply achieved by using an
 OpenMP-parallel loop to initialise newly-allocated arrays to some
 value, \textit{e.g.} zero.
 
-Since data arrays are managed within the GOcean Library this
+Since data arrays are managed within the GOcean infrastructure this
 optimisation can again be implemented without changing the
 natural-science code (\textit{i.e.} the Application and Kernel layers).
 
@@ -744,14 +747,47 @@ set at run-time using the OMP\_SCHEDULE environment variable. We
 experimented with using the standard static, dynamic and guided (with
 varying chunk size) OpenMP schedules.
 
+\subsection{Construction of OpenACC-Parallel NEMOLite2D}
+\label{sec_oacc_steps}
+
+The advantage of the {PS}y{KA}l re-structuring becomes apparent if we
+wish to run NEMOLite2D on different hardware, \textit{e.g.} a
+GPU. This is because the necessary code modifications are, by design,
+limited to the middle PSy layer. In order to demonstrate this and to
+check for any limitations imposed by the {PS}y{KA}l re-structuring, we
+had an expert from NVIDIA port the Fortran NEMOLite2D to GPU. He
+used OpenACC directives for this porting as that approach is similar
+to the use of OpenMP directives and works well within the {PS}y{KA}l
+approach.
+
+\subsubsection{Data Movement}
+
+Although the advent of technologies such as NVLink are alleviating the
+bottleneck presented by the connection of the GPU to the CPU, it
+remains critical to minimise data movement between the memory spaces
+of the two processing units. In NEMOLite2D this is achieved by
+performing all computation on the GPU. The whole time-stepping loop
+can then be enclosed inside a single OpenACC \texttt{data} region and it
+is only necessary to bring data back to the CPU for the purposes
+of I/O.
+
+\subsubsection{Kernel Acceleration}
+
+Moving the kernels to execute on the GPU was achieved by using the
+OpenACC \texttt{kernels} directive.
+
+He also experimented with using CUDA directly within the
+original form of NEMOLite2D in order to quantify any performance
+penalty incurred by taking the {PS}y{KA}l/OpenACC approach.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 
 We first consider the performance of the code in serial and examine
 the effects of the transformations described in
-Section~\ref{sec_methodology}. Once we have arrived at an optimal form
-for the serial version of NEMOLite2D we then investigate its parallel
-performance on both CPU- and GPU-based systems.
+Section~\ref{sec_methodology}. Once we have arrived at an optimised
+form for the serial version of NEMOLite2D we then investigate its
+parallel performance on both CPU- and GPU-based systems.
 
 \subsection{Serial Performance}
 
@@ -1126,7 +1162,7 @@ wish to run NEMOLite2D on different hardware, \textit{e.g.} a
 GPU. This is because the necessary code modifications are, by design,
 limited to the middle PSy layer. In order to demonstrate this and to
 check for any limitations imposed by the {PS}y{KA}l re-structuring, we
-had a GPU expert from NVIDIA port the Fortran NEMOLite2D to GPU. He
+had an expert from NVIDIA port the Fortran NEMOLite2D to GPU. He
 used OpenACC directives for this porting as that approach is similar
 to the use of OpenMP directives and works well within the {PS}y{KA}l
 apprach. He also experimented with using CUDA directly within the
