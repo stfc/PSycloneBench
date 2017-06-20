@@ -1,24 +1,21 @@
-=cluster; PSyKAl (OpenACC); Original code (CUDA)
+=cluster; Vanilla OpenACC; Parallel BC kernels; Collapse 2D loop nests; Short-loop clause in Momentum; Fuse Momentum kernels; Original code (CUDA)
 font=Helvetica
 fontsz=12
 =norotate
 =table;
 xlabel=Problem size
 ylabel=Performance (M points per second)
-64;	3.24E+01;   3.28E+01
-128;	8.97E+01;   9.23E+01
-256;	1.94E+02;   2.03E+02
-512;	2.63E+02;   2.81E+02
-1024;	2.87E+02;   3.15E+02
-2048;	2.89E+02;   3.25E+02
-4096;	2.84E+02;   3.12E+02
+64;	2.15E+01;   3.15E+01; 3.16E+01; 3.20E+01; 3.35E+01; 3.28E+01
+128;	5.19E+01;   8.36E+01; 8.03E+01; 9.36E+01; 9.76E+01; 9.23E+01
+256;	9.83E+01;   1.48E+02; 1.50E+02; 1.86E+02; 1.98E+02; 2.03E+02
+512;	1.44E+02;   1.89E+02; 1.93E+02; 2.45E+02; 2.61E+02; 2.81E+02
+1024;	1.71E+02;   2.03E+02; 2.06E+02; 2.69E+02; 2.88E+02; 3.15E+02
+2048;	1.88E+02;   2.03E+02; 2.06E+02; 2.75E+02; 2.90E+02; 3.25E+02
+4096;	1.92E+02;   1.97E+02; 2.00E+02; 2.65E+02; 2.84E+02; 3.12E+02
 
-# OpenACC with previous version of PGI compiler
-#3.26E+01; 
-#8.56E+01; 
-#1.65E+02; 
-#2.10E+02; 
-#2.28E+02; 
-#2.30E+02; 
-#2.15E+02;
 
+#Fuse Mom kernels	                3.35E+01	9.76E+01	1.98E+02	2.61E+02	2.88E+02	2.90E+02	2.84E+02
+#Add short-loop clause to Mom kernels	3.20E+01	9.36E+01	1.86E+02	2.45E+02	2.69E+02	2.75E+02	2.65E+02
+#Collapse 2D loop nests	                3.16E+01	8.03E+01	1.50E+02	1.93E+02	2.06E+02	2.06E+02	2.00E+02
+#Parallelise BC loops using independent	3.15E+01	8.36E+01	1.48E+02	1.89E+02	2.03E+02	2.03E+02	1.97E+02
+#Vanilla	       	     	   	2.15E+01	5.19E+01	9.83E+01	1.44E+02	1.71E+02	1.88E+02	1.92E+02
