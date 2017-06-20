@@ -1,17 +1,10 @@
-=cluster; Vanilla OpenACC; Parallel BC kernels; Collapse 2D loop nests; Short-loop clause in Momentum; Fuse Momentum kernels; Original code (CUDA)
+=cluster; Vanilla OpenACC; Parallel Flather kernels; Collapse 2D loop nests; Short-loop clause in Momentum; Fuse Momentum kernels; CUDA Momentum kernel
 font=Helvetica
 fontsz=12
 =norotate
 =table;
 xlabel=Problem size
 ylabel=Performance (M points per second)
-#2.15E+01;   3.15E+01; 3.16E+01; 3.20E+01; 3.35E+01; 3.28E+01
-#5.19E+01;   8.36E+01; 8.03E+01; 9.36E+01; 9.76E+01; 9.23E+01
-#9.83E+01;   1.48E+02; 1.50E+02; 1.86E+02; 1.98E+02; 2.03E+02
-#1.44E+02;   1.89E+02; 1.93E+02; 2.45E+02; 2.61E+02; 2.81E+02
-#1.71E+02;   2.03E+02; 2.06E+02; 2.69E+02; 2.88E+02; 3.15E+02
-#1.88E+02;   2.03E+02; 2.06E+02; 2.75E+02; 2.90E+02; 3.25E+02
-#1.92E+02;   1.97E+02; 2.00E+02; 2.65E+02; 2.84E+02; 3.12E+02
 # Vanilla, Independent clause in BCs, Collapse loops, Short-loop in Momentum kernels, Fused Momentum, CUDA Fortran version of Momentum
 64;	2.11E+01;  3.08E+01;  3.05E+01;  3.25E+01;  3.39E+01;  3.23E+01
 128;	5.03E+01;  8.00E+01;  8.16E+01;  8.93E+01;  9.21E+01;  1.01E+02
