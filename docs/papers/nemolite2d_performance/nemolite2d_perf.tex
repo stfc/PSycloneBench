@@ -697,7 +697,7 @@ When executing an OpenMP-parallel program on a Non-Uniform Memory
 Access (NUMA) compute node it becomes important to ensure that the
 memory locations accessed by each thread are local to the hardware
 core upon which it is executing. One way of doing this is to implement
-a so-called 'first-touch policy' whereby memory addresses that will
+a so-called `first-touch policy' whereby memory addresses that will
 generally be accessed by a given thread during program execution are
 first initialised by that thread. This is simply achieved by using an
 OpenMP-parallel loop to initialise newly-allocated arrays to some
@@ -774,11 +774,44 @@ of I/O.
 \subsubsection{Kernel Acceleration}
 
 Moving the kernels to execute on the GPU was achieved by using the
-OpenACC \texttt{kernels} directive.
+OpenACC \texttt{kernels} directive in each Fortran routine containing
+loops over grid points. (In the {PS}y{KA}l version this is just the
+single {PS}y layer subroutine). This directive instructs the OpenACC
+compiler to automatically create a GPU kernel for each loop nest it
+encounters.
 
-He also experimented with using CUDA directly within the
-original form of NEMOLite2D in order to quantify any performance
-penalty incurred by taking the {PS}y{KA}l/OpenACC approach.
+\subsubsection{Force parallelisation of Flather kernels}
+
+The PGI compiler was unable to determine whether the loops applying
+the Flather boundary condition in the $x$ and $y$ directions were safe
+to parallelise. This information therefore had to be supplied by
+inserting a \texttt{loop independent} OpenACC directive before each of
+the two loops.
+
+\subsubsection{Loop collapse}
+
+When using the OpenACC \texttt{kernels} directive the compiler creates
+GPU kernels by parallelising only the outer loop of each loop nest.
+For the majority of loop nests in NEMOLite2D all of the iterations are
+independent. It is therefore beneficial to expose the maximum amount
+of parallelism to the GPU and we do this by instructing the compiler
+to parallelise both levels (i.e. \texttt{ji} and \texttt{jj}) of a
+loop nest. This is achieved using the OpenACC \texttt{loop collapse(2)}
+directive.
+
+\subsubsection{Shortloop}
+
+As well as accounting for the bulk of the execution time, the Momentum
+kernels ($u$ and $v$) are also relatively large.
+
+\subsubsection{Kernel fusion}
+
+
+\subsubsection{CUDA}
+
+We also experimented with using CUDA directly within the original form
+of NEMOLite2D in order to quantify any performance penalty incurred by
+taking the {PS}y{KA}l/OpenACC approach.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
