@@ -793,19 +793,42 @@ the two loops.
 When using the OpenACC \texttt{kernels} directive the compiler creates
 GPU kernels by parallelising only the outer loop of each loop nest.
 For the majority of loop nests in NEMOLite2D all of the iterations are
-independent. It is therefore beneficial to expose the maximum amount
-of parallelism to the GPU and we do this by instructing the compiler
-to parallelise both levels (i.e. \texttt{ji} and \texttt{jj}) of a
-loop nest. This is achieved using the OpenACC \texttt{loop collapse(2)}
-directive.
+independent and the loop bodies consist of just a handful of
+executable statements. For small kernels the loop start-up cost can be
+significant and therefore it is therefore beneficial to generate as
+many threads as will fit on the GPU and then re-use them as
+required. For this approach to be efficient we must expose the maximum
+amount of parallelism to the GPU and we do this by instructing the
+compiler to parallelise both levels (i.e. \texttt{ji} and \texttt{jj})
+of a loop nest. This is achieved using the OpenACC \texttt{loop
+  collapse(2)} directive for all of the smaller kernels in NEMOLite2D.
 
 \subsubsection{Shortloop}
 
-As well as accounting for the bulk of the execution time, the Momentum
-kernels ($u$ and $v$) are also relatively large.
+In contrast to all of the other NEMOLite2D kernels, the Momentum
+kernels ($u$ and $v$) are relatively large in terms of the number of
+executable statements they contain. In turn, this means that the
+corresponding kernels will require more state and thus more registers
+on the GPU. Therefore, rather than generating as many threads as will
+fit on the GPU, it is more efficient only to generate as many as
+required by the problem. Once slots become free on the GPU new threads
+will launch. This minimises the overhead associated with thread
+creation and eases register pressure.  The compiler can be persuaded
+to adopt the above strategy through the use of the (PGI-specific)
+\texttt{loop shortloop} directive which tells it that there is not
+likely to be much thread re-use in the following loop. This directive
+was applied to both the \texttt{ji} and \texttt{jj} loops in both of
+the Momentum kernels.
 
 \subsubsection{Kernel fusion}
 
+Both of the Momentum kernels read from 20 double-precision arrays and
+thus require considerable memory bandwidth.  However, the majority of
+these arrays are used by both the $u$ and $v$ kernels. It is therefore
+possible to reduce the memory-bandwidth requirements by fusing the two
+kernels together. In practice, this means fusing the two,
+doubly-nested loops so that we have a single loop nest containing both
+the $u$ and $v$ kernel bodies/calls.
 
 \subsubsection{CUDA}
 
