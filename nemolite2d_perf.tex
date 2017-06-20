@@ -755,10 +755,12 @@ wish to run NEMOLite2D on different hardware, \textit{e.g.} a
 GPU. This is because the necessary code modifications are, by design,
 limited to the middle PSy layer. In order to demonstrate this and to
 check for any limitations imposed by the {PS}y{KA}l re-structuring, we
-had an expert from NVIDIA port the Fortran NEMOLite2D to GPU. He
-used OpenACC directives for this porting as that approach is similar
-to the use of OpenMP directives and works well within the {PS}y{KA}l
-approach.
+had an expert from NVIDIA port the Fortran NEMOLite2D to GPU. OpenACC
+directives were used as that approach is similar to the use of OpenMP
+directives and works well within the {PS}y{KA}l approach. In order to
+quantify any performance penalty incurred by taking the
+{PS}y{KA}l/OpenACC approach, we experimented with using CUDA directly
+within the original form of NEMOLite2D.
 
 \subsubsection{Data Movement}
 
@@ -797,7 +799,7 @@ independent and the loop bodies consist of just a handful of
 executable statements. For small kernels the loop start-up cost can be
 significant and therefore it is beneficial to generate as many threads
 as will fit on the GPU and then re-use them as required (\textit{i.e.} if the
-data size is greatre than the number of threads). For this approach to
+data size is greater than the number of threads). For this approach to
 be efficient we must expose the maximum amount of parallelism to the
 GPU and we do this by instructing the compiler to parallelise both
 levels (i.e. \texttt{ji} and \texttt{jj}) of a loop nest. This is
@@ -812,7 +814,7 @@ executable statements they contain. In turn, this means that the
 corresponding kernels will require more state and thus more registers
 on the GPU. Therefore, rather than generating as many threads as will
 fit on the GPU, it is more efficient only to generate as many as
-required by the problem so as to minimise reigster pressure. Once
+required by the problem so as to minimise register pressure. Once
 slots become free on the GPU, new threads will launch with the
 associated cost amortized by the longer execution time of the larger
 kernel. The compiler can be persuaded
@@ -824,7 +826,7 @@ the Momentum kernels.
 
 \subsubsection{Kernel fusion}
 
-Both of the Momentum kernels read from 20 double-precision arrays and
+Both of the Momentum kernels read from 16 double-precision arrays and
 thus require considerable memory bandwidth.  However, the majority of
 these arrays are used by both the $u$ and $v$ kernels. It is therefore
 possible to reduce the memory-bandwidth requirements by fusing the two
@@ -836,7 +838,12 @@ the $u$ and $v$ kernel bodies/calls.
 
 We also experimented with using CUDA directly within the original form
 of NEMOLite2D in order to quantify any performance penalty incurred by
-taking the {PS}y{KA}l/OpenACC approach.
+taking the {PS}y{KA}l/OpenACC approach. To do this we used PGI's
+support for CUDA Fortran to create a CUDA kernel for the (fused)
+Momentum kernel. The only significant code change with this approach
+is the explicit set-up of the grid- and block-sizes and the way in
+which the kernel is launched (i.e. use of the \texttt{call kernel $<<<$
+  gridDim1, blockDim1 $>>>$(args)} syntax).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
@@ -979,7 +986,7 @@ In-line field copies       & 5.92 & 12.5 & 11.4 \\
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\picwidth]{opt_stages_256}
-\caption{Performance of the {PS}y{KA}l version of NEMOLite2D for the
+\caption{Serial performance of the {PS}y{KA}l version of NEMOLite2D for the
   $256^{2}$ domain at each stage of optimisation. The first (black)
   bar of each cluster gives the performance of the original version of
   NEMOLite2D for that compiler/CPU combination.}
@@ -1215,37 +1222,63 @@ qualifiers.
 
 \subsubsection{OpenACC}
 
-The advantage of the {PS}y{KA}l re-structuring becomes apparent if we
-wish to run NEMOLite2D on different hardware, \textit{e.g.} a
-GPU. This is because the necessary code modifications are, by design,
-limited to the middle PSy layer. In order to demonstrate this and to
-check for any limitations imposed by the {PS}y{KA}l re-structuring, we
-had an expert from NVIDIA port the Fortran NEMOLite2D to GPU. He
-used OpenACC directives for this porting as that approach is similar
-to the use of OpenMP directives and works well within the {PS}y{KA}l
-apprach. He also experimented with using CUDA directly within the
-original form of NEMOLite2D in order to quantify any performance
-penalty incurred by taking the {PS}y{KA}l/OpenACC approach.
+In contrast to the CPU, we have just a single compiler to consider
+when looking at OpenACC performance. We are therefore able to
+investigate the effect of the various optimisations described in
+Section~\ref{sec_oacc_steps} for the full range of problem sizes.  All
+of the reported performance figures were obtained on an NVIDIA Tesla
+K40m GPU running in `boost' mode (enabled with the command
+\texttt{nvidia-smi -ac 3004,875}).
 
-The performance of these two versions of the code is plotted in
-Figure~\ref{FIG_gpu_opt_stages}.  Since the {PS}y{KA}l restructuring of
-NEMOLite2D did not prove to be a barrier to achieving a performant
+The performance of the various versions of the code is plotted in
+Figure~\ref{FIG_gpu_opt_stages}.  Since the {PS}y{KA}l restructuring
+of NEMOLite2D did not prove to be a barrier to achieving a performant
 code when using OpenACC directives, we only report the performance of
-the {PS}y{KA}l OpenACC version. For problem sizes up to $256^2$ the
-difference in the performance of the two versions is less than 5\% and
-for the larger domains it is at most 11\%. This demonstrates that the
-performance cost of the {PS}y{KA}l approach in utilising a GPU for
-NEMOLite2D is minimal.
+the {PS}y{KA}l OpenACC versions.
 
 \begin{figure}
 \centering
 \includegraphics[width=\picwidth]{gpu_opt_stages}
 \caption{Performance of the {PS}y{KA}l (OpenACC) and CUDA GPU
-  implementations of NEMOLite2D. The performance for the OpenACC
-  version of the original code is not shown since it is identical to
-  that of the {PS}y{KA}l version.}
+  implementations of NEMOLite2D. Optimisations are added to the code
+  in an incremental fashion. The performance for the OpenACC version
+  of the original code is not shown since it is identical to that of
+  the Vanilla {PS}y{KA}l version.}
 \label{FIG_gpu_opt_stages}
 \end{figure}
+
+The smallest domain ($64^2$) does not contain sufficient parallelism
+to fully utilise the GPU and only the parallelisation of the Flather
+kernels has much effect on performance. In fact, this is a significnt
+optimisation for all except the largest domain size where only changes
+to the Momentum kernel yield significant gains. Collapsing the 2D loop
+nests has a small but beneficial effect for the majority of problem
+sizes. Gains here are limited by the fact that this optimisation was
+only applied to the non-Momentum kernels which only account for som
+30\% of the run-time.
+
+Given the significance of the two Momentum kernels in the execution
+profile it is no surprise that their optimisation yields the most
+significant gains. Using the \texttt{shortloop} directive gives
+roughly a 25\% increase in performance for domains of $512^2$ and
+greater. Fusing the two momentum kernels gives a further boost of
+around 5\%. 
+
+Note that all of the previous optimisations are restricted to the PSy
+layer and in most cases are simply a case of adding directives or
+clauses to directives. However, the question then arises as to the
+cost of restricting optimisations to the PSy layer. In particular, how
+does the performance of the OpenACC version of NEMOLite2D compare with
+a version where those restrictions are lifted?
+Figure~\ref{FIG_gpu_opt_stages} also shows the performance of the
+version of the code where the (fused) Momentum kernel has been
+replaced by a CUDA kernel. For domains up to $256^2$ the difference in
+the performance of the two versions is less than 5\% and for the
+larger domains it is at most 12\%. This demonstrates that the
+performance cost of the {PS}y{KA}l approach in utilising a GPU for
+NEMOLite2D is minimal. Discussions with NVIDIA regarding the
+discrepancy in performance between the CUDA and OpenACC versions are
+also on-going.
 
 In Figure~\ref{FIG_cpu_cf_gpu} we compare the absolute performance of
 the OpenMP and OpenACC implementations of NEMOLite2D across the range
