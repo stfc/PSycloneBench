@@ -795,13 +795,14 @@ GPU kernels by parallelising only the outer loop of each loop nest.
 For the majority of loop nests in NEMOLite2D all of the iterations are
 independent and the loop bodies consist of just a handful of
 executable statements. For small kernels the loop start-up cost can be
-significant and therefore it is therefore beneficial to generate as
-many threads as will fit on the GPU and then re-use them as
-required. For this approach to be efficient we must expose the maximum
-amount of parallelism to the GPU and we do this by instructing the
-compiler to parallelise both levels (i.e. \texttt{ji} and \texttt{jj})
-of a loop nest. This is achieved using the OpenACC \texttt{loop
-  collapse(2)} directive for all of the smaller kernels in NEMOLite2D.
+significant and therefore it is beneficial to generate as many threads
+as will fit on the GPU and then re-use them as required (\textit{i.e.} if the
+data size is greatre than the number of threads). For this approach to
+be efficient we must expose the maximum amount of parallelism to the
+GPU and we do this by instructing the compiler to parallelise both
+levels (i.e. \texttt{ji} and \texttt{jj}) of a loop nest. This is
+achieved using the OpenACC \texttt{loop collapse(2)} directive for all
+of the smaller kernels in NEMOLite2D.
 
 \subsubsection{Shortloop}
 
@@ -811,9 +812,10 @@ executable statements they contain. In turn, this means that the
 corresponding kernels will require more state and thus more registers
 on the GPU. Therefore, rather than generating as many threads as will
 fit on the GPU, it is more efficient only to generate as many as
-required by the problem. Once slots become free on the GPU new threads
-will launch. This minimises the overhead associated with thread
-creation and eases register pressure.  The compiler can be persuaded
+required by the problem so as to minimise reigster pressure. Once
+slots become free on the GPU, new threads will launch with the
+associated cost amortized by the longer execution time of the larger
+kernel. The compiler can be persuaded
 to adopt the above strategy through the use of the (PGI-specific)
 \texttt{loop shortloop} directive which tells it that there is not
 likely to be much thread re-use in the following loop. This directive
