@@ -1130,7 +1130,7 @@ serial case the Cray- and Intel-compiled exectables were a factor of
 two faster than the Gnu-compiled binary
 (Figure~\ref{FIG_opt_stages_256}). In the OpenMP version, the
 Gnu-compiled binary is only 6\% slower than that produced by the Intel
-compiler and is 13\% \textit{faster} that that of the Cray compiler. In
+compiler and is 13\% faster that that of the Cray compiler. In
 part this situation comes about because of the effect that adding the
 OpenMP compiler flag has on the optimisations performed by the
 compiler.  In particular, the Cray compiler no longer vectorises the
@@ -1319,18 +1319,19 @@ some 3.4 times faster than the best OpenMP version on the CPU.
 Although we have investigated how the performance of the {PS}y{KA}l
 version of NEMOLite2D compares with that of the original, we have not
 addressed how efficient the original actually is. In order to do so we
+consider the performance of the code on the Intel Ivy Bridge CPU and
 use the Roofline Model~\citep{roofline} which provides a relatively
 simple way of characterising the performance of a code in terms of
 whether it is memory-bandwidth bound or compute bound. To do so we
-follow the approach suggested in~\cite{para_pearls} and use the
-STREAM~\citep{stream} and LINPACK~\citep{linpack} benchmarks in order to
-get the upper bounds on the memory bandwidth and floating-point
-operations per second (FLOPS) for the test hardware. Since we are
-using an Intel Ivybridge CPU we used the Intel Math Kernel Library
-implementation of LINPACK.
+follow the approach suggested in~\cite{para_pearls} and construct a
+roofline model using the STREAM~\citep{stream} and
+LINPACK~\citep{linpack} benchmarks in order to get the appropriate
+upper bounds on the memory bandwidth and floating-point operations per
+second (FLOPS). Since we are using an Intel Ivybridge CPU we used the
+Intel Math Kernel Library implementation of LINPACK.
 
 A key component of the Roofline model is the Operational or Arithmetic
-Intensity of the code being executed:
+Intensity (AI) of the code being executed:
 \[
 AI = \frac{\textrm{No. of floating-point operations}}{\textrm{Bytes fetched from memory}}
 \]
@@ -1365,12 +1366,13 @@ with the way that the kernel is implemented which are not captured in the
 simple roofline model.
 
 In order to aid our understanding of kernel performance we have
-developed a tool capable of parsing Fortran code and generating a
-Directed Acyclic Graph (DAG) of the data flow. This tool eases the
-laborious and error-prone process of counting memory accesses and
-FLOPs as well as providing information on those operations that are
-rate-limiting or on the critical path. Using the details of the Intel
-Ivy Bridge microarchitecture published by Fog~\citep{fog_microarch,
+developed a tool, ``Habakkuk'' (https://github.com/arporter/habakkuk),
+capable of parsing Fortran code and generating a Directed Acyclic
+Graph (DAG) of the data flow. Habakkuk eases the laborious and
+error-prone process of counting memory accesses and FLOPs as well as
+providing information on those operations that are rate-limiting or on
+the critical path. Using the details of the Intel Ivy Bridge
+microarchitecture published by Fog~\citep{fog_microarch,
   fog_instructions} we have constructed performance estimates of the
 NEMOLite2D kernel. By ignoring all Instruction-Level Parallelism
 (ILP), \textit{i.e.} assuming that all nodes in the DAG are executed
@@ -1413,6 +1415,15 @@ corresponding kernel performance no longer falls within the bounds of
 our performance estimate. This is because we have incorporated the
 effect of SSE into that estimate by simply assuming perfect
 vectorisation which gives a performance increase of a factor of two.
+Further investigation of this issue revealed that several of the
+NEMOLite2D kernels make frequent use of floating-point division
+operations. Although SSE and AVX versions of the division operation
+are available, on Ivy Bridge they do not provide any performance
+benefit~\citep{fog_instructions}. A straightforward optimisation then
+would be to alter the kernels in order to reduce the number of
+division operations. However, kernel optimisation is outside the scope
+of this paper since it breaks the PSyKAl separation of concerns.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \conclusions
