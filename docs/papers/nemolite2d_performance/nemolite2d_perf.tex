@@ -325,7 +325,7 @@ have performed tests on both an Intel Ivy Bridge CPU (E5-2697 at
 2.7~GHz) and on an NVIDIA Tesla K40 GPU.  On the Intel-based system we
 have used the Gnu, Intel and Cray Fortran compilers (versions 4.9.1,
 15.0.0.090 and 8.3.3, respectively). The code that made use of the GPU
-was compiled using version 15.5 of the PGI compiler.
+was compiled using version 15.10 of the PGI compiler.
 
 We first describe the code transformations performed for the serial
 version of NEMOLite2D.  We then move on to the construction of
@@ -1184,57 +1184,19 @@ For the Cray compiler/run-time, some form of dynamic scheduling became
 optimal once inter-thread synchronisation was reduced using the NOWAIT
 qualifiers.
 
-
-%\begin{figure}
-%\centering
-%\includegraphics[width=\picwidth]{omp_scaling_32_gnu}
-%\caption{Performance of the OpenMP-parallel version of {PS}y{KA}l
-%  nemolite2d for the Gnu compiler on a single Intel Ivy Bridge
-%  socket. The corresponding parallel efficiencies are shown using open
-%  symbols and dashed lines. The 24-thread runs employed hyperthreading
-%  and the optimal OpenMP schedule is given in parentheses.}
-%\label{FIG_gnu_omp_32}
-%\end{figure}
-
-%\begin{figure}
-%\centering
-%\includegraphics[width=\picwidth]{omp_scaling_32_intel}
-%\caption{Performance of the OpenMP-parallel version of {PS}y{KA}l
-%  nemolite2d for the Intel compiler on a single Intel Ivy Bridge
-%  socket.  The corresponding parallel efficiencies are shown using
-%  open symbols and dashed lines. The 24-thread runs employed
-%  hyperthreading and the optimal OpenMP schedule is given in
-%  parentheses.}
-%\label{FIG_intel_omp_32}
-%\end{figure}
-
-%\begin{figure}
-%\centering
-%\includegraphics[width=\picwidth]{omp_scaling_32_cray}
-%\caption{Performance of the OpenMP-parallel version of {PS}y{KA}l
-%  nemolite2d for the Cray compiler on a single Intel Ivy Bridge
-%  socket.  The corresponding parallel efficiencies are shown using
-%  open symbols and dashed lines. The 24-thread runs employed
-%  hyperthreading and the optimal OpenMP schedule is given in
-%  parentheses.}
-%\label{FIG_cray_omp_32}
-%\end{figure}
-
 \subsubsection{OpenACC}
 
-In contrast to the CPU, we have just a single compiler to consider
-when looking at OpenACC performance. We are therefore able to
-investigate the effect of the various optimisations described in
-Section~\ref{sec_oacc_steps} for the full range of problem sizes.  All
-of the reported performance figures were obtained on an NVIDIA Tesla
-K40m GPU running in `boost' mode (enabled with the command
-\texttt{nvidia-smi -ac 3004,875}).
+In contrast to the CPU, we only had access to the PGI compiler when
+looking at OpenACC performance. We therefore investigate the effect of
+the various optimisations described in Section~\ref{sec_oacc_steps}
+for the full range of problem sizes.  All of the reported performance
+figures were obtained on an NVIDIA Tesla K40m GPU running in `boost'
+mode (enabled with the command \texttt{nvidia-smi -ac 3004,875}).
 
 The performance of the various versions of the code is plotted in
-Figure~\ref{FIG_gpu_opt_stages}.  Since the {PS}y{KA}l restructuring
-of NEMOLite2D did not prove to be a barrier to achieving a performant
-code when using OpenACC directives, we only report the performance of
-the {PS}y{KA}l OpenACC versions.
+Figure~\ref{FIG_gpu_opt_stages}.  We do not show the performance of
+the OpenACC version of the original code as it was identical to that
+of the Vanilla {PS}y{KA}l version.
 
 \begin{figure}
 \centering
@@ -1249,13 +1211,13 @@ the {PS}y{KA}l OpenACC versions.
 
 The smallest domain ($64^2$) does not contain sufficient parallelism
 to fully utilise the GPU and only the parallelisation of the Flather
-kernels has much effect on performance. In fact, this is a significnt
+kernels has much effect on performance. In fact, this is a significant
 optimisation for all except the largest domain size where only changes
-to the Momentum kernel yield significant gains. Collapsing the 2D loop
+to the Momentum kernel yield sizeable gains. Collapsing the 2D loop
 nests has a small but beneficial effect for the majority of problem
 sizes. Gains here are limited by the fact that this optimisation was
-only applied to the non-Momentum kernels which only account for som
-30\% of the run-time.
+only beneficial for the non-Momentum kernels and these only account
+for some 30\% of the run-time.
 
 Given the significance of the two Momentum kernels in the execution
 profile it is no surprise that their optimisation yields the most
@@ -1276,9 +1238,8 @@ replaced by a CUDA kernel. For domains up to $256^2$ the difference in
 the performance of the two versions is less than 5\% and for the
 larger domains it is at most 12\%. This demonstrates that the
 performance cost of the {PS}y{KA}l approach in utilising a GPU for
-NEMOLite2D is minimal. Discussions with NVIDIA regarding the
-discrepancy in performance between the CUDA and OpenACC versions are
-also on-going.
+NEMOLite2D is minimal.  The discrepancy in performance between the
+CUDA and OpenACC versions has been fed back to the PGI compiler team.
 
 In Figure~\ref{FIG_cpu_cf_gpu} we compare the absolute performance of
 the OpenMP and OpenACC implementations of NEMOLite2D across the range
@@ -1310,25 +1271,24 @@ exhausted and performance becomes limited by the bandwidth to main
 memory. At this stage the OpenACC version of the code on the GPU is
 some 3.4 times faster than the best OpenMP version on the CPU.
 
-%Peak memory bandwidth on the K40 GPU is 288 GB/s and we measured
-%(using STREAM2) bandwidths of 46.0 and 20.5 GB/s to L3 and main
-%memory, respectively on the CPU.
-
 \subsection{Performance Analysis with the Roofline Model}
 
 Although we have investigated how the performance of the {PS}y{KA}l
 version of NEMOLite2D compares with that of the original, we have not
-addressed how efficient the original actually is. In order to do so we
-consider the performance of the code on the Intel Ivy Bridge CPU and
-use the Roofline Model~\citep{roofline} which provides a relatively
-simple way of characterising the performance of a code in terms of
-whether it is memory-bandwidth bound or compute bound. To do so we
-follow the approach suggested in~\cite{para_pearls} and construct a
-roofline model using the STREAM~\citep{stream} and
-LINPACK~\citep{linpack} benchmarks in order to get the appropriate
-upper bounds on the memory bandwidth and floating-point operations per
-second (FLOPS). Since we are using an Intel Ivybridge CPU we used the
-Intel Math Kernel Library implementation of LINPACK.
+addressed how efficient the original actually is. Without this
+information we have no way of knowing whether further optimisations
+might yield worthwhile performance improvements. Therefore, we
+consider the performance of the original, serial NEMOLIte2D code on
+the Intel Ivy Bridge CPU and use the Roofline Model~\citep{roofline}
+which provides a relatively simple way of characterising the
+performance of a code in terms of whether it is memory-bandwidth bound
+or compute bound. To do so we follow the approach suggested
+in~\cite{para_pearls} and construct a roofline model using the
+STREAM~\citep{stream} and LINPACK~\citep{linpack} benchmarks in order
+to obtain appropriate upper bounds on the memory bandwidth and
+floating-point operations per second (FLOPS), respectively. Since we
+are using an Intel Ivy Bridge CPU we used the Intel Math Kernel Library
+implementation of LINPACK.
 
 A key component of the Roofline model is the Operational or Arithmetic
 Intensity (AI) of the code being executed:
@@ -1399,11 +1359,11 @@ dashed lines) in Figure~\ref{FIG_roofline}. The performance of the
 Momentum kernel is seen to fall between these two bounds which
 demonstrates that its performance is not memory-bandwidth limited, as
 might have been assumed by its low AI. Therefore, although the
-performance of this kernel is clearly sub-optimal, this is due to the
-balance of floating-point operations that it contains. Improving this
-is outside the scope of the current work since here we are focused on
-the {PS}y{KA}l separation of concerns and the introduction of parallelism
-in the PSy layer.
+performance of this kernel is well below the peak performance of the
+CPU, this is due to the balance of floating-point operations that it
+contains. Improving this is outside the scope of the current work
+since here we are focused on the {PS}y{KA}l separation of concerns and
+the introduction of parallelism in the PSy layer.
 
 Enabling SIMD vectorisation for this kernel does not significantly
 improve its performance (Figure~\ref{FIG_roofline}) and in fact,
@@ -1412,17 +1372,18 @@ floating point numbers) rather than AVX (vector width of four) was
 found to produce a slightly more performant version. The poor
 efficiency of the SIMD version is highlighted by the fact that the
 corresponding kernel performance no longer falls within the bounds of
-our performance estimate. This is because we have incorporated the
-effect of SSE into that estimate by simply assuming perfect
-vectorisation which gives a performance increase of a factor of two.
-Further investigation of this issue revealed that several of the
-NEMOLite2D kernels make frequent use of floating-point division
-operations. Although SSE and AVX versions of the division operation
-are available, on Ivy Bridge they do not provide any performance
-benefit~\citep{fog_instructions}. A straightforward optimisation then
-would be to alter the kernels in order to reduce the number of
-division operations. However, kernel optimisation is outside the scope
-of this paper since it breaks the PSyKAl separation of concerns.
+the performance estimates produced by Habakkuk. This is because we
+have incorporated the effect of SSE into that estimate by simply
+assuming perfect vectorisation which gives a performance increase of a
+factor of two.  Further investigation of this issue revealed that
+several of the NEMOLite2D kernels make frequent use of floating-point
+division operations. Although SSE and AVX versions of the division
+operation are available, on Ivy Bridge they do not provide any
+performance benefit~\citep{fog_instructions}. A straightforward
+optimisation then would be to alter the kernels in order to reduce the
+number of division operations. However, again, kernel optimisation is
+outside the scope of this paper since it breaks the PSyKAl separation
+of concerns.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1450,7 +1411,7 @@ optimised code.
 Investigation of the absolute serial performance of the NEMOLite2D
 code using the roofline model revealed that it was still significantly
 below any of the traditional roofline ceilings. We have developed
-Habakkuk (https://github.com/arporter/habakkuk), a code-analysis tool
+Habakkuk, a code-analysis tool
 that is capable of providing more realistic ceilings by analysing the
 nature of the floating point computations performed by a kernel. The
 bounds produced by Habakkuk are in good agreement with the measured
@@ -1499,7 +1460,9 @@ generation of the PSy layer. This compiler (which we have named
 development.
 
 \codeavailability{The NEMOLite2D package is available as the GOcean
- 2.0 benchmark, available from https://puma.nerc.ac.uk/trac/GOcean.}
+  2.0 benchmark, available from
+  https://puma.nerc.ac.uk/trac/GOcean. Habakkuk is available from
+  https://github.com/arporter/habakkuk.}
 
 \competinginterests{No competing interests are present.}
 
