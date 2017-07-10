@@ -16,7 +16,7 @@
 %% -----------------------------------------------------------------
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
 \ProvidesClass{copernicus}
-    [2017/03/16 8.37 Copernicus papers]
+    [2017/06/21 8.45 Copernicus papers]
 \frenchspacing
 \clubpenalty10000
 \widowpenalty10000
@@ -380,8 +380,8 @@
             {0.6\textwidth}
             {\if@sansserifheader\leavevmode\runningheaderfont\fi
              \@journalInfo\\
-             \@journalurlInfo\\
-             doi:10.5194/%
+             %\@journalurlInfo\\ %raus laut Ticket 4529
+             https://doi.org/10.5194/%
              \if@noref
                \@msnumber
              \else
@@ -432,8 +432,8 @@
   \if!\@runtit!\UndefinedError{\string\runningtitle}\fi}
 \def\maketitle{%
   \gdef\supplement##1{%
-    \href{http://dx.doi.org/10.5194/\@journalnameshortlower-\@pvol-\@fpage-\@pyear-supplement}%
-         {doi:10.5194/\@journalnameshortlower-\@pvol-\@fpage-\@pyear-supplement}}%
+    \href{https://doi.org/10.5194/\@journalnameshortlower-\@pvol-\@fpage-\@pyear-supplement}%
+         {https://doi.org/10.5194/\@journalnameshortlower-\@pvol-\@fpage-\@pyear-supplement}}%
   \ifodd\@fpage\else
     \CopernicusError
     {Starting page must be odd!}{change the firstpage command}
@@ -698,7 +698,7 @@
         %\@journalInfo\\
         %\@journalurlInfo\\
         %\if@noref\else
-        %   doi:10.5194/\@journalnameshortlower-\@pvol-\@fpage-\@pyear
+        %   https://doi.org/10.5194/\@journalnameshortlower-\@pvol-\@fpage-\@pyear
         %\fi\\
         %\@journalcopyright
         \ifx\specialp@perstring\@undefined\else{\specialp@perstring} to\space\fi
@@ -991,6 +991,7 @@
   \def\codeavailabilityname{Code availability}%
   \def\dataavailabilityname{Data availability}%
   \def\codedataavailabilityname{Code and data availability}%
+  \def\sampleavailabilityname{Sample availability}%
   \def\authorcontributionname{Author contributions}%
   \def\competinginterestsname{Competing interests}%
   \def\teamlistname{Team list}%
@@ -1013,14 +1014,15 @@
   \def\introductionname{Einleitung}%
   \def\conclusionname{Fazit}%
   \def\copyrightstatementname{Urheberrechtserklärung}%
-  \def\codeavailabilityname{Code-Verfügbarkeit}%
-  \def\dataavailabilityname{Daten-Verfügbarkeit}%
-  \def\codedataavailabilityname{Code- und Daten-Verfügbarkeit}%
+  \def\codeavailabilityname{Codeverfügbarkeit}%
+  \def\dataavailabilityname{Datenverfügbarkeit}%
+  \def\codedataavailabilityname{Code- und Datenverfügbarkeit}%
+  \def\sampleavailabilityname{Probenverfügbarkeit}%
   \def\authorcontributionname{Autorenmitwirkung}%
   \def\competinginterestsname{Interessenkonflikt}%
   \def\teamlistname{Gruppenautorenschaft}%
   \def\disclaimername{Haftungsausschluss}%
-  \def\sistatementname{Spezialheft-Erklärung}%
+  \def\sistatementname{Erklärung zum Sonderheft}%
   \def\acknowledgementname{Danksagung}%
   \def\acknowledgementsname{Danksagung}%
   \if@cop@home
@@ -1037,12 +1039,13 @@
   \def\copyrightstatementname{Affirmation du droit d'auteur}%
   \def\codeavailabilityname{Disponibilité du code}%
   \def\dataavailabilityname{Disponibilité des données}%
+  \def\sampleavailabilityname{Disponibilité des examples}%
   \def\codedataavailabilityname{Disponibilité du code et des données}%
   \def\authorcontributionname{Collaborateurs}%
   \def\competinginterestsname{Intérêts concurrents}%
   \def\teamlistname{Liste d'auteurs}%
   \def\disclaimername{Clause de non-responsabilité}%
-  \def\sistatementname{Déclaration de numéro special}%
+  \def\sistatementname{Déclaration de la numéro special}%
   \def\acknowledgementname{Remerciements}%
   \def\acknowledgementsname{Remerciements}%
   \if@cop@home
@@ -1302,7 +1305,7 @@
   {\CopernicusWarningNoLine{Cannot find url.sty; proceeding without it}%
    \def\url#1{%
      \CopernicusError{To use \string\url, you must have url.sty}{Install url.sty}}}
-\newcommand\doitext{doi:}
+\newcommand\doitext{https://doi.org/}
 \newcommand*\doi{%
   \begingroup
   \lccode`\~=`\#\relax
@@ -1332,7 +1335,7 @@
   \edef\_{_}%
   \edef\textless{\@percentchar3C}% instead of {\string<} for Apple
   \edef\textgreater{\@percentchar3E}% instead of {\sting>} for Apple
-  \edef\x{\toks1={\noexpand\href{http://dx.doi.org/#1}}}%
+  \edef\x{\toks1={\noexpand\href{https://doi.org/#1}}}%
   \x
   \edef\x{\endgroup\doitext\the\toks1 \the\toks0}%
   \x}
@@ -1863,6 +1866,8 @@
   \fi
 \fi
 %% some of the following commands are only active if \@cop@hometrue
+\def\texlicencestatement#1{\gdef\@texlicencestatement{#1}}%
+  \def\@texlicencestatement{\CopernicusError{Please add \string\texlicencestatement}{You must provide the licence statement before \string\maketitle"}}
 \def\received#1{\if@cop@home\def\@recvd{#1}\fi}        \def\@recvd{}%+1,+2,+d
 \def\pubdiscuss#1{\if@cop@home\def\@pubdiscuss{#1}\fi} \def\@pubdiscuss{}%+1,+2,-d -- twostagejnltrue
 \def\revised#1{\if@cop@home\def\@revsd{#1}\fi}         \def\@revsd{}%+1,+2,-d
@@ -2067,14 +2072,18 @@
 \def\Supplementary#1{{%
   \advance\partopsep\baselineskip
   \begin{trivlist}\bfseries
-  \if@stage@final\raggedright\fi
+  \if@stage@final
+    \let\\\@centercr\@rightskip\z@\@plus\tw@ em
+    \rightskip\@rightskip
+    \parindent\z@
+  \fi
   \item The Supplement related to this article is available online at
     \if@stage@final\else\\\fi
     \supplement{#1}.
   \end{trivlist}}}
 \def\generateCommand#1#2{%
   \expandafter\long\expandafter\def\csname#1\endcsname##1{%
-    \if@stage@final\addvspace{2\baselineskip}\fi
+    \if@stage@final\ifhmode\vskip2\baselineskip\else\addvspace{2\baselineskip}\fi\fi
     \bgroup
     \list{}{\labelwidth\z@ \leftmargin\z@ \itemindent-\leftmargin
             \parsep\z@
@@ -2096,15 +2105,16 @@
     ##1#2}}
 \generateCommand{copyrightstatement}{\endlist\egroup}
 \ifessd
-  \long\def\codeavailability#1{\section{\codeavailabilityname}#1}
-  \long\def\dataavailability#1{\section{\dataavailabilityname}#1}
-  \long\def\codedataavailability#1{\section{\codedataavailabilityname}#1}
+  \long\def\codeavailability#1{\ifx\thesection\theolds\else\noappendix\fi\section{\codeavailabilityname}#1}
+  \long\def\dataavailability#1{\ifx\thesection\theolds\else\noappendix\fi\section{\dataavailabilityname}#1}
+  \long\def\codedataavailability#1{\ifx\thesection\theolds\else\noappendix\fi\section{\codedataavailabilityname}#1}
 \else
   \generateCommand{codeavailability}    {\endlist\egroup}
   \generateCommand{dataavailability}    {\endlist\egroup}
   \generateCommand{codedataavailability}{\endlist\egroup}
 \fi
 \generateCommand{authorcontribution}{\endlist\egroup}
+\generateCommand{sampleavailability}{\endlist\egroup}
 \generateCommand{competinginterests}{\endlist\egroup}
 \generateCommand{teamlist}          {\endlist\egroup}
 \generateCommand{disclaimer}        {\endlist\egroup}
@@ -2232,7 +2242,13 @@
 \newcommand\@journalnameshortlower{jn}
 \newcommand\@journalurl{www.jn.net}
 \newcommand\@journalpublisher{Copernicus Publications}
-\newcommand\@journalcopyright{\copyright\ Author(s)\ \@cyear. CC Attribution 3.0 License.}
+\newcommand\@journalcopyright{%
+  \copyright\ Author(s)\ \@cyear. %
+  \if!\@texlicencestatement!%
+    \CopernicusError{\string\texlicencestatement{} must have content}{Say, e.g., "\string\texlicencestatement{CC Attribution 4.0 License.}"}%
+  \else
+    \@texlicencestatement
+  \fi}
 \newcommand\@journalstartyear{2013}
 \newcommand\@journallogo{Journallogo}
 \newcommand\@sentence{Sentence.}
