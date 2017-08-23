@@ -147,7 +147,6 @@ contains
     type(r2d_field) :: self
     integer :: ierr
     character(len=8) :: fld_type
-    integer :: ji, jj
     !> The upper bounds actually used to allocate arrays (as opposed
     !! to the limits carried around with the field)
     integer :: upper_x_bound, upper_y_bound
@@ -214,9 +213,9 @@ contains
     upper_x_bound = self%whole%xstop + 1
     upper_y_bound = self%whole%ystop + 1
 
-    write(*,"('Allocating ',(A),' field with bounds: (',I1,':',I3, ',',I1,':',I3,')')") &
-               TRIM(ADJUSTL(fld_type)), &
-               1, upper_x_bound, 1, upper_y_bound
+!    write(*,"('Allocating ',(A),' field with bounds: (',I1,':',I3, ',',I1,':',I3,')')") &
+!               TRIM(ADJUSTL(fld_type)), &
+!               1, upper_x_bound, 1, upper_y_bound
 
     !allocate(self%data(self%internal%xstart-1:self%internal%xstop+1, &
     !                   self%internal%ystart-1:self%internal%ystop+1),&
@@ -238,17 +237,8 @@ contains
     ! Since we're allocating the arrays to be larger than strictly
     ! required we explicitly set all elements to -999 in case the code
     ! does access 'out-of-bounds' elements during speculative
-    ! execution. If we're running with OpenMP this also gives
-    ! us the opportunity to do a 'first touch' policy to aid with
-    ! memory<->thread locality...
-!$OMP PARALLEL DO schedule(runtime), default(none), &
-!$OMP private(ji,jj), shared(self, upper_x_bound, upper_y_bound)
-    do jj = 1, upper_y_bound, 1
-       do ji = 1, upper_x_bound, 1
-          self%data(ji,jj) = -999.0
-       end do
-    end do
-!$OMP END PARALLEL DO
+    ! execution.
+    self%data(:,:) = -999.0
 
   end function r2d_field_constructor
 

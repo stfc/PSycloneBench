@@ -1,0 +1,19 @@
+OpenMP Versions of NEMOLite2D
+-----------------------------
+
+This directory contains sub-directories for each of the following OpenMP
+versions of NEMOLite2D:
+
+nemolite2d_omp_basic         - OMP PARALLEL DO for each loop nest
+nemolite2d_omp_single_region - Single OMP PARALLEL region
+nemolite2d_omp_1st_touch     - 1st-touch policy applied to arrays
+nemolite2d_omp_nowait        - Reduce synchronisation using NOWAIT
+nemolite2d_omp_early_single  - Move single region earlier to allow cost to be
+                               amortized
+
+As with the serial versions of NEMOLite2D, the optimisations in the above
+list are cumulative.
+
+Since the first two of these versions do not include the 1st-touch policy,
+these include an earlier version of the GOcean Infrastructure Library that
+did not have this feature.
