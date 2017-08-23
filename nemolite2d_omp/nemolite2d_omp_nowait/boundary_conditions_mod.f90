@@ -18,11 +18,11 @@ module boundary_conditions_mod
   !=======================================
 
   type, extends(kernel_type) :: bc_ssh
-     type(arg), dimension(3) :: meta_args =  &
-          (/ arg(READ,       R, POINTWISE),  &
-             arg(READWRITE, CT, POINTWISE),  &
-             arg(READ,      GRID_MASK_T)     &
-           /)
+     !type(arg), dimension(3) :: meta_args =  &
+     !     (/ arg(READ,       R, POINTWISE),  &
+     !        arg(READWRITE, CT, POINTWISE),  &
+     !        arg(READ,      GRID_MASK_T)     &
+     !      /)
 
      !> We only have one value per grid point and that means
      !! we have a single DOF per grid point.
