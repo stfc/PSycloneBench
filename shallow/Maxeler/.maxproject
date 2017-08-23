@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<maxCompilerManager version="2">
-<enginePart internalEngineSubproject="gocean4_EngineCode" isSrcBin="false" isUseDefaultSelected="false" outputLocation="/gocean4_EngineCode/bin" projectName="gocean4"/>
-<cpuPart internalCpuSubproject="gocean4_CPUCode"/>
-<watchedFiles/>
-</maxCompilerManager>

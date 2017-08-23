@@ -3,8 +3,7 @@
 include Makefile.include
 
 # Location of the code defining the GOcean API
-API_VERSION=1.0
-API_DIR = ../api_v${API_VERSION}
+API_DIR = ../api_v0.2
 API_LIB = ${API_DIR}/gocean_api.a
 
 EXECS = nemolite2d
@@ -16,10 +15,11 @@ COMMON_MODULES = ${API_LIB}
 all: $(EXECS)
 
 # Normal targets
-.PHONY: nemolite2d
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
+# We pass which archiver to use as must use the Intel tool when doing IPO
+# with the Intel compiler.
 ${API_LIB}: ${API_DIR}/*.?90
 	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
 
@@ -28,13 +28,13 @@ nemolite2d.o: $(COMMON_MODULES)
 # Generic rules
 
 %.exe: $(MODULE_LIST)
-	$(F90) $(OMPFLAGS) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS)
+	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) -I${API_DIR} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) -I${API_DIR} -c $<
 
 clean: 
 	${MAKE} -C ${API_DIR} clean
