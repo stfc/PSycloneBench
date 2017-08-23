@@ -11,7 +11,7 @@ contains
                               sshn_t, sshn_u, sshn_v, &
                               hu, hv, ht, ua, va, un, vn)
     use kind_params_mod
-    use timing_mod
+    use dl_timer
     use field_mod
     use grid_mod
     use model_mod,       only: rdt, cbfr, visc
@@ -74,7 +74,7 @@ contains
     !vwhole_ystart = 1 ! vystart - NBOUNDARY
     !vwhole_ystop  = N ! vystop  + NBOUNDARY
 
-    call timer_start('Continuity',idxt)
+    call timer_start(idxt, 'Continuity')
 
 !    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
 !      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
@@ -98,7 +98,7 @@ contains
 
     call timer_stop(idxt)
 
-    call timer_start('Momentum',idxt)
+    call timer_start(idxt, 'Momentum')
 
 !    do jj = ua%internal%ystart, ua%internal%ystop, 1
 !      do ji = ua%internal%xstart, ua%internal%xstop, 1
@@ -333,7 +333,7 @@ contains
 
     ! Apply open and solid boundary conditions
 
-    call timer_start('BCs', idxt)
+    call timer_start(idxt, 'BCs')
 
 !    DO jj = ssha%internal%ystart, ssha%internal%ystop 
 !       DO ji = ssha%internal%xstart, ssha%internal%xstop 
@@ -446,7 +446,7 @@ contains
 
     ! Time update of fields
 
-    call timer_start('Next', idxt)
+    call timer_start(idxt, 'Next')
 
 !    call copy_field(ua, un)
 !    call copy_field(va, vn)
