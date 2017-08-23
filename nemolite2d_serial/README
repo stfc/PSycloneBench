@@ -1,0 +1,23 @@
+Serial versions of NEMOLite2D
+-----------------------------
+
+This directory contains the following serial versions of the NEMOLite2D code:
+
+nemolite2d_orig                  - original version of code
+nemolite2d_vanilla_single_invoke - re-structured following PSyKAl separation
+                                   of concerns
+nemolite2d_loop_bound_lookup     - specify loop bounds explicitly
+nemolite2d_safe_loop             - add Cray safe-loop directive
+nemolite2d_mom_inline            - manually in-line Momentum kernels
+nemolite2d_mom_vec               - add Cray directive to force SIMD
+                                   vectorisation of Momentum kernels
+nemolite2d_clean_rhs             - ensure read-only scalars are obtained from
+                                   read-only derived types
+nemolite2d_conti_inline          - manually in-line Continuity kernel
+nemolite2d_inline_all_kernels    - manually in-line all remaining explicit
+                                   kernels
+nemolite2d_fld_copy_inlined      - manually in-line the field copy operations
+
+With the exception of the first two, each version in the above list
+incorporates the optimisations applied to previous versions (i.e. the
+optimisations are cumulative).

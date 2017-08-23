@@ -1,13 +1,18 @@
-This README is for the GOcean Benchmark 2.0. The benchmark is based
-upon the 2D, free-surface part of the NEMO ocean model and was created
-by Hedong Liu of the National Oceanography Centre, Liverpool, UK.
+NEMOLite2D Distribution
+-----------------------
+
+This README is for the distribution of the reference and optimised
+versions of the NEMOLite2D benchmark created as part of the GOcean
+Project. The benchmark is based upon the 2D, free-surface part of the
+NEMO ocean model and was originally created by Hedong Liu of the
+National Oceanography Centre, Liverpool, UK.
 
 * BEFORE COMPILING AND RUNNING PLEASE READ THIS DOCUMENT, *
-* ESPECIALLY POINT 5 REGARDING COMPILATION.               *
+* ESPECIALLY 'Technical details' REGARDING COMPILATION.   *
 
-The directory named 'nemolite2d' contains the original version of the
-code as created by Hedong Liu. The directory named nemolite2d_psykal
-contains a 'PSyKAl' version of the code where PSyKAl stands for
+The directory named 'nemolite2d_orig' contains the original version of the
+code as created by Hedong Liu. The directory named 'nemolite2d_psykal'
+contains a 'PSyKAl' version of this code where PSyKAl stands for
 Parallel System, Kernel and Algorithm layers. In this PSyKAl version
 all computation is performed in point-wise kernels (the bottom
 layer). The algorithm (top) layer specifies operations on the whole
@@ -21,30 +26,26 @@ original code, and if so, why and how much, and b) what optimisations
 improve performance, whether these differ across architectures (and
 possibly problem sizes), and whether these optimisations can be
 replicated in the PSyclone generation system.
- 
-1: the original (single-file) version
 
-We are particularly interested in a "how fast can you go" solution for
-this version, where you are allowed to change what you like as long as
-you get the same results! The aggressive optimisations and resultant
-performance improvements are exactly what we would like to see. If it
-so happens that different optimisations give better performance at
-different resolutions then please feel free to implement different
-versions (if you have time of course!).
+Contents
+--------
 
-2: the PSyKAl (multi-file) version
+The directory containing this README should also contain the following
+files and directories:
 
-The idea of the PSyKAl (multi-file) version is also to optimise as
-much as possible, i.e. "as fast as you can go", but to limit any
-optimisations to the PSy layer. In practice, for this code, this means
-optimisations are limited to within the invoke_time_step()
-routine. Note, getting the compiler to inline via structural changes
-is also interesting to us as it informs us how we might need to write
-kernels in the future. Note, you are also allowed to copy a kernel
-subroutine into the PSy layer module if the compiler does not inline,
-or if this produces a performance improvement over compiler inlining.
+api_v1.0          - contains the GOcean infrastructure library sources
+arch              - contains various examples of Makefile.include
+LICENSE           - the license under which this code is distributed
+nemolite2d_serial - all serial versions of NEMOLite2D (including the
+		    original, unchanged form)
+nemolite2d_acc    - the various OpenACC versions of NEMOLite2D
+nemolite2d_omp    - the various OpenMP versions of NEMOLite2D
 
-3: Problem sizes
+Please see the individual README files under the various nemolite2d_*
+directories for more details about each set of optimised sources.
+
+Problem sizes
+-------------
 
 Note that the problem size defined in the namelist file is for the
 *whole* of the model domain. The simulated domain sits within this
@@ -72,12 +73,10 @@ Whilst we have provided suggested problem sizes that give simulated
 regions that are powers of 2 in extent, it may be the case that the
 relative performance differs when non-powers-of-two sizes are compared
 with powers-of-2 sizes and you might want to look into these if you
-have time. (Note that the arrays used in the code actually have
-extents one greater than the supplied domain size. For instance, if
-you specify a domain of 128x128 then the arrays will be allocated as
-(129,129).)
+have time.
 
-4: A note on timing and timing calls
+Timing and timing calls
+-----------------------
 
 The only timing we actually require is the time per step which is
 obtained from the timer around the time-stepping loop. In the provided
@@ -96,21 +95,27 @@ results you must ensure that the process is being pinned to a
 particular core.  We recommend repeating the run a number of times
 (~5-10) and taking the time of the quickest run as being 'the answer.'
 
-5: Technical details (compilation etc.)
+Technical details (compilation etc.)
+------------------------------------
 
-The Makefiles in nemolite2d/ and nemolite2d_psykal/ both expect a
-Makefile.include configuration file to be in the same directory as the
-Makefile. Examples of this file for various compilers are provided in
-the arch directory. Create 'Makefile.include' by either copying or
-linking to one of the supplied arch/Makefile.include.<compiler_name>
-files. You will almost certainly have to edit the settings in the file
-in order to match your local set-up. Once this is done, simply running
-'make' should produce an executable.
+The Makefile for each version of nemolite2d included in this
+distribution expects a Makefile.include configuration file to be in
+the same directory as the Makefile. Examples of this file for various
+compilers are provided in the arch directory. Create
+'Makefile.include' by either copying or linking to one of the supplied
+arch/Makefile.include.<compiler_name> files. You will almost certainly
+have to edit the settings in the file in order to match your local
+set-up. Once this is done, simply running 'make' should produce an
+executable.
 
-Both codes depend upon a library, the source for which is in the
-api_v0.2 directory. It should be built automatically by the make system
-when either of the codes is built.
+The majority of the versions of nemolite2d depend upon the GOcean
+Infrastructure library which is in the api_v1.0 directory.  It should
+be built automatically by the make system when the nemolite2d code is
+built.
 
-If you have any questions about this benchmark then please feel free
+Contact
+-------
+
+If you have any questions about this distribution then please feel free
 to contact either Andrew Porter or Rupert Ford who can be reached at
 firstname dot lastname at stfc.ac.uk.
