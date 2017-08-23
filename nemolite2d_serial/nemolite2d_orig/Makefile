@@ -3,14 +3,17 @@
 include Makefile.include
 
 # Location of the code defining the GOcean API
-API_DIR = ../api_v0.2
+API_DIR = ../../api_v1.0
 API_LIB = ${API_DIR}/gocean_api.a
+# Location of dl_timer
+TIMER_DIR = ../../dl_timer
+TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 
 EXECS = nemolite2d
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
-COMMON_MODULES = ${API_LIB}
+COMMON_MODULES = ${TIMER_LIB} ${API_LIB}
 
 all: $(EXECS)
 
@@ -23,6 +26,9 @@ nemolite2d:
 ${API_LIB}: ${API_DIR}/*.?90
 	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
 
+${TIMER_LIB}:
+	${MAKE} -C ${TIMER_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" sm_lib
+
 nemolite2d.o: $(COMMON_MODULES)
 
 # Generic rules
@@ -31,10 +37,10 @@ nemolite2d.o: $(COMMON_MODULES)
 	$(F90) -o $@ $(MODULE_LIST) $(LDFLAGS)
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${API_DIR} -c $<
+	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_DIR}/src -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) -I${API_DIR} -c $<
+	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_DIR}/src -c $<
 
 clean: 
 	${MAKE} -C ${API_DIR} clean
