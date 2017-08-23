@@ -3,7 +3,7 @@
 include Makefile.include
 
 # Location of the code defining the GOcean API
-API_DIR = ../../api_v1.0
+API_DIR = api_v0.2
 API_LIB = ${API_DIR}/gocean_api.a
 # Location of dl_timer
 TIMER_DIR = ../../dl_timer

@@ -1,6 +1,10 @@
 NEMOLite2D Distribution
 -----------------------
 
+Authors: H. Liu, National Oceanography Centre, Liverpool
+         A. Porter, STFC Daresbury Laboratory
+         J. Appleyard, NVIDIA Inc.
+
 This README is for the distribution of the reference and optimised
 versions of the NEMOLite2D benchmark created as part of the GOcean
 Project. The benchmark is based upon the 2D, free-surface part of the
@@ -34,6 +38,7 @@ The directory containing this README should also contain the following
 files and directories:
 
 api_v1.0          - contains the GOcean infrastructure library sources
+dl_timer          - contains the dl_timer library
 arch              - contains various examples of Makefile.include
 LICENSE           - the license under which this code is distributed
 nemolite2d_serial - all serial versions of NEMOLite2D (including the
@@ -111,7 +116,8 @@ executable.
 The majority of the versions of nemolite2d depend upon the GOcean
 Infrastructure library which is in the api_v1.0 directory.  It should
 be built automatically by the make system when the nemolite2d code is
-built.
+built. Similarly, the dl_timer library is used to time program execution
+and should also be built automatically as required.
 
 Contact
 -------
