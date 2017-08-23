@@ -2,7 +2,7 @@ MODULE model_mod
   use kind_params_mod
   use grid_mod
   use field_mod
-  use timing_mod, ONLY: timer_init, timer_report
+  use dl_timer, ONLY: timer_init, timer_report
   implicit none
 
   public
