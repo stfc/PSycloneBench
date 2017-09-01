@@ -4,12 +4,10 @@ OpenACC Versions of NEMOLite2D
 This directory contains versions of NEMOLite2D that use OpenACC
 directives. These were provided by Jeremy Appleyard of NVIDIA.
 
-In order to build a particular version you must ensure that
-Makefile.include contains the correct settings for your compiler and
-then copy/link your chosen version to nemolite2d.f90 before running
-make.
-
-The various versions are:
+In order to build a particular version you must first ensure that
+Makefile.include contains the correct settings for your compiler.
+You must then decide which version you wish to build from the list
+below:
 
 nemolite2d.vanilla.f90        - basic OpenACC version
 nemolite2d.indep_clause.f90   - loop independent clause added to
@@ -20,3 +18,8 @@ nemolite2d.mom_short_loop.f90 - SHORT LOOP clause added to loops in momentum
 nemolite2d.fused_mom.f90      - loops computing the u- and v-components fused
 nemolite2d.cuda_mom.f90       - as above but with the Momentum kernel supplied
                                 as a CUDA (Fortran) kernel
+
+Copy or link (ln -s) your chosen version so that it is named 'nemolite2d.f90'.
+Executing make should then build a GPU-enabled version of nemolite2d.
+Note that we have only used the PGI compiler when developing/testing these
+codes and that the SHORT LOOP clause is PGI-specific.
