@@ -16,10 +16,15 @@
 
 \maketitle
 
+\tableofcontents
+
 \section{Introduction}
 
-Shallow implementation of Sadourny~\cite{sadourny75}.
-NEMOLite2D.
+\begin{itemize}
+\item Shallow implementation of Sadourny~\cite{sadourny75}.
+\item NEMOLite2D.
+\item NEMO
+\end{itemize}
 
 \section{The Roofline Model and its Limitations}
 
@@ -83,6 +88,28 @@ single process/thread per core then clearly that thread will have
 exclusive use of that core's registers and execution units. Resources
 shared between cores (such as L2 cache or bandwidth to main memory) will
 however be shared by the executing threads.
+
+\section{Building a Model of a CPU Core}
+
+We require various parameters that characterise the performance of a
+CPU core, the value of these are micro-architecture dependent.
+
+\begin{itemize}
+\item Vector width
+\item Size of a cache line
+\item Support for FMA
+\item Support for out-of-order execution
+\item Available Instruction-Level Parallelism
+\item Cost of arithmetic operations
+\end{itemize}
+
+\subsection{Micro-Benchmarks}
+
+\begin{itemize}
+\item Fortran for high-level, intrinsic ops (e.g. SIN())
+\item Likwid for low-level, individual arithmetic ops (e.g. floating-point division)
+\item Results from Agner Fog
+\end{itemize}
 
 \section{Results}
 
@@ -539,6 +566,24 @@ heavy use of main memory.
 \subsection{Tracer Advection in NEMO}
 
 \section{Conclusions}
+
+\begin{itemize}
+  
+\item Constructing a traditional roofline model is not that straightforward.
+  
+\item We have demonstrated that the upper bounds in such a model can be
+  unrealistically high and therefore not that useful in determining
+  the performance-limiting aspects of a kernel.
+
+\item We have developed a tool, Habakkuk, which parses Fortran source
+  code and generates various performance estimates using a simple
+  model of the microarchitecture of the target CPU.
+
+\item Using the resulting performance estimates as the ceilings in the
+  roofline model results in more accurate bounds and provides more
+  information to a developer seeking to optimise their source code.
+
+\end{itemize}
 
 \bibliographystyle{unsrt}
 \bibliography{habakkuk}
