@@ -131,17 +131,8 @@ the previous section. It separates code into three layers; the
 Algorithm layer, the PSy layer and the Kernel layer. The approach has
 been developed in the GungHo project~\citep{GungHo}, which is creating
 a new Dynamical core for the UK Met Office, and its design has been
-influenced by earlier work on OP2~\citep{OP2, PYOP2}.
-
-In common with OP2, the {PS}y{KA}l approach separates out the science
-code and the performance-related code into distinct layers. The calls
-that specify parallelism in both approaches are similar in terms of
-where they are placed in the code and in their semantics. However, the
-{PS}y{KA}l approach supports the specification of more than one kernel
-in a parallel region of code, compared with one for OP2, giving more
-scope for optimisation. In addition, the metadata describing a kernel
-is included with the kernel code in the {PS}y{KA}l approach whereas it
-is provided as a part of the kernel call in OP2.
+influenced by earlier work on OP2~\citep{OP2, PYOP2} - see Section
+\ref{sec_other_approaches} for more details.
 
 While the {PS}y{KA}l approach is general, we are currently applying it to
 Atmosphere and Ocean models written in Fortran where domain
@@ -166,10 +157,7 @@ elements, or a set of columns.) Again the scientist is responsible for
 writing this layer and there is no parallelism specified here, but,
 depending on the complexity of the Kernels, there may be input from an
 HPC expert and/or some coding rules to help ensure that the kernels
-compile into efficient code.  In an alternative
-approach~\citep{firedrake,fenics}, kernels are generated from a
-high-level specification, potentially allowing them to be optimised
-automatically~\citep{coffee}.
+compile into efficient code.
 
 The PSy layer sits in-between the Algorithm and Kernel layers and its
 functional role is to link the algorithm calls to the associated
@@ -197,6 +185,40 @@ Clearly the separation of code into distinct layers may have an effect
 on performance. This overhead, how to get back to the performance of a
 parallel, hand-optimised code, and potentially improve on it, will be
 discussed in the remainder of this paper.
+
+\subsection{Related Approaches}
+\label{sec_other_approaches}
+
+As already mentioned, our approach is heavily influenced by the OP2
+system~\citep{OP2, PYOP2}.
+In common with OP2, the {PS}y{KA}l approach separates out the science
+code and the performance-related code into distinct layers. The calls
+that specify parallelism in both approaches are similar in terms of
+where they are placed in the code and in their semantics. However, the
+{PS}y{KA}l approach supports the specification of more than one kernel
+in a parallel region of code, compared with one for OP2, giving more
+scope for optimisation. In addition, the metadata describing a kernel
+is included with the kernel code in the {PS}y{KA}l approach whereas it
+is provided as a part of the kernel call in OP2.
+
+Although {PS}y{KA}l is a design for architecting code, rather than an
+implementation of a tool, there is an implicit assumption that the
+majority of the kernels in an application will be provided by the
+application developer. In the GridTools~\citep{grid_tools} and
+Firedrake~\citep{firedrake,fenics} approaches, the mathematical
+operations (finite-difference stencils and finite element operations,
+respectively) are specified in a high-level language by the
+user. Kernel code is then generated automatically. It is possible to
+optimise this generated code~\citep{coffee} and, in the case of
+GridTools, support both CPU and GPU architectures.
+
+% Put this later after we've discussed porting nemolite2d to GPU?
+%It is likely that the {PS}y{KA}l approach of constraining all
+%performance-related code to be within the middle, {PS}y, layer
+
+Lower-level abstractions, e.g. OCCA.
+
+H. C. Edwards, C. R. Trott, D. Sunderland, "Kokkos: Enabling manycore performance portability through polymorphic memory access patterns", J. Parallel Distrib. Comput., vol. 74, no. 12, pp. 3202-3216, 2014.
 
 \subsection{The `NEMOLite2D' Program}
 
