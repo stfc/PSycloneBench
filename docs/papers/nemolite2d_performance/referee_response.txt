@@ -50,3 +50,16 @@ We attribute the better performance of the SSE version of the code to the
 fact that the poor SIMD efficiency of the code is failing to amortize the
 larger cost of the peel and remainder loops associated with the greater
 vector width of AVX. We have expanded upon this in the text.
+
+Carlos Osuna's specific comments:
+
+(Top of page 8.) We have clarified why allocating larger arrays was
+necessary in order to use the safe_address directive.
+
+Changed "Intel does..." to "Intel can..." as requested.
+
+Sec 2.1.5 - the grid is not attached to the field, rather each field
+keeps a pointer back to the grid upon which it is defined. This approach
+was chosen in order to support applications which use more than one grid.
+
+Sec 2.1.8 - 

@@ -480,7 +480,7 @@ applied that transformation to the PSy layer of NEMOLite2D.
 \subsubsection{Addition of \texttt{safe\_address} directives}
 \label{sec_safe_address}
 
-Much of the optimisations we have performed have been informed by the
+Many of the optimisations we have performed have been informed by the
 diagnostic output produced by either the Cray or Intel compilers. Many
 of the NEMOLite2D kernels contain conditional statements. These
 statements are there to check whether \textit{e.g.} the current grid
@@ -493,12 +493,14 @@ notes this with messages of the form:
 A loop starting at line 448 would benefit 
 from "!dir$ safe_address".
 \end{verbatim}
-In order that we could safely add such directives we altered the
-GOcean infrastructure to allocate all field-data arrays with extents
-greater than strictly required.  We were then able to safely add the
-\texttt{safe\_address} before all of the loops where the Cray compiler
-indicated it might be useful (the Momentum loops and some of the BC
-loops).
+Originally, all fields were only allocated the bare minimum of storage
+and the conditional statements within kernels prevented out-of-bounds
+accesses, \textit{e.g.} at the edge of the simulation domain.  We
+subsequently altered the GOcean infrastructure to allocate all
+field-data arrays with extents greater than strictly required.  This
+enabled us to safely add the \texttt{safe\_address} before all of
+the loops where the Cray compiler indicated it might be useful (the
+Momentum loops and some of the BC loops).
 
 \subsubsection{In-line Momentum kernel bodies into middle-layer}
 \label{sec_inline_mom}
@@ -522,7 +524,7 @@ layer (from which the kernels are called). A further performance
 improvement of roughly 30\% was obtained when the kernel code was
 manually inserted at the site of the subroutine call.
 
-Although the Intel compiler does do in-lining when routines are in
+Although the Intel compiler can perform in-lining when routines are in
 separate source files, we have found (both here and in our previous
 work~\citep{shallow_psykal}) that the extent of the optimisations it
 performs is reduced if it first has to in-line a routine. For the
