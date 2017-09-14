@@ -1,0 +1,35 @@
+The authors thank the reviewers for their detailed feedback on our paper.
+We address the points raised below, beginning with the first (anonymous)
+referee and then moving on to those from Carlos Osuna.
+
+Anonymous referee:
+
+1/ The reviewer is right to be concerned with seeing how much
+   performance may be lost by the re-structuring required for
+   PSyKAl. However, the original form of the NEMOLite2D code that we
+   started with for this work was unoptimised. This is emphasised by
+   the results in Figure 4 which show that, for the majority of cases,
+   the final PSyKAl version was significantly faster. In contrast, our
+   previous paper (Porter et al, 2016) tackled the "Shallow" code
+   which has had optimisations applied to it over a period of some
+   twenty years and was therefore a much more demanding test. There,
+   the initial PSyKAl re-structuring did significantly harm
+   performance. However, we showed that it was possible to recover the
+   performance of the optimised original by applying code
+   transformations that were PSyKAl-compliant. We therefore do not
+   think that showing results for the optimisations
+   applied to the original form of NEMOLite2D is necessary.
+
+2/ The PSyKAl approach is in fact applicable to both Finite Element and
+   Finite Difference codes (and in fact, LFRic, the largest project making use
+   of it is using Finite Elements). We have updated the title to make
+   this clear.
+
+3/ A new section, "Related Approaches", has been added to the paper. In this
+   we bring together a comparison of various other approaches including OCCA.
+   This makes explicit the differences and makes clearer the advantages of
+   PSyKAl. 
+
+4/ We also use the new "Related Approaches" section to emphasise that
+    although the tool to generate the PSy layer exists ("PSyclone"),
+    the current paper is about code structuring.
