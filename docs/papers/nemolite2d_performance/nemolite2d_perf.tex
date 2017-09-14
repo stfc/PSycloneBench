@@ -420,7 +420,6 @@ PGI       & -acc -ta=tesla,cc35,nordc -Mcuda=maxregcount:80,loadcache:L1 \\
 \end{tabular}
 \end{table}
 
-
 Before applying any code transformations, we first benchmark the
 original, serial version of the code. We also benchmark the vanilla,
 unoptimised version after it has been re-structured following the
@@ -1338,7 +1337,7 @@ version of NEMOLite2D compares with that of the original, we have not
 addressed how efficient the original actually is. Without this
 information we have no way of knowing whether further optimisations
 might yield worthwhile performance improvements. Therefore, we
-consider the performance of the original, serial NEMOLIte2D code on
+consider the performance of the original, serial NEMOLite2D code on
 the Intel Ivy Bridge CPU and use the Roofline Model~\citep{roofline}
 which provides a relatively simple way of characterising the
 performance of a code in terms of whether it is memory-bandwidth bound
@@ -1421,9 +1420,26 @@ demonstrates that its performance is not memory-bandwidth limited, as
 might have been assumed by its low AI. Therefore, although the
 performance of this kernel is well below the peak performance of the
 CPU, this is due to the balance of floating-point operations that it
-contains. Improving this is outside the scope of the current work
-since here we are focused on the {PS}y{KA}l separation of concerns and
-the introduction of parallelism in the PSy layer.
+contains and in particular, the number of division
+operations. (Division costs at least eight times as much as a
+multiplication in the Ivy Bridge core~\citep{fog_instructions}.) For
+instance, a fragment of the most costly part of the momentum kernel is
+shown below:
+\begin{verbatim}
+    ...
+    ! -pressure gradient
+    hpg = -g * (hu(ji,jj) + sshn_u(ji,jj)) * e2u(ji,jj) * &
+           (sshn(ji+1,jj) - sshn(ji,jj))
+
+    ! -linear bottom friction (implemented implicitly.)
+    ua(ji,jj) = (un(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj)) + rdt * &
+                 (adv + vis + cor + hpg) / e12u(ji,jj)) / &
+                (hu(ji,jj) + ssha_u(ji,jj)) / (1.0_wp + cbfr * rdt) 
+\end{verbatim}
+The liberal use of the division operation is clearly something that
+can be improved upon. However, this is outside the scope of the
+current work since here we are focused on the {PS}y{KA}l separation of
+concerns and the introduction of parallelism in the PSy layer.
 
 Enabling SIMD vectorisation for this kernel does not significantly
 improve its performance (Figure~\ref{FIG_roofline}) and in fact,
