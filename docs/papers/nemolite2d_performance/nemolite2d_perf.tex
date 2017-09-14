@@ -189,6 +189,12 @@ discussed in the remainder of this paper.
 \subsection{Related Approaches}
 \label{sec_other_approaches}
 
+This paper is concerned with the implications of {PS}y{KA}l as a
+design for architecting code. The implementation of an associated tool
+for generating the middle, {PS}y, layer will be the subject of a future
+paper. However, comparison with other approaches necessarily involves
+tools rather than simply architectures.
+
 As already mentioned, our approach is heavily influenced by the OP2
 system~\citep{OP2, PYOP2}.
 In common with OP2, the {PS}y{KA}l approach separates out the science
@@ -201,8 +207,7 @@ scope for optimisation. In addition, the metadata describing a kernel
 is included with the kernel code in the {PS}y{KA}l approach whereas it
 is provided as a part of the kernel call in OP2.
 
-Although {PS}y{KA}l is a design for architecting code, rather than an
-implementation of a tool, there is an implicit assumption that the
+In the {PS}y{KA}l approach there is an implicit assumption that the
 majority of the kernels in an application will be provided by the
 application developer. In the GridTools~\citep{grid_tools} and
 Firedrake~\citep{firedrake,fenics} approaches, the mathematical
@@ -210,15 +215,44 @@ operations (finite-difference stencils and finite element operations,
 respectively) are specified in a high-level language by the
 user. Kernel code is then generated automatically. It is possible to
 optimise this generated code~\citep{coffee} and, in the case of
-GridTools, support both CPU and GPU architectures.
+GridTools, support both CPU and GPU architectures. This ability to
+generate kernels specific to a given computer architecture is a
+powerful feature. However, with this power comes the responsibility of
+providing domain scientists with the necessary functionality to
+describe all conceivable kernel operations as well as a programming
+interface with which they are comfortable.
+
+The {PS}y{KA}l, GridTools and Firedrake approaches are all based on
+the concept of (various flavours of) a Domain-Specific Language (DSL)
+for finite-difference and finite-element applications. This is
+distinct from other, lower-level abstractions such as
+Kokkos~\citep{kokkos} and OCCA~\citep{occa} where the aim is to
+provide a language that permits a user to implement a kernel just once
+and have it compile to performant code on a range of multi- and
+many-core devices. One could imagine using such abstractions to
+implement kernels for the {PS}y{KA}l, GridTools and Firedrake
+approaches rather than using e.g. OpenMP or CUDA directly.
 
 % Put this later after we've discussed porting nemolite2d to GPU?
 %It is likely that the {PS}y{KA}l approach of constraining all
 %performance-related code to be within the middle, {PS}y, layer
 
-Lower-level abstractions, e.g. OCCA.
-
-H. C. Edwards, C. R. Trott, D. Sunderland, "Kokkos: Enabling manycore performance portability through polymorphic memory access patterns", J. Parallel Distrib. Comput., vol. 74, no. 12, pp. 3202-3216, 2014.
+\begin{table}
+\caption{An overview of the functionality of similar approaches. Static compilation here means that all code is compiled before program execution is begun.}
+\label{TABLE_dsl_compare}
+\centering
+\begin{tabular}{l|c|c|c|c|c|c|c}
+\hline
+Approach   & DSL & MPI & Threading & Data layout & Kernels & Language & Compilation  \\
+\hline
+{PS}y{KA}l & Yes & Yes & Yes & Fixed  & User-supplied & Fortran & Static \\
+GridTools  & Yes & No  & Yes & Flexible & Generated & C++  & Static \\
+Firedrake  & Yes & Yes & No  & Fixed  & Generated & C with Python interface & Run-time \\
+Kokkos     & No  & No  & Yes & Flexible & User-supplied & C++ & Static \\
+OCCA       & No  & No  & Yes & Fixed  & User-supplied & C (Python \& Fortran interfaces) & Run-time \\
+\hline
+\end{tabular}
+\end{table}
 
 \subsection{The `NEMOLite2D' Program}
 
