@@ -1445,21 +1445,24 @@ Enabling SIMD vectorisation for this kernel does not significantly
 improve its performance (Figure~\ref{FIG_roofline}) and in fact,
 limiting it to SSE instructions (vector width of two double-precision
 floating point numbers) rather than AVX (vector width of four) was
-found to produce a slightly more performant version. The poor
-efficiency of the SIMD version is highlighted by the fact that the
-corresponding kernel performance no longer falls within the bounds of
-the performance estimates produced by Habakkuk. This is because we
-have incorporated the effect of SSE into that estimate by simply
-assuming perfect vectorisation which gives a performance increase of a
-factor of two.  Further investigation of this issue revealed that
-several of the NEMOLite2D kernels make frequent use of floating-point
-division operations. Although SSE and AVX versions of the division
-operation are available, on Ivy Bridge they do not provide any
-performance benefit~\citep{fog_instructions}. A straightforward
-optimisation then would be to alter the kernels in order to reduce the
-number of division operations. However, again, kernel optimisation is
-outside the scope of this paper since it breaks the PSyKAl separation
-of concerns.
+found to produce a slightly more performant version. We attribute this
+performance deficit to the low efficiency of the vectorised code
+combined with the higher trip-counts of the peel- and remainder loops
+required for the greater vector width of AVX.  The poor efficiency of
+the SIMD version is highlighted by the fact that the corresponding
+kernel performance no longer falls within the bounds of the
+performance estimates produced by Habakkuk. This is because we have
+incorporated the effect of SSE into that estimate by simply assuming
+perfect vectorisation which gives a performance increase of a factor
+of two.  Further investigation of this issue revealed that, as
+mentioned above, several of the NEMOLite2D kernels make frequent use
+of floating-point division. Although SSE and AVX versions
+of the division operation are available, on Ivy Bridge they do not
+provide any performance benefit~\citep{fog_instructions}. A
+straightforward optimisation then would be to alter the kernels in
+order to reduce the number of division operations. However, again,
+kernel optimisation is outside the scope of this paper since it breaks
+the PSyKAl separation of concerns.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -36,11 +36,17 @@ Anonymous referee:
 
 Carlos Osuna's general review:
 
-We have added a few key lines of source code from the Momentum kernel in
-section 3.3. We have also added text that explains that the apparently poor
-performance of this kernel is down to the number of division operations.
+We have added a few key lines of source code from the Momentum kernel
+in section 3.3. We have also added text that explains that the
+apparently poor performance of this kernel is down to the number of
+division operations.  On the Ivy Bridge, division operations require
+at least eight times as many cycles as a multiplication which can be
+very significant.
 
 The suggestion of a "Related Work" section is a good one and we have added
 this just after the Introduction.
 
-
+We attribute the better performance of the SSE version of the code to the
+fact that the poor SIMD efficiency of the code is failing to amortize the
+larger cost of the peel and remainder loops associated with the greater
+vector width of AVX. We have expanded upon this in the text.
