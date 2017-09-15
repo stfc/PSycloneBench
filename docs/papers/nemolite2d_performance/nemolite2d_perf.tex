@@ -684,10 +684,14 @@ of the kernels into the PSy layer.
 
 The Time-update section includes several array copies where fields for
 the current time-step become the fields at the previous time-step.
-Initially we implemented these copies as 'built-in' kernels (in the
-GOcean infrastructure) as they are specified in the algorithm
-layer. However, we obtained better performance by simply in-lining
-these array copies into the PSy layer.
+Initially we implemented these copies as `built-in' kernels (in the
+GOcean infrastructure) as they are specified in the Algorithm
+layer. However, we obtained better performance (for the Gnu and Intel
+compilers) by simply manually in-lining these array copies into the
+PSy layer. As discussed in~\ref{sec_inline_mom}, it is unclear why
+in-lining should improve performance, particularly for the Intel
+compiler. However, a detailed investigation of this issue is outside
+the scope of this paper.
 
 We shall see that the transformations we have just described do not
 always result in improved performance. Whether or not they do so
@@ -942,14 +946,21 @@ the range of compilers under consideration.}
 
 Moving now the to the {PS}y{KA}l version of NEMOLite2D,
 Figure~\ref{FIG_best_psykal_perf_summary} plots the performance of the
-fastest {PS}y{KA}l version for each of the compiler/problem-size combinations.
-While the Intel compiler still produces the best-performing binary,
-the Cray-compiled binary is now a very close second. In fact, the
-performance of both the Gnu- and Cray-compiled {PS}y{KA}l versions is
-generally significantly greater than that of their respective original
-versions. We also note that best absolute performance (in terms of
-grid points processed per second) with any compiler is obtained with
-the $256^2$ domain.
+fastest {PS}y{KA}l version for each of the compiler/problem-size
+combinations.  While the Intel compiler still produces the
+best-performing binary, the Cray-compiled binary is now a very close
+second. In fact, the performance of both the Gnu- and Cray-compiled
+{PS}y{KA}l versions is generally significantly greater than that of
+their respective original versions. We also note that best absolute
+performance (in terms of grid points processed per second) with any
+compiler is obtained with the $256^2$ domain. The performance of the
+Gnu-compiled binary is consistently a factor of two slower than those
+of the other compilers. This is due to the fact that it only SIMD
+vectorises the loop performing the Continuity calculation and, unlike
+Cray and Intel, it does not have an intrinsic to make vectorisation of
+a loop mandatory. (When using OpenMP 4.0 the SIMD directive could be
+used but even then that is only taken as a hint.)
+
 
 \begin{figure}[!t]
 \centering
@@ -966,7 +977,7 @@ only the Intel-compiled binary running the $64^2$ domain that is
 slower with the {PS}y{KA}l version of the code (and then only by some
 3\%). For all other points in the space, the optimised {PS}y{KA}l version
 of the code performs better. The results for the Cray compiler are
-however somewhat sqewed by the fact that it did not SIMD vectorise key
+however somewhat skewed by the fact that it did not SIMD vectorise key
 parts of the original version (see below).
 
 \begin{figure}[!t]

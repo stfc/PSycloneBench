@@ -62,4 +62,20 @@ Sec 2.1.5 - the grid is not attached to the field, rather each field
 keeps a pointer back to the grid upon which it is defined. This approach
 was chosen in order to support applications which use more than one grid.
 
-Sec 2.1.8 - 
+Sec 2.1.8 - it is not clear why in-lining manually helps (especially since
+one would expect the Intel compiler in particular to do this). We suspect
+that the change in the PSy-layer code causes the compiler to make some
+different optimisation decisions and these happen to be beneficial. A
+proper investigation of this is outside the scope of this paper. We have
+added a sentence about this.
+
+Sec 2.2.1 - yes, other strategies might be beneficial, especially blocking.
+The key point is that adopting the PSyKAl structure does not limit these
+possibilities.
+
+Figure 3 - The Gnu results are much slower because gfortran is only SIMD
+vectorising the loop containing the Continuity kernel. For some reason
+it does not vectorise any others. Unlike Cray, there is no directive
+that can be inserted to mandate that a loop be SIMD vectorised. We have
+added text to this effect.
+
