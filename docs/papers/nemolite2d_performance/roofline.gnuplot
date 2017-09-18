@@ -1,5 +1,5 @@
 # initial config
-set term postscript eps enhanced color
+set term postscript eps enhanced color "Helvetica" 18
 set output 'roofline.eps'
 #set term pngcairo dashed
 #set output 'roofline.png'
@@ -8,7 +8,7 @@ set nokey
 set grid layerdefault   linetype 0 linewidth 1.000,  linetype 0 linewidth 1.000
 
 set xlabel "Operational Intensity (Flops/byte)"
-set ylabel "GFlops/s"
+set ylabel "GFlops/s" offset 2,0
 
 # sets log base 2 scale for both axes
 set logscale x 2
@@ -16,7 +16,7 @@ set logscale y 2
 
 # label offsets
 L_MEM_X=0.125
-L_MEM_ANG=39
+L_MEM_ANG=37
 
 # range of each axis
 MAX_X=8
@@ -88,9 +88,9 @@ LINE_UMOM_SSE_CEIL=9
 BAR_WIDTH = 14
 
 set style line LINE_ROOF	lt 1 lw 6 lc rgb "#8B0000"
-set style line LINE_CEIL	lt 1 lw 3 lc rgb "blue"
-set style line LINE_UMOM_CEIL	lt 2 lw 2 lc rgb "red"
-set style line LINE_UMOM_SSE_CEIL lt 2 lw 2 lc rgb "orange"
+set style line LINE_CEIL	lt 1 lw 6 lc rgb "blue"
+set style line LINE_UMOM_CEIL	lt 2 lw 3 lc rgb "red"
+set style line LINE_UMOM_SSE_CEIL lt 2 lw 3 lc rgb "orange"
 
 set style line LINE_LOOP1_512     lt 1 lc rgb "dark-olivegreen"
 set style line LINE_LOOP1_1024    lt 1 lc rgb "green"
@@ -105,23 +105,24 @@ set multiplot
 # From Shallow with the Intel compiler
 
 # Loop1 of shallow with 512^2 achieves 7.55 GFLOPS
-set label 12 "shallow: loop 1, 512" at (SHALLOW_LOOP1_AI*1.06),8.1 front textcolor ls LINE_LOOP1_512
-set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.55 nohead ls LINE_LOOP1_512 lw BAR_WIDTH*SHALLOW_LOOP1_AI
+set label 11 "shallow, loop 1" at SHALLOW_LOOP1_AI-0.01,0.8 front textcolor ls LINE_LOOP1_1024 font "Helvetica,18" right
+set label 12 "512" at (SHALLOW_LOOP1_AI*1.06),8.0 front textcolor ls LINE_LOOP1_512 font "Helvetica,18"
+set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,7.55 nohead ls LINE_LOOP1_512 lw BAR_WIDTH
 
-set label 13 "shallow: loop 1, 1024" at (SHALLOW_LOOP1_AI*1.06), 4.4 front textcolor ls LINE_LOOP1_1024
+set label 13 "1024" at (SHALLOW_LOOP1_AI*1.06), 4.4 front textcolor ls LINE_LOOP1_1024 font "Helvetica,18"
 # Loop1 of shallow with 1024^2 achieves 4.61 GFLOPS
-set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.61 nohead ls LINE_LOOP1_1024 lw BAR_WIDTH*SHALLOW_LOOP1_AI
+set arrow from SHALLOW_LOOP1_AI,MIN_Y to SHALLOW_LOOP1_AI,4.61 nohead ls LINE_LOOP1_1024 lw BAR_WIDTH
 
 # From Nemolite2D with Intel compiler (as that's the fastest)
 
+set label 10 "nemolite2d, Momentum" at (NEMOLITE_MOM_AI*1.06),0.8 front textcolor ls LINE_MOM_256 font "Helvetica,18"
 # 256 domain should fit within L3 cache
-set label 14 "nemolite2d: Mom, SSE" at (NEMOLITE_MOM_AI*1.06),3.05 front textcolor ls LINE_MOM_256_SSE
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.01 nohead ls LINE_MOM_256_SSE lw BAR_WIDTH*NEMOLITE_MOM_AI
+set label 14 "SSE" at (NEMOLITE_MOM_AI*1.06),3.05 front textcolor ls LINE_MOM_256_SSE font "Helvetica,18"
+set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,3.01 nohead ls LINE_MOM_256_SSE lw BAR_WIDTH
 
 # 256 domain without SIMD
-set label 24 "nemolite2d: Mom, no SIMD" at (NEMOLITE_MOM_AI*1.06),2.2 front textcolor ls LINE_MOM_256
-set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,2.216 nohead ls LINE_MOM_256 lw BAR_WIDTH*NEMOLITE_MOM_AI
-
+set label 24 "No SIMD" at (NEMOLITE_MOM_AI*1.06),2.2 front textcolor ls LINE_MOM_256 font "Helvetica,18"
+set arrow from NEMOLITE_MOM_AI,MIN_Y to NEMOLITE_MOM_AI,2.216 nohead ls LINE_MOM_256 lw BAR_WIDTH
 
 # CPU CEILINGS
 
@@ -145,11 +146,11 @@ plot cpu_ceiling(x, 2.0*C_UMOM_NO_ILP) ls LINE_UMOM_SSE_CEIL
 
 # MEM CEILINGS
 
-set label 8 "Main memory" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_MEM_BW)*1.1) rotate by L_MEM_ANG
+set label 8 "Main memory" at (L_MEM_X),(mem_roof(L_MEM_X,PEAK_MEM_BW)*1.15) rotate by L_MEM_ANG
 plot mem_ceiling(mem_roof(x,PEAK_MEM_BW)) ls LINE_CEIL
 
 # ROOFLINE
-set label 1 "Peak FP Performance (LINPACK)" at (MAX_X-1),(PEAK_GFLOPS*0.85) right
+set label 1 "Peak FP Performance (LINPACK)" at (MAX_X-0.5),(PEAK_GFLOPS*0.85) right
 set label 2 "L3 Mem Bandwidth" at L_MEM_X,mem_roof(L_MEM_X,PEAK_BW)*1.15 rotate by L_MEM_ANG
 plot roofline(x, cpu_roof) ls LINE_ROOF
 
