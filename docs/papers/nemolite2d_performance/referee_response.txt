@@ -105,7 +105,14 @@ case the decisions made by the compiler were good and COLLAPSE provided
 little or no benefit. The text has been altered to cover both of these
 points.
 
-Page 22, line 11 - 
+Page 22, line 11 - we agree with the reviewer's point that there was
+no proof that the CUDA version was performing well. However, it is
+also not a matter of comparing memory bandwidths on the CPU and GPU -
+our work on the roofline model has demonstrated that the Momentum
+kernel is not memory-bandwidth bound. Instead, we have added a
+paragraph that demonstrates we have used profiling to investigate the
+performance limitations on the GPU and are confident that we can do no
+better without changing kernel code.
 
 Figure 13 - font size and line widths have been increased. Labels have been
 re-arranged to improve clarity.

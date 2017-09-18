@@ -1312,10 +1312,22 @@ Figure~\ref{FIG_gpu_opt_stages} also shows the performance of the
 version of the code where the (fused) Momentum kernel has been
 replaced by a CUDA kernel. For domains up to $256^2$ the difference in
 the performance of the two versions is less than 5\% and for the
-larger domains it is at most 12\%. This demonstrates that the
-performance cost of the {PS}y{KA}l approach in utilising a GPU for
-NEMOLite2D is minimal.  The discrepancy in performance between the
-CUDA and OpenACC versions has been fed back to the PGI compiler team.
+larger domains it is at most 12\%.
+
+In order to check the efficiency of the CUDA implementation we
+profiled the code on the GPU.  For large problem sizes this
+showed that the non-Momentum kernels are memory-bandwidth bound and
+account for about 40\% of the runtime. However, the Momentum kernels
+were latency limited, getting $\sim$103 GB/s of memory bandwidth. Although
+fusing these kernels reduced the required memory bandwidth (and
+produced a performance improvement), doing so resulted in a fairly
+large kernel requiring a large number of registers. This in turn
+reduces the occupancy of the device which exposes memory latencies.
+
+All of this demonstrates that the performance cost of the {PS}y{KA}l
+approach in utilising a GPU for NEMOLite2D is minimal.  The
+discrepancy in performance between the CUDA and OpenACC versions has
+been fed back to the PGI compiler team.
 
 In Figure~\ref{FIG_cpu_cf_gpu} we compare the absolute performance of
 the OpenMP and OpenACC implementations of NEMOLite2D across the range
