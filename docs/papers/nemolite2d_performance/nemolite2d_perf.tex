@@ -992,7 +992,7 @@ indicates that the {PS}y{KA}l version is slower than the original.}
 Having show that we can recover, and often improve upon, the
 performance of the original version of NEMOLite2D, the next logical
 step is to examine the necessary code transformations in detail.  We
-do this for the $256^{2}$ case since this fits within cache on the Ivy
+do this for the $256^{2}$ case since this fits within (L3) cache on the Ivy
 Bridge CPUs we are using here.  Table~\ref{TABLE_opt_breakdown} shows
 detailed performance figures for this case after each transformation
 has been applied to the code. The same data is visualised in
@@ -1108,10 +1108,12 @@ most performant, Intel-compiled version of NEMOLite2D. Although it is
 common for production runs of NEMO to use MPI sub-domains of $20
 \times 20$, it is clear from Figure~\ref{FIG_omp_domain_size} that the
 limited quantity of parallelism in the $32 \times 32$ domain inhibits
-scaling. Therefore, to fully test the performance of our OpenMP
-implementations we have chosen to examine results for the $256 \times
-256$ domain and these are shown in Figures~\ref{FIG_gnu_omp_256},
-\ref{FIG_intel_omp_256} and \ref{FIG_cray_omp_256}.
+scaling. (Recall that we are only parallelising the outer loop -
+Section~\ref{sec_sep_dos}.) Therefore, to fully test the performance
+of our OpenMP implementations we have chosen to examine results for
+the $256 \times 256$ domain and these are shown in
+Figures~\ref{FIG_gnu_omp_256}, \ref{FIG_intel_omp_256} and
+\ref{FIG_cray_omp_256}.
 
 \begin{figure}
 \centering

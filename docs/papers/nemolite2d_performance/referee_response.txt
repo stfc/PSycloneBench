@@ -79,3 +79,20 @@ it does not vectorise any others. Unlike Cray, there is no directive
 that can be inserted to mandate that a loop be SIMD vectorised. We have
 added text to this effect.
 
+Page 15, line 5 - we were referring to the L3 cache. This has been clarified.
+
+Figure 5 - it is a reflection of the fact that Gnu is free while the Intel and
+Cray compilers have performance of the generated code as a key part of their
+respective business models.
+
+Page 18, line 9 - the NEMOLite2D performance for the 32x32 domain is
+significantly greater than for the other domains because it largely
+fits within L2 cache. We have calculated that the working-set size for
+the momentum kernel is 136*n^2. For 32x32 this gives ~136KB while for
+64x64 this gives ~544KB. The former will fit within L2 cache while the
+latter will spill to L3 cache. In addition, recall that we only parallelise
+the outermost loop (Sec. 2.2.1) so, for the 32x32 domain, there are only
+32 items to be shared amongst the threads. We have added a note to the
+text regarding this.
+
+Figure 11 - 
