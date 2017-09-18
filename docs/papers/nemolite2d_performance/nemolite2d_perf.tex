@@ -1289,9 +1289,11 @@ kernels has much effect on performance. In fact, this is a significant
 optimisation for all except the largest domain size where only changes
 to the Momentum kernel yield sizeable gains. Collapsing the 2D loop
 nests has a small but beneficial effect for the majority of problem
-sizes. Gains here are limited by the fact that this optimisation was
-only beneficial for the non-Momentum kernels and these only account
-for some 30\% of the run-time.
+sizes.  The gains here are small for two reasons; first, the automatic
+CUDA kernel generation performed by the compiler (as instructed by the
+\texttt{kernels} directive) is working well for this code and second,
+this optimisation was only beneficial for the non-Momentum kernels and
+these account for just 30\% of the run-time.
 
 Given the significance of the two Momentum kernels in the execution
 profile it is no surprise that their optimisation yields the most

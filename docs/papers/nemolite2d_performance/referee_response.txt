@@ -95,4 +95,16 @@ the outermost loop (Sec. 2.2.1) so, for the 32x32 domain, there are only
 32 items to be shared amongst the threads. We have added a note to the
 text regarding this.
 
-Figure 11 - 
+Figure 11 - the size of the Momentum kernels meant that
+their resource use limited the occupancy that could be achieved.
+Therefore COLLAPSE might only help the performance of the other kernels and
+they only account for some 30% of the run-time. In addition, the kernels
+had been parallelised by enclosing them within a !$acc kernels region
+which leaves the details to the compiler. It would seem that in this
+case the decisions made by the compiler were good and COLLAPSE provided
+little or no benefit. The text has been altered to cover both of these
+points.
+
+
+
+
