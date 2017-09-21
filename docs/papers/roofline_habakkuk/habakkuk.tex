@@ -20,6 +20,18 @@
 
 \section{Introduction}
 
+The Roofline Model (RM)~\cite{roofline} has become a very popular way
+of examining the performance of a given computational kernel and
+contrasting it with the various limits associated with the system upon
+which it is executing. However, its simplicity naturally means that
+it has limitations.
+
+In this work we examine those limitations in light of two different
+shallow-water, finite-difference models. We explore the reasons behind
+the limited utility of the RM for these two models and present a
+tool, Habakkuk, that uses static code analysis to provide more
+realistic performance predictions for Fortran kernels.
+
 \begin{itemize}
 \item Shallow implementation of Sadourny~\cite{sadourny75}.
 \item NEMOLite2D.
@@ -30,7 +42,23 @@
 
 \subsection{What the Roofline Model (RFM) is}
 
+The construction of a Roofline Model requires the peak floating-point
+operations per second (FLOPS) and memory bandwidth (GB/s) that the
+computer hardware is capable of. Although theoretical values for these
+quantities may be computed (using the technical specification of
+the machine, e.g. the number of floating-point instructions that may
+be issued per clock cycle).
+
+information on both the
+computer being used and the code being run. For the former,
+
 Arithmetic intensity and MAX(memory bandwidth, FLOPS)
+
+A key component of the Roofline Model is the Arithmetic Intensity (AI)
+of the code being executed:
+\begin{equation}
+AI = \frac{\textrm{No. of floating-point operations}}{\textrm{Bytes fetched from memory}}
+\end{equation}
 
 \subsection{Approaches to constructing a RFM}
 
@@ -137,6 +165,7 @@ the code being executed:
 \begin{equation}
 AI = \frac{\textrm{No. of floating-point operations}}{\textrm{Bytes fetched from memory}}
 \end{equation}
+
 Since HWPC data proved to be unreliable, we calculated this quantity
 manually by examining the source code and counting the number of
 memory references and arithmetic operations that it contained. In
