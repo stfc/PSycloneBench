@@ -19,8 +19,8 @@
 
 \begin{document}
 
-\title{Portable Multi- and Many-Core Performance for Finite Difference Codes;
-  Application to the Free-Surface Component of NEMO.}
+\title{Portable Multi- and Many-Core Performance for Finite-Difference/Element Codes;
+  Application to the Free-Surface Component of NEMO (NEMOLite2D 1.0).}
 
 \Author[1]{Andrew}{Porter}
 \Author[2]{Jeremy}{Appleyard}
@@ -53,28 +53,29 @@
 
 \begin{abstract}
 
-We present an approach which we call {PS}y{KA}l that is designed to achieve
-portable performance for parallel, finite-difference Ocean models.  In
-{PS}y{KA}l the code related to the underlying science is formally
-separated from code related to parallelisation and single-core
-optimisations. This separation of concerns allows scientists to code
-their science independently of the underlying hardware architecture
-and for optimisation specialists to be able to tailor the code for a
+We present an approach which we call {PS}y{KA}l that is designed to
+achieve portable performance for parallel,
+finite-difference/ volume/element earth-system models.  In {PS}y{KA}l
+the code related to the underlying science is formally separated from
+code related to parallelisation and single-core optimisations. This
+separation of concerns allows scientists to code their science
+independently of the underlying hardware architecture and for
+optimisation specialists to be able to tailor the code for a
 particular machine independently of the science code. We have taken
 the free-surface part of the NEMO ocean model and created a new,
 shallow-water model named NEMOLite2D. In doing this we have a code
 which is of a manageable size and yet which incorporates elements of
 full ocean models (input/output, boundary conditions, \textit{etc.}).
-We have then manually constructed a {PS}y{KA}l version of this code and
-investigated the transformations that must be applied to the
+We have then manually constructed a {PS}y{KA}l version of this code
+and investigated the transformations that must be applied to the
 middle/PSy layer in order to achieve good performance, both serial and
 parallel. We have produced versions of the PSy layer parallelised with
 both OpenMP and OpenACC; in both cases we were able to leave the
 natural-science parts of the code unchanged while achieving good
 performance on both multi-core CPUs and GPUs. In quantifying whether
 or not the obtained performance is `good' we also consider the
-limitations of the basic roofline model and improve on it
-by generating kernel-specific CPU ceilings.
+limitations of the basic roofline model and improve on it by
+generating kernel-specific CPU ceilings.
 
 \end{abstract}
 
