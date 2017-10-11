@@ -36,6 +36,9 @@ nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
 %.o: %.c
 	$(CC) $(CFLAGS) ${OPENCL_INCLUDE} -c $<
 
+%.aocx: %.cl
+	aoc -march=emulator -v --board s5_ref $< -o $@
+
 clean: 
 	rm -f *.o *~
 

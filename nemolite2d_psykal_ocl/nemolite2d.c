@@ -243,9 +243,14 @@ int main(){
 				   &result_len);
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_VERSION,
 			  (size_t)128, &version_str, &result_len);
+#if __OPENCL_VERSION__ < 120
+    /* The Intel/Alter OpenCL SDK is only version 1.0 */
+    fp_config = 0;
+#else
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_DOUBLE_FP_CONFIG,
-			  (size_t)(sizeof(cl_device_fp_config)),
-			  &fp_config, &result_len);
+    			  (size_t)(sizeof(cl_device_fp_config)),
+    			  &fp_config, &result_len);
+#endif
     size_t wg_size;
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_WORK_GROUP_SIZE,
 			  (size_t)(sizeof(size_t)),
@@ -279,7 +284,10 @@ int main(){
   device = &(device_ids[idev]);
 
   /* Check what version of OpenCL is supported */
-  if(strstr(version_str, "OpenCL 1.2")){
+  if(strstr(version_str, "OpenCL 1.0")){
+    cl_version = 10;
+  }
+  else if(strstr(version_str, "OpenCL 1.2")){
     cl_version = 12;
   }
   else if(strstr(version_str, "OpenCL 2.0")){
@@ -300,21 +308,21 @@ int main(){
   check_status("clCreateContext", ret);
   
   /* Create Command Queue with properties set to NULL */
-  if(cl_version == 12){
-    /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
+#if __OPENCL_VERSION__ < 200
+  /* The Intel/Alter OpenCL SDK is only version 1.0 */
+  /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
      to call the ...WithProperties version of this routine */
-    command_queue = clCreateCommandQueue(context,
-					 *device,
-					 queue_properties, &ret);
-    check_status("clCreateCommandQueue", ret);
-  }
-  else if(cl_version == 20){
-    command_queue = clCreateCommandQueueWithProperties(context,
-						       *device,
-						       &queue_properties, &ret);
-    check_status("clCreateCommandQueueWithProperties", ret);
-  }
-
+  command_queue = clCreateCommandQueue(context,
+				       *device,
+				       queue_properties, &ret);
+  check_status("clCreateCommandQueue", ret);
+#else
+  command_queue = clCreateCommandQueueWithProperties(context,
+						     *device,
+						     &queue_properties, &ret);
+  check_status("clCreateCommandQueueWithProperties", ret);
+#endif
+    
   /* Create OpenCL Kernels and associated event objects (latter used
    to obtain detailed timing information). */
   cl_event cont_evt;
