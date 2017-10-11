@@ -1,8 +1,22 @@
-The authors thank the reviewers for their detailed feedback on our paper.
-We address the points raised below, beginning with the first (anonymous)
-referee and then moving on to those from Carlos Osuna.
+A. Kerkweg:
+==========
+
+We have added the name of the model used/developed in this work to the title.
+
+This model has been published with a DOI and a reference to this has been
+added to the Code Availability section of the paper.
 
 Anonymous referee:
+=================
+
+"1. The optimization and performance sections are very well done,
+however, I would like to see one additional data point in the parallel
+performance sec- tion: all of the optimizations and directives applied
+to the original NEMOLite2D code.  This will allow the reader to see if
+much or any performance is being left on the table by using the PSyKAl
+approach"
+
+Our response:
 
 1/ The reviewer is right to be concerned with seeing how much
    performance may be lost by the re-structuring required for
@@ -20,21 +34,68 @@ Anonymous referee:
    think that showing results for the optimisations
    applied to the original form of NEMOLite2D is necessary.
 
+--
+
+"2.  The title of the paper suggests the PSyKAl approach is limited to
+finite-difference models, yet there is barely any mention of this
+limitation in the paper.  Can you describe what causes this limitation
+or if there will be attempts to extend the idea to more complex
+finite-element or finite-volume models?"
+
+Our response:
+
 2/ The PSyKAl approach is in fact applicable to both Finite Element and
    Finite Difference codes (and in fact, LFRic, the largest project making use
    of it is using Finite Elements). We have updated the title to make
    this clear.
+
+--
+
+"3.  I fully agree that a separation of concerns is necessary to
+achieve portable performance, however it is not clear to me how
+significantly different PSyKAl is from similar ideas, such as OCCA
+(http://libocca.org) where kernels are written in a simple C or
+Fortran based kernel language and translated into OpenMP, CUDA or
+OpenCL and invoked similarly to a CUDA kernel.  Also, time-stepping
+research has long assumed that the spatial domain is computed using a
+single function call which iterates over all of points and executes
+the appropriate kernels.  Could the authors be more specific about the
+contributions which the PSyKAl approach makes, citing specific
+differences from ex- isting programming models, like CUDA and OpenMP?"
+
+Our response:
 
 3/ A new section, "Related Approaches", has been added to the paper. In this
    we bring together a comparison of various other approaches including OCCA.
    This makes explicit the differences and makes clearer the advantages of
    PSyKAl. 
 
+--
+
+"4.  The paper briefly mentions that generation of the PSy layer will
+be automated in the future.  Perhaps the authors could emphasize this
+more (as part of any changes made #3), as this paper describes a
+number of lessons learned which will be applied to work on automation."
+
+Our response:
+
 4/ We also use the new "Related Approaches" section to emphasise that
     although the tool to generate the PSy layer exists ("PSyclone"),
     the current paper is about code structuring.
 
 Carlos Osuna's general review:
+=============================
+
+"While the mathematics and equations are well described, the reviewer
+is missing some snippet of code that is representative of the target
+model.  Showing some simplified codes, like the dominant momentum
+section, could help the reader to understand the computational
+patterns (see some floating point operations performed, extensively
+dis- cussed in section 3.3), and, in general, better reason about
+sections that discuss the relevant characteristics of the code, like
+AI, or ILP."
+
+Our response:
 
 We have added a few key lines of source code from the Momentum kernel
 in section 3.3. We have also added text that explains that the
@@ -43,8 +104,35 @@ division operations.  On the Ivy Bridge, division operations require
 at least eight times as many cycles as a multiplication which can be
 very significant.
 
+--
+
+"A small "Related Work" section where other ap- proaches are explained
+and compared would help and can be used to highlight the novelties of
+this work. Similarly a section or paragraph describing the limitations
+would be valuable. Particularly a discussion on the design choices of
+PSyKAI in three levels, where all the computing architecture dependent
+optimizations happen in the PSy layer.  Is it the right choice, could
+the author imagine other optimizations that would need to be applied
+to the Kernel layer?"
+
+Our response:
+
 The suggestion of a "Related Work" section is a good one and we have added
 this just after the Introduction.
+
+--
+
+"What is there in the implementation, in terms of floating point
+operations that makes this code perform badly?  Also in the comparison
+of SSE and AVX, it is said that SSE and AVX versions of the division
+vector instruction does not provide any benefit. That would explain
+why they do not perform well, but not why SSE performs better than
+AVX."
+
+Our response:
+
+We have added text in section 3.3. to explain that the poor performance
+is due to liberal use of the division operation.
 
 We attribute the better performance of the SSE version of the code to the
 fact that the poor SIMD efficiency of the code is failing to amortize the
@@ -52,15 +140,48 @@ larger cost of the peel and remainder loops associated with the greater
 vector width of AVX. We have expanded upon this in the text.
 
 Carlos Osuna's specific comments:
+================================
+
+"pag.  7, line 10: "In order that we could safely add such directives
+we altered the GOcean infrastructure to allocate all field-data arrays
+with extents greater than strictly required": It is not clear to the
+reader why these larger extents are required in order to add this
+directive."
+
+Our response:
 
 (Top of page 8.) We have clarified why allocating larger arrays was
 necessary in order to use the safe_address directive.
 
+--
+
+"pag. 7, line 22: "Although the Intel compiler does do" I would
+replace by "Although the Intel compiler can do" since it is not
+guarantee when the compiler will inline."
+
+Our response:
+
 Changed "Intel does..." to "Intel can..." as requested.
+
+--
+
+"section 2.1.5:  the discussion makes the reader wonder whether attaching the
+grid to the field, which can be read only or not is the right choice."
+
+Our response:
 
 Sec 2.1.5 - the grid is not attached to the field, rather each field
 keeps a pointer back to the grid upon which it is defined. This approach
 was chosen in order to support applications which use more than one grid.
+
+--
+
+"section 2.1.8: it is not clear why inlining these copies gives better
+performance. Is it due to data reuse of the same fields that might be
+in cache? If so, that will depend on the domain size? Maybe a sentence
+clarifying that would help."
+
+Our response:
 
 Sec 2.1.8 - it is not clear why in-lining manually helps (especially since
 one would expect the Intel compiler in particular to do this). We suspect
@@ -69,9 +190,27 @@ different optimisation decisions and these happen to be beneficial. A
 proper investigation of this is outside the scope of this paper. We have
 added a sentence about this.
 
+--
+
+"section 2.2.1: Aside note: It looks like other omp strategies like
+blocking would help increasing the data locality of computations among
+cores computing different blocks, or parallel do simd that would allow
+collapsing the loops and increase parallelism?"
+
+Our response:
+
 Sec 2.2.1 - yes, other strategies might be beneficial, especially blocking.
 The key point is that adopting the PSyKAl structure does not limit these
 possibilities.
+
+--
+
+"Figure 3: why is gnu still much slower?  We would expect that PSyKAI
+would help the compiler adding the corresponding directives so that
+all compilers could deliver similar performance. Still is a factor 2x
+away from others. Can the reason for this be clarified?"
+
+Our response:
 
 Figure 3 - The Gnu results are much slower because gfortran is only SIMD
 vectorising the loop containing the Continuity kernel. For some reason
@@ -79,11 +218,44 @@ it does not vectorise any others. Unlike Cray, there is no directive
 that can be inserted to mandate that a loop be SIMD vectorised. We have
 added text to this effect.
 
+--
+
+"page 15, line 5: Text says that 256ˆ2 fits in cache.  Which cache are
+the authors referring to? A single field with that domain size would
+take 512 KB (in double precision) which will be out of L1"
+
+Our response:
+
 Page 15, line 5 - we were referring to the L3 cache. This has been clarified.
+
+--
+
+"Figure 5: same comment I made before.  It seems that we can not
+attain same perf.  with all compilers. Would be interesting clarify
+what is the intrinsic reason for this, if this is a real limitation of
+the compiler, or future work can improve the gnu performance."
+
+Our response:
 
 Figure 5 - it is a reflection of the fact that Gnu is free while the Intel and
 Cray compilers have performance of the generated code as a key part of their
-respective business models.
+respective business models. We have added text about the lack of a crucial
+directive to force the Gnu compiler to SIMD vectorise a given loop.
+
+--
+
+"page 18, line 9: text says that 32x32, due to limited amount of
+parallelism inhibits scaling, therefore focus is on 256x256 domain
+sizes.  Is it clear that is parallelism what limits scalability? The
+curve shown by 32x32 might have a reasonable shape for memory bound
+codes, where with few cores one can saturate the memory bandwidth of
+the Ivy Bridge, and adding more cores might not provide better
+performance. On the contrary the large gap between 32x32 and the other
+domains suggests that the code is not cache oblivious, where the
+updated points/s would not (so strongly) depend on the domain size?
+See for example: https://arxiv.org/pdf/1410.5010.pdf"
+
+Our response:
 
 Page 18, line 9 - the NEMOLite2D performance for the 32x32 domain is
 significantly greater than for the other domains because it largely
@@ -95,6 +267,15 @@ the outermost loop (Sec. 2.2.1) so, for the 32x32 domain, there are only
 32 items to be shared amongst the threads. We have added a note to the
 text regarding this.
 
+--
+
+"Figure 11: For domain size of 64, parallelism will be very small on
+the GPU, if col- lapse(2) is not used.  If used, 4096 GPU threads
+could be active, still not 100% occu- pancy but much better. So it is
+not clear why the collapse(2) didnt help in performance?"
+
+Our response:
+
 Figure 11 - the size of the Momentum kernels meant that
 their resource use limited the occupancy that could be achieved.
 Therefore COLLAPSE might only help the performance of the other kernels and
@@ -105,6 +286,20 @@ case the decisions made by the compiler were good and COLLAPSE provided
 little or no benefit. The text has been altered to cover both of these
 points.
 
+--
+
+"Page 22, line 11: The statement says that the comparison between
+PSyKAI approach and the CUDA fortran implementation proves little
+overhead introduced by PSyKAI.  While this is true, it is no proven
+that the implementation is efficient, since also a CUDA implementation
+could be inefficient.  Figure 12 suggests that actually the GPU imple-
+mentation provides an expected performance in comparison with memory
+bandwidths of the IB and K40. Adding the GPU numbers to the Roofline
+model of Figure 13 would help in proving efficency of the GPU code and
+make a more solid statements about the GPU performance."
+
+Our response:
+
 Page 22, line 11 - we agree with the reviewer's point that there was
 no proof that the CUDA version was performing well. However, it is
 also not a matter of comparing memory bandwidths on the CPU and GPU -
@@ -114,9 +309,12 @@ paragraph that demonstrates we have used profiling to investigate the
 performance limitations on the GPU and are confident that we can do no
 better without changing kernel code.
 
+--
+
+"Figure 13: font size and lines are small and hard to read. Increasing
+the font size and probably using markers would help"
+
+Our response:
+
 Figure 13 - font size and line widths have been increased. Labels have been
 re-arranged to improve clarity.
-
-
-
-
