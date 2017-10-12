@@ -243,14 +243,14 @@ int main(){
 				   &result_len);
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_VERSION,
 			  (size_t)128, &version_str, &result_len);
-#if __OPENCL_VERSION__ < 120
-    /* The Intel/Altera OpenCL SDK is only version 1.0 and that doesn't
-     have the CL_DEVICE_DOUBLE_FP_CONFIG property */
-    fp_config = 0;
-#else
+#ifdef CL_DEVICE_DOUBLE_FP_CONFIG
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_DOUBLE_FP_CONFIG,
     			  (size_t)(sizeof(cl_device_fp_config)),
     			  &fp_config, &result_len);
+#else
+    /* The Intel/Altera OpenCL SDK is only version 1.0 and that doesn't
+     have the CL_DEVICE_DOUBLE_FP_CONFIG property */
+    fp_config = 0;
 #endif
     size_t wg_size;
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_WORK_GROUP_SIZE,
@@ -286,13 +286,13 @@ int main(){
 
   /* Check what version of OpenCL is supported */
   if(strstr(version_str, "OpenCL 1.0")){
-    cl_version = 10;
+    cl_version = 100;
   }
   else if(strstr(version_str, "OpenCL 1.2")){
-    cl_version = 12;
+    cl_version = 120;
   }
   else if(strstr(version_str, "OpenCL 2.0")){
-    cl_version = 20;
+    cl_version = 200;
   }
   else{
     fprintf(stderr, "Unsupported OpenCL version: %s\n", version_str);
@@ -309,20 +309,23 @@ int main(){
   check_status("clCreateContext", ret);
   
   /* Create Command Queue with properties set to NULL */
-#if __OPENCL_VERSION__ < 200
-  /* The Intel/Alter OpenCL SDK is only version 1.0 */
-  /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
-     to call the ...WithProperties version of this routine */
-  command_queue = clCreateCommandQueue(context,
-				       *device,
-				       queue_properties, &ret);
-  check_status("clCreateCommandQueue", ret);
-#else
-  command_queue = clCreateCommandQueueWithProperties(context,
-						     *device,
-						     &queue_properties, &ret);
-  check_status("clCreateCommandQueueWithProperties", ret);
-#endif
+  if(cl_version < 200){
+    /* The Intel/Altera OpenCL SDK is only version 1.0 */
+    /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
+       to call the ...WithProperties version of this routine */
+    command_queue = clCreateCommandQueue(context,
+					 *device,
+					 queue_properties, &ret);
+    check_status("clCreateCommandQueue", ret);
+  }
+  else{
+    //command_queue = clCreateCommandQueueWithProperties(context,
+    //						       *device,
+    //					       &queue_properties, &ret);
+    //check_status("clCreateCommandQueueWithProperties", ret);
+    fprintf(stderr, "Implement use of clCreateCommandQueueWithProperties!\n");
+    exit(1);
+  }
     
   /* Create OpenCL Kernels and associated event objects (latter used
    to obtain detailed timing information). */

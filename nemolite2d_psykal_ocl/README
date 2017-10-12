@@ -33,8 +33,9 @@ Typing 'make' at the command prompt should then build the code.
 For FPGA emulation:
 
 export CC=g++
-export LDFLAGS="-L/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/board/s5_ref/linux64/lib -L/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/host/linux64/lib -Wl,--no-as-needed -lalteracl -laltera_s5_ref_mmd -lelf"
-export CFLAGS="-I/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/host/include -fpermissive"
+export OPENCL_LIBS="-L/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/board/s5_ref/linux64/lib -L/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/host/linux64/lib -Wl,--no-as-needed -lalteracl -laltera_s5_ref_mmd -lelf"
+export OPENCL_INCLUDE=-I/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/host/include
+export CFLAGS="-g -fpermissive"
 export QUARTUS_ROOTDIR_OVERRIDE=/home/kbc59144/MyInstalls/intelFPGA/17.0/quartus
 export CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1
 
