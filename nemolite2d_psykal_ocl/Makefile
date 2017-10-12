@@ -26,10 +26,10 @@ KERNEL_BINARIES = $(KERNEL_MODULES:.o=.aocx)
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} ${KERNEL_MODULES}" nemolite2d.exe
 
-# Target for FPGA
+# Target for FPGA - we must compile the kernels using the off-line compiler
 nemolite2d_fpga: ${KERNEL_BINARIES} nemolite2d
 
-nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES} ${KERNEL_BINARIES}
+nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
 
 # Interdependencies between modules, alphabetical order
 
@@ -41,6 +41,7 @@ nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES} ${KERNEL_BINARIES}
 %.o: %.c
 	$(CC) $(CFLAGS) ${OPENCL_INCLUDE} -c $<
 
+# Compile the kernels for emulation on the CPU
 %.aocx: %.cl
 	aoc -D__OPENCL_VERSION__=100 -march=emulator -v --board s5_ref $< -o $@
 
@@ -50,3 +51,11 @@ clean:
 allclean: clean
 	rm -f *.exe fparser.log
 	rm -rf *_wpl_dir/
+
+# When we've gone through the pain of building kernels for real FPGA
+# hardware then we're not often going to want to delete them - hence
+# a separate target for that...
+kernclean:
+	rm -rf $(KERNEL_MODULES:.o=)
+	rm -f ${KERNEL_BINARIES}
+	rm -f $(KERNEL_MODULES:.o=.aoco)
