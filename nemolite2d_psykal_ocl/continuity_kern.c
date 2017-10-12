@@ -33,16 +33,16 @@
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */
 __kernel void continuity_code(int width,                     
-			      __global double *ssha,
-			      __global double *sshn,
-			      __global double *sshn_u,
-			      __global double *sshn_v,
-			      __global double* hu,
-			      __global double *hv,
-			      __global double *un,
-			      __global double *vn,
+			      __global double* restrict ssha,
+			      __global double* restrict sshn,
+			      __global double* restrict sshn_u,
+			      __global double* restrict sshn_v,
+			      __global double* restrict hu,
+			      __global double* restrict hv,
+			      __global double* restrict un,
+			      __global double* restrict vn,
 			      double rdt,
-			      __global double *e12t){
+			      __global double* restrict e12t){
     int ji = get_global_id(0);
     int jj = get_global_id(1);
 #else

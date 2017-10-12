@@ -161,8 +161,8 @@
 #ifdef __OPENCL_VERSION__
 __kernel void bc_ssh_code(int width,
 			  int istep,
-			  __global double *ssha,
-			  __global int *tmask,
+			  __global double* restrict ssha,
+			  __global int* restrict tmask,
 			  double rdt){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
@@ -225,8 +225,8 @@ void bc_ssh_code(int ji, int jj, int width,
     /** Kernel to apply solid boundary conditions for u-velocity */
 #ifdef __OPENCL_VERSION__
 __kernel void bc_solid_u_code(int width,
-			      __global double *ua,
-			      __global int *tmask){
+			      __global double* restrict ua,
+			      __global int* restrict tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
   if(ji > (width-2))return;
@@ -262,7 +262,8 @@ __kernel void bc_solid_u_code(int width,
   /** Kernel to apply solid boundary conditions for v-velocity */
 #ifdef __OPENCL_VERSION__
 __kernel void bc_solid_v_code(int width,
-			      __global double *va, __global int *tmask){
+			      __global double* restrict va,
+			      __global int* restrict tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
   int nrow = (int)get_global_size(1);
@@ -307,10 +308,10 @@ void bc_solid_v_code(int ji, int jj, int width, double *va, int *tmask){
 /** Kernel to apply Flather condition to U */
 #ifdef __OPENCL_VERSION__
 __kernel void bc_flather_u_code(int width,
-				__global double *ua,
-				__global double *hu,
-				__global double *sshn_u,
-				__global int *tmask){
+				__global double* restrict ua,
+				__global double* restrict hu,
+				__global double* restrict sshn_u,
+				__global int* restrict tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
   if(ji > (width-2))return;
@@ -366,10 +367,10 @@ void bc_flather_u_code(int ji, int jj, int width,
       of velocity */
 #ifdef __OPENCL_VERSION__
 __kernel void bc_flather_v_code(int width,
-				__global double *va,
-				__global double *hv, 
-				__global double *sshn_v, 
-				__global int *tmask){
+				__global double* restrict va,
+				__global double* restrict hv, 
+				__global double* restrict sshn_v, 
+				__global int* restrict tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
   int nrow = (int)get_global_size(1);

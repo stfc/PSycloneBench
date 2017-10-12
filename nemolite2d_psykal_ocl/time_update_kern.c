@@ -10,11 +10,11 @@
 
 void set_args_next_sshv(cl_kernel kern,
 			cl_int *nx,
-			cl_mem *sshn_v_device,
-			cl_mem *sshn_device,
-			cl_mem *tmask_device,
-			cl_mem *e12t_device,
-			cl_mem *e12v_device){
+			cl_mem* sshn_v_device,
+			cl_mem* sshn_device,
+			cl_mem* tmask_device,
+			cl_mem* e12t_device,
+			cl_mem* e12v_device){
   cl_int ret;
   int arg_idx = 0;
 
@@ -98,17 +98,20 @@ void set_args_next_sshu(cl_kernel kern,
 
 #ifdef __OPENCL_VERSION__
 __kernel void next_sshu_code(int width,
-			     __global double *sshn_u,
-			     __global double *sshn,
-			     __global int *tmask,
-			     __global double *e12t,
-			     __global double *e12u){
+			     __global double* restrict sshn_u,
+			     __global double* restrict sshn,
+			     __global int* restrict tmask,
+			     __global double* restrict e12t,
+			     __global double* restrict e12u){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
 #else
   void next_sshu_code(int ji, int jj, int width,
-		    double *sshn_u, double *sshn,
-		    int *tmask, double *e12t, double *e12u){
+		      double* sshn_u,
+		      double* sshn,
+		      int* tmask,
+		      double* e12t,
+		      double* e12u){
 #endif
   double rtmp1;
   int idx = jj*width + ji;
@@ -159,17 +162,20 @@ __kernel void next_sshu_code(int width,
   
 #ifdef __OPENCL_VERSION__
 __kernel void next_sshv_code(int width,
-			     __global double *sshn_v,
-			     __global double *sshn,
-			     __global int *tmask,
-			     __global double *e12t,
-			     __global double *e12v){
+			     __global double* restrict sshn_v,
+			     __global double* restrict sshn,
+			     __global int* restrict tmask,
+			     __global double* restrict e12t,
+			     __global double* restrict e12v){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
 #else
 void next_sshv_code(int ji, int jj, int width,
-		    double *sshn_v, double *sshn, int *tmask,
-		    double *e12t, double *e12v){
+		    double* sshn_v,
+		    double* sshn,
+		    int* tmask,
+		    double* e12t,
+		    double* e12v){
 #endif
   double rtmp1;
   int idx = jj*width + ji;
