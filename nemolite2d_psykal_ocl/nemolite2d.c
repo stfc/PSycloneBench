@@ -244,7 +244,8 @@ int main(){
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_VERSION,
 			  (size_t)128, &version_str, &result_len);
 #if __OPENCL_VERSION__ < 120
-    /* The Intel/Alter OpenCL SDK is only version 1.0 */
+    /* The Intel/Altera OpenCL SDK is only version 1.0 and that doesn't
+     have the CL_DEVICE_DOUBLE_FP_CONFIG property */
     fp_config = 0;
 #else
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_DOUBLE_FP_CONFIG,
@@ -326,41 +327,41 @@ int main(){
   /* Create OpenCL Kernels and associated event objects (latter used
    to obtain detailed timing information). */
   cl_event cont_evt;
-  cont_kernel = build_kernel(&context, device,
-			     "./continuity_kern.c", "continuity_code");
+  cont_kernel = get_kernel(&context, device, version_str,
+			   "./continuity_kern.c", "continuity_code");
   cl_event momu_evt;
-  momu_kernel = build_kernel(&context, device,
-			     "./momentum_kern.c", "momentum_u_code");
+  momu_kernel = get_kernel(&context, device, version_str,
+			   "./momentum_kern.c", "momentum_u_code");
   cl_event momv_evt;
-  momv_kernel = build_kernel(&context, device,
-			     "./momentum_kern.c", "momentum_v_code");
+  momv_kernel = get_kernel(&context, device, version_str,
+			   "./momentum_kern.c", "momentum_v_code");
   cl_event bcssh_evt;
-  bc_ssh_kernel = build_kernel(&context, device,
-  			       "./boundary_conditions_kern.c", "bc_ssh_code");
+  bc_ssh_kernel = get_kernel(&context, device, version_str,
+			     "./boundary_conditions_kern.c", "bc_ssh_code");
   cl_event solidu_evt;
-  bc_solid_u_kernel = build_kernel(&context, device,
-				   "./boundary_conditions_kern.c",
-				   "bc_solid_u_code");
+  bc_solid_u_kernel = get_kernel(&context, device, version_str,
+				 "./boundary_conditions_kern.c",
+				 "bc_solid_u_code");
   cl_event solidv_evt;
-  bc_solid_v_kernel = build_kernel(&context, device,
-				   "./boundary_conditions_kern.c",
-				   "bc_solid_v_code");
+  bc_solid_v_kernel = get_kernel(&context, device, version_str,
+				 "./boundary_conditions_kern.c",
+				 "bc_solid_v_code");
   cl_event flatheru_evt;
-  bc_flather_u_kernel = build_kernel(&context, device,
-				     "./boundary_conditions_kern.c",
-				     "bc_flather_u_code");
+  bc_flather_u_kernel = get_kernel(&context, device, version_str,
+				   "./boundary_conditions_kern.c",
+				   "bc_flather_u_code");
   cl_event flatherv_evt;
-  bc_flather_v_kernel = build_kernel(&context, device,
-				     "./boundary_conditions_kern.c",
-				     "bc_flather_v_code");
+  bc_flather_v_kernel = get_kernel(&context, device, version_str,
+				   "./boundary_conditions_kern.c",
+				   "bc_flather_v_code");
   cl_event next_sshu_evt;
-  next_sshu_kernel = build_kernel(&context, device,
-				  "./time_update_kern.c",
-				  "next_sshu_code");
+  next_sshu_kernel = get_kernel(&context, device, version_str,
+				"./time_update_kern.c",
+				"next_sshu_code");
   cl_event next_sshv_evt;
-  next_sshv_kernel = build_kernel(&context, device,
-				  "./time_update_kern.c",
-				  "next_sshv_code");
+  next_sshv_kernel = get_kernel(&context, device, version_str,
+				"./time_update_kern.c",
+				"next_sshv_code");
 
   /* Create Device Memory Buffers */
   int num_buffers = 0;

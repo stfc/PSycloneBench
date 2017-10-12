@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -7,8 +8,10 @@
 #include <CL/cl.h>
 #endif
 
+#include "opencl_utils.h"
+
 #define MAX_SOURCE_SIZE (0x100000)
-#define VERBOSE 0
+#define VERBOSE 1
 
 const char* OCL_GetErrorString(cl_int error)
 {
@@ -124,24 +127,47 @@ void check_status(char *text, cl_int err){
   }
 }
 
-/** Creates an OpenCL kernel for the supplied context and device */
-cl_kernel build_kernel(cl_context *context, cl_device_id *device,
-		       char *filename, char *kernel_name){
+/** Creates an OpenCL kernel for the supplied context and device. If the
+ device is an FPGA then the kernel must be pre-compiled. */
+cl_kernel get_kernel(cl_context *context, cl_device_id *device,
+		     char *version_str, char *filename, char *kernel_name){
+  /* Holds return value of calls to OpenCL API */
+  cl_int ret;
+  cl_kernel kernel = NULL;
+  cl_program program;
+  
+  if( strstr(version_str, "FPGA SDK") ){
+    program = get_binary_kernel(context, device, filename);
+  }
+  else{
+    program = get_source_kernel(context, device, filename);
+  }
+
+  /* Create OpenCL Kernel */
+  kernel = clCreateKernel(program, kernel_name, &ret);
+  check_status("clCreateKernel", ret);
+
+  return kernel;
+}
+
+/** Creates an OpenCL kernel by compiling it from the supplied source */
+cl_program get_source_kernel(cl_context *context,
+			     cl_device_id *device,
+			     char *filename){
   FILE *fp;
   char *source_str;
   size_t source_size;
   /* Holds return value of calls to OpenCL API */
   cl_int ret;
-  cl_kernel kernel = NULL;
 
   /* Load the source code containing the kernel*/
   fp = fopen(filename, "r");
   if (!fp) {
-    fprintf(stderr, "Failed to load kernel %s.\n", filename);
+    fprintf(stderr, "Failed to load kernel source: %s.\n", filename);
     exit(1);
   }
   source_str = (char*)malloc(MAX_SOURCE_SIZE);
-  source_size = fread( source_str, 1, MAX_SOURCE_SIZE, fp);
+  source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
   fclose( fp );
 
   /* Create Kernel Program from the source */
@@ -169,14 +195,56 @@ cl_kernel build_kernel(cl_context *context, cl_device_id *device,
   }
   check_status("clBuildProgram", ret);
 
-  /* Create OpenCL Kernel */
-  kernel = clCreateKernel(program, kernel_name, &ret);
-  check_status("clCreateKernel", ret);
-
   /* Clean up */
   free(source_str);
 
-  return kernel;
+  return program;
+}
+  
+cl_program get_binary_kernel(cl_context *context,
+			     cl_device_id *device,
+			     char *filename){
+  FILE *fp;
+  const int num_binaries = 1;
+  unsigned char *binary_buffers[num_binaries];
+  size_t binary_sizes[num_binaries];
+  cl_int binary_status[num_binaries];
+  cl_int ret_codes[num_binaries];
+  /* Modified filename of the kernel binary (as opposed to source) */
+  char bname[STD_STRING_LEN];
+  /* Holds return value of calls to OpenCL API */
+  cl_int ret;
+  /* Modify the name of the kernel to point to a pre-compiled .aocx file */
+  strcpy(bname, filename);
+  char *ptr = strstr(bname, ".c");
+  sprintf(ptr, ".aocx");
+  /* Open and read the file containing the pre-compiled kernel */  
+  fp = fopen(bname, "rb");
+  if (!fp) {
+    fprintf(stderr, "Failed to load pre-compiled kernel: %s.\n", filename);
+    exit(1);
+  }
+  fseek(fp, 0, SEEK_END);
+  binary_sizes[0] = ftell(fp);
+  binary_buffers[0] = (unsigned char*)malloc(
+				  sizeof(unsigned char)*binary_sizes[0]);
+  rewind(fp);
+  fread(binary_buffers[0], binary_sizes[0], 1, fp);
+  fclose(fp);
+  fprintf(stdout, "Read %d bytes for binary %s\n", binary_sizes[0], bname);
+
+  /* Create the program object from the loaded binary */
+  cl_program program = clCreateProgramWithBinary(*context, 1, device,
+						 binary_sizes, binary_buffers,
+						 binary_status, &ret);
+  check_status("clCreateProgramWithBinary", ret);
+
+  /* Clean up */
+  for(int ibuf=0; ibuf<num_binaries; ibuf++){
+    free(binary_buffers[ibuf]);
+  }
+
+  return program;
 }
 
 /** Returns the duration of the supplied OpenCL event in nanoseconds.

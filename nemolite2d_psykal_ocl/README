@@ -19,7 +19,8 @@ Building
 ========
 
 The Makefile picks up the compiler to use, the location of the
-OpenCL libraries and any flags from environment variables. e.g.:
+OpenCL libraries and any flags from environment variables. e.g. to
+use AMD's dispatch library:
 
 export CC=gcc
 export OPENCL_LIBS="-L/opt/AMDAPPSDK-3.0/lib/x86_64 -lOpenCL"
@@ -28,6 +29,17 @@ export CFLAGS="-g -O0 -Wall"
 export LDFLAGS=-lm
 
 Typing 'make' at the command prompt should then build the code.
+
+For FPGA emulation:
+
+export CC=g++
+export LDFLAGS="-L/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/board/s5_ref/linux64/lib -L/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/host/linux64/lib -Wl,--no-as-needed -lalteracl -laltera_s5_ref_mmd -lelf"
+export CFLAGS="-I/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/host/include -fpermissive"
+export QUARTUS_ROOTDIR_OVERRIDE=/home/kbc59144/MyInstalls/intelFPGA/17.0/quartus
+export CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1
+
+Typing 'make nemolite2d_fpga' should then build the kernels and driver
+code.
 
 Configuration and running
 =========================

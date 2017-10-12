@@ -19,12 +19,17 @@ COMMON_MODULES = opencl_utils.o timing.o
 KERNEL_MODULES = continuity_kern.o momentum_kern.o \
                  boundary_conditions_kern.o time_update_kern.o
 
+KERNEL_BINARIES = $(KERNEL_MODULES:.o=.aocx)
+
 # Normal targets
 .PHONY: nemolite2d
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} ${KERNEL_MODULES}" nemolite2d.exe
 
-nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
+# Target for FPGA
+nemolite2d_fpga: ${KERNEL_BINARIES} nemolite2d
+
+nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES} ${KERNEL_BINARIES}
 
 # Interdependencies between modules, alphabetical order
 
@@ -37,7 +42,7 @@ nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
 	$(CC) $(CFLAGS) ${OPENCL_INCLUDE} -c $<
 
 %.aocx: %.cl
-	aoc -march=emulator -v --board s5_ref $< -o $@
+	aoc -D__OPENCL_VERSION__=100 -march=emulator -v --board s5_ref $< -o $@
 
 clean: 
 	rm -f *.o *~
