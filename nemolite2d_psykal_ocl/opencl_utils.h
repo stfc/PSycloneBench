@@ -11,21 +11,21 @@
 
 const char* OCL_GetErrorString(cl_int error);
 
-void check_status(char *text, cl_int err);
+void check_status(const char *text, cl_int err);
 
 cl_kernel get_kernel(cl_context *context,
 		     cl_device_id *device,
-		     char *version_str,
-		     char *filename,
-		     char *kernel_name);
+		     const char *version_str,
+		     const char *filename,
+		     const char *kernel_name);
 
 cl_program get_source_kernel(cl_context *context,
 			     cl_device_id *device,
-			     char *filename);
+			     const char *filename);
 
 cl_program get_binary_kernel(cl_context *context,
 			     cl_device_id *device,
-			     char *filename);
+			     const char *filename);
 
 cl_ulong duration_ns(cl_event event);
 #endif

@@ -111,7 +111,7 @@ void TimerInit()
 
 /*=====================================================*/
 
-void TimerStart(char* name)
+void TimerStart(const char* name)
 {
   int i;
 

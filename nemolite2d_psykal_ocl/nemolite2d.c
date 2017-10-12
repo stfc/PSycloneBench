@@ -37,7 +37,7 @@ double checksum(double *array, int width,
 
 /** Write the supplied integer field data to the specified file. Data
     formatted for use with gnuplot's splot command. */
-void write_ifield(char *filename, int nx, int ny,
+void write_ifield(const char *filename, int nx, int ny,
 		 int xstart, int ystart, int *field){
   int ji, jj, idx;
   FILE *fp = fopen(filename, "w");
@@ -59,7 +59,7 @@ void write_ifield(char *filename, int nx, int ny,
 
 /** Write the supplied double-precision field data to the specified
     file. Data formatted for use with gnuplot's splot command. */
-void write_field(char *filename, int nx, int ny,
+void write_field(const char *filename, int nx, int ny,
 		 int xstart, int ystart, double *field){
   int ji, jj, idx;
   FILE *fp = fopen(filename, "w");
@@ -260,7 +260,7 @@ int main(){
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,
 			  sizeof(cl_uint), &ndims, &result_len);
     size_t *max_sizes;
-    max_sizes = malloc(ndims*sizeof(size_t));
+    max_sizes = (size_t*)malloc(ndims*sizeof(size_t));
     ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_WORK_ITEM_SIZES,
 			  ndims*sizeof(size_t), max_sizes, &result_len);
     cl_uint max_units;
@@ -647,32 +647,32 @@ int main(){
   /*------------------------------------------------------------*/
   /* Field initialisation on host */
   
-  ssha = malloc(buff_size);
-  ssha_u = malloc(buff_size);
-  ssha_v = malloc(buff_size);
-  sshn = malloc(buff_size);
-  sshn_u = malloc(buff_size);
-  sshn_v = malloc(buff_size);
-  hu = malloc(buff_size);
-  hv = malloc(buff_size);
-  ht = malloc(buff_size);
-  un = malloc(buff_size);
-  vn = malloc(buff_size);
-  ua = malloc(buff_size);
-  va = malloc(buff_size);
-  e1u = malloc(buff_size);
-  e1v = malloc(buff_size);
-  e1t = malloc(buff_size);
-  e2u = malloc(buff_size);
-  e2v = malloc(buff_size);
-  e2t = malloc(buff_size);
-  e12u = malloc(buff_size);
-  e12v = malloc(buff_size);
-  e12t = malloc(buff_size);
-  tmask = malloc(nx*ny*sizeof(cl_int));
+  ssha = (cl_double*)malloc(buff_size);
+  ssha_u = (cl_double*)malloc(buff_size);
+  ssha_v = (cl_double*)malloc(buff_size);
+  sshn = (cl_double*)malloc(buff_size);
+  sshn_u = (cl_double*)malloc(buff_size);
+  sshn_v = (cl_double*)malloc(buff_size);
+  hu = (cl_double*)malloc(buff_size);
+  hv = (cl_double*)malloc(buff_size);
+  ht = (cl_double*)malloc(buff_size);
+  un = (cl_double*)malloc(buff_size);
+  vn = (cl_double*)malloc(buff_size);
+  ua = (cl_double*)malloc(buff_size);
+  va = (cl_double*)malloc(buff_size);
+  e1u = (cl_double*)malloc(buff_size);
+  e1v = (cl_double*)malloc(buff_size);
+  e1t = (cl_double*)malloc(buff_size);
+  e2u = (cl_double*)malloc(buff_size);
+  e2v = (cl_double*)malloc(buff_size);
+  e2t = (cl_double*)malloc(buff_size);
+  e12u = (cl_double*)malloc(buff_size);
+  e12v = (cl_double*)malloc(buff_size);
+  e12t = (cl_double*)malloc(buff_size);
+  tmask = (cl_int*)malloc(nx*ny*sizeof(cl_int));
 
-  gphiu = malloc(buff_size);
-  gphiv = malloc(buff_size);
+  gphiu = (cl_double*)malloc(buff_size);
+  gphiv = (cl_double*)malloc(buff_size);
 
   int xstart = 1;
   int xstop = nx - 1;
@@ -742,7 +742,7 @@ int main(){
 
   /* Create an array to store the event associated with each write
      to the device */
-  cl_event *write_events = malloc(num_buffers*sizeof(cl_event));
+  cl_event *write_events = (cl_event*)malloc(num_buffers*sizeof(cl_event));
   int buf_idx = 0;
   ret = clEnqueueWriteBuffer(command_queue, ssha_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha, 0,
@@ -852,7 +852,7 @@ int main(){
   /* Run the kernels */
 
   // Thread block size 
-  size_t global_size[2] = {nx, ny};
+  size_t global_size[2] = {(size_t)nx, (size_t)ny};
   size_t local_size[2] = {64, 1};
 
   TimerStart("Time-stepping, OpenCL");

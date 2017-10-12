@@ -117,7 +117,7 @@ const char* OCL_GetErrorString(cl_int error)
     }
 }
 
-void check_status(char *text, cl_int err){
+void check_status(const char *text, cl_int err){
   if(err != CL_SUCCESS){
     fprintf(stderr, "Hit error: %s: %s\n", text, OCL_GetErrorString(err));
     exit(1);
@@ -130,7 +130,9 @@ void check_status(char *text, cl_int err){
 /** Creates an OpenCL kernel for the supplied context and device. If the
  device is an FPGA then the kernel must be pre-compiled. */
 cl_kernel get_kernel(cl_context *context, cl_device_id *device,
-		     char *version_str, char *filename, char *kernel_name){
+		     const char *version_str,
+		     const char *filename,
+		     const char *kernel_name){
   /* Holds return value of calls to OpenCL API */
   cl_int ret;
   cl_kernel kernel = NULL;
@@ -153,7 +155,7 @@ cl_kernel get_kernel(cl_context *context, cl_device_id *device,
 /** Creates an OpenCL kernel by compiling it from the supplied source */
 cl_program get_source_kernel(cl_context *context,
 			     cl_device_id *device,
-			     char *filename){
+			     const char *filename){
   FILE *fp;
   char *source_str;
   size_t source_size;
@@ -203,7 +205,7 @@ cl_program get_source_kernel(cl_context *context,
   
 cl_program get_binary_kernel(cl_context *context,
 			     cl_device_id *device,
-			     char *filename){
+			     const char *filename){
   FILE *fp;
   const int num_binaries = 1;
   unsigned char *binary_buffers[num_binaries];
