@@ -214,16 +214,30 @@ cl_program get_binary_kernel(cl_context *context,
   cl_int ret_codes[num_binaries];
   /* Modified filename of the kernel binary (as opposed to source) */
   char bname[STD_STRING_LEN];
+  char *ptr;
   /* Holds return value of calls to OpenCL API */
   cl_int ret;
   /* Modify the name of the kernel to point to a pre-compiled .aocx file */
   strcpy(bname, filename);
-  char *ptr = strstr(bname, ".c");
-  sprintf(ptr, ".aocx");
+  
+  if(ptr = strstr(bname, ".c")){
+    /* We've been given the name of the kernel source file. We change the
+       suffix to get the name of the compiled version. */
+    sprintf(ptr, ".aocx");
+  }
+  else if(!strstr(bname, ".aocx")){
+    fprintf(stderr,
+	    "ERROR: get_binary_kernel: supplied filename (%s) is not a c "
+	    "source (.c) file or a compiled (.aocx) file\n", bname);
+    exit(1);
+  }
+
   /* Open and read the file containing the pre-compiled kernel */  
   fp = fopen(bname, "rb");
   if (!fp) {
-    fprintf(stderr, "Failed to load pre-compiled kernel: %s.\n", filename);
+    fprintf(stderr,
+	    "ERROR: get_binary_kernel: Failed to load pre-compiled kernel: "
+	    "%s.\n", filename);
     exit(1);
   }
   fseek(fp, 0, SEEK_END);

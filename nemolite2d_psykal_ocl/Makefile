@@ -27,9 +27,14 @@ nemolite2d:
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} ${KERNEL_MODULES}" nemolite2d.exe
 
 # Target for FPGA - we must compile the kernels using the off-line compiler
-nemolite2d_fpga: ${KERNEL_BINARIES} nemolite2d
+nemolite2d_fpga: nemolite2d_kernels.aocx nemolite2d
 
 nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
+
+# Compile all the kernels into a single file so that we can put them all on
+# one device
+nemolite2d_kernels.aocx: ${KERNEL_MODULES}
+	aoc -D__OPENCL_VERSION__=100 -march=emulator -v --board s5_ref ${KERNEL_MODULES:.o=.cl} -o $@
 
 # Interdependencies between modules, alphabetical order
 

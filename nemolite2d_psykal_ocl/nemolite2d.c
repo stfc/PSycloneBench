@@ -142,6 +142,9 @@ int main(){
   /** Default problem size. May be overridden by setting
       NEMOLITE2D_N{X,Y} environment variables. */
   char *env_string;
+  /** Name of file containing single, compiled image for multiple
+      kernels */
+  char *image_file = NULL;
   cl_int nx = 127;
   cl_int ny = 127;
   /** Our time-step index (passed into BCs kernel) */
@@ -202,6 +205,16 @@ int main(){
   if( (env_string = getenv("NEMOLITE2D_NY")) ){
     if(sscanf(env_string, "%d", &ny) != 1){
       fprintf(stderr, "Error parsing NEMOLITE2D_NY environment variable (%s)\n",
+	      env_string);
+      exit(1);
+    }
+  }
+  /* Check to see whether we should get our kernels from a single image file */
+  if( (env_string = getenv("NEMOLITE2D_SINGLE_IMAGE")) ){
+    if(sscanf(env_string, "%ms", &image_file) != 1){
+      fprintf(stderr,
+	      "Error parsing NEMOLITE2D_SINGLE_IMAGE environment "
+	      "variable (%s)\n",
 	      env_string);
       exit(1);
     }
@@ -1118,4 +1131,7 @@ int main(){
   ret = clReleaseCommandQueue(command_queue);
   ret = clReleaseContext(context);
 
+  if(image_file){
+    free(image_file);
+  }
 }
