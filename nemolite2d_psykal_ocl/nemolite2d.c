@@ -343,41 +343,101 @@ int main(){
   /* Create OpenCL Kernels and associated event objects (latter used
    to obtain detailed timing information). */
   cl_event cont_evt;
-  cont_kernel = get_kernel(&context, device, version_str,
-			   "./continuity_kern.c", "continuity_code");
+  if(image_file){
+    cont_kernel = get_kernel(&context, device, version_str,
+			     image_file, "continuity_code");
+  }
+  else{
+    cont_kernel = get_kernel(&context, device, version_str,
+			     "./continuity_kern.c", "continuity_code");
+  }
   cl_event momu_evt;
-  momu_kernel = get_kernel(&context, device, version_str,
-			   "./momentum_kern.c", "momentum_u_code");
+  if(image_file){
+    momu_kernel = get_kernel(&context, device, version_str,
+			     image_file, "momentum_u_code");
+  }
+  else{
+    momu_kernel = get_kernel(&context, device, version_str,
+			     "./momentum_kern.c", "momentum_u_code");
+  }
   cl_event momv_evt;
-  momv_kernel = get_kernel(&context, device, version_str,
-			   "./momentum_kern.c", "momentum_v_code");
+  if(image_file){
+    momv_kernel = get_kernel(&context, device, version_str,
+			     image_file, "momentum_v_code");
+  }
+  else{
+    momv_kernel = get_kernel(&context, device, version_str,
+			     "./momentum_kern.c", "momentum_v_code");
+  }
   cl_event bcssh_evt;
-  bc_ssh_kernel = get_kernel(&context, device, version_str,
-			     "./boundary_conditions_kern.c", "bc_ssh_code");
+  if(image_file){
+    bc_ssh_kernel = get_kernel(&context, device, version_str,
+			       image_file, "bc_ssh_code");
+  }
+  else{
+    bc_ssh_kernel = get_kernel(&context, device, version_str,
+			       "./boundary_conditions_kern.c", "bc_ssh_code");
+  }
   cl_event solidu_evt;
-  bc_solid_u_kernel = get_kernel(&context, device, version_str,
-				 "./boundary_conditions_kern.c",
-				 "bc_solid_u_code");
+  if(image_file){
+    bc_solid_u_kernel = get_kernel(&context, device, version_str,
+				   image_file, "bc_solid_u_code");
+  }
+  else{
+    bc_solid_u_kernel = get_kernel(&context, device, version_str,
+				   "./boundary_conditions_kern.c",
+				   "bc_solid_u_code");
+  }
   cl_event solidv_evt;
-  bc_solid_v_kernel = get_kernel(&context, device, version_str,
-				 "./boundary_conditions_kern.c",
-				 "bc_solid_v_code");
+  if(image_file){
+    bc_solid_v_kernel = get_kernel(&context, device, version_str,
+				   image_file, "bc_solid_v_code");
+  }
+  else{
+    bc_solid_v_kernel = get_kernel(&context, device, version_str,
+				   "./boundary_conditions_kern.c",
+				   "bc_solid_v_code");
+  }
   cl_event flatheru_evt;
-  bc_flather_u_kernel = get_kernel(&context, device, version_str,
-				   "./boundary_conditions_kern.c",
-				   "bc_flather_u_code");
+  if(image_file){
+    bc_flather_u_kernel = get_kernel(&context, device, version_str,
+				     image_file, "bc_flather_u_code");
+  }
+  else{
+    bc_flather_u_kernel = get_kernel(&context, device, version_str,
+				     "./boundary_conditions_kern.c",
+				     "bc_flather_u_code");
+  }
   cl_event flatherv_evt;
-  bc_flather_v_kernel = get_kernel(&context, device, version_str,
-				   "./boundary_conditions_kern.c",
-				   "bc_flather_v_code");
+  if(image_file){
+    bc_flather_v_kernel = get_kernel(&context, device, version_str,
+				     image_file, "bc_flather_v_code");
+  }
+  else{
+    bc_flather_v_kernel = get_kernel(&context, device, version_str,
+				     "./boundary_conditions_kern.c",
+				     "bc_flather_v_code");
+  }
   cl_event next_sshu_evt;
-  next_sshu_kernel = get_kernel(&context, device, version_str,
-				"./time_update_kern.c",
-				"next_sshu_code");
+  if(image_file){
+    next_sshu_kernel = get_kernel(&context, device, version_str,
+				  image_file, "next_sshu_code");
+  }
+  else{
+    next_sshu_kernel = get_kernel(&context, device, version_str,
+				  "./time_update_kern.c",
+				  "next_sshu_code");
+  }
   cl_event next_sshv_evt;
-  next_sshv_kernel = get_kernel(&context, device, version_str,
-				"./time_update_kern.c",
-				"next_sshv_code");
+  if(image_file){
+    next_sshv_kernel = get_kernel(&context, device, version_str,
+				  image_file, "next_sshv_code");
+  }
+  else{
+    next_sshv_kernel = get_kernel(&context, device, version_str,
+				  "./time_update_kern.c",
+				  "next_sshv_code");
+  }
 
   /* Create Device Memory Buffers */
   int num_buffers = 0;

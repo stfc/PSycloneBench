@@ -236,7 +236,7 @@ cl_program get_binary_kernel(cl_context *context,
   fp = fopen(bname, "rb");
   if (!fp) {
     fprintf(stderr,
-	    "ERROR: get_binary_kernel: Failed to load pre-compiled kernel: "
+	    "ERROR: get_binary_kernel: Failed to load pre-compiled kernel file: "
 	    "%s.\n", filename);
     exit(1);
   }
