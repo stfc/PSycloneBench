@@ -21,6 +21,9 @@ KERNEL_MODULES = continuity_kern.o momentum_kern.o \
 
 KERNEL_BINARIES = $(KERNEL_MODULES:.o=.aocx)
 
+AOC_FLAGS = -v -board=p385a_sch_ax115
+#AOC_FLAGS += -march=emulator
+
 # Normal targets
 .PHONY: nemolite2d
 nemolite2d: 
@@ -34,7 +37,7 @@ nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
 # Compile all the kernels into a single file so that we can put them all on
 # one device
 nemolite2d_kernels.aocx: ${KERNEL_MODULES}
-	aoc -D__OPENCL_VERSION__=100 -march=emulator -v --board s5_ref ${KERNEL_MODULES:.o=.cl} -o $@
+	aoc -D__OPENCL_VERSION__=100 ${AOC_FLAGS} ${KERNEL_MODULES:.o=.cl} -o $@
 
 # Interdependencies between modules, alphabetical order
 
@@ -48,7 +51,7 @@ nemolite2d_kernels.aocx: ${KERNEL_MODULES}
 
 # Compile the kernels for emulation on the CPU
 %.aocx: %.cl
-	aoc -D__OPENCL_VERSION__=100 -march=emulator -v --board s5_ref $< -o $@
+	aoc -D__OPENCL_VERSION__=100 ${AOC_FLAGS} $< -o $@
 
 clean: 
 	rm -f *.o *~
@@ -64,3 +67,4 @@ kernclean:
 	rm -rf $(KERNEL_MODULES:.o=)
 	rm -f ${KERNEL_BINARIES}
 	rm -f $(KERNEL_MODULES:.o=.aoco)
+	rm -f nemolite2d_kernels.aoc?

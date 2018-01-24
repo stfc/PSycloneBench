@@ -30,17 +30,20 @@ export LDFLAGS=-lm
 
 Typing 'make' at the command prompt should then build the code.
 
-For FPGA emulation:
+For FPGA *emulation*:
 
+export FPGA_BOARD=nalla_pcie
 export CC=g++
-export OPENCL_LIBS="-L/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/board/s5_ref/linux64/lib -L/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/host/linux64/lib -Wl,--no-as-needed -lalteracl -laltera_s5_ref_mmd -lelf"
-export OPENCL_INCLUDE=-I/home/kbc59144/MyInstalls/intelFPGA/17.0/hld/host/include
+export OPENCL_LIBS="-L${INTELFPGAOCLSDKROOT}/board/${BOARD}/linux64/lib -L${INTELFPGAOCLSDKROOT}/host/linux64/lib -Wl,--no-as-needed -lalteracl -l${BOARD}_mmd -lelf"
+export OPENCL_INCLUDE=-I${INTELFPGAOCLSDKROOT}/host/include
 export CFLAGS="-g -fpermissive"
-export QUARTUS_ROOTDIR_OVERRIDE=/home/kbc59144/MyInstalls/intelFPGA/17.0/quartus
 export CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1
 
 Typing 'make nemolite2d_fpga' should then build the kernels and driver
 code.
+
+Of course, if you want to run on the FPGA for real then you need to
+unset CL_CONTEXT_EMULATOR_DEVICE_ALTERA.
 
 Configuration and running
 =========================
