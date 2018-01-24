@@ -22,12 +22,16 @@ KERNEL_MODULES = continuity_kern.o momentum_kern.o \
 KERNEL_BINARIES = $(KERNEL_MODULES:.o=.aocx)
 
 AOC_FLAGS = -v -board=p385a_sch_ax115
-#AOC_FLAGS += -march=emulator
+AOC_FLAGS += -march=emulator
 
 # Normal targets
 .PHONY: nemolite2d
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} ${KERNEL_MODULES}" nemolite2d.exe
+
+# Single-kernel version of the application
+cont: continuity_kern.aocx
+	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="nemolite2d.o ${COMMON_MODULES} continuity_kern.o" cont.exe
 
 # Target for FPGA - we must compile the kernels using the off-line compiler
 nemolite2d_fpga: nemolite2d_kernels.aocx nemolite2d
