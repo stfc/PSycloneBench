@@ -33,6 +33,10 @@ nemolite2d:
 cont: continuity_kern.aocx
 	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="nemolite2d.o ${COMMON_MODULES} continuity_kern.o" cont.exe
 
+# Two-kernel version
+twokern: nemolite2d_kernels.aocx
+	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="twokern.o ${COMMON_MODULES} continuity_kern.o momentum_kern.o" twokern.exe
+
 # Target for FPGA - we must compile the kernels using the off-line compiler
 nemolite2d_fpga: nemolite2d_kernels.aocx nemolite2d
 
