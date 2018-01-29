@@ -16,43 +16,50 @@ all: $(EXECS)
 COMMON_MODULES = opencl_utils.o timing.o
 
 # Source files containing (OpenCL) kernels
-KERNEL_MODULES = continuity_kern.o momentum_kern.o \
+ALL_KERNEL_MODULES = continuity_kern.o momentum_u_kern.o momentum_v_kern.o \
                  boundary_conditions_kern.o time_update_kern.o
 
 KERNEL_BINARIES = $(KERNEL_MODULES:.o=.aocx)
+
+KERNEL_SOURCES = $(KERNEL_MODULES:.o=.cl)
 
 AOC_FLAGS = -v -board=p385a_sch_ax115
 AOC_FLAGS += -march=emulator
 
 # Normal targets
-.PHONY: nemolite2d
+.PHONY: nemolite2d fpga cont twokern
 nemolite2d: 
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} ${KERNEL_MODULES}" nemolite2d.exe
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" KERNEL_MODULES="${ALL_KERNEL_MODULES}" nemolite2d.exe
 
 # Single-kernel version of the application
-cont: continuity_kern.aocx
-	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="nemolite2d.o ${COMMON_MODULES} continuity_kern.o" cont.exe
+cont:
+	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o" cont.exe
 
 # Two-kernel version
-twokern: nemolite2d_kernels.aocx
-	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="twokern.o ${COMMON_MODULES} continuity_kern.o momentum_kern.o" twokern.exe
+twokern:
+	${MAKE} KERNEL_MODULES="continuity_kern.o momentum_u_kern.o" fpga
+	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="twokern.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o momentum_u_kern.o" twokern.exe
 
 # Target for FPGA - we must compile the kernels using the off-line compiler
-nemolite2d_fpga: nemolite2d_kernels.aocx nemolite2d
+nemolite2d_fpga:
+	${MAKE} KERNEL_MODULES=${ALL_KERNEL_MODULES} fpga
+	${MAKE} KERNEL_MODULES=${ALL_KERNEL_MODULES} nemolite2d
 
 nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
 
 # Compile all the kernels into a single file so that we can put them all on
 # one device
-nemolite2d_kernels.aocx: ${KERNEL_MODULES}
-	aoc -D__OPENCL_VERSION__=100 ${AOC_FLAGS} ${KERNEL_MODULES:.o=.cl} -o $@
-
-# Interdependencies between modules, alphabetical order
+fpga: ${KERNEL_MODULES:.o=.cl}
+	aoc -D__OPENCL_VERSION__=100 ${AOC_FLAGS} ${KERNEL_MODULES:.o=.cl} -o nemolite2d_kernels
 
 # Generic rules
 
-%.exe: $(MODULE_LIST)
-	$(CC) -o $@ $(MODULE_LIST) ${OPENCL_LIBS} $(LDFLAGS)
+%.exe: $(MODULE_LIST) ${KERNEL_MODULES}
+	$(CC) -o $@ $(MODULE_LIST) ${KERNEL_MODULES} ${OPENCL_LIBS} $(LDFLAGS)
+
+# The OpenCL compiler expects sources to have the .cl suffix
+%.cl: %.c
+	ln -sf $< $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) ${OPENCL_INCLUDE} -c $<
@@ -62,7 +69,7 @@ nemolite2d_kernels.aocx: ${KERNEL_MODULES}
 	aoc -D__OPENCL_VERSION__=100 ${AOC_FLAGS} $< -o $@
 
 clean: 
-	rm -f *.o *~
+	rm -f *.o *~ *.cl
 
 allclean: clean
 	rm -f *.exe fparser.log
