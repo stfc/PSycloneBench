@@ -4,9 +4,6 @@
 
 /* Headers for the C versions of the kernels */
 #include "continuity.h"
-#include "momentum.h"
-#include "boundary_conditions.h"
-#include "time_update.h"
 
 #include "opencl_utils.h"
 #include "timing.h"
@@ -124,15 +121,6 @@ int main(){
 
   /* Our OpenCL kernel objects */
   cl_kernel cont_kernel = NULL;
-  cl_kernel momu_kernel = NULL;
-  cl_kernel momv_kernel = NULL;
-  cl_kernel bc_ssh_kernel = NULL;
-  cl_kernel bc_solid_u_kernel  = NULL;
-  cl_kernel bc_solid_v_kernel  = NULL;
-  cl_kernel bc_flather_u_kernel  = NULL;
-  cl_kernel bc_flather_v_kernel  = NULL;
-  cl_kernel next_sshu_kernel  = NULL;
-  cl_kernel next_sshv_kernel  = NULL;
 
   cl_platform_id platform_ids[MAX_DEVICES];
   cl_uint ret_num_devices;
@@ -351,95 +339,6 @@ int main(){
     cont_kernel = get_kernel(&context, device, version_str,
 			     "./continuity_kern.c", "continuity_code");
   }
-#ifndef SINGLE_KERNEL
-  cl_event momu_evt;
-  if(image_file){
-    momu_kernel = get_kernel(&context, device, version_str,
-			     image_file, "momentum_u_code");
-  }
-  else{
-    momu_kernel = get_kernel(&context, device, version_str,
-			     "./momentum_kern.c", "momentum_u_code");
-  }
-  cl_event momv_evt;
-  if(image_file){
-    momv_kernel = get_kernel(&context, device, version_str,
-			     image_file, "momentum_v_code");
-  }
-  else{
-    momv_kernel = get_kernel(&context, device, version_str,
-			     "./momentum_kern.c", "momentum_v_code");
-  }
-  cl_event bcssh_evt;
-  if(image_file){
-    bc_ssh_kernel = get_kernel(&context, device, version_str,
-			       image_file, "bc_ssh_code");
-  }
-  else{
-    bc_ssh_kernel = get_kernel(&context, device, version_str,
-			       "./boundary_conditions_kern.c", "bc_ssh_code");
-  }
-  cl_event solidu_evt;
-  if(image_file){
-    bc_solid_u_kernel = get_kernel(&context, device, version_str,
-				   image_file, "bc_solid_u_code");
-  }
-  else{
-    bc_solid_u_kernel = get_kernel(&context, device, version_str,
-				   "./boundary_conditions_kern.c",
-				   "bc_solid_u_code");
-  }
-  cl_event solidv_evt;
-  if(image_file){
-    bc_solid_v_kernel = get_kernel(&context, device, version_str,
-				   image_file, "bc_solid_v_code");
-  }
-  else{
-    bc_solid_v_kernel = get_kernel(&context, device, version_str,
-				   "./boundary_conditions_kern.c",
-				   "bc_solid_v_code");
-  }
-  cl_event flatheru_evt;
-  if(image_file){
-    bc_flather_u_kernel = get_kernel(&context, device, version_str,
-				     image_file, "bc_flather_u_code");
-  }
-  else{
-    bc_flather_u_kernel = get_kernel(&context, device, version_str,
-				     "./boundary_conditions_kern.c",
-				     "bc_flather_u_code");
-  }
-  cl_event flatherv_evt;
-  if(image_file){
-    bc_flather_v_kernel = get_kernel(&context, device, version_str,
-				     image_file, "bc_flather_v_code");
-  }
-  else{
-    bc_flather_v_kernel = get_kernel(&context, device, version_str,
-				     "./boundary_conditions_kern.c",
-				     "bc_flather_v_code");
-  }
-  cl_event next_sshu_evt;
-  if(image_file){
-    next_sshu_kernel = get_kernel(&context, device, version_str,
-				  image_file, "next_sshu_code");
-  }
-  else{
-    next_sshu_kernel = get_kernel(&context, device, version_str,
-				  "./time_update_kern.c",
-				  "next_sshu_code");
-  }
-  cl_event next_sshv_evt;
-  if(image_file){
-    next_sshv_kernel = get_kernel(&context, device, version_str,
-				  image_file, "next_sshv_code");
-  }
-  else{
-    next_sshv_kernel = get_kernel(&context, device, version_str,
-				  "./time_update_kern.c",
-				  "next_sshv_code");
-  }
-#endif /* ndef SINGLE_KERNEL */
 
   /* Create Device Memory Buffers */
   int num_buffers = 0;
@@ -447,17 +346,6 @@ int main(){
   ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			       NULL, &ret);
   num_buffers++;
-#ifndef SINGLE_KERNEL
-  check_status("clCreateBuffer", ret);
-  ssha_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-				 NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  ssha_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-				 NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-#endif
   sshn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			       NULL, &ret);
   num_buffers++;
@@ -477,13 +365,6 @@ int main(){
   hv_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			     NULL, &ret);
   num_buffers++;
-#ifndef SINGLE_KERNEL
-  check_status("clCreateBuffer", ret);
-  ht_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-			     NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-#endif
   
   /* Velocity fields */
   un_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
@@ -494,74 +375,13 @@ int main(){
 			     NULL, &ret);
   num_buffers++;
   check_status("clCreateBuffer", ret);
-#ifndef SINGLE_KERNEL
-  ua_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-			     NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  va_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-			     NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-#endif
 
   /* Mesh scale factors */
-#ifndef SINGLE_KERNEL
-  e1t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-			      NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  e1u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-			      NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  e1v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-			      NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  e2u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-			      NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  e2v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-			      NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  e2t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-			      NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  e12u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-                          NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-
-  e12v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-                          NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-
-  tmask_device = clCreateBuffer(context, CL_MEM_READ_ONLY,
-				(size_t)(nx*ny*sizeof(cl_int)), NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-#endif
   e12t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
                           NULL, &ret);
   num_buffers++;
   check_status("clCreateBuffer", ret);
 
-  /* Coriolis parameters */
-#ifndef SINGLE_KERNEL
-  gphiu_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-				NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  gphiv_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-				NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-#endif
   fprintf(stdout, "Created %d device buffers OK\n", num_buffers);
 
   /* Set OpenCL Kernel Parameters for Continuity */
@@ -600,134 +420,6 @@ int main(){
   check_status("clSetKernelArg", ret);
   fprintf(stdout, "Set %d arguments for Continuity kernel\n", arg_idx);
   
-#ifndef SINGLE_KERNEL
-  /* Set OpenCL Kernel Parameters for Momentum-u */
-  set_args_momu(momu_kernel,
-		&nx,
-		&ua_device, &un_device, &vn_device,
-		&hu_device, &hv_device, &ht_device,
-		&ssha_u_device, &sshn_device,
-		&sshn_u_device, &sshn_v_device,
-		&tmask_device,
-		&e1u_device, &e1v_device,
-		&e1t_device, &e2u_device,
-		&e2t_device, &e12u_device,
-		&gphiu_device,
-		&rdt, &cbfr, &visc);
-
-  /* Set OpenCL Kernel Parameters for Momentum-v */
-  set_args_momv(momv_kernel,
-		&nx,
-		&va_device, &un_device, &vn_device,
-		&hu_device, &hv_device, &ht_device,
-		&ssha_v_device, &sshn_device,
-		&sshn_u_device, &sshn_v_device,
-		&tmask_device,
-		&e1v_device, &e1t_device,
-		&e2u_device, &e2v_device,
-		&e2t_device, &e12v_device,
-		&gphiv_device,
-		&rdt, &cbfr, &visc);
-
-  /* Set kernel arguments for bc_ssh */
-  arg_idx = 0;
-  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_int),
-		       (void *)&nx);
-  check_status("clSetKernelArg", ret);
-  arg_idx++; // Skip time-step argument here - do in time-stepping loop
-  /* ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_int), */
-  /* 		       (void *)&istep); */
-  /* check_status("clSetKernelArg", ret); */
-  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&ssha_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&tmask_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_double),
-		       (void *)&rdt);
-  check_status("clSetKernelArg", ret);
-
-  fprintf(stdout, "Set %d arguments for bc-ssh kernel\n", arg_idx);
-
-  /* Set OpenCL Kernel Parameters for bc_solid_u kernel */
-  arg_idx = 0;
-  ret = clSetKernelArg(bc_solid_u_kernel, arg_idx++, sizeof(cl_int),
-		       (void *)&nx);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_solid_u_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&ua_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_solid_u_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&tmask_device);
-  check_status("clSetKernelArg", ret);
-
-  fprintf(stdout, "Set %d arguments for bc_solid_u kernel\n", arg_idx);
-
-  /* Set OpenCL Kernel Parameters for bc_solid_v kernel */
-  arg_idx = 0;
-  ret = clSetKernelArg(bc_solid_v_kernel, arg_idx++, sizeof(cl_int),
-		       (void *)&nx);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_solid_v_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&va_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_solid_v_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&tmask_device);
-  check_status("clSetKernelArg", ret);
-
-  fprintf(stdout, "Set %d arguments for bc_solid_v kernel\n", arg_idx);
-
-  /* Set OpenCL Kernel Parameters for bc_flather_u kernel */
-  arg_idx = 0;
-  ret = clSetKernelArg(bc_flather_u_kernel, arg_idx++, sizeof(cl_int),
-		       (void *)&nx);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_flather_u_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&ua_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_flather_u_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&hu_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_flather_u_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_u_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_flather_u_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&tmask_device);
-  check_status("clSetKernelArg", ret);
-
-  fprintf(stdout, "Set %d arguments for bc_flather_u kernel\n", arg_idx);
-
-  /* Set OpenCL Kernel Parameters for bc_flather_v kernel */
-  arg_idx = 0;
-  ret = clSetKernelArg(bc_flather_v_kernel, arg_idx++, sizeof(cl_int),
-		       (void *)&nx);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_flather_v_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&va_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_flather_v_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&hv_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_flather_v_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_v_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(bc_flather_v_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&tmask_device);
-  check_status("clSetKernelArg", ret);
-
-  fprintf(stdout, "Set %d arguments for bc_flather_v kernel\n", arg_idx);
-  
-  /* Set OpenCL Kernel Parameters for next_sshu kernel */
-  set_args_next_sshv(next_sshu_kernel,
-		     &nx, &sshn_u_device, &sshn_device, &tmask_device,
-		     &e12t_device, &e12u_device);
-  
-  /* Set OpenCL Kernel Parameters for next_sshv kernel */
-  set_args_next_sshv(next_sshv_kernel,
-		     &nx, &sshn_v_device, &sshn_device, &tmask_device,
-		     &e12t_device, &e12v_device);
-#endif
   TimerStop();
 
   /*------------------------------------------------------------*/
@@ -834,16 +526,6 @@ int main(){
 			     (size_t)buff_size, (void *)ssha, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-#ifndef SINGLE_KERNEL
-  ret = clEnqueueWriteBuffer(command_queue, ssha_u_device, 1, 0,
-			     (size_t)buff_size, (void *)ssha_u, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, ssha_v_device, 1, 0,
-			     (size_t)buff_size, (void *)ssha_v, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-#endif
   ret = clEnqueueWriteBuffer(command_queue, sshn_device, 1, 0,
 			     (size_t)buff_size, (void *)sshn, 0,
 			     NULL, &(write_events[buf_idx++]));
@@ -864,12 +546,6 @@ int main(){
 			     (size_t)buff_size, (void *)hv, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-#ifndef SINGLE_KERNEL
-  ret = clEnqueueWriteBuffer(command_queue, ht_device, 1, 0,
-			     (size_t)buff_size, (void *)ht, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-#endif
   ret = clEnqueueWriteBuffer(command_queue, un_device, 1, 0,
 			     (size_t)buff_size, (void *)un, 0,
 			     NULL, &(write_events[buf_idx++]));
@@ -878,65 +554,10 @@ int main(){
 			     (size_t)buff_size, (void *)vn, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-#ifndef SINGLE_KERNEL
-  ret = clEnqueueWriteBuffer(command_queue, ua_device, 1, 0,
-			     (size_t)buff_size, (void *)ua, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, va_device, 1, 0,
-			     (size_t)buff_size, (void *)va, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, e1u_device, 1, 0,
-			     (size_t)buff_size, (void *)e1u, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, e1v_device, 1, 0,
-			     (size_t)buff_size, (void *)e1v, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, e1t_device, 1, 0,
-			     (size_t)buff_size, (void *)e1t, 0,
-			     NULL, &(write_events[buf_idx++]));
-  ret = clEnqueueWriteBuffer(command_queue, e2u_device, 1, 0,
-			     (size_t)buff_size, (void *)e2u, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, e2v_device, 1, 0,
-			     (size_t)buff_size, (void *)e2v, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, e2t_device, 1, 0,
-			     (size_t)buff_size, (void *)e2t, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, e12u_device, 1, 0,
-			     (size_t)buff_size, (void *)e12u, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, e12v_device, 1, 0,
-			     (size_t)buff_size, (void *)e12v, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-#endif
   ret = clEnqueueWriteBuffer(command_queue, e12t_device, 1, 0,
 			     (size_t)buff_size, (void *)e12t, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-#ifndef SINGLE_KERNEL
-  ret = clEnqueueWriteBuffer(command_queue, gphiu_device, 1, 0,
-			     (size_t)buff_size, (void *)gphiu, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, gphiv_device, 1, 0,
-			     (size_t)buff_size, (void *)gphiv, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, tmask_device, 1, 0,
-			     (size_t)(nx*ny*sizeof(cl_int)), (void *)tmask, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-#endif
   ret = clWaitForEvents(num_buffers, write_events);
   check_status("clWaitForEvents", ret);
 
@@ -953,67 +574,10 @@ int main(){
   
   for(istep=1; istep<=nsteps; istep++){
 
-#ifndef SINGLE_KERNEL
-    /* Update the time-step index argument to the bc-ssh kernel */
-    ret = clSetKernelArg(bc_ssh_kernel, 1, sizeof(cl_int),
-			 (void *)&istep);
-    check_status("clSetKernelArg", ret);
-#endif
-
     ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
     				 global_size, NULL, 0, NULL, &cont_evt);
     check_status("clEnqueueNDRangeKernel(Continuity)", ret);
 
-#ifndef SINGLE_KERNEL
-    /* Experimentation on a K20c showed that this work-group size was
-       optimal for that device */
-    local_size[0] = 64;
-    local_size[1] = 1;
-    if (local_size[0] > nx) local_size[0] = nx;
-    ret = clEnqueueNDRangeKernel(command_queue, momu_kernel, 2, 0,
-				 global_size, local_size, 0, NULL, &momu_evt);
-    check_status("clEnqueueNDRangeKernel(Mom-u)", ret);
-    ret = clEnqueueNDRangeKernel(command_queue, momv_kernel, 2, 0,
-				 global_size, local_size, 0, NULL, &momv_evt);
-    check_status("clEnqueueNDRangeKernel(Mom-v)", ret);
-    ret = clEnqueueNDRangeKernel(command_queue, bc_ssh_kernel, 2, NULL,
-    				 global_size, NULL, 0,0, &bcssh_evt);
-    check_status("clEnqueueNDRangeKernel(bc-ssh)", ret);
-
-    /* Apply boundary conditions */
-    ret = clEnqueueNDRangeKernel(command_queue, bc_solid_u_kernel, 2, 0,
-				 global_size, NULL, 0,0, &solidu_evt);
-    check_status("clEnqueueNDRangeKernel(bc-solid-u)", ret);
-    ret = clEnqueueNDRangeKernel(command_queue, bc_solid_v_kernel, 2, 0,
-    				 global_size, NULL, 0,0, &solidv_evt);
-    check_status("clEnqueueNDRangeKernel(bc-solid-v)", ret);
-    ret = clEnqueueNDRangeKernel(command_queue, bc_flather_u_kernel, 2, 0,
-				 global_size, NULL, 0,0, &flatheru_evt);
-    check_status("clEnqueueNDRangeKernel(bc-flather-u)", ret);
-    ret = clEnqueueNDRangeKernel(command_queue, bc_flather_v_kernel, 2, 0,
-    				 global_size, NULL, 0,0, &flatherv_evt);
-    check_status("clEnqueueNDRangeKernel(bc-flather-v)", ret);
-
-    /* Copy 'after' fields to 'now' fields */
-    ret = clEnqueueCopyBuffer(command_queue, ua_device, un_device, 0, 0,
-			      buff_size,0, NULL, NULL);
-    check_status("clEnqueueCopyBuffer", ret);
-    ret = clEnqueueCopyBuffer(command_queue, va_device, vn_device, 0, 0,
-			      buff_size,0, NULL, NULL);
-    check_status("clEnqueueCopyBuffer", ret);
-    ret = clEnqueueCopyBuffer(command_queue, ssha_device, sshn_device, 0, 0,
-			      buff_size,0, NULL, NULL);
-    check_status("clEnqueueCopyBuffer", ret);
-
-    /* Update of sshu and sshv fields */
-    ret = clEnqueueNDRangeKernel(command_queue, next_sshu_kernel, 2, 0,
-				 global_size, NULL, 0, 0, &next_sshu_evt);
-    check_status("clEnqueueNDRangeKernel(next-sshu)", ret);
-  
-    ret = clEnqueueNDRangeKernel(command_queue, next_sshv_kernel, 2, 0,
-				 global_size, NULL, 0, 0, &next_sshv_evt);
-    check_status("clEnqueueNDRangeKernel(next-sshv)", ret);
-#endif
   }
 
   /* Block on the execution of the last kernel */
@@ -1039,81 +603,6 @@ int main(){
     			un, vn, rdt, e12t);
       }
     }
-#ifndef SINGLE_KERNEL
-    for(jj=ystart; jj<ystop; jj++){
-      for(ji=xstart; ji<xstop-1; ji++){
-	momentum_u_code(ji, jj, nx,                     
-			ua, un, vn, hu, hv, ht,
-			ssha_u, sshn, sshn_u, sshn_v, tmask,
-			e1u, e1v, e1t, e2u, e2t, e12u, gphiu,
-			rdt, cbfr, visc);
-      }
-    }
-    for(jj=ystart; jj<ystop-1; jj++){
-      for(ji=xstart; ji<xstop; ji++){
-	momentum_v_code(ji, jj, nx,                     
-			va, un, vn, hu, hv, ht,
-			ssha_v, sshn, sshn_u, sshn_v, tmask,
-			e1v, e1t, e2u, e2v, e2t, e12v, gphiv,
-			rdt, cbfr, visc);
-      }
-    }
-    for(jj=ystart; jj<ystop; jj++){
-      for(ji=xstart; ji<xstop; ji++){
-    	bc_ssh_code(ji, jj, nx,
-    		    istep, ssha, tmask, rdt);
-      }
-    }
-    /* Upper loop limit for jj should encompass whole domain here (i.e. be
-       greater than any of the limits for the previous loops) */
-    for(jj=ystart-1; jj<ystop+1; jj++){
-      for(ji=xstart-1; ji<xstop; ji++){
-	bc_solid_u_code(ji, jj, nx,
-			ua, tmask);
-      }
-    }
-    /* Upper loop limit for ji should encompass whole domain here (i.e. be
-       greater than any of the limits for the previous loops) */
-    for(jj=ystart-1; jj<ystop; jj++){
-      for(ji=xstart-1; ji<xstop+1; ji++){
-    	bc_solid_v_code(ji, jj, nx,
-    			va, tmask);
-      }
-    }
-    /* Upper loop limit for jj should encompass whole domain here (i.e. be
-       greater than any of the limits for the previous loops) */
-    for(jj=ystart-1; jj<ystop+1; jj++){
-      for(ji=xstart-1; ji<xstop; ji++){
-	bc_flather_u_code(ji, jj, nx,
-			  ua, hu, sshn_u, tmask);
-      }
-    }
-    /* Upper loop limit for ji should encompass whole domain here (i.e. be
-       greater than any of the limits for the previous loops) */
-    for(jj=ystart-1; jj<ystop; jj++){
-      for(ji=xstart-1; ji<xstop+1; ji++){
-    	bc_flather_v_code(ji, jj, nx,
-    			  va, hv, sshn_v, tmask);
-      }
-    }
-    /* Copy 'after' fields to 'now' fields */
-    memcpy(un, ua, buff_size);
-    memcpy(vn, va, buff_size);
-    memcpy(sshn, ssha, buff_size);
-
-    for(jj=ystart; jj<ystop; jj++){
-      for(ji=xstart; ji<xstop-1; ji++){
-	next_sshu_code(ji, jj, nx,
-		       sshn_u, sshn, tmask, e12t, e12u);
-      }
-    }
-    for(jj=ystart; jj<ystop-1; jj++){
-      for(ji=xstart;ji<xstop; ji++){
-	next_sshv_code(ji, jj, nx,
-		       sshn_v, sshn, tmask, e12t, e12v);
-      }
-    }
-#endif
   }
 
   TimerStop();
@@ -1135,18 +624,6 @@ int main(){
 			    &(read_events[0]));
   nread++;
   check_status("clEnqueueReadBuffer", ret);
-#ifndef SINGLE_KERNEL
-  ret = clEnqueueReadBuffer(command_queue, ua_device, CL_TRUE, 0,
-			    (size_t)buff_size, (void *)ua, 0, NULL,
-			    &(read_events[1]));
-  nread++;
-  check_status("clEnqueueReadBuffer", ret);
-  ret = clEnqueueReadBuffer(command_queue, va_device, CL_TRUE, 0,
-			    (size_t)buff_size, (void *)va, 0, NULL,
-			    &(read_events[2]));
-  nread++;
-  check_status("clEnqueueReadBuffer", ret);
-#endif
   clWaitForEvents(nread, read_events);
   check_status("clWaitForEvents", ret);
 
@@ -1174,12 +651,6 @@ int main(){
   if(profiling_enabled){
     fprintf(stdout, "Time spent in Continuity kern = %e us\n",
   	    duration_ns(cont_evt)*0.001);
-#ifndef SINGLE_KERNEL
-    fprintf(stdout, "Time spent in Momentum-u kern = %e us\n",
-            duration_ns(momu_evt)*0.001);
-    fprintf(stdout, "Time spent in Momentum-v kern = %e us\n",
-            duration_ns(momv_evt)*0.001);
-#endif
   }
 
   /* Generate report on host timings */
@@ -1189,17 +660,6 @@ int main(){
   ret = clFlush(command_queue);
   ret = clFinish(command_queue);
   ret = clReleaseKernel(cont_kernel);
-#ifndef SINGLE_KERNEL
-  ret = clReleaseKernel(momu_kernel);
-  ret = clReleaseKernel(momv_kernel);
-  ret = clReleaseKernel(bc_ssh_kernel);
-  ret = clReleaseKernel(bc_solid_u_kernel);
-  ret = clReleaseKernel(bc_solid_v_kernel);
-  ret = clReleaseKernel(bc_flather_u_kernel);
-  ret = clReleaseKernel(bc_flather_v_kernel);
-  ret = clReleaseKernel(next_sshu_kernel);
-  ret = clReleaseKernel(next_sshv_kernel);
-#endif
 
   ret = clReleaseProgram(program);
   ret = clReleaseMemObject(ssha_device);
@@ -1211,24 +671,6 @@ int main(){
   ret = clReleaseMemObject(un_device);
   ret = clReleaseMemObject(vn_device);
   ret = clReleaseMemObject(e12t_device);
-#ifndef SINGLE_KERNEL
-  ret = clReleaseMemObject(ssha_u_device);
-  ret = clReleaseMemObject(ssha_v_device);
-  ret = clReleaseMemObject(ht_device);
-  ret = clReleaseMemObject(ua_device);
-  ret = clReleaseMemObject(va_device);
-  ret = clReleaseMemObject(e1u_device);
-  ret = clReleaseMemObject(e1v_device);
-  ret = clReleaseMemObject(e1t_device);
-  ret = clReleaseMemObject(e2u_device);
-  ret = clReleaseMemObject(e2v_device);
-  ret = clReleaseMemObject(e2t_device);
-  ret = clReleaseMemObject(e12u_device);
-  ret = clReleaseMemObject(e12v_device);
-  ret = clReleaseMemObject(gphiu_device);
-  ret = clReleaseMemObject(gphiv_device);
-  ret = clReleaseMemObject(tmask_device);
-#endif
   ret = clReleaseCommandQueue(command_queue);
   ret = clReleaseContext(context);
 

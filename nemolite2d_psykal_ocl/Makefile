@@ -33,7 +33,7 @@ nemolite2d:
 
 # Single-kernel version of the application
 cont:
-	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o" cont.exe
+	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="cont_only.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o" cont.exe
 
 # Two-kernel version
 twokern:
