@@ -719,7 +719,7 @@ int main(){
   fprintf(stdout, "Set %d arguments for bc_flather_v kernel\n", arg_idx);
   
   /* Set OpenCL Kernel Parameters for next_sshu kernel */
-  set_args_next_sshv(next_sshu_kernel,
+  set_args_next_sshu(next_sshu_kernel,
 		     &nx, &sshn_u_device, &sshn_device, &tmask_device,
 		     &e12t_device, &e12u_device);
   
