@@ -7,6 +7,7 @@
 
 #include "opencl_utils.h"
 #include "timing.h"
+#include "math.h"
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -463,11 +464,11 @@ int main(){
       hu[idx] = dep_const;
       hv[idx] = dep_const;
       ht[idx] = dep_const;
-      un[idx] = 0.0;
+      un[idx] = 0.01;
       vn[idx] = 0.0;
-      sshn_u[idx] = 0.0;
-      sshn_v[idx] = 0.0;
-      sshn[idx] = 0.0;
+      sshn_u[idx] = cos((360.0*ji)/(float)nx);//0.0;
+      sshn_v[idx] = cos((360.0*ji)/(float)nx);//0.0;
+      sshn[idx] = sin((360.0*ji)/(float)nx);//0.0;
       ssha[idx] = 0.0;
       // Grid properties
       e1u[idx] = dx;
@@ -570,22 +571,22 @@ int main(){
   size_t global_size[2] = {(size_t)nx, (size_t)ny};
   size_t local_size[2] = {64, 1};
 
+  local_size[0] = 64;
+  local_size[1] = 1;
+  if (local_size[0] > nx) local_size[0] = nx;
+    
   TimerStart("Time-stepping, OpenCL");
   
   for(istep=1; istep<=nsteps; istep++){
 
     ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
-    				 global_size, NULL, 0, NULL, &cont_evt);
+    				 global_size, local_size, 0, NULL, &cont_evt);
     check_status("clEnqueueNDRangeKernel(Continuity)", ret);
 
   }
 
   /* Block on the execution of the last kernel */
-#ifdef SINGLE_KERNEL
   ret = clWaitForEvents(1, &cont_evt);
-#else
-  ret = clWaitForEvents(1, &next_sshv_evt);
-#endif
   check_status("clWaitForEvents", ret);
 
   TimerStop();
