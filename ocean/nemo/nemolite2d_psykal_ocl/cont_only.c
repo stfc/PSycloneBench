@@ -1,13 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "math.h"
 
 /* Headers for the C versions of the kernels */
 #include "continuity.h"
 
+#include "nemolite2d_utils.h"
 #include "opencl_utils.h"
 #include "timing.h"
-#include "math.h"
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -136,6 +137,7 @@ int main(){
   char *image_file = NULL;
   cl_int nx = 127;
   cl_int ny = 127;
+  int xstart, xstop, ystart, ystop;
   /** Our time-step index (passed into BCs kernel) */
   cl_int istep;
   /** Number of time-steps to do. May be overridden by setting
@@ -425,93 +427,17 @@ int main(){
 
   /*------------------------------------------------------------*/
   /* Field initialisation on host */
-  
-  ssha = (cl_double*)malloc(buff_size);
-  ssha_u = (cl_double*)malloc(buff_size);
-  ssha_v = (cl_double*)malloc(buff_size);
-  sshn = (cl_double*)malloc(buff_size);
-  sshn_u = (cl_double*)malloc(buff_size);
-  sshn_v = (cl_double*)malloc(buff_size);
-  hu = (cl_double*)malloc(buff_size);
-  hv = (cl_double*)malloc(buff_size);
-  ht = (cl_double*)malloc(buff_size);
-  un = (cl_double*)malloc(buff_size);
-  vn = (cl_double*)malloc(buff_size);
-  ua = (cl_double*)malloc(buff_size);
-  va = (cl_double*)malloc(buff_size);
-  e1u = (cl_double*)malloc(buff_size);
-  e1v = (cl_double*)malloc(buff_size);
-  e1t = (cl_double*)malloc(buff_size);
-  e2u = (cl_double*)malloc(buff_size);
-  e2v = (cl_double*)malloc(buff_size);
-  e2t = (cl_double*)malloc(buff_size);
-  e12u = (cl_double*)malloc(buff_size);
-  e12v = (cl_double*)malloc(buff_size);
-  e12t = (cl_double*)malloc(buff_size);
-  tmask = (cl_int*)malloc(nx*ny*sizeof(cl_int));
-
-  gphiu = (cl_double*)malloc(buff_size);
-  gphiv = (cl_double*)malloc(buff_size);
-
-  int xstart = 1;
-  int xstop = nx - 1;
-  int ystart = 1;
-  int ystop = ny - 1;
-
-  for(jj=0;jj<ny;jj++){
-    for(ji=0;ji<nx;ji++){
-      idx = jj*nx + ji;
-      hu[idx] = dep_const;
-      hv[idx] = dep_const;
-      ht[idx] = dep_const;
-      un[idx] = 0.01;
-      vn[idx] = 0.0;
-      sshn_u[idx] = cos((360.0*ji)/(float)nx);//0.0;
-      sshn_v[idx] = cos((360.0*ji)/(float)nx);//0.0;
-      sshn[idx] = sin((360.0*ji)/(float)nx);//0.0;
-      ssha[idx] = 0.0;
-      // Grid properties
-      e1u[idx] = dx;
-      e1v[idx] = dx;
-      e1t[idx] = dx;
-      e2u[idx] = dy;
-      e2v[idx] = dy;
-      e2t[idx] = dy;
-      e12u[idx] = dx*dy;
-      e12v[idx] = e12u[idx];
-      e12t[idx] = e12u[idx];
-      // f-plane test case (constant Coriolis parameter)
-      gphiu[idx] = 50.0;
-      gphiv[idx] = 50.0;
-      // All inner cells
-      tmask[idx] = 1;
-    }
-  }
-  for(jj=0;jj<ny;jj++){
-    idx = jj*nx;
-    // West solid boundary
-    for(ji=0; ji<xstart; ji++){
-      tmask[idx+ji] = 0;
-    }
-    // East solid boundary
-    for(ji=xstop; ji<nx; ji++){
-      tmask[idx+ji] = 0;
-    }
-  }
-  // Southern open boundary
-  for(jj=0; jj<ystart; jj++){
-    idx = jj*nx;
-    for(ji=0;ji<nx;ji++){
-      tmask[idx + ji] = -1;
-    }
-  }
-  // North solid boundary
-  for(jj=ystop; jj<ny; jj++){
-    idx = jj*nx;
-    for(ji=0;ji<nx;ji++){
-      tmask[idx + ji] = 0;
-    }
-  }
+  init_fields(nx, ny, dx, dy, dep_const,
+	      &xstart, &xstop, &ystart, &ystop,
+	      &ssha,  &ssha_u, &ssha_v,
+	      &sshn,  &sshn_u, &sshn_v,
+	      &hu,  &hv,  &ht,
+	      &un,  &vn,  &ua, &va,
+	      &gphiu, &gphiv,
+	      &e1u,  &e1v,  &e1t,
+	      &e2u,  &e2v,  &e2t,
+	      &e12t, &e12u, &e12v,
+	      &tmask);
   
   write_ifield("tmask.dat", nx, ny, 0, 0, tmask);
   

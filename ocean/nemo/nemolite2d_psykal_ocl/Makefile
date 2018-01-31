@@ -13,7 +13,7 @@ EXECS = nemolite2d
 
 all: $(EXECS)
 
-COMMON_MODULES = opencl_utils.o timing.o
+COMMON_MODULES = opencl_utils.o timing.o nemolite2d_utils.o
 
 # Source files containing (OpenCL) kernels
 ALL_KERNEL_MODULES = continuity_kern.o momentum_u_kern.o momentum_v_kern.o \
@@ -22,6 +22,7 @@ ALL_KERNEL_MODULES = continuity_kern.o momentum_u_kern.o momentum_v_kern.o \
 # Flags for the Altera Offline Compiler. Need the -D__OPENCL_VERSION__
 # because the kernel source files also include CPU code
 AOC_FLAGS = -v -board=p385a_sch_ax115 -D__OPENCL_VERSION__=100
+#AOC_FLAGS += -c
 AOC_FLAGS += -march=emulator
 
 # Normal targets
