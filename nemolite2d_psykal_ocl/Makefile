@@ -19,11 +19,9 @@ COMMON_MODULES = opencl_utils.o timing.o
 ALL_KERNEL_MODULES = continuity_kern.o momentum_u_kern.o momentum_v_kern.o \
                  boundary_conditions_kern.o time_update_kern.o
 
-KERNEL_BINARIES = $(KERNEL_MODULES:.o=.aocx)
-
-KERNEL_SOURCES = $(KERNEL_MODULES:.o=.cl)
-
-AOC_FLAGS = -v -board=p385a_sch_ax115
+# Flags for the Altera Offline Compiler. Need the -D__OPENCL_VERSION__
+# because the kernel source files also include CPU code
+AOC_FLAGS = -v -board=p385a_sch_ax115 -D__OPENCL_VERSION__=100
 AOC_FLAGS += -march=emulator
 
 # Normal targets
@@ -34,6 +32,9 @@ nemolite2d:
 # Single-kernel version of the application
 cont:
 	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="cont_only.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o" cont.exe
+
+cont_kern: continuity_kern.cl
+	aoc ${AOC_FLAGS} continuity_kern.cl
 
 # Two-kernel version
 twokern:
@@ -50,7 +51,7 @@ nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
 # Compile all the kernels into a single file so that we can put them all on
 # one device
 fpga: ${KERNEL_MODULES:.o=.cl}
-	aoc -D__OPENCL_VERSION__=100 ${AOC_FLAGS} ${KERNEL_MODULES:.o=.cl} -o nemolite2d_kernels
+	aoc ${AOC_FLAGS} ${KERNEL_MODULES:.o=.cl} -o nemolite2d_kernels
 
 # Generic rules
 
@@ -79,7 +80,5 @@ allclean: clean
 # hardware then we're not often going to want to delete them - hence
 # a separate target for that...
 kernclean:
-	rm -rf $(KERNEL_MODULES:.o=)
-	rm -f ${KERNEL_BINARIES}
-	rm -f $(KERNEL_MODULES:.o=.aoco)
-	rm -f nemolite2d_kernels.aoc?
+	rm -rf $(ALL_KERNEL_MODULES:.o=)
+	rm -f *.aoc?
