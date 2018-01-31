@@ -25,7 +25,7 @@ AOC_FLAGS = -v -board=p385a_sch_ax115 -D__OPENCL_VERSION__=100
 AOC_FLAGS += -march=emulator
 
 # Normal targets
-.PHONY: nemolite2d fpga cont twokern
+.PHONY: nemolite2d fpga cont twokern twokernchannels
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" KERNEL_MODULES="${ALL_KERNEL_MODULES}" nemolite2d.exe
 
@@ -39,7 +39,12 @@ cont_kern: continuity_kern.cl
 # Two-kernel version
 twokern:
 	${MAKE} KERNEL_MODULES="continuity_kern.o momentum_u_kern.o" fpga
-	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="twokern.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o momentum_u_kern.o" twokern.exe
+	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="twokern.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o momentum_u_kern.o" twokern.exe
+
+# Two-kernel version with streaming using FIFO buffers
+twokernchannels:
+	${MAKE} KERNEL_MODULES="continuity_kern.o time_update_u_kern.o" fpga
+	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="twokernchannels.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o time_update_u_kern.o" twokernchannels.exe
 
 # Target for FPGA - we must compile the kernels using the off-line compiler
 nemolite2d_fpga:
