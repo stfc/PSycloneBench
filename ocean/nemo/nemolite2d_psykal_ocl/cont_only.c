@@ -427,6 +427,7 @@ int main(){
 
   /*------------------------------------------------------------*/
   /* Field initialisation on host */
+
   init_fields(nx, ny, dx, dy, dep_const,
 	      &xstart, &xstop, &ystart, &ystop,
 	      &ssha,  &ssha_u, &ssha_v,
