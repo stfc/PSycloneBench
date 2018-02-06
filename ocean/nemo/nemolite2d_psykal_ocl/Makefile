@@ -47,6 +47,10 @@ twokernchannels:
 	${MAKE} KERNEL_MODULES="continuity_kern_channel.o time_update_u_kern_channel.o" fpga
 	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="twokernchannels.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o time_update_u_kern.o" twokernchannels.exe
 
+simplechannel:
+	${MAKE} KERNEL_MODULES="read_write_kern.o" fpga
+	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="simplechannel.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o time_update_u_kern.o" simplechannel.exe
+
 # Target for FPGA - we must compile the kernels using the off-line compiler
 nemolite2d_fpga:
 	${MAKE} KERNEL_MODULES=${ALL_KERNEL_MODULES} fpga
