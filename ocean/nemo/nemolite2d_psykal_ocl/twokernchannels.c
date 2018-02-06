@@ -341,7 +341,8 @@ int main(){
   }
   else{
     cont_kernel = get_kernel(&context, device, version_str,
-			     "./continuity_kern.c", "continuity_code");
+			     "./continuity_kern_channel.c",
+			     "continuity_code");
   }
   cl_event next_sshu_evt;
   if(image_file){
@@ -350,7 +351,7 @@ int main(){
   }
   else{
     next_sshu_kernel = get_kernel(&context, device, version_str,
-				  "./time_update_kern.c",
+				  "./time_update_u_kern_channel.c",
 				  "next_sshu_code");
   }
 

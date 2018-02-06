@@ -44,7 +44,7 @@ twokern:
 
 # Two-kernel version with streaming using FIFO buffers
 twokernchannels:
-	${MAKE} KERNEL_MODULES="continuity_kern.o time_update_u_kern.o" fpga
+	${MAKE} KERNEL_MODULES="continuity_kern_channel.o time_update_u_kern_channel.o" fpga
 	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="twokernchannels.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o time_update_u_kern.o" twokernchannels.exe
 
 # Target for FPGA - we must compile the kernels using the off-line compiler
