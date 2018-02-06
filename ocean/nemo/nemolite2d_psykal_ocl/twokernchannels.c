@@ -407,41 +407,12 @@ int main(){
   fprintf(stdout, "Created %d device buffers OK\n", num_buffers);
 
   /* Set OpenCL Kernel Parameters for Continuity */
-  int arg_idx = 0;
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)&nx);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&ssha_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_u_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_v_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&hu_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&hv_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&un_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&vn_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_double),
-		       (void *)&rdt);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e12t_device);
-  check_status("clSetKernelArg", ret);
-  fprintf(stdout, "Set %d arguments for Continuity kernel\n", arg_idx);
-  
+  set_args_continuity(cont_kernel, &nx,
+		      &ssha_device, &sshn_device,
+		      &sshn_u_device, &sshn_v_device,
+		      &hu_device, &hv_device,
+		      &un_device, &vn_device,
+		      &rdt, &e12t_device); 
   
   /* Set OpenCL Kernel Parameters for next_sshu kernel */
   set_args_next_sshu(next_sshu_kernel,

@@ -1,3 +1,63 @@
+#ifndef __OPENCL_VERSION__
+#include <stdio.h>
+#include "opencl_utils.h"
+
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
+
+void set_args_continuity(cl_kernel cont_kernel,
+			 cl_int *nx,
+			 cl_mem *ssha_device,
+			 cl_mem *sshn_device,
+			 cl_mem *sshn_u_device,
+			 cl_mem *sshn_v_device,
+			 cl_mem *hu_device,
+			 cl_mem *hv_device,
+			 cl_mem *un_device,
+			 cl_mem *vn_device,
+			 cl_double *rdt,
+			 cl_mem *e12t_device){
+  cl_int ret;
+  int arg_idx = 0;
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)&nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&ssha_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_u_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&sshn_v_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&hu_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&hv_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&un_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&vn_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_double),
+		       (void *)&rdt);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+		       (void *)&e12t_device);
+  check_status("clSetKernelArg", ret);
+  
+  fprintf(stdout, "Set %d arguments for Continuity kernel\n", arg_idx);
+}
+#endif
 /*
   type, extends(kernel_type) :: continuity
      type(arg), dimension(10) :: meta_args =    &
