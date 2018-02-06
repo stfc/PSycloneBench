@@ -11,7 +11,7 @@
 #include "opencl_utils.h"
 
 #define MAX_SOURCE_SIZE (0x100000)
-#define VERBOSE 0
+#define VERBOSE 1
 
 const char* OCL_GetErrorString(cl_int error)
 {

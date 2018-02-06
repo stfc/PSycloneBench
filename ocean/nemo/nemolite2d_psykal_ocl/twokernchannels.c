@@ -19,64 +19,9 @@
 /** Maximum number of OpenCL devices we will query */
 #define MAX_DEVICES 4
 
-/** Compute a checksum for a double precision array of unknown no. of rows
-    but with each row containing width entries */
-double checksum(double *array, int width,
-		int nx, int ny, int xstart, int ystart){
-  int i, j, jidx;
-  double sum = 0.0;
-  for(j=ystart; j<ny; j++){
-    jidx = j*width;
-    for(i=xstart; i<nx; i++){
-      sum += array[i+jidx];
-    }
-  }
-  return sum;
-}
+/** The number of concurrent kernels in our design */
+#define NUM_KERNELS 2
 
-/** Write the supplied integer field data to the specified file. Data
-    formatted for use with gnuplot's splot command. */
-void write_ifield(const char *filename, int nx, int ny,
-		 int xstart, int ystart, int *field){
-  int ji, jj, idx;
-  FILE *fp = fopen(filename, "w");
-  if(!fp){
-    fprintf(stderr, "write_ifield: failed to open file %s\n", filename);
-    return;
-  }
-
-  idx = 0;
-  for(jj=ystart; jj<ny; jj++){
-    for(ji=xstart; ji<nx; ji++){
-      fprintf(fp, "%d %d\n", ji, field[idx++]);
-    }
-    fprintf(fp, "\n");
-  }
-
-  fclose(fp);
-}
-
-/** Write the supplied double-precision field data to the specified
-    file. Data formatted for use with gnuplot's splot command. */
-void write_field(const char *filename, int nx, int ny,
-		 int xstart, int ystart, double *field){
-  int ji, jj, idx;
-  FILE *fp = fopen(filename, "w");
-  if(!fp){
-    fprintf(stderr, "write_field: failed to open file %s\n", filename);
-    return;
-  }
-
-  idx = 0;
-  for(jj=ystart; jj<ny; jj++){
-    for(ji=xstart; ji<nx; ji++){
-      fprintf(fp, "%d %e\n", ji, field[idx++]);
-    }
-    fprintf(fp, "\n");
-  }
-
-  fclose(fp);
-}
 
 /** Top-level driver program. Queries the hardware to find OpenCL devices,
     creates OpenCL kernels and runs them. Also runs the same kernels on
@@ -88,7 +33,10 @@ int main(){
   cl_device_id *device;
   int idev;
   cl_context context = NULL;
-  cl_command_queue command_queue = NULL;
+  /* In order to run multiple kernels concurrently, we must have
+     multiple command queues (since the Intel OpenCL SDK only supports
+     in-order queues) */
+  cl_command_queue command_queue[NUM_KERNELS];
   cl_command_queue_properties queue_properties = 0;
   cl_bool profiling_enabled = 0;
 
@@ -314,30 +262,23 @@ int main(){
   check_status("clCreateContext", ret);
   
   /* Create Command Queue with properties set to NULL */
-  if(cl_version < 200){
+  for(ji=0; ji<NUM_KERNELS; ji++){
     /* The Intel/Altera OpenCL SDK is only version 1.0 */
     /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
        to call the ...WithProperties version of this routine */
-    command_queue = clCreateCommandQueue(context,
-					 *device,
-					 queue_properties, &ret);
+    command_queue[ji] = clCreateCommandQueue(context,
+					     *device,
+					     queue_properties, &ret);
     check_status("clCreateCommandQueue", ret);
   }
-  else{
-    //command_queue = clCreateCommandQueueWithProperties(context,
-    //						       *device,
-    //					       &queue_properties, &ret);
-    //check_status("clCreateCommandQueueWithProperties", ret);
-    fprintf(stderr, "Implement use of clCreateCommandQueueWithProperties!\n");
-    exit(1);
-  }
-    
+
   /* Create OpenCL Kernels and associated event objects (latter used
    to obtain detailed timing information). */
   cl_event cont_evt;
   if(image_file){
     cont_kernel = get_kernel(&context, device, version_str,
-			     image_file, "continuity_code");
+			     image_file,
+			     "continuity_code");
   }
   else{
     cont_kernel = get_kernel(&context, device, version_str,
@@ -347,7 +288,8 @@ int main(){
   cl_event next_sshu_evt;
   if(image_file){
     next_sshu_kernel = get_kernel(&context, device, version_str,
-				  image_file, "next_sshu_code");
+				  image_file,
+                                  "next_sshu_code");
   }
   else{
     next_sshu_kernel = get_kernel(&context, device, version_str,
@@ -446,47 +388,47 @@ int main(){
      to the device */
   cl_event *write_events = (cl_event*)malloc(num_buffers*sizeof(cl_event));
   int buf_idx = 0;
-  ret = clEnqueueWriteBuffer(command_queue, ssha_device, 1, 0,
+  ret = clEnqueueWriteBuffer(command_queue[0], ssha_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, sshn_device, 1, 0,
+  ret = clEnqueueWriteBuffer(command_queue[0], sshn_device, 1, 0,
 			     (size_t)buff_size, (void *)sshn, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, sshn_u_device, 1, 0,
+  ret = clEnqueueWriteBuffer(command_queue[0], sshn_u_device, 1, 0,
 			     (size_t)buff_size, (void *)sshn_u, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, sshn_v_device, 1, 0,
+  ret = clEnqueueWriteBuffer(command_queue[0], sshn_v_device, 1, 0,
 			     (size_t)buff_size, (void *)sshn_v, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, hu_device, 1, 0,
+  ret = clEnqueueWriteBuffer(command_queue[0], hu_device, 1, 0,
 			     (size_t)buff_size, (void *)hu, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, hv_device, 1, 0,
+  ret = clEnqueueWriteBuffer(command_queue[0], hv_device, 1, 0,
 			     (size_t)buff_size, (void *)hv, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, un_device, 1, 0,
+  ret = clEnqueueWriteBuffer(command_queue[0], un_device, 1, 0,
 			     (size_t)buff_size, (void *)un, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, vn_device, 1, 0,
+  ret = clEnqueueWriteBuffer(command_queue[0], vn_device, 1, 0,
 			     (size_t)buff_size, (void *)vn, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, e12u_device, 1, 0,
+  ret = clEnqueueWriteBuffer(command_queue[0], e12u_device, 1, 0,
 			     (size_t)buff_size, (void *)e12u, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, e12t_device, 1, 0,
+  ret = clEnqueueWriteBuffer(command_queue[0], e12t_device, 1, 0,
 			     (size_t)buff_size, (void *)e12t, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue, tmask_device, 1, 0,
+  ret = clEnqueueWriteBuffer(command_queue[0], tmask_device, 1, 0,
 			     (size_t)(nx*ny*sizeof(cl_int)), (void *)tmask, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
@@ -507,15 +449,14 @@ int main(){
   
   for(istep=1; istep<=nsteps; istep++){
 
-    ret = clEnqueueNDRangeKernel(command_queue, cont_kernel, 2, 0,
+    ret = clEnqueueNDRangeKernel(command_queue[0], cont_kernel, 2, 0,
     				 global_size, NULL, 0, NULL, &cont_evt);
     check_status("clEnqueueNDRangeKernel(Continuity)", ret);
 
     /* Update of sshu field */
-    ret = clEnqueueNDRangeKernel(command_queue, next_sshu_kernel, 2, 0,
+    ret = clEnqueueNDRangeKernel(command_queue[1], next_sshu_kernel, 2, 0,
 				 global_size, NULL, 0, 0, &next_sshu_evt);
     check_status("clEnqueueNDRangeKernel(next-sshu)", ret);
-  
   }
 
   /* Block on the execution of the last kernel */
@@ -560,7 +501,7 @@ int main(){
   /* Copy data back from device, synchronously. */
   cl_event read_events[3];
   int nread = 0;
-  ret = clEnqueueReadBuffer(command_queue, ssha_device, CL_TRUE, 0,
+  ret = clEnqueueReadBuffer(command_queue[0], ssha_device, CL_TRUE, 0,
 			    (size_t)buff_size, (void *)ssha, 0, NULL,
 			    &(read_events[0]));
   nread++;
@@ -600,8 +541,10 @@ int main(){
   TimerReport();
 
   /* Clean up */
-  ret = clFlush(command_queue);
-  ret = clFinish(command_queue);
+  for(ji=0; ji<NUM_KERNELS; ji++){
+    ret = clFlush(command_queue[ji]);
+    ret = clFinish(command_queue[ji]);
+  }
   ret = clReleaseKernel(cont_kernel);
   ret = clReleaseKernel(next_sshu_kernel);
 
@@ -618,7 +561,9 @@ int main(){
   ret = clReleaseMemObject(e12u_device);
   ret = clReleaseMemObject(tmask_device);
 
-  ret = clReleaseCommandQueue(command_queue);
+  for(ji=0; ji<NUM_KERNELS; ji++){
+    ret = clReleaseCommandQueue(command_queue[ji]);
+  }
   ret = clReleaseContext(context);
 
   if(image_file){

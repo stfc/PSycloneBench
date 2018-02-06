@@ -17,3 +17,12 @@ int init_fields(int nx, int ny,  cl_double dx, cl_double dy,
 		cl_double **e2u, cl_double **e2v, cl_double **e2t,
 		cl_double **e12t, cl_double **e12u, cl_double **e12v,
 		cl_int **tmask);
+
+double checksum(double *array, int width,
+		int nx, int ny, int xstart, int ystart);
+
+void write_ifield(const char *filename, int nx, int ny,
+		  int xstart, int ystart, int *field);
+
+void write_field(const char *filename, int nx, int ny,
+		 int xstart, int ystart, double *field);

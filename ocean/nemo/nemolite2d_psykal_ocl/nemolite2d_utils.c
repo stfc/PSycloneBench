@@ -1,5 +1,6 @@
 #include "opencl_utils.h"
 #include "math.h"
+#include <stdio.h>
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -7,6 +8,7 @@
 #include <CL/cl.h>
 #endif
 
+/** Allocate memory and initialise field values */
 int init_fields(int nx, int ny, cl_double dx, cl_double dy,
 		cl_double dep_const,
 		int *xstart, int *xstop, int *ystart, int *ystop,
@@ -111,4 +113,63 @@ int init_fields(int nx, int ny, cl_double dx, cl_double dy,
   }
 
   return 0;
+}
+
+/** Compute a checksum for a double precision array of unknown no. of rows
+    but with each row containing width entries */
+double checksum(double *array, int width,
+		int nx, int ny, int xstart, int ystart){
+  int i, j, jidx;
+  double sum = 0.0;
+  for(j=ystart; j<ny; j++){
+    jidx = j*width;
+    for(i=xstart; i<nx; i++){
+      sum += array[i+jidx];
+    }
+  }
+  return sum;
+}
+
+/** Write the supplied integer field data to the specified file. Data
+    formatted for use with gnuplot's splot command. */
+void write_ifield(const char *filename, int nx, int ny,
+		 int xstart, int ystart, int *field){
+  int ji, jj, idx;
+  FILE *fp = fopen(filename, "w");
+  if(!fp){
+    fprintf(stderr, "write_ifield: failed to open file %s\n", filename);
+    return;
+  }
+
+  idx = 0;
+  for(jj=ystart; jj<ny; jj++){
+    for(ji=xstart; ji<nx; ji++){
+      fprintf(fp, "%d %d\n", ji, field[idx++]);
+    }
+    fprintf(fp, "\n");
+  }
+
+  fclose(fp);
+}
+
+/** Write the supplied double-precision field data to the specified
+    file. Data formatted for use with gnuplot's splot command. */
+void write_field(const char *filename, int nx, int ny,
+		 int xstart, int ystart, double *field){
+  int ji, jj, idx;
+  FILE *fp = fopen(filename, "w");
+  if(!fp){
+    fprintf(stderr, "write_field: failed to open file %s\n", filename);
+    return;
+  }
+
+  idx = 0;
+  for(jj=ystart; jj<ny; jj++){
+    for(ji=xstart; ji<nx; ji++){
+      fprintf(fp, "%d %e\n", ji, field[idx++]);
+    }
+    fprintf(fp, "\n");
+  }
+
+  fclose(fp);
 }
