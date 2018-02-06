@@ -22,37 +22,37 @@ void set_args_continuity(cl_kernel cont_kernel,
 			 cl_mem *e12t_device){
   cl_int ret;
   int arg_idx = 0;
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)&nx);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)nx);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&ssha_device);
+		       (void *)ssha_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_device);
+		       (void *)sshn_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_u_device);
+		       (void *)sshn_u_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_v_device);
+		       (void *)sshn_v_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&hu_device);
+		       (void *)hu_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&hv_device);
+		       (void *)hv_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&un_device);
+		       (void *)un_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&vn_device);
+		       (void *)vn_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_double),
-		       (void *)&rdt);
+		       (void *)rdt);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&e12t_device);
+		       (void *)e12t_device);
   check_status("clSetKernelArg", ret);
   
   fprintf(stdout, "Set %d arguments for Continuity kernel\n", arg_idx);
