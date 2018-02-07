@@ -42,30 +42,7 @@ int main(){
 
   /* Buffers on the device */
   cl_mem ssha_device = NULL;
-  cl_mem ssha_u_device = NULL;
-  cl_mem ssha_v_device = NULL;
   cl_mem sshn_device = NULL;
-  cl_mem sshn_u_device = NULL;
-  cl_mem sshn_v_device = NULL;
-  cl_mem ht_device = NULL;
-  cl_mem hu_device = NULL;
-  cl_mem hv_device = NULL;
-  cl_mem un_device = NULL;
-  cl_mem vn_device = NULL;
-  cl_mem ua_device = NULL;
-  cl_mem va_device = NULL;
-  cl_mem e1u_device = NULL;
-  cl_mem e1v_device = NULL;
-  cl_mem e1t_device = NULL;
-  cl_mem e2u_device = NULL;
-  cl_mem e2v_device = NULL;
-  cl_mem e2t_device = NULL;
-  cl_mem e12u_device = NULL;
-  cl_mem e12v_device = NULL;
-  cl_mem e12t_device = NULL;
-  cl_mem gphiu_device = NULL;
-  cl_mem gphiv_device = NULL;
-  cl_mem tmask_device = NULL;
 
   cl_program program = NULL;
 
@@ -297,45 +274,6 @@ int main(){
 			       NULL, &ret);
   num_buffers++;
   check_status("clCreateBuffer", ret);
-  sshn_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-				 NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  sshn_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-				 NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  hu_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-			     NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  hv_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-			     NULL, &ret);
-  num_buffers++;
-  
-  /* Velocity fields */
-  un_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-			     NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  vn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
-			     NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-
-  /* Mesh scale factors */
-  e12u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-                          NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  e12t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-                          NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
-  tmask_device = clCreateBuffer(context, CL_MEM_READ_ONLY,
-				(size_t)(nx*ny*sizeof(cl_int)), NULL, &ret);
-  num_buffers++;
-  check_status("clCreateBuffer", ret);
 
   fprintf(stdout, "Created %d device buffers OK\n", num_buffers);
 
@@ -392,42 +330,6 @@ int main(){
 			     (size_t)buff_size, (void *)sshn, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue[0], sshn_u_device, 1, 0,
-			     (size_t)buff_size, (void *)sshn_u, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue[0], sshn_v_device, 1, 0,
-			     (size_t)buff_size, (void *)sshn_v, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue[0], hu_device, 1, 0,
-			     (size_t)buff_size, (void *)hu, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue[0], hv_device, 1, 0,
-			     (size_t)buff_size, (void *)hv, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue[0], un_device, 1, 0,
-			     (size_t)buff_size, (void *)un, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue[0], vn_device, 1, 0,
-			     (size_t)buff_size, (void *)vn, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue[0], e12u_device, 1, 0,
-			     (size_t)buff_size, (void *)e12u, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue[0], e12t_device, 1, 0,
-			     (size_t)buff_size, (void *)e12t, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue[0], tmask_device, 1, 0,
-			     (size_t)(nx*ny*sizeof(cl_int)), (void *)tmask, 0,
-			     NULL, &(write_events[buf_idx++]));
-  check_status("clEnqueueWriteBuffer", ret);
 
   ret = clWaitForEvents(num_buffers, write_events);
   check_status("clWaitForEvents", ret);
@@ -436,9 +338,6 @@ int main(){
   
   /*------------------------------------------------------------*/
   /* Run the kernels */
-
-  // Thread block size 
-  size_t global_size[2] = {(size_t)nx, (size_t)ny};
 
   TimerStart("Time-stepping, OpenCL");
   
@@ -462,40 +361,7 @@ int main(){
   check_status("clWaitForEvents", ret);
 
   TimerStop();
-  
-  /* Run the kernels on the CPU */
-
-  TimerStart("Time-stepping, C");
-  
-  for(istep=1; istep<=nsteps; istep++){
     
-    for(jj=ystart; jj<ystop; jj++){
-      for(ji=xstart; ji<xstop; ji++){
-    	continuity_code(ji, jj, nx,
-    			ssha, sshn, sshn_u, sshn_v, hu, hv,
-    			un, vn, rdt, e12t);
-      }
-    }
-
-    for(jj=ystart; jj<ystop; jj++){
-      for(ji=xstart; ji<xstop-1; ji++){
-	next_sshu_code(ji, jj, nx,
-		       sshn_u, sshn, tmask, e12t, e12u);
-      }
-    }
-  }
-
-  TimerStop();
-
-  write_field("ssha_cpu.dat", nx, ny, 0, 0, ssha);
-  write_field("ua_cpu.dat", nx, ny, 0, 0, ua);
-  write_field("va_cpu.dat", nx, ny, 0, 0, va);
-  
-  /* Dump final fields computed on CPU */
-  cpu_sum[0] = checksum(ssha, nx, xstop, ystop, xstart, ystart);
-  cpu_sum[1] = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
-  cpu_sum[2] = checksum(va, nx, xstop, ystop-1, xstart, ystart);
-
   /* Copy data back from device, synchronously. */
   cl_event read_events[3];
   int nread = 0;
@@ -507,24 +373,10 @@ int main(){
   clWaitForEvents(nread, read_events);
   check_status("clWaitForEvents", ret);
 
-  /* Compute and output a checksum */
-  ocl_sum[0] = checksum(ssha, nx, xstop, ystop, xstart, ystart);
-
   /* Dump final fields computed on OpenCL device */
   write_field("ssha_ocl.dat", nx, ny, 0, 0, ssha);
   write_field("ua_ocl.dat", nx, ny, 0, 0, ua);
   write_field("va_ocl.dat", nx, ny, 0, 0, va);
-
-  fprintf(stdout, "After %d time-steps for %d x %d domain:\n",
-	  nsteps, nx-1, ny-1);
-  fprintf(stdout, "ssha checksums (CPU, OpenCL) = %e, %e. Diff = %e\n",
-          cpu_sum[0], ocl_sum[0], cpu_sum[0]-ocl_sum[0]);
-  ocl_sum[1] = checksum(ua, nx, xstop-1, ystop, xstart, ystart);
-  fprintf(stdout, "ua checksums (CPU, OpenCL) = %e, %e. Diff = %e\n",
-          cpu_sum[1], ocl_sum[1], cpu_sum[1]-ocl_sum[1]);
-  ocl_sum[2] = checksum(va, nx, xstop, ystop-1, xstart, ystart);
-  fprintf(stdout, "va checksums (CPU, OpenCL) = %e, %e. Diff = %e\n",
-          cpu_sum[2], ocl_sum[2], cpu_sum[2]-ocl_sum[2]);
 
   /* Extract profiling info from the OpenCL runtime. Note that this will
      be the time taken during the most recent execution of each kernel. */
@@ -549,15 +401,6 @@ int main(){
   ret = clReleaseProgram(program);
   ret = clReleaseMemObject(ssha_device);
   ret = clReleaseMemObject(sshn_device);
-  ret = clReleaseMemObject(sshn_u_device);
-  ret = clReleaseMemObject(sshn_v_device);
-  ret = clReleaseMemObject(hu_device);
-  ret = clReleaseMemObject(hv_device);
-  ret = clReleaseMemObject(un_device);
-  ret = clReleaseMemObject(vn_device);
-  ret = clReleaseMemObject(e12t_device);
-  ret = clReleaseMemObject(e12u_device);
-  ret = clReleaseMemObject(tmask_device);
 
   for(ji=0; ji<NUM_KERNELS; ji++){
     ret = clReleaseCommandQueue(command_queue[ji]);
