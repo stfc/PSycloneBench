@@ -49,7 +49,7 @@ twokernchannels:
 
 simplechannel:
 	${MAKE} KERNEL_MODULES="read_write_kern.o" fpga
-	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="simplechannel.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o time_update_u_kern.o" simplechannel.exe
+	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="simplechannel.o ${COMMON_MODULES}" KERNEL_MODULES="" simplechannel.exe
 
 # Target for FPGA - we must compile the kernels using the off-line compiler
 nemolite2d_fpga:
@@ -68,7 +68,7 @@ fpga: ${KERNEL_MODULES:.o=.cl}
 %.exe: $(MODULE_LIST) ${KERNEL_MODULES}
 	$(CC) -o $@ $(MODULE_LIST) ${KERNEL_MODULES} ${OPENCL_LIBS} $(LDFLAGS)
 
-# The OpenCL compiler expects sources to have the .cl suffix
+# The Altera Off-line Compiler expects sources to have the .cl suffix
 %.cl: %.c
 	ln -sf $< $@
 

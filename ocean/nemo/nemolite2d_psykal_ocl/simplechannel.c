@@ -2,10 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-/* Headers for the C versions of the kernels */
-#include "continuity.h"
-#include "time_update.h"
-
 #include "nemolite2d_utils.h"
 #include "opencl_utils.h"
 #include "timing.h"
@@ -257,11 +253,21 @@ int main(){
 			     image_file,
 			     "channel_write");
   }
+  else{
+    fprintf(stderr, "Please set NEMOLITE2D_SINGLE_IMAGE to point to the "
+	    ".aocx containing the compiled kernels\n");
+    exit(1);
+  }
   cl_event next_sshu_evt;
   if(image_file){
     next_sshu_kernel = get_kernel(&context, device, version_str,
 				  image_file,
 				  "channel_read");
+  }
+  else{
+    fprintf(stderr, "Please set NEMOLITE2D_SINGLE_IMAGE to point to the "
+	    ".aocx containing the compiled kernels\n");
+    exit(1);
   }
 
   /* Create Device Memory Buffers */
