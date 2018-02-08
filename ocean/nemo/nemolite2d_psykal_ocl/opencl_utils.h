@@ -9,6 +9,10 @@
 
 #define STD_STRING_LEN 128
 
+void init_device(cl_device_id *device,
+		 char *version_str,
+		 cl_context *context);
+
 const char* OCL_GetErrorString(cl_int error);
 
 void check_status(const char *text, cl_int err);

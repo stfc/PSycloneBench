@@ -10,8 +10,123 @@
 
 #include "opencl_utils.h"
 
+/** Maximum number of OpenCL devices we will query */
+#define MAX_DEVICES 4
+
 #define MAX_SOURCE_SIZE (0x100000)
 #define VERBOSE 1
+
+/** Query the available OpenCL devices and choose one */
+void init_device(cl_device_id *device,
+		 char *version_str,
+		 cl_context *context)
+{
+  /** The version of OpenCL supported by the selected device */
+  int cl_version;
+  cl_device_id device_ids[MAX_DEVICES];
+  cl_platform_id platform_ids[MAX_DEVICES];
+  cl_uint ret_num_devices;
+  cl_uint ret_num_platforms;
+  cl_int ret;
+  int idev;
+
+  /* Get Platform and Device Info */
+  ret = clGetPlatformIDs(MAX_DEVICES, platform_ids, &ret_num_platforms);
+  check_status("clGetPlatformIDs", ret);
+  fprintf(stdout, "Have %d platforms.\n", ret_num_platforms);
+  char result_str[128];
+  cl_device_fp_config fp_config;
+  cl_device_type device_type;
+  size_t result_len;
+  for(idev=0;idev<ret_num_platforms;idev++){
+    ret = clGetPlatformInfo(platform_ids[idev],
+			    CL_PLATFORM_NAME,
+			    (size_t)128, (void *)result_str, &result_len);
+    fprintf(stdout, "Platform %d (id=%ld) is: %s\n",
+	    idev, (long)(platform_ids[idev]), result_str);
+  }
+
+  ret = clGetDeviceIDs(platform_ids[0], CL_DEVICE_TYPE_DEFAULT, MAX_DEVICES,
+		       device_ids, &ret_num_devices);
+  check_status("clGetDeviceIDs", ret);
+  fprintf(stdout, "Have %d devices\n", ret_num_devices);
+  for (idev=0; idev<ret_num_devices; idev++){
+    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_NAME,
+			  (size_t)128, result_str, &result_len);
+    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_TYPE,
+			  (size_t)(sizeof(cl_device_type)), &device_type,
+				   &result_len);
+    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_VERSION,
+			  (size_t)128, version_str, &result_len);
+#ifdef CL_DEVICE_DOUBLE_FP_CONFIG
+    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_DOUBLE_FP_CONFIG,
+    			  (size_t)(sizeof(cl_device_fp_config)),
+    			  &fp_config, &result_len);
+#else
+    /* The Intel/Altera OpenCL SDK is only version 1.0 and that doesn't
+     have the CL_DEVICE_DOUBLE_FP_CONFIG property */
+    fp_config = 0;
+#endif
+    size_t wg_size;
+    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_WORK_GROUP_SIZE,
+			  (size_t)(sizeof(size_t)),
+			  &wg_size, &result_len);
+    cl_uint ndims;
+    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,
+			  sizeof(cl_uint), &ndims, &result_len);
+    size_t *max_sizes;
+    max_sizes = (size_t*)malloc(ndims*sizeof(size_t));
+    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_WORK_ITEM_SIZES,
+			  ndims*sizeof(size_t), max_sizes, &result_len);
+    cl_uint max_units;
+    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_COMPUTE_UNITS,
+			  sizeof(cl_uint), &max_units, &result_len);
+
+    fprintf(stdout, "Device %d is: %s, type=%d, version=%s\n",
+	    idev, result_str, (int)(device_type), version_str);
+    if((int)fp_config == 0){
+      fprintf(stdout, "             double precision NOT supported\n");
+    }
+    else{
+      fprintf(stdout, "             double precision supported\n");
+    }
+    fprintf(stdout, "             max work group size = %ld\n", (long)wg_size);
+    fprintf(stdout, "             max size of each work item dimension: "
+	    "%ld %ld\n", max_sizes[0], max_sizes[1]);
+    fprintf(stdout, "             max compute units = %ld\n", (long)max_units);
+    free(max_sizes);
+  }
+  /* Choose device 0 */
+  idev = 0;
+  *device = device_ids[idev];
+
+  /* Check what version of OpenCL is supported */
+  if(strstr(version_str, "OpenCL 1.0")){
+    cl_version = 100;
+  }
+  else if(strstr(version_str, "OpenCL 1.2")){
+    cl_version = 120;
+  }
+  else if(strstr(version_str, "OpenCL 2.0")){
+    cl_version = 200;
+  }
+  else{
+    fprintf(stderr, "Unsupported OpenCL version: %s\n", version_str);
+    exit(1);
+  }
+
+  /* Create OpenCL context for just 1 device */
+  cl_context_properties cl_props[3];
+  /* The list of properties for this context is zero terminated */
+  cl_props[0] = CL_CONTEXT_PLATFORM;
+  cl_props[1] = (cl_context_properties)(platform_ids[0]);
+  cl_props[2] = 0;
+
+  *context = clCreateContext(cl_props, 1, device, NULL, NULL, &ret);
+  check_status("clCreateContext", ret);
+
+}
+
 
 const char* OCL_GetErrorString(cl_int error)
 {
@@ -187,7 +302,7 @@ cl_program get_source_kernel(cl_context *context,
     size_t log_size;
     clGetProgramBuildInfo(program, *device, CL_PROGRAM_BUILD_LOG,
 			  0, NULL, &log_size);
-    build_log = malloc(log_size+1);
+    build_log = (char *)malloc(log_size+1);
     clGetProgramBuildInfo(program, *device, CL_PROGRAM_BUILD_LOG,
 			  log_size, build_log, NULL);
     build_log[log_size] = '\0';
