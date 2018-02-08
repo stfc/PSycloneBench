@@ -160,7 +160,7 @@ int main(){
   }
   else{
     fprintf(stderr, "Please set NEMOLITE2D_SINGLE_IMAGE to point to the "
-	    ".aocx containing the compiled kernels\n");
+	    ".aocx file containing the compiled kernels\n");
     exit(1);
   }
   cl_event next_sshu_evt;
@@ -171,7 +171,7 @@ int main(){
   }
   else{
     fprintf(stderr, "Please set NEMOLITE2D_SINGLE_IMAGE to point to the "
-	    ".aocx containing the compiled kernels\n");
+	    ".aocx file containing the compiled kernels\n");
     exit(1);
   }
 
@@ -187,6 +187,9 @@ int main(){
   check_status("clCreateBuffer", ret);
 
   fprintf(stdout, "Created %d device buffers OK\n", num_buffers);
+  
+  /*------------------------------------------------------------*/
+  /* Set kernel arguments */
 
   int arg_idx = 0;
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)&nx);

@@ -60,7 +60,9 @@ nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
 
 # Compile all the kernels into a single file so that we can put them all on
 # one device
-fpga: ${KERNEL_MODULES:.o=.cl}
+fpga: nemolite2d_kernels.aocx
+
+nemolite2d_kernels.aocx: ${KERNEL_MODULES:.o=.cl}
 	aoc ${AOC_FLAGS} ${KERNEL_MODULES:.o=.cl} -o nemolite2d_kernels
 
 # Generic rules

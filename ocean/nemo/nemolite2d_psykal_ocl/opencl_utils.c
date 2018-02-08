@@ -295,7 +295,7 @@ cl_program get_source_kernel(cl_context *context,
   check_status("clCreateProgramWithSource", ret);
 
   /* Build Kernel Program */
-  char *build_options = "-cl-mad-enable -cl-fast-relaxed-math";
+  char const *build_options = "-cl-mad-enable -cl-fast-relaxed-math";
   ret = clBuildProgram(program, 1, device, build_options, NULL, NULL);
   if(ret == CL_BUILD_PROGRAM_FAILURE){
     char *build_log;
@@ -323,6 +323,7 @@ cl_program get_binary_kernel(cl_context *context,
 			     const char *filename){
   FILE *fp;
   const int num_binaries = 1;
+  /** Array of pointers to buffers containing kernel binaries */
   unsigned char *binary_buffers[num_binaries];
   size_t binary_sizes[num_binaries];
   cl_int binary_status[num_binaries];
@@ -366,7 +367,8 @@ cl_program get_binary_kernel(cl_context *context,
 
   /* Create the program object from the loaded binary */
   cl_program program = clCreateProgramWithBinary(*context, 1, device,
-						 binary_sizes, binary_buffers,
+						 binary_sizes,
+						 binary_buffers,
 						 binary_status, &ret);
   check_status("clCreateProgramWithBinary", ret);
 
