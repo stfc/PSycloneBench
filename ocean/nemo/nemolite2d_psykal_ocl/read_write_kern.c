@@ -1,26 +1,21 @@
 
-#ifdef __OPENCL_VERSION__
-
-#ifdef INTELFPGA_CL
 #pragma OPENCL EXTENSION cl_intel_channels : enable
-channel float ssh_channel __attribute__((depth(10)));
-#endif
+
+channel int ssh_channel __attribute__((depth(10)));
 
 __kernel void channel_write(int nx, int ny,
 			    __global double* restrict ssha){
-    for(int i=0; i<10; i++){
-      write_channel_intel(ssh_channel, (float)(ssha[i]));
+    for(int i=0; i<100000; i++){
+      write_channel_intel(ssh_channel, i); //(float)(ssha[i]));
     }
-    //mem_fence(CLK_CHANNEL_MEM_FENCE);
 }
 
 
 __kernel void channel_read(int nx, int ny,
 			   __global double* restrict sshn){
-  for(int i=0; i<1; i++){
-    sshn[i] = (double)read_channel_intel(ssh_channel);
+  int j;
+  for(int i=0; i<100000; i++){
+    j = read_channel_intel(ssh_channel);
   }
-  //mem_fence(CLK_CHANNEL_MEM_FENCE);
+  sshn[0] = (double)j;
 }
-
-#endif
