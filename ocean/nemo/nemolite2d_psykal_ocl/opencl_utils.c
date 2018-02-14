@@ -8,10 +8,6 @@
 #include <CL/cl.h>
 #endif
 
-#include "AOCLUtils/aocl_utils.h"
-
-using namespace aocl_utils;
-
 #include "opencl_utils.h"
 
 /** Maximum number of OpenCL devices we will query */
@@ -31,33 +27,9 @@ void init_device(cl_device_id *device,
   cl_platform_id platform_ids[MAX_DEVICES];
   cl_uint ret_num_devices;
   cl_uint ret_num_platforms;
-  cl_int ret, status;
+  cl_int ret;
   int idev;
 
-  // Get the OpenCL platform.
-  cl_platform_id platform = findPlatform("Intel(R) FPGA SDK for OpenCL(TM)");
-  if(platform == NULL) {
-    printf("ERROR: Unable to find Intel(R) FPGA OpenCL platform.\n");
-    return false;
-  }
-
-  sprintf(version_str, "Intel(R) FPGA SDK for OpenCL(TM)");
-
-  // Query the available OpenCL devices.
-  scoped_array<cl_device_id> devices;
-  cl_uint num_devices;
-
-  devices.reset(getDevices(platform, CL_DEVICE_TYPE_ALL, &ret_num_devices));
-
-  // We'll just use the first device.
-  *device = devices[0];
-
-  // Create the context.
-  *context = clCreateContext(NULL, 1, device, &oclContextCallback, NULL,
-			     &status);
-  checkError(status, "Failed to create context");
-  return;
- 
   /* Get Platform and Device Info */
   ret = clGetPlatformIDs(MAX_DEVICES, platform_ids, &ret_num_platforms);
   check_status("clGetPlatformIDs", ret);
@@ -270,10 +242,26 @@ void check_status(const char *text, cl_int err){
   }
 }
 
+cl_program get_program(cl_context context,
+		       const cl_device_id *device,
+		       const char *version_str,
+		       const char *filename){
+  cl_program program;
+
+  if( strstr(version_str, "FPGA SDK") ){
+    program = get_binary_kernel(context, device, filename);
+  }
+  else{
+    program = get_source_kernel(context, device, filename);
+  }
+  
+  return program;
+}
+
 /** Creates an OpenCL kernel for the supplied context and device. If the
  device is an FPGA then the kernel must be pre-compiled. */
 cl_kernel get_kernel(cl_context context,
-		     cl_device_id *device,
+		     const cl_device_id *device,
 		     const char *version_str,
 		     const char *filename,
 		     const char *kernel_name){
@@ -281,13 +269,6 @@ cl_kernel get_kernel(cl_context context,
   cl_int ret;
   cl_kernel kernel = NULL;
   cl_program program;
-  
-  if( strstr(version_str, "FPGA SDK") ){
-    program = get_binary_kernel(context, device, filename);
-  }
-  else{
-    program = get_source_kernel(context, device, filename);
-  }
 
   /* Create OpenCL Kernel */
   kernel = clCreateKernel(program, kernel_name, &ret);
@@ -298,7 +279,7 @@ cl_kernel get_kernel(cl_context context,
 
 /** Creates an OpenCL kernel by compiling it from the supplied source */
 cl_program get_source_kernel(cl_context context,
-			     cl_device_id *device,
+			     const cl_device_id *device,
 			     const char *filename){
   FILE *fp;
   char *source_str;
@@ -348,7 +329,7 @@ cl_program get_source_kernel(cl_context context,
 }
   
 cl_program get_binary_kernel(cl_context context,
-			     cl_device_id *device,
+			     const cl_device_id *device,
 			     const char *filename){
   FILE *fp;
   const int num_binaries = 1;
@@ -395,15 +376,17 @@ cl_program get_binary_kernel(cl_context context,
   fprintf(stdout, "Read %d bytes for binary %s\n", binary_sizes[0], bname);
 
   /* Create the program object from the loaded binary */
-  cl_program program = clCreateProgramWithBinary(context, 1, device,
+  cl_program program = clCreateProgramWithBinary(context, (cl_uint)1,
+						 device,
 						 binary_sizes,
 						 binary_buffers,
 						 binary_status, &ret);
   check_status("clCreateProgramWithBinary", ret);
+  check_status("Loading binary", binary_status[0]);
 
   // Build the program that was just created.
   ret = clBuildProgram(program, 0, NULL, "", NULL, NULL);
-  check_status("Build program", ret);
+  check_status("clBuildProgram", ret);
 
   /* Clean up */
   for(int ibuf=0; ibuf<num_binaries; ibuf++){

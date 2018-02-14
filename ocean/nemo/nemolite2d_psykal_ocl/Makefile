@@ -23,7 +23,7 @@ ALL_KERNEL_MODULES = continuity_kern.o momentum_u_kern.o momentum_v_kern.o \
 # because the kernel source files also include CPU code
 AOC_FLAGS = -v -board=p385a_sch_ax115 -D__OPENCL_VERSION__=100
 #AOC_FLAGS += -c
-AOC_FLAGS += -march=emulator
+AOC_FLAGS += -march=emulator -emulator-channel-depth-model=strict
 
 # Normal targets
 .PHONY: nemolite2d fpga cont twokern twokernchannels
@@ -75,6 +75,9 @@ nemolite2d_kernels.aocx: ${KERNEL_MODULES:.o=.cl}
 	ln -sf $< $@
 
 %.o: %.c
+	$(CC) $(CFLAGS) ${OPENCL_INCLUDE} -c $<
+
+%.o: %.cpp
 	$(CC) $(CFLAGS) ${OPENCL_INCLUDE} -c $<
 
 # Compile the kernels for emulation on the CPU

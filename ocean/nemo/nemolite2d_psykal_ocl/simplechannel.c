@@ -11,9 +11,9 @@
 #include <CL/cl.h>
 #endif
 
-#include "AOCLUtils/aocl_utils.h"
+//#include "AOCLUtils/aocl_utils.h"
 
-using namespace aocl_utils;
+//using namespace aocl_utils;
 
 /** The number of concurrent kernels in our design */
 #define NUM_KERNELS 2
@@ -104,28 +104,7 @@ int main(){
   /*------------------------------------------------------------*/
   /* OpenCL initialisation */
 
-  //init_device(&device, version_str, &context);
-  // Get the OpenCL platform.
-  cl_platform_id platform = findPlatform("Intel(R) FPGA SDK for OpenCL(TM)");
-  if(platform == NULL) {
-    printf("ERROR: Unable to find Intel(R) FPGA OpenCL platform.\n");
-    return false;
-  }
-  sprintf(version_str, "Intel(R) FPGA SDK for OpenCL(TM)");
-
-  // Query the available OpenCL devices.
-  scoped_array<cl_device_id> devices;
-  cl_uint num_devices;
-  cl_int status;
-
-  devices.reset(getDevices(platform, CL_DEVICE_TYPE_ALL, &num_devices));
-
-  // We'll just use the first device.
-  device = devices[0];
-
-  // Create the context.
-  context = clCreateContext(NULL, 1, &device, &oclContextCallback, NULL, &status);
-  checkError(status, "Failed to create context");
+  init_device(&device, version_str, &context);
 
   /* Create Command Queue with properties set to NULL */
   /* The Intel/Altera OpenCL SDK is only version 1.0 */
@@ -137,35 +116,25 @@ int main(){
   read_queue = clCreateCommandQueue(context, device,
 				    CL_QUEUE_PROFILING_ENABLE, &ret);
   check_status("clCreateCommandQueue", ret);
-
-  program = createProgramFromBinary(context, image_file, &device, 1);
-  status = clBuildProgram(program, 0, NULL, "", NULL, NULL);
-  checkError(status, "Failed to build program");
-
-  write_kernel = clCreateKernel(program, "channel_write", &status);
-  checkError(status, "Failed to create kernel");
-  read_kernel = clCreateKernel(program, "channel_read", &status);
-  checkError(status, "Failed to create kernel");
   
   /* Create OpenCL Kernels and associated event objects (latter used
-   to obtain detailed timing information).
+     to obtain detailed timing information). */
   if(image_file){
-    write_kernel = get_kernel(&context, &device, version_str,
-			      image_file,
-			      //"mov_avg");
-			      "channel_write");
-    read_kernel = get_kernel(&context, &device, version_str,
-			     image_file,
-			     //"inverse");
-                             "channel_read");
+    program = get_program(context, &device, version_str, image_file);
   }
   else{
     fprintf(stderr, "Please set NEMOLITE2D_SINGLE_IMAGE to point to the "
 	    ".aocx file containing the compiled kernels\n");
     exit(1);
   }
-  */
-  
+
+  // Create a program using the image file
+
+  write_kernel = clCreateKernel(program, "channel_write", &ret);
+  check_status("clCreateCommandQueue", ret);
+  read_kernel = clCreateKernel(program, "channel_read", &ret);
+  check_status("clCreateCommandQueue", ret);
+
   buff_size = nx*ny*sizeof(cl_int);
 
   ssha = (cl_int*)malloc(buff_size);
