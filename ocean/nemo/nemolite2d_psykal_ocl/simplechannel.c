@@ -117,8 +117,7 @@ int main(){
 				    CL_QUEUE_PROFILING_ENABLE, &ret);
   check_status("clCreateCommandQueue", ret);
   
-  /* Create OpenCL Kernels and associated event objects (latter used
-     to obtain detailed timing information). */
+  /* Create the OpenCL program object */
   if(image_file){
     program = get_program(context, &device, version_str, image_file);
   }
@@ -128,8 +127,7 @@ int main(){
     exit(1);
   }
 
-  // Create a program using the image file
-
+  /* Create the kernels associated with the program object */
   write_kernel = clCreateKernel(program, "channel_write", &ret);
   check_status("clCreateCommandQueue", ret);
   read_kernel = clCreateKernel(program, "channel_read", &ret);
@@ -162,34 +160,14 @@ int main(){
   ret = clSetKernelArg(write_kernel, 2, sizeof(cl_mem),
 		       (void *)&ssha_device);
   check_status("clSetKernelArg", ret);
-  /*
-  ret = clSetKernelArg(write_kernel, 0, sizeof(cl_mem),
-		       (void *)&ssha_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(write_kernel, 1, sizeof(cl_mem),
-		       (void *)&sshn_device);
-  check_status("clSetKernelArg", ret);
-  n_points = nx*ny;
-  n_points_out = n_points-4;
-  ret = clSetKernelArg(write_kernel, 2, sizeof(cl_int),
-		       (void *)&n_points);
-  check_status("clSetKernelArg", ret);
-  */
+
   ret = clSetKernelArg(read_kernel, 0, sizeof(cl_int), (void *)&nx);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(read_kernel, 1, sizeof(cl_int), (void *)&ny);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(read_kernel, 2, sizeof(cl_mem), (void *)&sshn_device);
   check_status("clSetKernelArg", ret);
-  /*
-  ret = clSetKernelArg(read_kernel, 0, sizeof(cl_mem),
-		       (void *)&sshn_device);
-  check_status("clSetKernelArg", ret);
 
-  ret = clSetKernelArg(read_kernel, 1, sizeof(cl_int),
-		       (void *)&n_points_out);
-  check_status("clSetKernelArg", ret);
-  */
   /*------------------------------------------------------------*/
   /* Copy data to device synchronously */
 
