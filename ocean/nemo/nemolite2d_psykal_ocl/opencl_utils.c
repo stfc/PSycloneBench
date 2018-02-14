@@ -372,6 +372,10 @@ cl_program get_binary_kernel(cl_context *context,
 						 binary_status, &ret);
   check_status("clCreateProgramWithBinary", ret);
 
+  // Build the program that was just created.
+  ret = clBuildProgram(program, 0, NULL, "", NULL, NULL);
+  check_status("Build program", ret);
+
   /* Clean up */
   for(int ibuf=0; ibuf<num_binaries; ibuf++){
     free(binary_buffers[ibuf]);
