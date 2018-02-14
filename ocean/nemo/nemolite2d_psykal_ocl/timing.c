@@ -274,11 +274,11 @@ void TimerReportMPI()
   /* For each of the timed regions we want the max and min time
      spent by any of the MPI processes */
 
-  min_vals = malloc(num_active_timers*sizeof(val_loc_type));
-  max_vals = malloc(num_active_timers*sizeof(val_loc_type));
-  timings  = malloc(num_active_timers*sizeof(val_loc_type));
-  raw_times = calloc((size_t)num_active_timers,sizeof(float));
-  sum_times = calloc((size_t)num_active_timers,sizeof(float));
+  min_vals = (val_loc_type*)malloc(num_active_timers*sizeof(val_loc_type));
+  max_vals = (val_loc_type*)malloc(num_active_timers*sizeof(val_loc_type));
+  timings  = (val_loc_type*)malloc(num_active_timers*sizeof(val_loc_type));
+  raw_times = (float*)calloc((size_t)num_active_timers,sizeof(float));
+  sum_times = (float*)calloc((size_t)num_active_timers,sizeof(float));
   if(!timings || !min_vals || !max_vals || !raw_times || !sum_times){
     fprintf(stderr, "TimerReportMPI: failed to malloc buffers for stats\n");
     return;
