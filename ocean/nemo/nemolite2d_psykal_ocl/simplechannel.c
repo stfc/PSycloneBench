@@ -11,6 +11,10 @@
 #include <CL/cl.h>
 #endif
 
+#include "AOCLUtils/aocl_utils.h"
+
+using namespace aocl_utils;
+
 /** The number of concurrent kernels in our design */
 #define NUM_KERNELS 2
 
@@ -19,7 +23,7 @@
     the CPU and compares the results. */
 int main(){
   /** Pointer to the OpenCL device (hardware) that we will use */
-  cl_device_id device;
+  cl_device_id device = NULL;
   cl_context context = NULL;
   /* String holding info on chosen device */
   char version_str[128];
@@ -42,7 +46,7 @@ int main(){
 
   /* Our OpenCL kernel objects */
   cl_kernel read_kernel = NULL;
-  cl_kernel write_kernel  = NULL;
+  cl_kernel write_kernel = NULL;
 
   /* Ptr used when getting env variables */
   char *env_string;
@@ -54,32 +58,13 @@ int main(){
       NEMOLITE2D_N{X,Y} environment variables. */
   cl_int nx = 127;
   cl_int ny = 127;
-    int xstart, xstop, ystart, ystop;
-  /** Our time-step index (passed into BCs kernel) */
-  cl_int istep;
-  /** Number of time-steps to do. May be overridden by setting
-      NEMOLITE2D_NSTEPS environment variable. */
-  cl_int nsteps = 2000;
+  cl_int n_points, n_points_out;
   int ji, jj, idx;
   int buff_size;
   /** Sea-surface height */
-  cl_double *ssha, *ssha_u, *ssha_v, *sshn, *sshn_u, *sshn_v;
-  cl_double *hu, *hv, *ht, *un, *vn, *ua, *va;
-  cl_double *gphiu, *gphiv;
-  cl_double *e1u, *e1v, *e1t, *e2u, *e2v, *e2t, *e12t, *e12u, *e12v;
-  /** T-point mask */
-  cl_int *tmask;
-  cl_double dep_const = 100.0;
-  /** Horizontal grid resolution */
-  cl_double dx = 1000.0, dy = 1000.0;
+  cl_int *ssha, *sshn;
   /** For computing checksums for validation */
   double cpu_sum[3], ocl_sum[3];
-  /** Time step (s) */
-  cl_double rdt = 20.0;
-  /** horiz. kinematic viscosity coeff. */
-  cl_double visc = 0.1;
-  /** Coefficient of bottom friction */
-  cl_double cbfr = 0.00015;
 
   /*------------------------------------------------------------*/
   /* Run-time configuration of the benchmark */
@@ -87,19 +72,6 @@ int main(){
     profiling_enabled = CL_TRUE;
     /* We create the OpenCL command queue with profiling enabled */
     queue_properties = CL_QUEUE_PROFILING_ENABLE;
-  }
-  if( (env_string = getenv("NEMOLITE2D_NSTEPS")) ){
-    if(sscanf(env_string, "%d", &nsteps) != 1){
-      fprintf(stderr,
-	      "Error parsing NEMOLITE2D_NSTEPS environment variable (%s)\n",
-	      env_string);
-      exit(1);
-    }
-    if(nsteps < 1){
-      fprintf(stderr, "Error, NEMOLITE2D_NSTEPS must be >= 1 but got %d\n",
-	      nsteps);
-      exit(1);
-    }
   }
   if( (env_string = getenv("NEMOLITE2D_NX")) ){
     if(sscanf(env_string, "%d", &nx) != 1){
@@ -132,39 +104,75 @@ int main(){
   /*------------------------------------------------------------*/
   /* OpenCL initialisation */
 
-  init_device(&device, version_str, &context);
-  
+  //init_device(&device, version_str, &context);
+  // Get the OpenCL platform.
+  cl_platform_id platform = findPlatform("Intel(R) FPGA SDK for OpenCL(TM)");
+  if(platform == NULL) {
+    printf("ERROR: Unable to find Intel(R) FPGA OpenCL platform.\n");
+    return false;
+  }
+  sprintf(version_str, "Intel(R) FPGA SDK for OpenCL(TM)");
+
+  // Query the available OpenCL devices.
+  scoped_array<cl_device_id> devices;
+  cl_uint num_devices;
+  cl_int status;
+
+  devices.reset(getDevices(platform, CL_DEVICE_TYPE_ALL, &num_devices));
+
+  // We'll just use the first device.
+  device = devices[0];
+
+  // Create the context.
+  context = clCreateContext(NULL, 1, &device, &oclContextCallback, NULL, &status);
+  checkError(status, "Failed to create context");
+
   /* Create Command Queue with properties set to NULL */
   /* The Intel/Altera OpenCL SDK is only version 1.0 */
   /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
      to call the ...WithProperties version of this routine */
   write_queue = clCreateCommandQueue(context, device,
-				     queue_properties, &ret);
+				     CL_QUEUE_PROFILING_ENABLE, &ret);
   check_status("clCreateCommandQueue", ret);
   read_queue = clCreateCommandQueue(context, device,
-				    queue_properties, &ret);
+				    CL_QUEUE_PROFILING_ENABLE, &ret);
   check_status("clCreateCommandQueue", ret);
 
+  program = createProgramFromBinary(context, image_file, &device, 1);
+  status = clBuildProgram(program, 0, NULL, "", NULL, NULL);
+  checkError(status, "Failed to build program");
 
+  write_kernel = clCreateKernel(program, "channel_write", &status);
+  checkError(status, "Failed to create kernel");
+  read_kernel = clCreateKernel(program, "channel_read", &status);
+  checkError(status, "Failed to create kernel");
+  
   /* Create OpenCL Kernels and associated event objects (latter used
-   to obtain detailed timing information). */
+   to obtain detailed timing information).
   if(image_file){
     write_kernel = get_kernel(&context, &device, version_str,
-			     image_file,
-			     "channel_write");
+			      image_file,
+			      //"mov_avg");
+			      "channel_write");
     read_kernel = get_kernel(&context, &device, version_str,
 			     image_file,
-			     "channel_read");
+			     //"inverse");
+                             "channel_read");
   }
   else{
     fprintf(stderr, "Please set NEMOLITE2D_SINGLE_IMAGE to point to the "
 	    ".aocx file containing the compiled kernels\n");
     exit(1);
   }
+  */
+  
+  buff_size = nx*ny*sizeof(cl_int);
+
+  ssha = (cl_int*)malloc(buff_size);
+  sshn = (cl_int*)malloc(buff_size);
 
   /* Create Device Memory Buffers */
   int num_buffers = 0;
-  buff_size = nx*ny*sizeof(cl_double);
   ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			       NULL, &ret);
   num_buffers++;
@@ -177,7 +185,7 @@ int main(){
   
   /*------------------------------------------------------------*/
   /* Set kernel arguments */
-
+  
   ret = clSetKernelArg(write_kernel, 0, sizeof(cl_int), (void *)&nx);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(write_kernel, 1, sizeof(cl_int), (void *)&ny);
@@ -185,34 +193,39 @@ int main(){
   ret = clSetKernelArg(write_kernel, 2, sizeof(cl_mem),
 		       (void *)&ssha_device);
   check_status("clSetKernelArg", ret);
-
+  /*
+  ret = clSetKernelArg(write_kernel, 0, sizeof(cl_mem),
+		       (void *)&ssha_device);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(write_kernel, 1, sizeof(cl_mem),
+		       (void *)&sshn_device);
+  check_status("clSetKernelArg", ret);
+  n_points = nx*ny;
+  n_points_out = n_points-4;
+  ret = clSetKernelArg(write_kernel, 2, sizeof(cl_int),
+		       (void *)&n_points);
+  check_status("clSetKernelArg", ret);
+  */
   ret = clSetKernelArg(read_kernel, 0, sizeof(cl_int), (void *)&nx);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(read_kernel, 1, sizeof(cl_int), (void *)&ny);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(read_kernel, 2, sizeof(cl_mem), (void *)&sshn_device);
   check_status("clSetKernelArg", ret);
+  /*
+  ret = clSetKernelArg(read_kernel, 0, sizeof(cl_mem),
+		       (void *)&sshn_device);
+  check_status("clSetKernelArg", ret);
 
-  /*------------------------------------------------------------*/
-  /* Field initialisation on host */
-  
-  init_fields(nx, ny, dx, dy, dep_const,
-	      &xstart, &xstop, &ystart, &ystop,
-	      &ssha,  &ssha_u, &ssha_v,
-	      &sshn,  &sshn_u, &sshn_v,
-	      &hu,  &hv,  &ht,
-	      &un,  &vn,  &ua, &va,
-	      &gphiu, &gphiv,
-	      &e1u,  &e1v,  &e1t,
-	      &e2u,  &e2v,  &e2t,
-	      &e12t, &e12u, &e12v,
-	      &tmask);
-  
+  ret = clSetKernelArg(read_kernel, 1, sizeof(cl_int),
+		       (void *)&n_points_out);
+  check_status("clSetKernelArg", ret);
+  */
   /*------------------------------------------------------------*/
   /* Copy data to device synchronously */
 
   /* Set a recognisable first value in the input buffer */
-  ssha[0] = 99.0;
+  ssha[0] = 99;
   
   /* Create an array to store the event associated with each write
      to the device */
@@ -259,7 +272,8 @@ int main(){
   clWaitForEvents(1, read_events);
   check_status("clWaitForEvents", ret);
 
-  fprintf(stdout, "First value in read buffer = %lf\n", sshn[0]);
+  fprintf(stdout, "First value in read buffer = %d\n", sshn[0]);
+  fprintf(stdout, "Second value in read buffer = %d\n", sshn[1]);
   
   /* Clean up */
   ret = clFlush(read_queue);
