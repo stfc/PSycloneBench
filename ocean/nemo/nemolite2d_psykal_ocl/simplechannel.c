@@ -4,7 +4,6 @@
 
 #include "nemolite2d_utils.h"
 #include "opencl_utils.h"
-#include "timing.h"
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -14,7 +13,6 @@
 
 /** The number of concurrent kernels in our design */
 #define NUM_KERNELS 2
-
 
 /** Top-level driver program. Queries the hardware to find OpenCL devices,
     creates OpenCL kernels and runs them. Also runs the same kernels on
@@ -42,8 +40,8 @@ int main(){
   cl_int ret;
 
   /* Our OpenCL kernel objects */
-  cl_kernel cont_kernel = NULL;
-  cl_kernel next_sshu_kernel  = NULL;
+  cl_kernel read_kernel = NULL;
+  cl_kernel write_kernel  = NULL;
 
   /* Ptr used when getting env variables */
   char *env_string;
@@ -81,8 +79,6 @@ int main(){
   cl_double visc = 0.1;
   /** Coefficient of bottom friction */
   cl_double cbfr = 0.00015;
-
-  TimerInit();
 
   /*------------------------------------------------------------*/
   /* Run-time configuration of the benchmark */
@@ -135,8 +131,6 @@ int main(){
   /*------------------------------------------------------------*/
   /* OpenCL initialisation */
 
-  TimerStart("OCL Init");
-  
   init_device(&device, version_str, &context);
   
   /* Create Command Queue with properties set to NULL */
@@ -154,7 +148,7 @@ int main(){
    to obtain detailed timing information). */
   cl_event cont_evt;
   if(image_file){
-    cont_kernel = get_kernel(&context, &device, version_str,
+    write_kernel = get_kernel(&context, &device, version_str,
 			     image_file,
 			     "channel_write");
   }
@@ -165,9 +159,9 @@ int main(){
   }
   cl_event next_sshu_evt;
   if(image_file){
-    next_sshu_kernel = get_kernel(&context, &device, version_str,
-				  image_file,
-				  "channel_read");
+    read_kernel = get_kernel(&context, &device, version_str,
+			     image_file,
+			     "channel_read");
   }
   else{
     fprintf(stderr, "Please set NEMOLITE2D_SINGLE_IMAGE to point to the "
@@ -191,25 +185,20 @@ int main(){
   /*------------------------------------------------------------*/
   /* Set kernel arguments */
 
-  int arg_idx = 0;
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)&nx);
+  ret = clSetKernelArg(write_kernel, 0, sizeof(cl_int), (void *)&nx);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)&ny);
+  ret = clSetKernelArg(write_kernel, 1, sizeof(cl_int), (void *)&ny);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
+  ret = clSetKernelArg(write_kernel, 2, sizeof(cl_mem),
 		       (void *)&ssha_device);
   check_status("clSetKernelArg", ret);
-  arg_idx = 0;
-  ret = clSetKernelArg(next_sshu_kernel, arg_idx++, sizeof(cl_int),
-		       (void *)&nx);
+
+  ret = clSetKernelArg(read_kernel, 0, sizeof(cl_int), (void *)&nx);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshu_kernel, arg_idx++, sizeof(cl_int),
-		       (void *)&ny);
+  ret = clSetKernelArg(read_kernel, 1, sizeof(cl_int), (void *)&ny);
   check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(next_sshu_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)&sshn_device);
+  ret = clSetKernelArg(read_kernel, 2, sizeof(cl_mem), (void *)&sshn_device);
   check_status("clSetKernelArg", ret);
-  TimerStop();
 
   /*------------------------------------------------------------*/
   /* Field initialisation on host */
@@ -230,7 +219,6 @@ int main(){
   
   /*------------------------------------------------------------*/
   /* Copy data to device synchronously */
-  TimerStart("Write buffers to device");
 
   /* Set a recognisable first value in the input buffer */
   ssha[0] = 99.0;
@@ -251,23 +239,20 @@ int main(){
   ret = clWaitForEvents(num_buffers, write_events);
   check_status("clWaitForEvents", ret);
 
-  TimerStop();
-  
   /*------------------------------------------------------------*/
   /* Run the kernels */
 
-  TimerStart("Time-stepping, OpenCL");
-  
   for(istep=1; istep<=nsteps; istep++){
 
-    /* Update of sshu field */
-    ret = clEnqueueTask(command_queue[1], next_sshu_kernel, 0,
-			NULL, &next_sshu_evt);
-    check_status("clEnqueueTask(next-sshu)", ret);
+    /* Write to channel */
+    ret = clEnqueueTask(command_queue[1], write_kernel, 0,
+			NULL, NULL);
+    check_status("clEnqueueTask(write_kernel)", ret);
 
-    ret = clEnqueueTask(command_queue[0], cont_kernel, 0,
-			NULL, &cont_evt);
-    check_status("clEnqueueTask(Continuity)", ret);
+    /* Read from channel */
+    ret = clEnqueueTask(command_queue[0], read_kernel, 0,
+			NULL, NULL);
+    check_status("clEnqueueTask(read_kernel)", ret);
   }
   
   fprintf(stdout, "Waiting for kernels to finish...\n");
@@ -277,16 +262,8 @@ int main(){
     check_status("clFinish", ret);
   }
 
-  //ret = clWaitForEvents(1, &cont_evt);
-  //check_status("clWaitForEvents", ret);
-  fprintf(stdout, "First kernel done!\n");
-  /* Block on the execution of the last kernel */
-  //ret = clWaitForEvents(1, &next_sshu_evt);
-  //check_status("clWaitForEvents", ret);
-  fprintf(stdout, "Second kernel done!\n");
+  fprintf(stdout, "Kernels done!\n");
 
-  TimerStop();
-    
   /* Copy data back from device, synchronously. */
   cl_event read_events[3];
   int nread = 0;
@@ -312,16 +289,13 @@ int main(){
             duration_ns(next_sshu_evt)*0.001);
   }
 
-  /* Generate report on host timings */
-  TimerReport();
-
   /* Clean up */
   for(ji=0; ji<NUM_KERNELS; ji++){
     ret = clFlush(command_queue[ji]);
     ret = clFinish(command_queue[ji]);
   }
-  ret = clReleaseKernel(cont_kernel);
-  ret = clReleaseKernel(next_sshu_kernel);
+  ret = clReleaseKernel(write_kernel);
+  ret = clReleaseKernel(read_kernel);
 
   ret = clReleaseProgram(program);
   ret = clReleaseMemObject(ssha_device);
