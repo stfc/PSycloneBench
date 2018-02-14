@@ -27,7 +27,8 @@ int main(){
   /* In order to run multiple kernels concurrently, we must have
      multiple command queues (since the Intel OpenCL SDK only supports
      in-order queues) */
-  cl_command_queue command_queue[NUM_KERNELS];
+  cl_command_queue write_queue;
+  cl_command_queue read_queue;
   cl_command_queue_properties queue_properties = 0;
   cl_bool profiling_enabled = 0;
 
@@ -134,15 +135,16 @@ int main(){
   init_device(&device, version_str, &context);
   
   /* Create Command Queue with properties set to NULL */
-  for(ji=0; ji<NUM_KERNELS; ji++){
-    /* The Intel/Altera OpenCL SDK is only version 1.0 */
-    /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
-       to call the ...WithProperties version of this routine */
-    command_queue[ji] = clCreateCommandQueue(context,
-					     device,
-					     queue_properties, &ret);
-    check_status("clCreateCommandQueue", ret);
-  }
+  /* The Intel/Altera OpenCL SDK is only version 1.0 */
+  /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
+     to call the ...WithProperties version of this routine */
+  write_queue = clCreateCommandQueue(context, device,
+				     queue_properties, &ret);
+  check_status("clCreateCommandQueue", ret);
+  read_queue = clCreateCommandQueue(context, device,
+				    queue_properties, &ret);
+  check_status("clCreateCommandQueue", ret);
+
 
   /* Create OpenCL Kernels and associated event objects (latter used
    to obtain detailed timing information). */
@@ -227,11 +229,11 @@ int main(){
      to the device */
   cl_event *write_events = (cl_event*)malloc(num_buffers*sizeof(cl_event));
   int buf_idx = 0;
-  ret = clEnqueueWriteBuffer(command_queue[0], ssha_device, 1, 0,
+  ret = clEnqueueWriteBuffer(write_queue, ssha_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
-  ret = clEnqueueWriteBuffer(command_queue[0], sshn_device, 1, 0,
+  ret = clEnqueueWriteBuffer(write_queue, sshn_device, 1, 0,
 			     (size_t)buff_size, (void *)sshn, 0,
 			     NULL, &(write_events[buf_idx++]));
   check_status("clEnqueueWriteBuffer", ret);
@@ -245,29 +247,29 @@ int main(){
   for(istep=1; istep<=nsteps; istep++){
 
     /* Write to channel */
-    ret = clEnqueueTask(command_queue[1], write_kernel, 0,
+    ret = clEnqueueTask(write_queue, write_kernel, 0,
 			NULL, NULL);
     check_status("clEnqueueTask(write_kernel)", ret);
 
     /* Read from channel */
-    ret = clEnqueueTask(command_queue[0], read_kernel, 0,
+    ret = clEnqueueTask(read_queue, read_kernel, 0,
 			NULL, NULL);
     check_status("clEnqueueTask(read_kernel)", ret);
   }
   
   fprintf(stdout, "Waiting for kernels to finish...\n");
   
-  for(int i=0; i<NUM_KERNELS; ++i) {
-    ret = clFinish(command_queue[i]);
-    check_status("clFinish", ret);
-  }
+  ret = clFinish(write_queue);
+  check_status("clFinish", ret);
+  ret = clFinish(read_queue);
+  check_status("clFinish", ret);
 
   fprintf(stdout, "Kernels done!\n");
 
   /* Copy data back from device, synchronously. */
   cl_event read_events[3];
   int nread = 0;
-  ret = clEnqueueReadBuffer(command_queue[0], sshn_device, CL_TRUE, 0,
+  ret = clEnqueueReadBuffer(read_queue, sshn_device, CL_TRUE, 0,
 			    (size_t)buff_size, (void *)sshn, 0, NULL,
 			    &(read_events[0]));
   nread++;
@@ -290,10 +292,12 @@ int main(){
   }
 
   /* Clean up */
-  for(ji=0; ji<NUM_KERNELS; ji++){
-    ret = clFlush(command_queue[ji]);
-    ret = clFinish(command_queue[ji]);
-  }
+  ret = clFlush(read_queue);
+  ret = clFinish(read_queue);
+
+  ret = clFlush(write_queue);
+  ret = clFinish(write_queue);
+  
   ret = clReleaseKernel(write_kernel);
   ret = clReleaseKernel(read_kernel);
 
@@ -301,9 +305,9 @@ int main(){
   ret = clReleaseMemObject(ssha_device);
   ret = clReleaseMemObject(sshn_device);
 
-  for(ji=0; ji<NUM_KERNELS; ji++){
-    ret = clReleaseCommandQueue(command_queue[ji]);
-  }
+  ret = clReleaseCommandQueue(write_queue);
+  ret = clReleaseCommandQueue(read_queue);
+
   ret = clReleaseContext(context);
 
   if(image_file){
