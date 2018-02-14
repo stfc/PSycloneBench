@@ -148,19 +148,10 @@ int main(){
 
   /* Create OpenCL Kernels and associated event objects (latter used
    to obtain detailed timing information). */
-  cl_event cont_evt;
   if(image_file){
     write_kernel = get_kernel(&context, &device, version_str,
 			     image_file,
 			     "channel_write");
-  }
-  else{
-    fprintf(stderr, "Please set NEMOLITE2D_SINGLE_IMAGE to point to the "
-	    ".aocx file containing the compiled kernels\n");
-    exit(1);
-  }
-  cl_event next_sshu_evt;
-  if(image_file){
     read_kernel = get_kernel(&context, &device, version_str,
 			     image_file,
 			     "channel_read");
@@ -217,8 +208,6 @@ int main(){
 	      &e12t, &e12u, &e12v,
 	      &tmask);
   
-  write_ifield("tmask.dat", nx, ny, 0, 0, tmask);
-  
   /*------------------------------------------------------------*/
   /* Copy data to device synchronously */
 
@@ -244,18 +233,13 @@ int main(){
   /*------------------------------------------------------------*/
   /* Run the kernels */
 
-  for(istep=1; istep<=nsteps; istep++){
+  /* Write to channel */
+  ret = clEnqueueTask(write_queue, write_kernel, 0, NULL, NULL);
+  check_status("clEnqueueTask(write_kernel)", ret);
 
-    /* Write to channel */
-    ret = clEnqueueTask(write_queue, write_kernel, 0,
-			NULL, NULL);
-    check_status("clEnqueueTask(write_kernel)", ret);
-
-    /* Read from channel */
-    ret = clEnqueueTask(read_queue, read_kernel, 0,
-			NULL, NULL);
-    check_status("clEnqueueTask(read_kernel)", ret);
-  }
+  /* Read from channel */
+  ret = clEnqueueTask(read_queue, read_kernel, 0, NULL, NULL);
+  check_status("clEnqueueTask(read_kernel)", ret);
   
   fprintf(stdout, "Waiting for kernels to finish...\n");
   
@@ -268,29 +252,15 @@ int main(){
 
   /* Copy data back from device, synchronously. */
   cl_event read_events[3];
-  int nread = 0;
   ret = clEnqueueReadBuffer(read_queue, sshn_device, CL_TRUE, 0,
 			    (size_t)buff_size, (void *)sshn, 0, NULL,
 			    &(read_events[0]));
-  nread++;
   check_status("clEnqueueReadBuffer", ret);
-  clWaitForEvents(nread, read_events);
+  clWaitForEvents(1, read_events);
   check_status("clWaitForEvents", ret);
 
   fprintf(stdout, "First value in read buffer = %lf\n", sshn[0]);
   
-  /* Dump final fields computed on OpenCL device */
-  write_field("sshn_ocl.dat", nx, ny, 0, 0, sshn);
-
-  /* Extract profiling info from the OpenCL runtime. Note that this will
-     be the time taken during the most recent execution of each kernel. */
-  if(profiling_enabled){
-    fprintf(stdout, "Time spent in Continuity kern = %e us\n",
-  	    duration_ns(cont_evt)*0.001);
-    fprintf(stdout, "Time spent in next-sshu kern = %e us\n",
-            duration_ns(next_sshu_evt)*0.001);
-  }
-
   /* Clean up */
   ret = clFlush(read_queue);
   ret = clFinish(read_queue);
