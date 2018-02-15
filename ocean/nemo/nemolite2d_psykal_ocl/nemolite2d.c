@@ -58,8 +58,8 @@ static const char* kernel_names[K_NUM_KERNELS] =
 static const char* kernel_files[K_NUM_KERNELS] =
 {
   "./continuity_kern.c",
-  "./momentum_kern.c",
-  "./momentum_kern.c",
+  "./momentum_u_kern.c",
+  "./momentum_v_kern.c",
   "./boundary_conditions_kern.c",
   "./boundary_conditions_kern.c",
   "./boundary_conditions_kern.c",
@@ -244,8 +244,9 @@ int main(){
 
     if(!image_file){
       program = get_program(context, &device, version_str,
-			    "./continuity_kern.c");
+			    kernel_files[ikern]);
     }
+    fprintf(stdout, "Creating kernel %s...\n", kernel_names[ikern]);
     clkernel[ikern] = clCreateKernel(program, kernel_names[ikern], &ret);
     check_status("clCreateKernel", ret);
   }
