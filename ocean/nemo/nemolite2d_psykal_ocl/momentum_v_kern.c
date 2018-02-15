@@ -175,6 +175,11 @@ void momentum_v_code(int ji, int jj, int width,
   //if(jj==0 || jj > (nrow-2))return;
 #endif
   
+#if 1
+  va[idx] = (vn[idx] * (hv[idx] + sshn_v[idx]) + 
+	       rdt * (1.0) / e12v[idx] ) / 
+    ((hv[idx] + ssha_v[idx])) / (1.0 + cbfr * rdt) ;
+#else
   idxim1 = idx - 1;
   idxip1 = idx + 1;
   idxjm1 = idx - width;
@@ -267,4 +272,5 @@ void momentum_v_code(int ji, int jj, int width,
   va[idx] = (vn[idx] * (hv[idx] + sshn_v[idx]) + 
 	       rdt * (adv + vis + cor + hpg) / e12v[idx] ) / 
     ((hv[idx] + ssha_v[idx])) / (1.0 + cbfr * rdt) ;
+#endif
 }

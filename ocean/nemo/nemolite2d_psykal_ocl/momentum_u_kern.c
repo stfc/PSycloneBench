@@ -197,6 +197,11 @@ void momentum_u_code(int ji, int jj, int width,
   //if(jj==0 || jj > (nrow-2))return;
 #endif
 
+#if 1
+  ua[idx] = (un[idx] * (hu[idx] + sshn_u[idx]) + rdt * 
+	     (1.0) / e12u[idx]) / 
+    (hu[idx] + ssha_u[idx]) / (1.0 + cbfr * rdt) ;
+#else
   idxim1 = idx - 1;
   idxip1 = idx + 1;
   idxjm1 = idx - width;
@@ -284,5 +289,5 @@ void momentum_u_code(int ji, int jj, int width,
   ua[idx] = (un[idx] * (hu[idx] + sshn_u[idx]) + rdt * 
                  (adv + vis + cor + hpg) / e12u[idx]) / 
     (hu[idx] + ssha_u[idx]) / (1.0 + cbfr * rdt) ;
-
+#endif
 }

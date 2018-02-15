@@ -1,63 +1,4 @@
-#ifndef __OPENCL_VERSION__
-#include <stdio.h>
-#include "opencl_utils.h"
 
-#ifdef __APPLE__
-#include <OpenCL/opencl.h>
-#else
-#include <CL/cl.h>
-#endif
-
-void set_args_continuity(cl_kernel cont_kernel,
-			 cl_int *nx,
-			 cl_mem *ssha_device,
-			 cl_mem *sshn_device,
-			 cl_mem *sshn_u_device,
-			 cl_mem *sshn_v_device,
-			 cl_mem *hu_device,
-			 cl_mem *hv_device,
-			 cl_mem *un_device,
-			 cl_mem *vn_device,
-			 cl_double *rdt,
-			 cl_mem *e12t_device){
-  cl_int ret;
-  int arg_idx = 0;
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)nx);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)ssha_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)sshn_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)sshn_u_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)sshn_v_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)hu_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)hv_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)un_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)vn_device);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_double),
-		       (void *)rdt);
-  check_status("clSetKernelArg", ret);
-  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
-		       (void *)e12t_device);
-  check_status("clSetKernelArg", ret);
-  
-  fprintf(stdout, "Set %d arguments for Continuity kernel\n", arg_idx);
-}
-#endif
 /*
   type, extends(kernel_type) :: continuity
      type(arg), dimension(10) :: meta_args =    &
@@ -91,6 +32,12 @@ void set_args_continuity(cl_kernel cont_kernel,
 */
 
 #ifdef __OPENCL_VERSION__
+
+#ifdef INTELFPGA_CL
+#pragma OPENCL EXTENSION cl_intel_channels : enable
+channel double ssh_channel __attribute__((depth(1000)));
+#endif
+
 /** Interface to OpenCL version of kernel */
 __kernel void continuity_code(int width,                     
 			      __global double* restrict ssha,
@@ -122,12 +69,12 @@ void continuity_code(int ji, int jj,
 		     double *e12t){
 #endif
     /* Locals */
-    double rtmp1, rtmp2, rtmp3, rtmp4;
+  double rtmp1, rtmp2, rtmp3, rtmp4, ssha_idx;
     int idxim1, idxjm1;
     int idx = jj*width + ji;
 
-    if(jj == 0)return;
-
+    //ARPDBG to avoid stalling on a channel if(jj == 0)return;
+    /*
     idxim1 = idx - 1;
     idxjm1 = idx - width;
 
@@ -136,8 +83,18 @@ void continuity_code(int ji, int jj,
     rtmp3 = (sshn_v[idx] + hv[idx]) * vn[idx];
     rtmp4 = (sshn_v[idxjm1] + hv[idxjm1]) * vn[idxjm1];
 
-    ssha[idx] = sshn[idx] + (rtmp2 - rtmp1 + rtmp4 - rtmp3) *
+    ssha_idx = sshn[idx] + (rtmp2 - rtmp1 + rtmp4 - rtmp3) *
       rdt / e12t[idx];
+    */
+
+    //ssha_idx = sshn[idx];
     // Following line is for testing only
-    //ssha[idx] = (double)idx;
+    ssha_idx = (double)idx;
+
+#ifdef __OPENCL_VERSION__
+    // Write the value we've just computed to the channel
+    // This call is specific to the Intel OpenCL SDK
+    write_channel_intel(ssh_channel, ssha_idx);
+#endif
+
   }

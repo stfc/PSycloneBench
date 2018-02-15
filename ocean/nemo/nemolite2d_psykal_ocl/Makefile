@@ -13,7 +13,7 @@ EXECS = nemolite2d
 
 all: $(EXECS)
 
-COMMON_MODULES = opencl_utils.o timing.o
+COMMON_MODULES = opencl_utils.o timing.o nemolite2d_utils.o
 
 # Source files containing (OpenCL) kernels
 ALL_KERNEL_MODULES = continuity_kern.o momentum_u_kern.o momentum_v_kern.o \
@@ -22,10 +22,12 @@ ALL_KERNEL_MODULES = continuity_kern.o momentum_u_kern.o momentum_v_kern.o \
 # Flags for the Altera Offline Compiler. Need the -D__OPENCL_VERSION__
 # because the kernel source files also include CPU code
 AOC_FLAGS = -v -board=p385a_sch_ax115 -D__OPENCL_VERSION__=100
+#AOC_FLAGS += -c
 AOC_FLAGS += -march=emulator
+#-emulator-channel-depth-model=strict
 
 # Normal targets
-.PHONY: nemolite2d fpga cont twokern
+.PHONY: nemolite2d fpga cont twokern twokernchannels
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" KERNEL_MODULES="${ALL_KERNEL_MODULES}" nemolite2d.exe
 
@@ -39,18 +41,30 @@ cont_kern: continuity_kern.cl
 # Two-kernel version
 twokern:
 	${MAKE} KERNEL_MODULES="continuity_kern.o momentum_u_kern.o" fpga
-	${MAKE} CFLAGS="${CFLAGS} -DSINGLE_KERNEL" MODULE_LIST="twokern.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o momentum_u_kern.o" twokern.exe
+	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="twokern.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o momentum_u_kern.o" twokern.exe
+
+# Two-kernel version with streaming using FIFO buffers
+twokernchannels:
+	${MAKE} KERNEL_MODULES="continuity_kern_channel.o time_update_u_kern_channel.o" fpga
+	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="twokernchannels.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o time_update_u_kern.o" twokernchannels.exe
+
+simplechannel:
+	${MAKE} KERNEL_MODULES="read_write_kern.o" fpga
+	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="simplechannel.o ${COMMON_MODULES}" KERNEL_MODULES="" simplechannel.exe
 
 # Target for FPGA - we must compile the kernels using the off-line compiler
 nemolite2d_fpga:
-	${MAKE} KERNEL_MODULES=${ALL_KERNEL_MODULES} fpga
-	${MAKE} KERNEL_MODULES=${ALL_KERNEL_MODULES} nemolite2d
+	${MAKE} KERNEL_MODULES="${ALL_KERNEL_MODULES}" fpga
+	${MAKE} KERNEL_MODULES="${ALL_KERNEL_MODULES}" nemolite2d
 
 nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
 
 # Compile all the kernels into a single file so that we can put them all on
 # one device
-fpga: ${KERNEL_MODULES:.o=.cl}
+fpga:
+	${MAKE} KERNEL_MODULES="${KERNEL_MODULES}" nemolite2d_kernels.aocx
+
+nemolite2d_kernels.aocx: ${KERNEL_MODULES:.o=.cl}
 	aoc ${AOC_FLAGS} ${KERNEL_MODULES:.o=.cl} -o nemolite2d_kernels
 
 # Generic rules
@@ -58,11 +72,14 @@ fpga: ${KERNEL_MODULES:.o=.cl}
 %.exe: $(MODULE_LIST) ${KERNEL_MODULES}
 	$(CC) -o $@ $(MODULE_LIST) ${KERNEL_MODULES} ${OPENCL_LIBS} $(LDFLAGS)
 
-# The OpenCL compiler expects sources to have the .cl suffix
+# The Altera Off-line Compiler expects sources to have the .cl suffix
 %.cl: %.c
 	ln -sf $< $@
 
 %.o: %.c
+	$(CC) $(CFLAGS) ${OPENCL_INCLUDE} -c $<
+
+%.o: %.cpp
 	$(CC) $(CFLAGS) ${OPENCL_INCLUDE} -c $<
 
 # Compile the kernels for emulation on the CPU
