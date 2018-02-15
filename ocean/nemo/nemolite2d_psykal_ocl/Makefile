@@ -23,7 +23,8 @@ ALL_KERNEL_MODULES = continuity_kern.o momentum_u_kern.o momentum_v_kern.o \
 # because the kernel source files also include CPU code
 AOC_FLAGS = -v -board=p385a_sch_ax115 -D__OPENCL_VERSION__=100
 #AOC_FLAGS += -c
-AOC_FLAGS += -march=emulator -emulator-channel-depth-model=strict
+AOC_FLAGS += -march=emulator
+#-emulator-channel-depth-model=strict
 
 # Normal targets
 .PHONY: nemolite2d fpga cont twokern twokernchannels
@@ -53,14 +54,15 @@ simplechannel:
 
 # Target for FPGA - we must compile the kernels using the off-line compiler
 nemolite2d_fpga:
-	${MAKE} KERNEL_MODULES=${ALL_KERNEL_MODULES} fpga
-	${MAKE} KERNEL_MODULES=${ALL_KERNEL_MODULES} nemolite2d
+	${MAKE} KERNEL_MODULES="${ALL_KERNEL_MODULES}" fpga
+	${MAKE} KERNEL_MODULES="${ALL_KERNEL_MODULES}" nemolite2d
 
 nemolite2d.o: $(COMMON_MODULES) ${KERNEL_MODULES}
 
 # Compile all the kernels into a single file so that we can put them all on
 # one device
-fpga: nemolite2d_kernels.aocx
+fpga:
+	${MAKE} KERNEL_MODULES="${KERNEL_MODULES}" nemolite2d_kernels.aocx
 
 nemolite2d_kernels.aocx: ${KERNEL_MODULES:.o=.cl}
 	aoc ${AOC_FLAGS} ${KERNEL_MODULES:.o=.cl} -o nemolite2d_kernels
