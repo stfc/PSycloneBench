@@ -22,12 +22,6 @@ cl_program get_program(cl_context context,
 		       const char *version_str,
 		       const char *filename);
 
-cl_kernel get_kernel(cl_context context,
-		     const cl_device_id *device,
-		     const char *version_str,
-		     const char *filename,
-		     const char *kernel_name);
-
 cl_program get_source_kernel(cl_context context,
 			     const cl_device_id *device,
 			     const char *filename);

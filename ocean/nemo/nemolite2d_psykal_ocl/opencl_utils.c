@@ -258,25 +258,6 @@ cl_program get_program(cl_context context,
   return program;
 }
 
-/** Creates an OpenCL kernel for the supplied context and device. If the
- device is an FPGA then the kernel must be pre-compiled. */
-cl_kernel get_kernel(cl_context context,
-		     const cl_device_id *device,
-		     const char *version_str,
-		     const char *filename,
-		     const char *kernel_name){
-  /* Holds return value of calls to OpenCL API */
-  cl_int ret;
-  cl_kernel kernel = NULL;
-  cl_program program;
-
-  /* Create OpenCL Kernel */
-  kernel = clCreateKernel(program, kernel_name, &ret);
-  check_status("clCreateKernel", ret);
-
-  return kernel;
-}
-
 /** Creates an OpenCL kernel by compiling it from the supplied source */
 cl_program get_source_kernel(cl_context context,
 			     const cl_device_id *device,
