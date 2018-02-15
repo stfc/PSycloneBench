@@ -87,6 +87,7 @@ void continuity_code(int ji, int jj,
       rdt / e12t[idx];
     */
 
+    //ssha_idx = sshn[idx];
     // Following line is for testing only
     ssha_idx = (double)idx;
 
@@ -94,7 +95,6 @@ void continuity_code(int ji, int jj,
     // Write the value we've just computed to the channel
     // This call is specific to the Intel OpenCL SDK
     write_channel_intel(ssh_channel, ssha_idx);
-    //mem_fence(CLK_CHANNEL_MEM_FENCE);
 #endif
 
   }

@@ -73,12 +73,12 @@ __kernel void next_sshu_code(int width,
   int ji = get_global_id(0);
   int jj = get_global_id(1);
 #else
-  void next_sshu_code(int ji, int jj, int width,
+  void next_sshu_code(const int ji, const int jj, const int width,
 		      double* sshn_u,
-		      double* sshn,
-		      int* tmask,
-		      double* e12t,
-		      double* e12u){
+		      const double* sshn,
+		      const int* tmask,
+		      const double* e12t,
+		      const double* e12u){
 #endif
   double rtmp1;
   int idx = jj*width + ji;

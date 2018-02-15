@@ -337,7 +337,6 @@ cl_program get_binary_kernel(cl_context context,
   unsigned char *binary_buffers[num_binaries];
   size_t binary_sizes[num_binaries];
   cl_int binary_status[num_binaries];
-  cl_int ret_codes[num_binaries];
   /* Modified filename of the kernel binary (as opposed to source) */
   char bname[STD_STRING_LEN];
   char *ptr;

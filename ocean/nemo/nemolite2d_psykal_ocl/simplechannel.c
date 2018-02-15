@@ -26,7 +26,7 @@ int main(){
   cl_device_id device = NULL;
   cl_context context = NULL;
   /* String holding info on chosen device */
-  char version_str[128];
+  char version_str[STD_STRING_LEN];
 
   /* In order to run multiple kernels concurrently, we must have
      multiple command queues (since the Intel OpenCL SDK only supports

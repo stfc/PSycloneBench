@@ -7,12 +7,12 @@
 #include <CL/cl.h>
 #endif
 
-void next_sshu_code(int ji, int jj, int width,
+void next_sshu_code(const int ji, const int jj, const int width,
 		    double* sshn_u,
-		    double* sshn,
-		    int* tmask,
-		    double* e12t,
-		    double* e12u);
+		    const double* sshn,
+		    const int* tmask,
+		    const double* e12t,
+		    const double* e12u);
 
 void set_args_next_sshu(cl_kernel kern,
 			cl_int *nx,

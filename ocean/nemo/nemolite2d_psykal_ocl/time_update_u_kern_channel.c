@@ -30,8 +30,6 @@
 #ifdef __OPENCL_VERSION__
 
 #pragma OPENCL EXTENSION cl_intel_channels : enable
-//channel int in_channel;
-//extern channel double ssh_channel;
 
 __kernel void next_sshu_code(int width,
 			     __global double* restrict sshn_u,
@@ -42,20 +40,18 @@ __kernel void next_sshu_code(int width,
   int ji = get_global_id(0);
   int jj = get_global_id(1);
 #else
-  void next_sshu_code(int ji, int jj, int width,
+  void next_sshu_code(const int ji, const int jj, const int width,
 		      double* sshn_u,
-		      double* sshn,
-		      int* tmask,
-		      double* e12t,
-		      double* e12u){
+		      const double* sshn,
+		      const int* tmask,
+		      const double* e12t,
+		      const double* e12u){
 #endif
   double rtmp1;
   int idx = jj*width + ji;
   int idxip1 = idx + 1;
   double ssh = 0.0;
-
 #ifdef INTELFPGA_CL
-  //mem_fence(CLK_CHANNEL_MEM_FENCE);
   // the ssh_channel is declared in continuity_kern_channel.c
   ssh = read_channel_intel(ssh_channel);
 #endif
