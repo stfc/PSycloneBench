@@ -82,7 +82,7 @@ int main(){
   char *image_file = NULL;
   cl_int nx = 127;
   cl_int ny = 127;
-    int xstart, xstop, ystart, ystop;
+  int xstart, xstop, ystart, ystop;
   /** Our time-step index (passed into BCs kernel) */
   cl_int istep;
   /** Number of time-steps to do. May be overridden by setting
@@ -193,9 +193,9 @@ int main(){
 
   /* Create the kernels associated with the program object */
   cont_kernel = clCreateKernel(program, "continuity_code", &ret);
-  check_status("clCreateCommandQueue", ret);
+  check_status("clCreateKernel", ret);
   next_sshu_kernel = clCreateKernel(program, "next_sshu_code", &ret);
-  check_status("clCreateCommandQueue", ret);
+  check_status("clCreateKernel", ret);
 
   /* Create Device Memory Buffers */
   int num_buffers = 0;
