@@ -3,15 +3,17 @@
 !
 program nemolite2d
   use clfortran
-  use ISO_C_BINDING
+  use opencl_utils_mod
+  use iso_c_binding
   implicit none
 
-  integer irec,i,iallocerr,iplatform,idevice
+  integer irec, i, iallocerr
   integer, parameter :: iunit=10
   integer, parameter :: wp = kind(1.0d0)
+  character(len=CL_UTIL_STR_LEN) :: version_str
 
-  integer(c_int32_t) :: ierr,num_devices,num_platforms, arg_idx
-  integer(c_size_t) :: iret,size_in_bytes,zero_size= 0
+  integer(c_int32_t) :: ierr, arg_idx
+  integer(c_size_t) :: iret, size_in_bytes
   integer(c_int32_t), target :: status
   integer(c_size_t), target :: binary_size
   character, dimension(1) :: char
@@ -26,18 +28,16 @@ program nemolite2d
   integer, target :: isize, nx, ny, num_buffers
   real(kind=wp), target :: rdt
   integer(c_size_t),target :: globalsize(2), localsize(2)
-  integer(c_int32_t), target :: device_cu, build_log
-  integer(c_intptr_t), allocatable, target :: &
-       platform_ids(:), device_ids(:), write_events(:)
-  integer(c_intptr_t), target :: &
-       ctx_props(3),context,cmd_queue,prog,kernel,cl_vec1,cl_vec2
+  integer(c_int32_t), target :: build_log
+  integer(c_intptr_t), allocatable, target :: write_events(:)
+  integer(c_intptr_t), target :: device
+  integer(c_intptr_t), target :: context, cmd_queue, prog, kernel
   integer(c_intptr_t), target :: ssha_device
   integer(c_intptr_t), target :: sshn_device, sshn_u_device, sshn_v_device
   integer(c_intptr_t), target :: un_device, vn_device
   integer(c_intptr_t), target :: hu_device, hv_device
   integer(c_intptr_t), target :: e12t_device
-  character(len=1,kind=c_char), allocatable, target :: &
-       source(:),device_name(:)
+  character(len=1,kind=c_char), allocatable, target :: source(:)
   character(len=1,kind=c_char), target :: &
        source2(1:1024),retinfo(1:1024), &
        c_options(1:1024),c_kernel_name(1:1024)
@@ -57,77 +57,16 @@ program nemolite2d
   ssha = 1.0d0
   hu = 1.0d0
   hv = 1.0d0
+  
+  ! Initialise the OpenCL device
+  call init_device(device, version_str, context)
 
-  ierr = clGetPlatformIDs(0, C_NULL_PTR, num_platforms)
-  call check_status('clGetPlatformIDs', ierr)
-  if (num_platforms < 1)then
-     write (*,*) "Failed to get any OpenCL platform IDs"
-     stop
-  end if
-  print '(a,i2)','Num Platforms: ',num_platforms
-
-  allocate(platform_ids(num_platforms), stat=iallocerr)
-  if (iallocerr.ne.0) stop 'memory allocation error'
-
-  ! whenever "&" appears in C subroutine (address-of) call,
-  ! then C_LOC has to be used in Fortran
-  ierr = clGetPlatformIDs(num_platforms, C_LOC(platform_ids), &
-                          num_platforms)
-  if (ierr.ne.CL_SUCCESS) stop 'clGetPlatformIDs'
-
-! Get device IDs only for platform 1
-  iplatform=1
-
-  ierr=clGetDeviceIDs(platform_ids(iplatform),CL_DEVICE_TYPE_ALL, &
-          0,C_NULL_PTR,num_devices)
-  if ((ierr.ne.CL_SUCCESS).or.(num_devices.lt.1))then
-     stop 'clGetDeviceIDs'
-  end if
-  print '(a,i2)','Num Devices: ',num_devices
-  allocate(device_ids(num_devices),stat=iallocerr)
-  if (iallocerr.ne.0) stop 'memory allocation error'
-
-  ! whenever "&" appears in C subroutine (address-off) call,
-  ! then C_LOC has to be used in Fortran
-  ierr = clGetDeviceIDs(platform_ids(iplatform),CL_DEVICE_TYPE_ALL, &
-                        num_devices,C_LOC(device_ids),num_devices)
-  if (ierr.ne.CL_SUCCESS) stop 'clGetDeviceIDs'
-
-! Get device info only for device 1
-  idevice=1
-
-  ierr=clGetDeviceInfo(device_ids(idevice), &
-          CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(device_cu), &
-          C_LOC(device_cu),iret)
-  if (ierr.ne.CL_SUCCESS) stop 'clGetDeviceInfo'
-  ierr=clGetDeviceInfo(device_ids(idevice), &
-       CL_DEVICE_NAME,zero_size,C_NULL_PTR,iret)
-  if (ierr.ne.CL_SUCCESS) stop 'clGetDeviceInfo'
-  allocate(device_name(iret),stat=iallocerr)
-  if (iallocerr.ne.0) stop 'allocate'
-  ierr=clGetDeviceInfo(device_ids(idevice), &
-       CL_DEVICE_NAME,sizeof(device_name),C_LOC(device_name),iret)
-  if (ierr.ne.CL_SUCCESS) stop 'clGetDeviceInfo'
-  write (*,'(a,i2,a,i3,a)',advance='no') &
-          ' Device (#',idevice,', Compute Units: ',device_cu,') - '
-  print *,device_name(1:iret)
-  deallocate(device_name)
-
-  print '(a,i2,a)', 'Creating context for: ', num_devices,' devices'
-  print '(a,i2)', 'for platform: ',iplatform
-  ctx_props(1)=CL_CONTEXT_PLATFORM
-  ctx_props(2)=platform_ids(iplatform)
-  ctx_props(3)=0
-  context=clCreateContext(C_LOC(ctx_props),num_devices, &
-       C_LOC(device_ids),C_NULL_FUNPTR,C_NULL_PTR,ierr)
-  if (ierr.ne.CL_SUCCESS) stop 'clCreateContext'
-
-  cmd_queue=clCreateCommandQueue(context,device_ids(idevice), &
-       CL_QUEUE_PROFILING_ENABLE,ierr)
+  cmd_queue=clCreateCommandQueue(context, device, &
+                                 CL_QUEUE_PROFILING_ENABLE, ierr)
   if (ierr.ne.CL_SUCCESS) stop 'clCreateCommandQueue'
 
-! read kernel from disk
-  open(iunit,file='../nemolite2d_kernels.aocx',access='direct', &
+  ! read kernel from disk
+  open(iunit,file='../kernels/nemolite2d_kernels.aocx',access='direct', &
        status='old',action='read',iostat=ierr,recl=1)
   if (ierr.ne.0) stop 'Cannot open file ../nemolite2d_kernels.aocx'
   irec=1
@@ -149,7 +88,7 @@ program nemolite2d
 
   psource=C_LOC(source) ! pointer to source code
   binary_size = irec
-  prog = clCreateProgramWithBinary(context, 1, C_LOC(device_ids(idevice)), &
+  prog = clCreateProgramWithBinary(context, 1, C_LOC(device), &
                                    C_LOC(binary_size), C_LOC(psource), &
                                    C_NULL_PTR, ierr)
 
@@ -173,8 +112,8 @@ program nemolite2d
                       C_NULL_FUNPTR,C_NULL_PTR)
   if (ierr.ne.CL_SUCCESS) then
      print *,'clBuildProgram',ierr
-     ierr=clGetProgramBuildInfo(prog,device_ids(idevice), &
-          CL_PROGRAM_BUILD_LOG,sizeof(retinfo),C_LOC(retinfo),iret)
+     ierr=clGetProgramBuildInfo(prog, device, CL_PROGRAM_BUILD_LOG, &
+                                sizeof(retinfo), C_LOC(retinfo),iret)
      if (ierr.ne.0) stop 'clGetProgramBuildInfo'
      print '(a)','build log start'
      print '(1024a)',retinfo(1:min(iret,1024))
@@ -382,131 +321,5 @@ program nemolite2d
   if (ierr.ne.0) stop 'clReleaseCommandQueue'
   ierr=clReleaseContext(context)
   if (ierr.ne.0) stop 'clReleaseContext'
-
-contains
-
-subroutine check_status(text, ierr)
-  use clfortran
-  implicit none
-  character(len=*), intent(in) :: text
-  integer, intent(in) :: ierr
-
-  logical, parameter :: verbose = .TRUE.
-
-  if(ierr /= CL_SUCCESS)then
-    write(*,'("Hit error: ",(A),": ",(A))') text, OCL_GetErrorString(ierr)
-    stop
-  end if
-  if(verbose)then
-    write(*,'("Called ",(A)," OK")') text 
-  end if
-
-end subroutine check_status
-  
-function OCL_GetErrorString(error)
-  use clfortran
-  implicit none
-  character(len=64) :: OCL_GetErrorString
-  integer, intent(in) :: error
-  select case(error)
-
-    case (CL_SUCCESS)
-        OCL_GetErrorString = "CL_SUCCESS"
-    case (CL_DEVICE_NOT_FOUND)
-        OCL_GetErrorString = "CL_DEVICE_NOT_FOUND"
-    case (CL_DEVICE_NOT_AVAILABLE)
-        OCL_GetErrorString = "CL_DEVICE_NOT_AVAILABLE"
-    case (CL_COMPILER_NOT_AVAILABLE)
-        OCL_GetErrorString = "CL_COMPILER_NOT_AVAILABLE"
-    case (CL_MEM_OBJECT_ALLOCATION_FAILURE)
-        OCL_GetErrorString = "CL_MEM_OBJECT_ALLOCATION_FAILURE"
-    case (CL_OUT_OF_RESOURCES)
-        OCL_GetErrorString = "CL_OUT_OF_RESOURCES"
-    case (CL_OUT_OF_HOST_MEMORY)
-        OCL_GetErrorString = "CL_OUT_OF_HOST_MEMORY"
-    case (CL_PROFILING_INFO_NOT_AVAILABLE)
-        OCL_GetErrorString = "CL_PROFILING_INFO_NOT_AVAILABLE"
-    case (CL_MEM_COPY_OVERLAP)
-        OCL_GetErrorString = "CL_MEM_COPY_OVERLAP"
-    case (CL_IMAGE_FORMAT_MISMATCH)
-        OCL_GetErrorString = "CL_IMAGE_FORMAT_MISMATCH"
-    case (CL_IMAGE_FORMAT_NOT_SUPPORTED)
-        OCL_GetErrorString = "CL_IMAGE_FORMAT_NOT_SUPPORTED"
-    case (CL_BUILD_PROGRAM_FAILURE)
-        OCL_GetErrorString = "CL_BUILD_PROGRAM_FAILURE"
-    case (CL_MAP_FAILURE)
-        OCL_GetErrorString = "CL_MAP_FAILURE"
-    case (CL_INVALID_VALUE)
-        OCL_GetErrorString = "CL_INVALID_VALUE"
-    case (CL_INVALID_DEVICE_TYPE)
-        OCL_GetErrorString = "CL_INVALID_DEVICE_TYPE"
-    case (CL_INVALID_PLATFORM)
-        OCL_GetErrorString = "CL_INVALID_PLATFORM"
-    case (CL_INVALID_DEVICE)
-        OCL_GetErrorString = "CL_INVALID_DEVICE"
-    case (CL_INVALID_CONTEXT)
-        OCL_GetErrorString = "CL_INVALID_CONTEXT"
-    case (CL_INVALID_QUEUE_PROPERTIES)
-        OCL_GetErrorString = "CL_INVALID_QUEUE_PROPERTIES"
-    case (CL_INVALID_COMMAND_QUEUE)
-        OCL_GetErrorString = "CL_INVALID_COMMAND_QUEUE"
-    case (CL_INVALID_HOST_PTR)
-        OCL_GetErrorString = "CL_INVALID_HOST_PTR"
-    case (CL_INVALID_MEM_OBJECT)
-        OCL_GetErrorString = "CL_INVALID_MEM_OBJECT"
-    case (CL_INVALID_IMAGE_FORMAT_DESCRIPTOR)
-        OCL_GetErrorString = "CL_INVALID_IMAGE_FORMAT_DESCRIPTOR"
-    case (CL_INVALID_IMAGE_SIZE)
-        OCL_GetErrorString = "CL_INVALID_IMAGE_SIZE"
-    case (CL_INVALID_SAMPLER)
-        OCL_GetErrorString = "CL_INVALID_SAMPLER"
-    case (CL_INVALID_BINARY)
-        OCL_GetErrorString = "CL_INVALID_BINARY"
-    case (CL_INVALID_BUILD_OPTIONS)
-        OCL_GetErrorString = "CL_INVALID_BUILD_OPTIONS"
-    case (CL_INVALID_PROGRAM)
-        OCL_GetErrorString = "CL_INVALID_PROGRAM"
-    case (CL_INVALID_PROGRAM_EXECUTABLE)
-        OCL_GetErrorString = "CL_INVALID_PROGRAM_EXECUTABLE"
-    case (CL_INVALID_KERNEL_NAME)
-        OCL_GetErrorString = "CL_INVALID_KERNEL_NAME"
-    case (CL_INVALID_KERNEL_DEFINITION)
-        OCL_GetErrorString = "CL_INVALID_KERNEL_DEFINITION"
-    case (CL_INVALID_KERNEL)
-        OCL_GetErrorString = "CL_INVALID_KERNEL"
-    case (CL_INVALID_ARG_INDEX)
-        OCL_GetErrorString = "CL_INVALID_ARG_INDEX"
-    case (CL_INVALID_ARG_VALUE)
-        OCL_GetErrorString = "CL_INVALID_ARG_VALUE"
-    case (CL_INVALID_ARG_SIZE)
-        OCL_GetErrorString = "CL_INVALID_ARG_SIZE"
-    case (CL_INVALID_KERNEL_ARGS)
-        OCL_GetErrorString = "CL_INVALID_KERNEL_ARGS"
-    case (CL_INVALID_WORK_DIMENSION)
-        OCL_GetErrorString = "CL_INVALID_WORK_DIMENSION"
-    case (CL_INVALID_WORK_GROUP_SIZE)
-        OCL_GetErrorString = "CL_INVALID_WORK_GROUP_SIZE"
-    case (CL_INVALID_WORK_ITEM_SIZE)
-        OCL_GetErrorString = "CL_INVALID_WORK_ITEM_SIZE"
-    case (CL_INVALID_GLOBAL_OFFSET)
-        OCL_GetErrorString = "CL_INVALID_GLOBAL_OFFSET"
-    case (CL_INVALID_EVENT_WAIT_LIST)
-        OCL_GetErrorString = "CL_INVALID_EVENT_WAIT_LIST"
-    case (CL_INVALID_EVENT)
-        OCL_GetErrorString = "CL_INVALID_EVENT"
-    case (CL_INVALID_OPERATION)
-        OCL_GetErrorString = "CL_INVALID_OPERATION"
-    case (CL_INVALID_GL_OBJECT)
-        OCL_GetErrorString = "CL_INVALID_GL_OBJECT"
-    case (CL_INVALID_BUFFER_SIZE)
-        OCL_GetErrorString = "CL_INVALID_BUFFER_SIZE"
-    case (CL_INVALID_MIP_LEVEL)
-        OCL_GetErrorString = "CL_INVALID_MIP_LEVEL"
-    case(CL_INVALID_GLOBAL_WORK_SIZE)
-        OCL_GetErrorString = "CL_INVALID_GLOBAL_WORK_SIZE"
-    case default
-        OCL_GetErrorString = "unknown error code"
-     end select
-   end function OCL_GetErrorString
 
  end program nemolite2d
