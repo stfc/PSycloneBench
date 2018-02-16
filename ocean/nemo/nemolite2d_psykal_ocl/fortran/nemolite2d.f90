@@ -20,9 +20,9 @@ program sum
   character, dimension(1) :: char
   character(len=1024) :: options,kernel_name
 
-  real(kind=wp), allocatable, dimension(:,:), target :: un, vn, sshn, sshn_t, sshn_u, sshn_v
-  real(kind=wp), allocatable, dimension(:,:), target :: ua, va, ssha, ssha_u, ssha_v
-  real(kind=wp), allocatable, dimension(:,:), target :: hu, hv, ht, e12t
+  real(kind=wp), allocatable, dimension(:,:), target :: un, vn, sshn
+  real(kind=wp), allocatable, dimension(:,:), target :: sshn_u, sshn_v, ssha
+  real(kind=wp), allocatable, dimension(:,:), target :: hu, hv, e12t
 
 ! C_LOC determines the C address of an object
 ! The variable type must be either a pointer or a target
@@ -31,14 +31,13 @@ program sum
   integer(c_size_t),target :: globalsize(2), localsize(2)
   integer(c_int32_t), target :: device_cu, build_log
   integer(c_intptr_t), allocatable, target :: &
-       platform_ids(:),device_ids(:)
+       platform_ids(:), device_ids(:), write_events(:)
   integer(c_intptr_t), target :: &
        ctx_props(3),context,cmd_queue,prog,kernel,cl_vec1,cl_vec2
-  integer(c_int32_t), allocatable, target :: write_events(:)
-  integer(c_intptr_t), target :: ssha_device, ssha_u_device, ssha_v_device
+  integer(c_intptr_t), target :: ssha_device
   integer(c_intptr_t), target :: sshn_device, sshn_u_device, sshn_v_device
   integer(c_intptr_t), target :: un_device, vn_device
-  integer(c_intptr_t), target :: ht_device, hu_device, hv_device
+  integer(c_intptr_t), target :: hu_device, hv_device
   integer(c_intptr_t), target :: e12t_device
   character(len=1,kind=c_char), allocatable, target :: &
        source(:),device_name(:)
@@ -50,22 +49,17 @@ program sum
 
   nx = 128
   ny = 128
-  allocate(un(nx, ny), vn(nx, ny), sshn_t(nx, ny), sshn_u(nx, ny), &
-           sshn_v(nx, ny), ua(nx, ny), va(nx, ny), ssha(nx, ny), &
-           ssha_u(nx, ny), ssha_v(nx, ny), hu(nx, ny), hv(nx, ny), ht(nx, ny))
+  allocate(un(nx, ny), vn(nx, ny), sshn_u(nx, ny),   &
+           sshn_v(nx, ny), sshn(nx,ny), ssha(nx, ny), hu(nx, ny), &
+           hv(nx, ny), e12t(nx, ny), stat=iallocerr)
+  if(iallocerr /= 0) stop 'Allocate of fields failed'
   un = 1.0d0
   vn = 1.0d0
-  sshn_t = 1.0d0
   sshn_u = 1.0d0
   sshn_v = 1.0d0
-  ua = 1.0d0
-  va = 1.0d0
   ssha = 1.0d0
-  ssha_u = 1.0d0
-  ssha_v = 1.0d0
   hu = 1.0d0
   hv = 1.0d0
-  ht = 1.0d0
 
   ierr = clGetPlatformIDs(0, C_NULL_PTR, num_platforms)
   ierr = check_status('clGetPlatformIDs', ierr)
@@ -216,14 +210,6 @@ program sum
                                size_in_bytes, C_NULL_PTR, ierr)
   ierr = check_status('clCreateBuffer', ierr)
   num_buffers = num_buffers + 1
-  ssha_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
-				 C_NULL_PTR, ierr)
-  ierr = check_status("clCreateBuffer", ierr)
-  num_buffers = num_buffers + 1
-  ssha_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
-				 C_NULL_PTR, ierr)
-  ierr = check_status("clCreateBuffer", ierr)
-  num_buffers = num_buffers + 1
   sshn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			       C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
@@ -241,10 +227,6 @@ program sum
   ierr = check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
   hv_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
-			     C_NULL_PTR, ierr)
-  ierr = check_status("clCreateBuffer", ierr)
-  num_buffers = num_buffers + 1
-  ht_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
@@ -268,7 +250,10 @@ program sum
   ! 0_8 is a zero of kind=8
   ! Create an array to store the event associated with each write
   !   to the device
-  allocate(write_events(num_buffers))
+  allocate(write_events(num_buffers), stat=iallocerr)
+  if(iallocerr /= 0) stop 'Allocate write_events'
+  write (*,*) "Allocated space for ", num_buffers, " events"
+
   num_buffers = 1;
   ierr = clEnqueueWriteBuffer(cmd_queue, ssha_device, CL_TRUE, 0_8, &
 			     size_in_bytes, C_LOC(ssha), 0, &
@@ -314,10 +299,13 @@ program sum
 			     size_in_bytes, C_LOC(e12t), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   ierr = check_status("clEnqueueWriteBuffer", ierr)
-  ierr = clWaitForEvents(C_LOC(num_buffers), C_LOC(write_events));
+
+  ! Wait for the writes
+  write(*,*) "Sent ", num_buffers, " buffers to device"
+  ierr = clWaitForEvents(num_buffers, C_LOC(write_events));
   ierr = check_status("clWaitForEvents", ierr)
 
-! set the kernel arguments
+  ! set the kernel arguments
   arg_idx = 0
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(nx), C_LOC(nx))
   ierr = check_status("clSetKernelArg", ierr)
@@ -410,7 +398,7 @@ function check_status(text, ierr)
     stop
   end if
   if(verbose)then
-    write(*,'("Called ",(A)," OK\n")') text 
+    write(*,'("Called ",(A)," OK")') text 
   end if
   check_status = 0
 end function check_status
