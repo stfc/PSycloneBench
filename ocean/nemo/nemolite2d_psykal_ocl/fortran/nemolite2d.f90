@@ -11,6 +11,7 @@ program sum
 
   integer irec,i,iallocerr,iplatform,idevice
   integer, parameter :: iunit=10
+  integer, parameter :: wp = kind(1.0d0)
 
   integer(c_int32_t) :: ierr,num_devices,num_platforms, arg_idx
   integer(c_size_t) :: iret,size_in_bytes,zero_size= 0
@@ -19,20 +20,24 @@ program sum
   character, dimension(1) :: char
   character(len=1024) :: options,kernel_name
 
+  real(kind=wp), allocatable, dimension(:,:) :: un, vn, sshn_t, sshn_u, sshn_v
+  real(kind=wp), allocatable, dimension(:,:) :: ua, va, ssha, ssha_u, ssha_v
+  real(kind=wp), allocatable, dimension(:,:) :: hu, hv, ht
+
 ! C_LOC determines the C address of an object
 ! The variable type must be either a pointer or a target
   integer, target :: isize, nx, ny
-  real(kind=8), target :: rdt
+  real(kind=wp), target :: rdt
   integer(c_size_t),target :: globalsize,localsize
   integer(c_int32_t), target :: device_cu,build_log
   integer(c_intptr_t), allocatable, target :: &
        platform_ids(:),device_ids(:)
   integer(c_intptr_t), target :: &
        ctx_props(3),context,cmd_queue,prog,kernel,cl_vec1,cl_vec2
-  integer(c_intptr_t), target :: ssha_device, ssha_u_device
+  integer(c_intptr_t), target :: ssha_device, ssha_u_device, ssha_v_device
   integer(c_intptr_t), target :: sshn_device, sshn_u_device, sshn_v_device
   integer(c_intptr_t), target :: un_device, vn_device
-  integer(c_intptr_t), target :: hu_device, hv_device
+  integer(c_intptr_t), target :: ht_device, hu_device, hv_device
   integer(c_intptr_t), target :: e12t_device
   character(len=1,kind=c_char), allocatable, target :: &
        source(:),device_name(:)
@@ -41,6 +46,25 @@ program sum
        c_options(1:1024),c_kernel_name(1:1024)
   real, allocatable, target :: vec1(:), vec2(:)
   type(c_ptr), target :: psource
+
+  nx = 128
+  ny = 128
+  allocate(un(nx, ny), vn(nx, ny), sshn_t(nx, ny), sshn_u(nx, ny), &
+           sshn_v(nx, ny), ua(nx, ny), va(nx, ny), ssha(nx, ny), &
+           ssha_u(nx, ny), ssha_v(nx, ny), hu(nx, ny), hv(nx, ny), ht(nx, ny))
+  un = 1.0d0
+  vn = 1.0d0
+  sshn_t = 1.0d0
+  sshn_u = 1.0d0
+  sshn_v = 1.0d0
+  ua = 1.0d0
+  va = 1.0d0
+  ssha = 1.0d0
+  ssha_u = 1.0d0
+  ssha_v = 1.0d0
+  hu = 1.0d0
+  hv = 1.0d0
+  ht = 1.0d0
 
   ierr=clGetPlatformIDs(0,C_NULL_PTR,num_platforms)
   if ((ierr.ne.CL_SUCCESS).or.(num_platforms.lt.1))then
@@ -176,28 +200,49 @@ program sum
   ierr=clReleaseProgram(prog)
   if (ierr.ne.0) stop 'clReleaseProgram'
 
-  isize=1000
-  size_in_bytes=int(isize,8)*4_8
-! Size of an element, typically: 
-! 4_8 for integer or real 
-! 8_8 for double precision or complex 
-! 16_8 for double complex
-! second 8 indicates kind=8 (same is true for 8 in int() argument list)
-  allocate(vec1(1:isize))
-  allocate(vec2(1:isize))
+  size_in_bytes = int(nx*ny,8)*8_8
+  ! Size of an element, typically: 
+  ! 4_8 for integer or real 
+  ! 8_8 for double precision or complex 
+  ! 16_8 for double complex
+  ! second 8 indicates kind=8 (same is true for 8 in int() argument list)
 
-  do i=1,isize
-     vec1(i)=real(i)
-     vec2(i)=real(isize-i)
-  enddo
-
-! allocate device memory
-  cl_vec1=clCreateBuffer(context,CL_MEM_READ_ONLY, &
-       size_in_bytes,C_NULL_PTR,ierr)
-  if (ierr.ne.0) stop 'clCreateBuffer'
-  cl_vec2=clCreateBuffer(context,CL_MEM_READ_WRITE, &
-       size_in_bytes,C_NULL_PTR,ierr)
-  if (ierr.ne.0) stop 'clCreateBuffer'
+  ! allocate device memory
+  ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, &
+                               size_in_bytes, C_NULL_PTR, ierr)
+  ierr = check_status('clCreateBuffer', ierr)
+  ssha_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+				 C_NULL_PTR, ierr)
+  ierr = check_status("clCreateBuffer", ierr)
+  ssha_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+				 C_NULL_PTR, ierr)
+  ierr = check_status("clCreateBuffer", ierr)
+  sshn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+			       C_NULL_PTR, ierr)
+  ierr = check_status("clCreateBuffer", ierr)
+  sshn_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+				 C_NULL_PTR, ierr)
+  ierr = check_status("clCreateBuffer", ierr)
+  sshn_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+				 C_NULL_PTR, ierr)
+  ierr = check_status("clCreateBuffer", ierr)
+  hu_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+			     C_NULL_PTR, ierr)
+  ierr = check_status("clCreateBuffer", ierr)
+  hv_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+			     C_NULL_PTR, ierr)
+  ierr = check_status("clCreateBuffer", ierr)
+  ht_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+			     C_NULL_PTR, ierr)
+  ierr = check_status("clCreateBuffer", ierr)
+  
+  ! Velocity fields
+  un_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+			     C_NULL_PTR, ierr)
+  ierr = check_status("clCreateBuffer", ierr)
+  vn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+			     C_NULL_PTR, ierr)
+  ierr = check_status("clCreateBuffer", ierr)
 
 
 ! copy data to device memory
