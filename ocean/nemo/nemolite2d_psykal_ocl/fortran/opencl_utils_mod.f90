@@ -1,4 +1,6 @@
 module opencl_utils_mod
+  use clfortran
+  use iso_c_binding
   implicit none
 
   integer, parameter :: CL_UTIL_STR_LEN = 64
@@ -6,8 +8,6 @@ module opencl_utils_mod
 contains
   
   subroutine init_device(device, version_str, context)
-    use clfortran
-    use iso_c_binding
     integer(c_intptr_t), intent(inout) :: device, context 
     character(len=CL_UTIL_STR_LEN), intent(inout) :: version_str
 
@@ -92,6 +92,74 @@ contains
     call check_status('clCreateContext', ierr)
 
   end subroutine init_device
+
+  function get_program(context, device, version_str, filename) result(prog)
+    integer(c_intptr_t), target :: prog
+    integer(c_intptr_t), intent(inout), target :: device, context 
+    character(len=CL_UTIL_STR_LEN), intent(in) :: version_str, filename
+    ! Locals
+    character(len=1,kind=c_char), allocatable, target :: source(:)
+    type(c_ptr), target :: psource
+    character(len=1024) :: options
+    character(len=1, kind=c_char), target :: retinfo(1:1024), c_options(1:1024)
+    integer :: i, irec, iallocerr
+    integer(c_int32_t) :: ierr
+    integer, parameter :: iunit=10
+    integer(c_size_t), target :: binary_size, iret
+    character, dimension(1) :: char
+
+    ! read kernel from disk
+    open(iunit, file=filename, access='direct', &
+         status='old', action='read', iostat=ierr, recl=1)
+    if (ierr.ne.0)then
+       write(*,*) 'Cannot open file: ', TRIM(filename)
+       stop
+    end if
+    irec=1
+    do
+       read(iunit, rec=irec, iostat=ierr) char
+       if (ierr /= 0) exit
+       irec = irec+1
+    end do
+
+    if (irec.eq.0) stop 'nothing read'
+    allocate(source(irec+1),stat=iallocerr)
+    if (iallocerr.ne.0) stop 'allocate'
+    do i=1,irec
+       read(iunit,rec=i,iostat=ierr) source(i:i)
+    enddo
+    close(iunit)
+
+    print '(a,i7)','size of source code in bytes: ',irec
+
+    psource=C_LOC(source) ! pointer to source code
+    binary_size = irec
+    prog = clCreateProgramWithBinary(context, 1, C_LOC(device), &
+                                     C_LOC(binary_size), C_LOC(psource), &
+                                     C_NULL_PTR, ierr)
+
+    call check_status('clCreateProgramWithSource', ierr)
+
+    options = "" !'-cl-opt-disable' ! compiler options
+    irec = len(trim(options))
+    do i=1, irec
+       c_options(i)=options(i:i)
+    enddo
+    c_options(irec+1) = C_NULL_CHAR
+    ierr=clBuildProgram(prog, 0, C_NULL_PTR, C_LOC(c_options), &
+         C_NULL_FUNPTR,C_NULL_PTR)
+    if (ierr.ne.CL_SUCCESS) then
+       print *,'clBuildProgram',ierr
+       ierr=clGetProgramBuildInfo(prog, device, CL_PROGRAM_BUILD_LOG, &
+            sizeof(retinfo), C_LOC(retinfo),iret)
+       if (ierr.ne.0) stop 'clGetProgramBuildInfo'
+       print '(a)','build log start'
+       print '(1024a)',retinfo(1:min(iret,1024))
+       print '(a)','build log end'
+       stop
+    endif
+
+  end function get_program
 
   subroutine check_status(text, ierr)
     use clfortran

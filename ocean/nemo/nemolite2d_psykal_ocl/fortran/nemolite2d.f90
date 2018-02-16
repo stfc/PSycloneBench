@@ -8,41 +8,34 @@ program nemolite2d
   implicit none
 
   integer irec, i, iallocerr
-  integer, parameter :: iunit=10
   integer, parameter :: wp = kind(1.0d0)
-  character(len=CL_UTIL_STR_LEN) :: version_str
+  character(len=CL_UTIL_STR_LEN) :: version_str, filename
 
   integer(c_int32_t) :: ierr, arg_idx
-  integer(c_size_t) :: iret, size_in_bytes
+  integer(c_size_t) :: size_in_bytes
   integer(c_int32_t), target :: status
-  integer(c_size_t), target :: binary_size
-  character, dimension(1) :: char
-  character(len=1024) :: options,kernel_name
+  character(len=1024) :: kernel_name
 
   real(kind=wp), allocatable, dimension(:,:), target :: un, vn, sshn
   real(kind=wp), allocatable, dimension(:,:), target :: sshn_u, sshn_v, ssha
   real(kind=wp), allocatable, dimension(:,:), target :: hu, hv, e12t
 
-! C_LOC determines the C address of an object
-! The variable type must be either a pointer or a target
-  integer, target :: isize, nx, ny, num_buffers
+  ! C_LOC determines the C address of an object
+  ! The variable type must be either a pointer or a target
+  integer, target :: nx, ny, num_buffers
   real(kind=wp), target :: rdt
   integer(c_size_t),target :: globalsize(2), localsize(2)
   integer(c_int32_t), target :: build_log
   integer(c_intptr_t), allocatable, target :: write_events(:)
   integer(c_intptr_t), target :: device
   integer(c_intptr_t), target :: context, cmd_queue, prog, kernel
+  ! Pointers to device memory
   integer(c_intptr_t), target :: ssha_device
   integer(c_intptr_t), target :: sshn_device, sshn_u_device, sshn_v_device
   integer(c_intptr_t), target :: un_device, vn_device
   integer(c_intptr_t), target :: hu_device, hv_device
   integer(c_intptr_t), target :: e12t_device
-  character(len=1,kind=c_char), allocatable, target :: source(:)
-  character(len=1,kind=c_char), target :: &
-       source2(1:1024),retinfo(1:1024), &
-       c_options(1:1024),c_kernel_name(1:1024)
-  real, allocatable, target :: vec1(:), vec2(:)
-  type(c_ptr), target :: psource
+  character(len=1, kind=c_char), target :: c_kernel_name(1:1024)
 
   nx = 128
   ny = 128
@@ -61,65 +54,12 @@ program nemolite2d
   ! Initialise the OpenCL device
   call init_device(device, version_str, context)
 
-  cmd_queue=clCreateCommandQueue(context, device, &
-                                 CL_QUEUE_PROFILING_ENABLE, ierr)
-  if (ierr.ne.CL_SUCCESS) stop 'clCreateCommandQueue'
+  cmd_queue = clCreateCommandQueue(context, device, &
+                                   CL_QUEUE_PROFILING_ENABLE, ierr)
+  call check_status('clCreateCommandQueue', ierr)
 
-  ! read kernel from disk
-  open(iunit,file='../kernels/nemolite2d_kernels.aocx',access='direct', &
-       status='old',action='read',iostat=ierr,recl=1)
-  if (ierr.ne.0) stop 'Cannot open file ../nemolite2d_kernels.aocx'
-  irec=1
-  do
-     read(iunit,rec=irec,iostat=ierr) char
-     if (ierr.ne.0) exit
-     irec=irec+1
-  end do
-
-  if (irec.eq.0) stop 'nothing read'
-  allocate(source(irec+1),stat=iallocerr)
-  if (iallocerr.ne.0) stop 'allocate'
-  do i=1,irec
-     read(iunit,rec=i,iostat=ierr) source(i:i)
-  enddo
-  close(iunit)
-
-  print '(a,i7)','size of source code in bytes: ',irec
-
-  psource=C_LOC(source) ! pointer to source code
-  binary_size = irec
-  prog = clCreateProgramWithBinary(context, 1, C_LOC(device), &
-                                   C_LOC(binary_size), C_LOC(psource), &
-                                   C_NULL_PTR, ierr)
-
-  call check_status('clCreateProgramWithSource', ierr)
-
-  ! check if program has uploaded successfully to CL device
-  !ierr=clGetProgramInfo(prog,CL_PROGRAM_SOURCE, &
-  !     sizeof(source2),C_LOC(source2),iret)
-  !if (ierr.ne.CL_SUCCESS) stop 'clGetProgramInfo'
-  !print '(a)','**** code retrieved from device start ****'
-  !print '(1024a)',source2(1:min(iret,1024))
-  !print '(a)','**** code retrieved from device end ****'
-
-  options = "" !'-cl-opt-disable' ! compiler options
-  irec = len(trim(options))
-  do i=1, irec
-     c_options(i)=options(i:i)
-  enddo
-  c_options(irec+1) = C_NULL_CHAR
-  ierr=clBuildProgram(prog, 0, C_NULL_PTR, C_LOC(c_options), &
-                      C_NULL_FUNPTR,C_NULL_PTR)
-  if (ierr.ne.CL_SUCCESS) then
-     print *,'clBuildProgram',ierr
-     ierr=clGetProgramBuildInfo(prog, device, CL_PROGRAM_BUILD_LOG, &
-                                sizeof(retinfo), C_LOC(retinfo),iret)
-     if (ierr.ne.0) stop 'clGetProgramBuildInfo'
-     print '(a)','build log start'
-     print '(1024a)',retinfo(1:min(iret,1024))
-     print '(a)','build log end'
-     stop
-  endif
+  filename = "../kernels/nemolite2d_kernels.aocx"
+  prog = get_program(context, device, version_str, filename)
 
   kernel_name = 'continuity_code'
   irec = len(trim(kernel_name))
@@ -284,15 +224,6 @@ program nemolite2d
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(e12t_device), &
                         C_LOC(e12t_device))
   call check_status("clSetKernelArg", ierr)
-
-  ! get the local size for the kernel
-  !ierr=clGetKernelWorkGroupInfo(kernel,device_ids(idevice), &
-  !        CL_KERNEL_WORK_GROUP_SIZE,sizeof(localsize), &
-  !        C_LOC(localsize),iret)
-  !if (ierr.ne.0) stop 'clGetKernelWorkGroupInfo'
-  !globalsize=int(isize,8)
-  !if (mod(globalsize,localsize).ne.0) globalsize= &
-  !     globalsize+localsize-mod(globalsize,localsize) 
 
   globalsize(1) = nx
   globalsize(2) = ny

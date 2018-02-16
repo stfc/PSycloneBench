@@ -12,4 +12,4 @@ clean:
 	rm -f *.o *~
 
 allclean: clean
-	rm *.exe
+	rm -f *.exe *.mod
