@@ -28,7 +28,7 @@ program sum
 ! The variable type must be either a pointer or a target
   integer, target :: isize, nx, ny, num_buffers
   real(kind=wp), target :: rdt
-  integer(c_size_t),target :: globalsize,localsize
+  integer(c_size_t),target :: globalsize(2), localsize(2)
   integer(c_int32_t), target :: device_cu, build_log
   integer(c_intptr_t), allocatable, target :: &
        platform_ids(:),device_ids(:)
@@ -359,47 +359,31 @@ program sum
                         C_LOC(e12t_device))
   ierr = check_status("clSetKernelArg", ierr)
 
+  ! get the local size for the kernel
+  !ierr=clGetKernelWorkGroupInfo(kernel,device_ids(idevice), &
+  !        CL_KERNEL_WORK_GROUP_SIZE,sizeof(localsize), &
+  !        C_LOC(localsize),iret)
+  !if (ierr.ne.0) stop 'clGetKernelWorkGroupInfo'
+  !globalsize=int(isize,8)
+  !if (mod(globalsize,localsize).ne.0) globalsize= &
+  !     globalsize+localsize-mod(globalsize,localsize) 
 
-  ierr=clSetKernelArg(kernel,0,sizeof(isize),C_LOC(isize))
-  if (ierr.ne.0) stop 'clSetKernelArg'
-  ierr=clSetKernelArg(kernel,1,sizeof(cl_vec1),C_LOC(cl_vec1))
-  if (ierr.ne.0) stop 'clSetKernelArg'
-  ierr=clSetKernelArg(kernel,2,sizeof(cl_vec2),C_LOC(cl_vec2))
-  if (ierr.ne.0) stop 'clSetKernelArg'
+  globalsize(1) = nx
+  globalsize(2) = ny
 
-! get the local size for the kernel
-  ierr=clGetKernelWorkGroupInfo(kernel,device_ids(idevice), &
-          CL_KERNEL_WORK_GROUP_SIZE,sizeof(localsize), &
-          C_LOC(localsize),iret)
-  if (ierr.ne.0) stop 'clGetKernelWorkGroupInfo'
-  globalsize=int(isize,8)
-  if (mod(globalsize,localsize).ne.0) globalsize= &
-       globalsize+localsize-mod(globalsize,localsize) 
-
-
-! execute the kernel
-  ierr=clEnqueueNDRangeKernel(cmd_queue,kernel, &
-          1,C_NULL_PTR,C_LOC(globalsize),C_LOC(localsize), &
-          0,C_NULL_PTR,C_NULL_PTR)
+  ! execute the kernel
+  ierr = clEnqueueNDRangeKernel(cmd_queue, kernel, &
+          2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
+          0, C_NULL_PTR,C_NULL_PTR)
   if (ierr.ne.0) stop 'clEnqueueNDRangeKernel'
   ierr=clFinish(cmd_queue)
   if (ierr.ne.0) stop 'clFinish'
 
-  print '(a)','sent to device:'
-  do i=1,10
-     print '(2e12.5)',vec1(i),vec2(i)
-  enddo
-
-! read the resulting vector from device memory
-  ierr=clEnqueueReadBuffer(cmd_queue,cl_vec2, &
-          CL_TRUE,0_8,size_in_bytes,C_LOC(vec2), &
-          0,C_NULL_PTR,C_NULL_PTR)
+  ! read the resulting vector from device memory
+  ierr = clEnqueueReadBuffer(cmd_queue, ssha_device, &
+                             CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha), &
+                             0, C_NULL_PTR, C_NULL_PTR)
   if (ierr.ne.0) stop 'clEnqueueReadBuffer'
-
-  print '(a)','retrieved from device:'
-  do i=1,10
-     print '(12x,e12.5)',vec2(i)
-  enddo
 
   ierr=clReleaseKernel(kernel)
   if (ierr.ne.0) stop 'clReleaseKernel'
