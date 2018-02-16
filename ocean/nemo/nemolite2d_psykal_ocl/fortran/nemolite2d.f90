@@ -67,9 +67,11 @@ program sum
   hv = 1.0d0
   ht = 1.0d0
 
-  ierr=clGetPlatformIDs(0,C_NULL_PTR,num_platforms)
-  if ((ierr.ne.CL_SUCCESS).or.(num_platforms.lt.1))then
-     print *,'clGetPlatformIDs',ierr
+  ierr = clGetPlatformIDs(0, C_NULL_PTR, num_platforms)
+  ierr = check_status('clGetPlatformIDs', ierr)
+  if (num_platforms < 1)then
+     write (*,*) "Failed to get any OpenCL platform IDs"
+     stop
   end if
   print '(a,i2)','Num Platforms: ',num_platforms
   allocate(platform_ids(num_platforms),stat=iallocerr)
@@ -402,7 +404,7 @@ function check_status(text, ierr, verbose)
   integer, intent(in) :: ierr
   logical, optional, intent(in) :: verbose
   if(ierr /= CL_SUCCESS)then
-    write(*,'("Hit error: ",(A),": ",(A))') text, "OCL error string goes here" !OCL_GetErrorString(ierr)
+    write(*,'("Hit error: ",(A),": ",(A))') text, OCL_GetErrorString(ierr)
     stop
   end if
   if(verbose)then
@@ -411,6 +413,112 @@ function check_status(text, ierr, verbose)
   check_status = 0
 end function check_status
   
+function OCL_GetErrorString(error)
+  use clfortran
+  implicit none
+  character(len=64) :: OCL_GetErrorString
+  integer, intent(in) :: error
+  select case(error)
+
+    case (CL_SUCCESS)
+        OCL_GetErrorString = "CL_SUCCESS"
+    case (CL_DEVICE_NOT_FOUND)
+        OCL_GetErrorString = "CL_DEVICE_NOT_FOUND"
+    case (CL_DEVICE_NOT_AVAILABLE)
+        OCL_GetErrorString = "CL_DEVICE_NOT_AVAILABLE"
+    case (CL_COMPILER_NOT_AVAILABLE)
+        OCL_GetErrorString = "CL_COMPILER_NOT_AVAILABLE"
+    case (CL_MEM_OBJECT_ALLOCATION_FAILURE)
+        OCL_GetErrorString = "CL_MEM_OBJECT_ALLOCATION_FAILURE"
+    case (CL_OUT_OF_RESOURCES)
+        OCL_GetErrorString = "CL_OUT_OF_RESOURCES"
+    case (CL_OUT_OF_HOST_MEMORY)
+        OCL_GetErrorString = "CL_OUT_OF_HOST_MEMORY"
+    case (CL_PROFILING_INFO_NOT_AVAILABLE)
+        OCL_GetErrorString = "CL_PROFILING_INFO_NOT_AVAILABLE"
+    case (CL_MEM_COPY_OVERLAP)
+        OCL_GetErrorString = "CL_MEM_COPY_OVERLAP"
+    case (CL_IMAGE_FORMAT_MISMATCH)
+        OCL_GetErrorString = "CL_IMAGE_FORMAT_MISMATCH"
+    case (CL_IMAGE_FORMAT_NOT_SUPPORTED)
+        OCL_GetErrorString = "CL_IMAGE_FORMAT_NOT_SUPPORTED"
+    case (CL_BUILD_PROGRAM_FAILURE)
+        OCL_GetErrorString = "CL_BUILD_PROGRAM_FAILURE"
+    case (CL_MAP_FAILURE)
+        OCL_GetErrorString = "CL_MAP_FAILURE"
+    case (CL_INVALID_VALUE)
+        OCL_GetErrorString = "CL_INVALID_VALUE"
+    case (CL_INVALID_DEVICE_TYPE)
+        OCL_GetErrorString = "CL_INVALID_DEVICE_TYPE"
+    case (CL_INVALID_PLATFORM)
+        OCL_GetErrorString = "CL_INVALID_PLATFORM"
+    case (CL_INVALID_DEVICE)
+        OCL_GetErrorString = "CL_INVALID_DEVICE"
+    case (CL_INVALID_CONTEXT)
+        OCL_GetErrorString = "CL_INVALID_CONTEXT"
+    case (CL_INVALID_QUEUE_PROPERTIES)
+        OCL_GetErrorString = "CL_INVALID_QUEUE_PROPERTIES"
+    case (CL_INVALID_COMMAND_QUEUE)
+        OCL_GetErrorString = "CL_INVALID_COMMAND_QUEUE"
+    case (CL_INVALID_HOST_PTR)
+        OCL_GetErrorString = "CL_INVALID_HOST_PTR"
+    case (CL_INVALID_MEM_OBJECT)
+        OCL_GetErrorString = "CL_INVALID_MEM_OBJECT"
+    case (CL_INVALID_IMAGE_FORMAT_DESCRIPTOR)
+        OCL_GetErrorString = "CL_INVALID_IMAGE_FORMAT_DESCRIPTOR"
+    case (CL_INVALID_IMAGE_SIZE)
+        OCL_GetErrorString = "CL_INVALID_IMAGE_SIZE"
+    case (CL_INVALID_SAMPLER)
+        OCL_GetErrorString = "CL_INVALID_SAMPLER"
+    case (CL_INVALID_BINARY)
+        OCL_GetErrorString = "CL_INVALID_BINARY"
+    case (CL_INVALID_BUILD_OPTIONS)
+        OCL_GetErrorString = "CL_INVALID_BUILD_OPTIONS"
+    case (CL_INVALID_PROGRAM)
+        OCL_GetErrorString = "CL_INVALID_PROGRAM"
+    case (CL_INVALID_PROGRAM_EXECUTABLE)
+        OCL_GetErrorString = "CL_INVALID_PROGRAM_EXECUTABLE"
+    case (CL_INVALID_KERNEL_NAME)
+        OCL_GetErrorString = "CL_INVALID_KERNEL_NAME"
+    case (CL_INVALID_KERNEL_DEFINITION)
+        OCL_GetErrorString = "CL_INVALID_KERNEL_DEFINITION"
+    case (CL_INVALID_KERNEL)
+        OCL_GetErrorString = "CL_INVALID_KERNEL"
+    case (CL_INVALID_ARG_INDEX)
+        OCL_GetErrorString = "CL_INVALID_ARG_INDEX"
+    case (CL_INVALID_ARG_VALUE)
+        OCL_GetErrorString = "CL_INVALID_ARG_VALUE"
+    case (CL_INVALID_ARG_SIZE)
+        OCL_GetErrorString = "CL_INVALID_ARG_SIZE"
+    case (CL_INVALID_KERNEL_ARGS)
+        OCL_GetErrorString = "CL_INVALID_KERNEL_ARGS"
+    case (CL_INVALID_WORK_DIMENSION)
+        OCL_GetErrorString = "CL_INVALID_WORK_DIMENSION"
+    case (CL_INVALID_WORK_GROUP_SIZE)
+        OCL_GetErrorString = "CL_INVALID_WORK_GROUP_SIZE"
+    case (CL_INVALID_WORK_ITEM_SIZE)
+        OCL_GetErrorString = "CL_INVALID_WORK_ITEM_SIZE"
+    case (CL_INVALID_GLOBAL_OFFSET)
+        OCL_GetErrorString = "CL_INVALID_GLOBAL_OFFSET"
+    case (CL_INVALID_EVENT_WAIT_LIST)
+        OCL_GetErrorString = "CL_INVALID_EVENT_WAIT_LIST"
+    case (CL_INVALID_EVENT)
+        OCL_GetErrorString = "CL_INVALID_EVENT"
+    case (CL_INVALID_OPERATION)
+        OCL_GetErrorString = "CL_INVALID_OPERATION"
+    case (CL_INVALID_GL_OBJECT)
+        OCL_GetErrorString = "CL_INVALID_GL_OBJECT"
+    case (CL_INVALID_BUFFER_SIZE)
+        OCL_GetErrorString = "CL_INVALID_BUFFER_SIZE"
+    case (CL_INVALID_MIP_LEVEL)
+        OCL_GetErrorString = "CL_INVALID_MIP_LEVEL"
+    case(CL_INVALID_GLOBAL_WORK_SIZE)
+        OCL_GetErrorString = "CL_INVALID_GLOBAL_WORK_SIZE"
+    case default
+        OCL_GetErrorString = "unknown error code"
+     end select
+   end function OCL_GetErrorString
+
 end program sum
 
 
