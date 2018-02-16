@@ -74,12 +74,14 @@ program sum
      stop
   end if
   print '(a,i2)','Num Platforms: ',num_platforms
-  allocate(platform_ids(num_platforms),stat=iallocerr)
+
+  allocate(platform_ids(num_platforms), stat=iallocerr)
   if (iallocerr.ne.0) stop 'memory allocation error'
-! whenever "&" appears in C subroutine (address-of) call,
-! then C_LOC has to be used in Fortran
-  ierr=clGetPlatformIDs(num_platforms,C_LOC(platform_ids),&
-       num_platforms)
+
+  ! whenever "&" appears in C subroutine (address-of) call,
+  ! then C_LOC has to be used in Fortran
+  ierr = clGetPlatformIDs(num_platforms, C_LOC(platform_ids), &
+                          num_platforms)
   if (ierr.ne.CL_SUCCESS) stop 'clGetPlatformIDs'
 
 ! Get device IDs only for platform 1
@@ -93,10 +95,11 @@ program sum
   print '(a,i2)','Num Devices: ',num_devices
   allocate(device_ids(num_devices),stat=iallocerr)
   if (iallocerr.ne.0) stop 'memory allocation error'
+
   ! whenever "&" appears in C subroutine (address-off) call,
   ! then C_LOC has to be used in Fortran
-  ierr=clGetDeviceIDs(platform_ids(iplatform),CL_DEVICE_TYPE_ALL, &
-       num_devices,C_LOC(device_ids),num_devices)
+  ierr = clGetDeviceIDs(platform_ids(iplatform),CL_DEVICE_TYPE_ALL, &
+                        num_devices,C_LOC(device_ids),num_devices)
   if (ierr.ne.CL_SUCCESS) stop 'clGetDeviceIDs'
 
 ! Get device info only for device 1
@@ -151,18 +154,15 @@ program sum
   enddo
   close(iunit)
 
-  print '(a,i4)','size of source code in bytes: ',irec
-! in C, strings end with c_null_char
-  source(irec+1)=C_NULL_CHAR
+  print '(a,i7)','size of source code in bytes: ',irec
 
   psource=C_LOC(source) ! pointer to source code
   binary_size = irec
   prog = clCreateProgramWithBinary(context, 1, C_LOC(device_ids(idevice)), &
-                                   C_LOC(binary_size), psource, C_LOC(status), &
-                                   ierr)
-  !prog = clCreateProgramWithSource(context, 1, C_LOC(psource), &
-  !                                 C_NULL_PTR, ierr)
-  if (ierr.ne.CL_SUCCESS) stop 'clCreateProgramWithSource'
+                                   C_LOC(binary_size), C_LOC(psource), &
+                                   C_NULL_PTR, ierr)
+
+  ierr = check_status('clCreateProgramWithSource', ierr)
 
   ! check if program has uploaded successfully to CL device
   !ierr=clGetProgramInfo(prog,CL_PROGRAM_SOURCE, &
@@ -396,13 +396,15 @@ program sum
 
 contains
 
-function check_status(text, ierr, verbose)
+function check_status(text, ierr)
   use clfortran
   implicit none
   integer :: check_status
   character(len=*), intent(in) :: text
   integer, intent(in) :: ierr
-  logical, optional, intent(in) :: verbose
+
+  logical, parameter :: verbose = .TRUE.
+
   if(ierr /= CL_SUCCESS)then
     write(*,'("Hit error: ",(A),": ",(A))') text, OCL_GetErrorString(ierr)
     stop
