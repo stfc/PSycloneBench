@@ -3,6 +3,7 @@
 !
 ! uses module clfortran.mod
 !
+
 program sum
   use clfortran
   use ISO_C_BINDING
@@ -11,20 +12,28 @@ program sum
   integer irec,i,iallocerr,iplatform,idevice
   integer, parameter :: iunit=10
 
-  integer(c_int32_t) :: ierr,num_devices,num_platforms
+  integer(c_int32_t) :: ierr,num_devices,num_platforms, arg_idx
   integer(c_size_t) :: iret,size_in_bytes,zero_size= 0
+  integer(c_int32_t), target :: status
+  integer(c_size_t), target :: binary_size
   character, dimension(1) :: char
   character(len=1024) :: options,kernel_name
 
 ! C_LOC determines the C address of an object
 ! The variable type must be either a pointer or a target
-  integer, target :: isize
+  integer, target :: isize, nx, ny
+  real(kind=8), target :: rdt
   integer(c_size_t),target :: globalsize,localsize
   integer(c_int32_t), target :: device_cu,build_log
   integer(c_intptr_t), allocatable, target :: &
        platform_ids(:),device_ids(:)
   integer(c_intptr_t), target :: &
        ctx_props(3),context,cmd_queue,prog,kernel,cl_vec1,cl_vec2
+  integer(c_intptr_t), target :: ssha_device, ssha_u_device
+  integer(c_intptr_t), target :: sshn_device, sshn_u_device, sshn_v_device
+  integer(c_intptr_t), target :: un_device, vn_device
+  integer(c_intptr_t), target :: hu_device, hv_device
+  integer(c_intptr_t), target :: e12t_device
   character(len=1,kind=c_char), allocatable, target :: &
        source(:),device_name(:)
   character(len=1,kind=c_char), target :: &
@@ -97,9 +106,9 @@ program sum
   if (ierr.ne.CL_SUCCESS) stop 'clCreateCommandQueue'
 
 ! read kernel from disk
-  open(iunit,file='sum.cl',access='direct', &
+  open(iunit,file='../nemolite2d_kernels.aocx',access='direct', &
        status='old',action='read',iostat=ierr,recl=1)
-  if (ierr.ne.0) stop 'Cannot open file sum.cl'
+  if (ierr.ne.0) stop 'Cannot open file ../nemolite2d_kernels.aocx'
   irec=1
   do
      read(iunit,rec=irec,iostat=ierr) char
@@ -114,34 +123,36 @@ program sum
      read(iunit,rec=i,iostat=ierr) source(i:i)
   enddo
   close(iunit)
-!      print '(a)','**** CL SOURCE CODE START ****'
-!      print '(1024a)',source(1:irec)
-!      print '(a)','**** CL SOURCE CODE END ****'
+
   print '(a,i4)','size of source code in bytes: ',irec
 ! in C, strings end with c_null_char
   source(irec+1)=C_NULL_CHAR
 
   psource=C_LOC(source) ! pointer to source code
-  prog=clCreateProgramWithSource(context,1, &
-       C_LOC(psource),C_NULL_PTR,ierr)
+  binary_size = irec
+  prog = clCreateProgramWithBinary(context, 1, C_LOC(device_ids(idevice)), &
+                                   C_LOC(binary_size), psource, C_LOC(status), &
+                                   ierr)
+  !prog = clCreateProgramWithSource(context, 1, C_LOC(psource), &
+  !                                 C_NULL_PTR, ierr)
   if (ierr.ne.CL_SUCCESS) stop 'clCreateProgramWithSource'
 
-! check if program has uploaded successfully to CL device
-  ierr=clGetProgramInfo(prog,CL_PROGRAM_SOURCE, &
-       sizeof(source2),C_LOC(source2),iret)
-  if (ierr.ne.CL_SUCCESS) stop 'clGetProgramInfo'
-  print '(a)','**** code retrieved from device start ****'
-  print '(1024a)',source2(1:min(iret,1024))
-  print '(a)','**** code retrieved from device end ****'
+  ! check if program has uploaded successfully to CL device
+  !ierr=clGetProgramInfo(prog,CL_PROGRAM_SOURCE, &
+  !     sizeof(source2),C_LOC(source2),iret)
+  !if (ierr.ne.CL_SUCCESS) stop 'clGetProgramInfo'
+  !print '(a)','**** code retrieved from device start ****'
+  !print '(1024a)',source2(1:min(iret,1024))
+  !print '(a)','**** code retrieved from device end ****'
 
-  options='-cl-opt-disable' ! compiler options
-  irec=len(trim(options))
-  do i=1,irec
+  options = "" !'-cl-opt-disable' ! compiler options
+  irec = len(trim(options))
+  do i=1, irec
      c_options(i)=options(i:i)
   enddo
-  c_options(irec+1)=C_NULL_CHAR
-  ierr=clBuildProgram(prog,0, &
-       C_NULL_PTR,C_LOC(c_options),C_NULL_FUNPTR,C_NULL_PTR)
+  c_options(irec+1) = C_NULL_CHAR
+  ierr=clBuildProgram(prog, 0, C_NULL_PTR, C_LOC(c_options), &
+                      C_NULL_FUNPTR,C_NULL_PTR)
   if (ierr.ne.CL_SUCCESS) then
      print *,'clBuildProgram',ierr
      ierr=clGetProgramBuildInfo(prog,device_ids(idevice), &
@@ -153,13 +164,13 @@ program sum
      stop
   endif
 
-  kernel_name='sum'
-  irec=len(trim(kernel_name))
-  do i=1,irec
+  kernel_name = 'continuity_code'
+  irec = len(trim(kernel_name))
+  do i=1, irec
      c_kernel_name(i)=kernel_name(i:i)
   enddo
   c_kernel_name(irec+1)=C_NULL_CHAR
-  kernel=clCreateKernel(prog,C_LOC(c_kernel_name),ierr)
+  kernel=clCreateKernel(prog, C_LOC(c_kernel_name), ierr)
   if (ierr.ne.0) stop 'clCreateKernel'
 
   ierr=clReleaseProgram(prog)
@@ -188,6 +199,7 @@ program sum
        size_in_bytes,C_NULL_PTR,ierr)
   if (ierr.ne.0) stop 'clCreateBuffer'
 
+
 ! copy data to device memory
   ierr=clEnqueueWriteBuffer(cmd_queue,cl_vec1, &
        CL_TRUE,0_8,size_in_bytes,C_LOC(vec1), &
@@ -199,7 +211,52 @@ program sum
           0,C_NULL_PTR,C_NULL_PTR)
   if (ierr.ne.0) stop 'clEnqueueWriteBuffer'
 
+
 ! set the kernel arguments
+  arg_idx = 0
+  ierr = clSetKernelArg(kernel, arg_idx, sizeof(nx), C_LOC(nx))
+  ierr = check_status("clSetKernelArg", ierr)
+  arg_idx = arg_idx + 1
+  ierr = clSetKernelArg(kernel, arg_idx, sizeof(ssha_device), &
+		       C_LOC(ssha_device))
+  ierr = check_status("clSetKernelArg", ierr)
+  arg_idx = arg_idx + 1
+  ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_device), &
+		       C_LOC(sshn_device))
+  ierr = check_status("clSetKernelArg", ierr)
+  arg_idx = arg_idx + 1
+  ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_u_device), &
+		       C_LOC(sshn_u_device))
+  ierr = check_status("clSetKernelArg", ierr)
+  arg_idx = arg_idx + 1
+  ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_v_device), &
+		       C_LOC(sshn_v_device))
+  ierr =  check_status("clSetKernelArg", ierr)
+  arg_idx = arg_idx + 1
+  ierr = clSetKernelArg(kernel, arg_idx, sizeof(hu_device), &
+		       C_LOC(hu_device))
+  ierr = check_status("clSetKernelArg", ierr)
+  arg_idx = arg_idx + 1
+  ierr = clSetKernelArg(kernel, arg_idx, sizeof(hv_device), &
+		       C_LOC(hv_device))
+  ierr = check_status("clSetKernelArg", ierr)
+  arg_idx = arg_idx + 1
+  ierr = clSetKernelArg(kernel, arg_idx, sizeof(un_device), &
+		       C_LOC(un_device))
+  ierr = check_status("clSetKernelArg", ierr)
+  arg_idx = arg_idx + 1
+  ierr = clSetKernelArg(kernel, arg_idx, sizeof(vn_device), &
+		       C_LOC(vn_device))
+  ierr = check_status("clSetKernelArg", ierr)
+  arg_idx = arg_idx + 1
+  ierr = clSetKernelArg(kernel, arg_idx, sizeof(rdt), C_LOC(rdt))
+  ierr = check_status("clSetKernelArg", ierr)
+  arg_idx = arg_idx + 1
+  ierr = clSetKernelArg(kernel, arg_idx, sizeof(e12t_device), &
+                        C_LOC(e12t_device))
+  ierr = check_status("clSetKernelArg", ierr)
+
+
   ierr=clSetKernelArg(kernel,0,sizeof(isize),C_LOC(isize))
   if (ierr.ne.0) stop 'clSetKernelArg'
   ierr=clSetKernelArg(kernel,1,sizeof(cl_vec1),C_LOC(cl_vec1))
@@ -247,6 +304,25 @@ program sum
   if (ierr.ne.0) stop 'clReleaseCommandQueue'
   ierr=clReleaseContext(context)
   if (ierr.ne.0) stop 'clReleaseContext'
+
+contains
+
+function check_status(text, ierr, verbose)
+  use clfortran
+  implicit none
+  integer :: check_status
+  character(len=*), intent(in) :: text
+  integer, intent(in) :: ierr
+  logical, optional, intent(in) :: verbose
+  if(ierr /= CL_SUCCESS)then
+    write(*,'("Hit error: ",(A),": ",(A))') text, "OCL error string goes here" !OCL_GetErrorString(ierr)
+    stop
+  end if
+  if(verbose)then
+    write(*,'("Called ",(A)," OK\n")') text 
+  end if
+  check_status = 0
+end function check_status
   
 end program sum
 
