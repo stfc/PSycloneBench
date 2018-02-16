@@ -1,10 +1,7 @@
-! gfortran -fcheck=all -ffixed-form -fbacktrace -L/usr/lib64/nvidia -lOpenCL -o sum sum.f
-! srun --gres=gpu ./sum
 !
 ! uses module clfortran.mod
 !
-
-program sum
+program nemolite2d
   use clfortran
   use ISO_C_BINDING
   implicit none
@@ -62,7 +59,7 @@ program sum
   hv = 1.0d0
 
   ierr = clGetPlatformIDs(0, C_NULL_PTR, num_platforms)
-  ierr = check_status('clGetPlatformIDs', ierr)
+  call check_status('clGetPlatformIDs', ierr)
   if (num_platforms < 1)then
      write (*,*) "Failed to get any OpenCL platform IDs"
      stop
@@ -156,7 +153,7 @@ program sum
                                    C_LOC(binary_size), C_LOC(psource), &
                                    C_NULL_PTR, ierr)
 
-  ierr = check_status('clCreateProgramWithSource', ierr)
+  call check_status('clCreateProgramWithSource', ierr)
 
   ! check if program has uploaded successfully to CL device
   !ierr=clGetProgramInfo(prog,CL_PROGRAM_SOURCE, &
@@ -208,42 +205,42 @@ program sum
   num_buffers = 0
   ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, &
                                size_in_bytes, C_NULL_PTR, ierr)
-  ierr = check_status('clCreateBuffer', ierr)
+  call check_status('clCreateBuffer', ierr)
   num_buffers = num_buffers + 1
   sshn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			       C_NULL_PTR, ierr)
-  ierr = check_status("clCreateBuffer", ierr)
+  call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
   sshn_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 				 C_NULL_PTR, ierr)
-  ierr = check_status("clCreateBuffer", ierr)
+  call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
   sshn_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 				 C_NULL_PTR, ierr)
-  ierr = check_status("clCreateBuffer", ierr)
+  call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
   hu_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
-  ierr = check_status("clCreateBuffer", ierr)
+  call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
   hv_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
-  ierr = check_status("clCreateBuffer", ierr)
+  call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
 
   ! Velocity fields
   un_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
-  ierr = check_status("clCreateBuffer", ierr)
+  call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
   vn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
-  ierr = check_status("clCreateBuffer", ierr)
+  call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
 
   e12t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, size_in_bytes, &
                                C_NULL_PTR, ierr)
-  ierr = check_status("clCreateBuffer", ierr)
+  call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
 
   ! copy data to device memory
@@ -258,96 +255,96 @@ program sum
   ierr = clEnqueueWriteBuffer(cmd_queue, ssha_device, CL_TRUE, 0_8, &
 			     size_in_bytes, C_LOC(ssha), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queue, sshn_device, CL_TRUE, 0_8, &
 			     size_in_bytes, C_LOC(sshn), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queue, sshn_u_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(sshn_u), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queue, sshn_v_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(sshn_v), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queue, hu_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(hu), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queue, hv_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(hv), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queue, un_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(un), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queue, vn_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(vn), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queue, e12t_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(e12t), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  call check_status("clEnqueueWriteBuffer", ierr)
 
   ! Wait for the writes
   write(*,*) "Sent ", num_buffers, " buffers to device"
   ierr = clWaitForEvents(num_buffers, C_LOC(write_events));
-  ierr = check_status("clWaitForEvents", ierr)
+  call check_status("clWaitForEvents", ierr)
 
   ! set the kernel arguments
   arg_idx = 0
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(nx), C_LOC(nx))
-  ierr = check_status("clSetKernelArg", ierr)
+  call check_status("clSetKernelArg", ierr)
   arg_idx = arg_idx + 1
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(ssha_device), &
 		       C_LOC(ssha_device))
-  ierr = check_status("clSetKernelArg", ierr)
+  call check_status("clSetKernelArg", ierr)
   arg_idx = arg_idx + 1
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_device), &
 		       C_LOC(sshn_device))
-  ierr = check_status("clSetKernelArg", ierr)
+  call check_status("clSetKernelArg", ierr)
   arg_idx = arg_idx + 1
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_u_device), &
 		       C_LOC(sshn_u_device))
-  ierr = check_status("clSetKernelArg", ierr)
+  call check_status("clSetKernelArg", ierr)
   arg_idx = arg_idx + 1
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_v_device), &
 		       C_LOC(sshn_v_device))
-  ierr =  check_status("clSetKernelArg", ierr)
+  call check_status("clSetKernelArg", ierr)
   arg_idx = arg_idx + 1
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(hu_device), &
 		       C_LOC(hu_device))
-  ierr = check_status("clSetKernelArg", ierr)
+  call check_status("clSetKernelArg", ierr)
   arg_idx = arg_idx + 1
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(hv_device), &
 		       C_LOC(hv_device))
-  ierr = check_status("clSetKernelArg", ierr)
+  call check_status("clSetKernelArg", ierr)
   arg_idx = arg_idx + 1
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(un_device), &
 		       C_LOC(un_device))
-  ierr = check_status("clSetKernelArg", ierr)
+  call check_status("clSetKernelArg", ierr)
   arg_idx = arg_idx + 1
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(vn_device), &
 		       C_LOC(vn_device))
-  ierr = check_status("clSetKernelArg", ierr)
+  call check_status("clSetKernelArg", ierr)
   arg_idx = arg_idx + 1
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(rdt), C_LOC(rdt))
-  ierr = check_status("clSetKernelArg", ierr)
+  call check_status("clSetKernelArg", ierr)
   arg_idx = arg_idx + 1
   ierr = clSetKernelArg(kernel, arg_idx, sizeof(e12t_device), &
                         C_LOC(e12t_device))
-  ierr = check_status("clSetKernelArg", ierr)
+  call check_status("clSetKernelArg", ierr)
 
   ! get the local size for the kernel
   !ierr=clGetKernelWorkGroupInfo(kernel,device_ids(idevice), &
@@ -365,15 +362,19 @@ program sum
   ierr = clEnqueueNDRangeKernel(cmd_queue, kernel, &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
           0, C_NULL_PTR,C_NULL_PTR)
-  if (ierr.ne.0) stop 'clEnqueueNDRangeKernel'
+  call check_status('clEnqueueNDRangeKernel', ierr)
+
   ierr=clFinish(cmd_queue)
-  if (ierr.ne.0) stop 'clFinish'
+  call check_status('clFinish', ierr)
 
   ! read the resulting vector from device memory
   ierr = clEnqueueReadBuffer(cmd_queue, ssha_device, &
                              CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha), &
-                             0, C_NULL_PTR, C_NULL_PTR)
+                             0, C_NULL_PTR, C_LOC(write_events(1)))
   if (ierr.ne.0) stop 'clEnqueueReadBuffer'
+
+  ierr = clWaitForEvents(1, C_LOC(write_events))
+  call check_status('clWaitForEvents', ierr)
 
   ierr=clReleaseKernel(kernel)
   if (ierr.ne.0) stop 'clReleaseKernel'
@@ -384,10 +385,9 @@ program sum
 
 contains
 
-function check_status(text, ierr)
+subroutine check_status(text, ierr)
   use clfortran
   implicit none
-  integer :: check_status
   character(len=*), intent(in) :: text
   integer, intent(in) :: ierr
 
@@ -400,8 +400,8 @@ function check_status(text, ierr)
   if(verbose)then
     write(*,'("Called ",(A)," OK")') text 
   end if
-  check_status = 0
-end function check_status
+
+end subroutine check_status
   
 function OCL_GetErrorString(error)
   use clfortran
@@ -509,18 +509,4 @@ function OCL_GetErrorString(error)
      end select
    end function OCL_GetErrorString
 
-end program sum
-
-
-
-
-
-
-! Argument lists need to be handled with care. Neither the C nor the Fortran compiler checks for mismatched argument types, or even a mismatch in the number of arguments. Some bizarre run-time errors therefore arise. Keep in mind that Fortran passes arguments by reference whereas C passes arguments by value. When you put a variable name into a function call from Fortran, the corresponding C function receives a pointer to that variable. Similarly, when calling a Fortran subroutine from C, you must explicitly pass addresses rather than values in the argument list.
-
-! When passing arrays, remember that C arrays start with subscript zero. Fortran stores multidimensional arrays in column-major order (first index varies fastest) whereas C stores them in row-major order (last index varies fastest).
-
-! Passing character strings is a special problem. C knows it has come to the end of string when it hits a null character, but Fortran uses the declared length of a string. The C-Fortran interface provides an extra argument for each character string in a C argument list to receive the declared length of a string when called from Fortran. Consider the following Fortran fragment:
-
-
-
+ end program nemolite2d
