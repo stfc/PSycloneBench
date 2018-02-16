@@ -20,20 +20,21 @@ program sum
   character, dimension(1) :: char
   character(len=1024) :: options,kernel_name
 
-  real(kind=wp), allocatable, dimension(:,:) :: un, vn, sshn_t, sshn_u, sshn_v
-  real(kind=wp), allocatable, dimension(:,:) :: ua, va, ssha, ssha_u, ssha_v
-  real(kind=wp), allocatable, dimension(:,:) :: hu, hv, ht
+  real(kind=wp), allocatable, dimension(:,:), target :: un, vn, sshn, sshn_t, sshn_u, sshn_v
+  real(kind=wp), allocatable, dimension(:,:), target :: ua, va, ssha, ssha_u, ssha_v
+  real(kind=wp), allocatable, dimension(:,:), target :: hu, hv, ht, e12t
 
 ! C_LOC determines the C address of an object
 ! The variable type must be either a pointer or a target
-  integer, target :: isize, nx, ny
+  integer, target :: isize, nx, ny, num_buffers
   real(kind=wp), target :: rdt
   integer(c_size_t),target :: globalsize,localsize
-  integer(c_int32_t), target :: device_cu,build_log
+  integer(c_int32_t), target :: device_cu, build_log
   integer(c_intptr_t), allocatable, target :: &
        platform_ids(:),device_ids(:)
   integer(c_intptr_t), target :: &
        ctx_props(3),context,cmd_queue,prog,kernel,cl_vec1,cl_vec2
+  integer(c_int32_t), allocatable, target :: write_events(:)
   integer(c_intptr_t), target :: ssha_device, ssha_u_device, ssha_v_device
   integer(c_intptr_t), target :: sshn_device, sshn_u_device, sshn_v_device
   integer(c_intptr_t), target :: un_device, vn_device
@@ -208,54 +209,111 @@ program sum
   ! second 8 indicates kind=8 (same is true for 8 in int() argument list)
 
   ! allocate device memory
+  num_buffers = 0
   ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, &
                                size_in_bytes, C_NULL_PTR, ierr)
   ierr = check_status('clCreateBuffer', ierr)
+  num_buffers = num_buffers + 1
   ssha_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 				 C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
   ssha_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 				 C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
   sshn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			       C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
   sshn_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 				 C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
   sshn_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 				 C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
   hu_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
   hv_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
   ht_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
-  
+  num_buffers = num_buffers + 1
+
   ! Velocity fields
   un_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
   vn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
   ierr = check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
 
+  e12t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, size_in_bytes, &
+                               C_NULL_PTR, ierr)
+  ierr = check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
 
-! copy data to device memory
-  ierr=clEnqueueWriteBuffer(cmd_queue,cl_vec1, &
-       CL_TRUE,0_8,size_in_bytes,C_LOC(vec1), &
-       0,C_NULL_PTR,C_NULL_PTR)
-! 0_8 is a zero of kind=8
-  if (ierr.ne.0) stop 'clEnqueueWriteBuffer'
-  ierr=clEnqueueWriteBuffer(cmd_queue,cl_vec2, &
-          CL_TRUE,0_8,size_in_bytes,C_LOC(vec2), &
-          0,C_NULL_PTR,C_NULL_PTR)
-  if (ierr.ne.0) stop 'clEnqueueWriteBuffer'
-
+  ! copy data to device memory
+  ! 0_8 is a zero of kind=8
+  ! Create an array to store the event associated with each write
+  !   to the device
+  allocate(write_events(num_buffers))
+  num_buffers = 1;
+  ierr = clEnqueueWriteBuffer(cmd_queue, ssha_device, CL_TRUE, 0_8, &
+			     size_in_bytes, C_LOC(ssha), 0, &
+			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  num_buffers = num_buffers + 1
+  ierr = clEnqueueWriteBuffer(cmd_queue, sshn_device, CL_TRUE, 0_8, &
+			     size_in_bytes, C_LOC(sshn), 0, &
+			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  num_buffers = num_buffers + 1
+  ierr = clEnqueueWriteBuffer(cmd_queue, sshn_u_device, CL_TRUE,0_8, &
+			     size_in_bytes, C_LOC(sshn_u), 0, &
+			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  num_buffers = num_buffers + 1
+  ierr = clEnqueueWriteBuffer(cmd_queue, sshn_v_device, CL_TRUE,0_8, &
+			     size_in_bytes, C_LOC(sshn_v), 0, &
+			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  num_buffers = num_buffers + 1
+  ierr = clEnqueueWriteBuffer(cmd_queue, hu_device, CL_TRUE,0_8, &
+			     size_in_bytes, C_LOC(hu), 0, &
+			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  num_buffers = num_buffers + 1
+  ierr = clEnqueueWriteBuffer(cmd_queue, hv_device, CL_TRUE,0_8, &
+			     size_in_bytes, C_LOC(hv), 0, &
+			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  num_buffers = num_buffers + 1
+  ierr = clEnqueueWriteBuffer(cmd_queue, un_device, CL_TRUE,0_8, &
+			     size_in_bytes, C_LOC(un), 0, &
+			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  num_buffers = num_buffers + 1
+  ierr = clEnqueueWriteBuffer(cmd_queue, vn_device, CL_TRUE,0_8, &
+			     size_in_bytes, C_LOC(vn), 0, &
+			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  num_buffers = num_buffers + 1
+  ierr = clEnqueueWriteBuffer(cmd_queue, e12t_device, CL_TRUE,0_8, &
+			     size_in_bytes, C_LOC(e12t), 0, &
+			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = check_status("clEnqueueWriteBuffer", ierr)
+  ierr = clWaitForEvents(C_LOC(num_buffers), C_LOC(write_events));
+  ierr = check_status("clWaitForEvents", ierr)
 
 ! set the kernel arguments
   arg_idx = 0
