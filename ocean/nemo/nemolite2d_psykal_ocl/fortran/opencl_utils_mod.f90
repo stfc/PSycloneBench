@@ -161,8 +161,33 @@ contains
 
   end function get_program
 
+  !> Get a kernel object from a program object
+  !>
+  !> @param [in] prog OpenCL program object obtained from
+  !>                  <code>get_program</code>
+  !> @return the kernel object
+  !>
+  function get_kernel(prog, kernel_name) result(kernel)
+    integer(c_intptr_t), target, intent(in) :: prog
+    character(len=*), intent(in) :: kernel_name
+    integer(c_intptr_t), target :: kernel
+    ! Locals
+    integer :: irec, i
+    character(len=1, kind=c_char), target :: c_kernel_name(1:1024)
+
+    irec = len(trim(kernel_name))
+    do i=1, irec
+       c_kernel_name(i) = kernel_name(i:i)
+    enddo
+    c_kernel_name(irec+1) = C_NULL_CHAR
+
+    kernel = clCreateKernel(prog, C_LOC(c_kernel_name), irec)
+    call check_status('clCreateKernel', irec)
+
+  end function get_kernel
+
+  !> Check the return code of an OpenCL API cal
   subroutine check_status(text, ierr)
-    use clfortran
     implicit none
     character(len=*), intent(in) :: text
     integer, intent(in) :: ierr
@@ -176,11 +201,9 @@ contains
     if(verbose)then
        write(*,'("Called ",(A)," OK")') text 
     end if
-
   end subroutine check_status
   
 function OCL_GetErrorString(error)
-  use clfortran
   implicit none
   character(len=64) :: OCL_GetErrorString
   integer, intent(in) :: error

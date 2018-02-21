@@ -17,7 +17,6 @@ program nemolite2d
   integer(c_int32_t) :: ierr, arg_idx
   integer(c_size_t) :: size_in_bytes
   integer(c_int32_t), target :: status
-  character(len=1024) :: kernel_name
 
   real(kind=wp), allocatable, dimension(:,:), target :: un, vn, sshn
   real(kind=wp), allocatable, dimension(:,:), target :: sshn_u, sshn_v, ssha
@@ -39,7 +38,6 @@ program nemolite2d
   integer(c_intptr_t), target :: un_device, vn_device
   integer(c_intptr_t), target :: hu_device, hv_device
   integer(c_intptr_t), target :: e12t_device
-  character(len=1, kind=c_char), target :: c_kernel_name(1:1024)
 
   nx = 128
   ny = 128
@@ -67,14 +65,7 @@ program nemolite2d
   filename = "../kernels/nemolite2d_kernels.aocx"
   prog = get_program(context, device, version_str, filename)
 
-  kernel_name = 'continuity_code'
-  irec = len(trim(kernel_name))
-  do i=1, irec
-     c_kernel_name(i) = kernel_name(i:i)
-  enddo
-  c_kernel_name(irec+1) = C_NULL_CHAR
-  kernel=clCreateKernel(prog, C_LOC(c_kernel_name), ierr)
-  if (ierr.ne.0) stop 'clCreateKernel'
+  kernel = get_kernel(prog, 'continuity_code')
 
   ierr=clReleaseProgram(prog)
   if (ierr.ne.0) stop 'clReleaseProgram'
