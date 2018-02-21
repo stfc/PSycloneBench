@@ -9,6 +9,9 @@ program nemolite2d
 
   integer irec, i, iallocerr
   integer, parameter :: wp = kind(1.0d0)
+  ! The number of OpenCL command queues we will use
+  integer, parameter :: NUM_CMD_QUEUES = 2
+
   character(len=CL_UTIL_STR_LEN) :: version_str, filename
 
   integer(c_int32_t) :: ierr, arg_idx
@@ -28,7 +31,8 @@ program nemolite2d
   integer(c_int32_t), target :: build_log
   integer(c_intptr_t), allocatable, target :: write_events(:)
   integer(c_intptr_t), target :: device
-  integer(c_intptr_t), target :: context, cmd_queue, prog, kernel
+  integer(c_intptr_t), target :: context, prog, kernel
+  integer(c_intptr_t), target :: cmd_queues(NUM_CMD_QUEUES)
   ! Pointers to device memory
   integer(c_intptr_t), target :: ssha_device
   integer(c_intptr_t), target :: sshn_device, sshn_u_device, sshn_v_device
@@ -54,9 +58,11 @@ program nemolite2d
   ! Initialise the OpenCL device
   call init_device(device, version_str, context)
 
-  cmd_queue = clCreateCommandQueue(context, device, &
-                                   CL_QUEUE_PROFILING_ENABLE, ierr)
-  call check_status('clCreateCommandQueue', ierr)
+  do i=1, NUM_CMD_QUEUES
+     cmd_queues(i) = clCreateCommandQueue(context, device, &
+                                          CL_QUEUE_PROFILING_ENABLE, ierr)
+     call check_status('clCreateCommandQueue', ierr)
+  end do
 
   filename = "../kernels/nemolite2d_kernels.aocx"
   prog = get_program(context, device, version_str, filename)
@@ -64,9 +70,9 @@ program nemolite2d
   kernel_name = 'continuity_code'
   irec = len(trim(kernel_name))
   do i=1, irec
-     c_kernel_name(i)=kernel_name(i:i)
+     c_kernel_name(i) = kernel_name(i:i)
   enddo
-  c_kernel_name(irec+1)=C_NULL_CHAR
+  c_kernel_name(irec+1) = C_NULL_CHAR
   kernel=clCreateKernel(prog, C_LOC(c_kernel_name), ierr)
   if (ierr.ne.0) stop 'clCreateKernel'
 
@@ -131,47 +137,47 @@ program nemolite2d
   write (*,*) "Allocated space for ", num_buffers, " events"
 
   num_buffers = 1;
-  ierr = clEnqueueWriteBuffer(cmd_queue, ssha_device, CL_TRUE, 0_8, &
-			     size_in_bytes, C_LOC(ssha), 0, &
-			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = clEnqueueWriteBuffer(cmd_queues(1), ssha_device, CL_TRUE, 0_8, &
+ 			      size_in_bytes, C_LOC(ssha), 0,            &
+			      C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
-  ierr = clEnqueueWriteBuffer(cmd_queue, sshn_device, CL_TRUE, 0_8, &
-			     size_in_bytes, C_LOC(sshn), 0, &
-			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_device, CL_TRUE, 0_8, &
+			      size_in_bytes, C_LOC(sshn), 0,            &
+			      C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
-  ierr = clEnqueueWriteBuffer(cmd_queue, sshn_u_device, CL_TRUE,0_8, &
-			     size_in_bytes, C_LOC(sshn_u), 0, &
-			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_u_device, CL_TRUE,0_8, &
+			      size_in_bytes, C_LOC(sshn_u), 0,           &
+			      C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
-  ierr = clEnqueueWriteBuffer(cmd_queue, sshn_v_device, CL_TRUE,0_8, &
-			     size_in_bytes, C_LOC(sshn_v), 0, &
-			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_v_device, CL_TRUE,0_8, &
+			      size_in_bytes, C_LOC(sshn_v), 0,           &
+			      C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
-  ierr = clEnqueueWriteBuffer(cmd_queue, hu_device, CL_TRUE,0_8, &
+  ierr = clEnqueueWriteBuffer(cmd_queues(1), hu_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(hu), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
-  ierr = clEnqueueWriteBuffer(cmd_queue, hv_device, CL_TRUE,0_8, &
+  ierr = clEnqueueWriteBuffer(cmd_queues(1), hv_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(hv), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
-  ierr = clEnqueueWriteBuffer(cmd_queue, un_device, CL_TRUE,0_8, &
+  ierr = clEnqueueWriteBuffer(cmd_queues(1), un_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(un), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
-  ierr = clEnqueueWriteBuffer(cmd_queue, vn_device, CL_TRUE,0_8, &
+  ierr = clEnqueueWriteBuffer(cmd_queues(1), vn_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(vn), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
-  ierr = clEnqueueWriteBuffer(cmd_queue, e12t_device, CL_TRUE,0_8, &
+  ierr = clEnqueueWriteBuffer(cmd_queues(1), e12t_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(e12t), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
@@ -229,16 +235,16 @@ program nemolite2d
   globalsize(2) = ny
 
   ! execute the kernel
-  ierr = clEnqueueNDRangeKernel(cmd_queue, kernel, &
+  ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel, &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
           0, C_NULL_PTR,C_NULL_PTR)
   call check_status('clEnqueueNDRangeKernel', ierr)
 
-  ierr=clFinish(cmd_queue)
+  ierr=clFinish(cmd_queues(1))
   call check_status('clFinish', ierr)
 
   ! read the resulting vector from device memory
-  ierr = clEnqueueReadBuffer(cmd_queue, ssha_device, &
+  ierr = clEnqueueReadBuffer(cmd_queues(1), ssha_device, &
                              CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha), &
                              0, C_NULL_PTR, C_LOC(write_events(1)))
   if (ierr.ne.0) stop 'clEnqueueReadBuffer'
@@ -248,8 +254,10 @@ program nemolite2d
 
   ierr=clReleaseKernel(kernel)
   if (ierr.ne.0) stop 'clReleaseKernel'
-  ierr=clReleaseCommandQueue(cmd_queue)
-  if (ierr.ne.0) stop 'clReleaseCommandQueue'
+  do i=1, NUM_CMD_QUEUES
+     ierr=clReleaseCommandQueue(cmd_queues(i))
+     if (ierr.ne.0) stop 'clReleaseCommandQueue'
+  end do
   ierr=clReleaseContext(context)
   if (ierr.ne.0) stop 'clReleaseContext'
 
