@@ -39,6 +39,20 @@ program nemolite2d
   end enum
   integer, PARAMETER :: K_NUM_KERNELS = K_NUM_KERNELS_PLUS_ONE - 1
 
+  !> The name of each kernel. This must be the name of the OpenCL
+  !! routine.
+  character(len=20), dimension(K_NUM_KERNELS) :: kernel_names = &
+                 [character(len=20) :: "continuity_code", &
+                                       "momentum_u_code", &
+                                       "momentum_v_code", &
+                                       "bc_ssh_code",     &
+                                       "bc_solid_u_code", &
+                                       "bc_solid_v_code", &
+                                       "bc_flather_u_code", &
+                                       "bc_flather_v_code", &
+                                       "next_sshu_code", &
+                                       "next_sshv_code"]    
+
   ! C_LOC determines the C address of an object
   ! The variable type must be either a pointer or a target
   integer, target :: nx, ny, num_buffers
@@ -85,10 +99,13 @@ program nemolite2d
   filename = "../kernels/nemolite2d_kernels.aocx"
   prog = get_program(context, device, version_str, filename)
 
-  kernels(K_CONTINUITY) = get_kernel(prog, 'continuity_code')
+  do i=1, K_NUM_KERNELS
+     kernels(i) = get_kernel(prog, kernel_names(i))
+  end do
 
-  ierr=clReleaseProgram(prog)
-  if (ierr.ne.0) stop 'clReleaseProgram'
+  ! Release the program now that we've created the kernels
+  ierr = clReleaseProgram(prog)
+  call check_status('clReleaseProgram', ierr)
 
   size_in_bytes = int(nx*ny,8)*8_8
   ! Size of an element, typically: 
@@ -232,8 +249,10 @@ program nemolite2d
   ierr = clWaitForEvents(1, C_LOC(write_events))
   call check_status('clWaitForEvents', ierr)
 
-  ierr=clReleaseKernel(kernels(K_CONTINUITY))
-  if (ierr.ne.0) stop 'clReleaseKernel'
+  do i=1, K_NUM_KERNELS
+     ierr = clReleaseKernel(kernels(i))
+     call check_status('clReleaseKernel', ierr)
+  end do
   do i=1, NUM_CMD_QUEUES
      ierr=clReleaseCommandQueue(cmd_queues(i))
      if (ierr.ne.0) stop 'clReleaseCommandQueue'
