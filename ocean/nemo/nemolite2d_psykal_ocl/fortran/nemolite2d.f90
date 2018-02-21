@@ -5,11 +5,17 @@ program nemolite2d
   use iso_c_binding
   use clfortran
   use opencl_utils_mod
-  use kernel_args_mod, only: set_continuity_args
+  use kernel_args_mod, only: set_continuity_args, set_momu_args
+  use grid_mod
+  use field_mod
+  use initialisation_mod, only: initialisation
+  use model_mod
+!  use boundary_conditions_mod
+  use gocean2d_io_mod, only: model_write
+  use gocean_mod,      only: model_write_log
   implicit none
 
   integer irec, i, iallocerr
-  integer, parameter :: wp = kind(1.0d0)
   ! The number of OpenCL command queues we will use
   integer, parameter :: NUM_CMD_QUEUES = 2
 
@@ -19,9 +25,19 @@ program nemolite2d
   integer(c_size_t) :: size_in_bytes
   integer(c_int32_t), target :: status
 
-  real(kind=wp), allocatable, dimension(:,:), target :: un, vn, sshn
-  real(kind=wp), allocatable, dimension(:,:), target :: sshn_u, sshn_v, ssha
-  real(kind=wp), allocatable, dimension(:,:), target :: hu, hv, e12t
+  !> The grid on which our fields are defined
+  type(grid_type), target :: model_grid
+  !> Current ('now') sea-surface height at different grid points
+  type(r2d_field), target :: sshn_u_fld, sshn_v_fld, sshn_t_fld
+  !> 'After' sea-surface height at different grid points
+  type(r2d_field), target :: ssha_u_fld, ssha_v_fld, ssha_t_fld
+  !> Distance from sea-bed to mean sea level at the different grid points.
+  !! This is not time varying.
+  type(r2d_field), target :: ht_fld, hu_fld, hv_fld
+  !> Current ('now') velocity components
+  type(r2d_field), target :: un_fld, vn_fld
+  !> 'After' velocity components
+  type(r2d_field), target :: ua_fld, va_fld
 
   enum, bind(c)
      enumerator :: K_CONTINUITY = 1 ! Start from 1 rather than 0
@@ -56,7 +72,6 @@ program nemolite2d
   ! C_LOC determines the C address of an object
   ! The variable type must be either a pointer or a target
   integer, target :: nx, ny, num_buffers
-  real(kind=wp), target :: rdt
   integer(c_size_t),target :: globalsize(2), localsize(2)
   integer(c_int32_t), target :: build_log
   integer(c_intptr_t), allocatable, target :: write_events(:)
@@ -67,25 +82,69 @@ program nemolite2d
   !> Array of command queues - used to achieve concurrent execution
   integer(c_intptr_t), target :: cmd_queues(NUM_CMD_QUEUES)
   ! Pointers to device memory
-  integer(c_intptr_t), target :: ssha_device
+  integer(c_intptr_t), target :: ssha_device, ssha_u_device
   integer(c_intptr_t), target :: sshn_device, sshn_u_device, sshn_v_device
   integer(c_intptr_t), target :: un_device, vn_device
-  integer(c_intptr_t), target :: hu_device, hv_device
-  integer(c_intptr_t), target :: e12t_device
+  integer(c_intptr_t), target :: ua_device, va_device
+  integer(c_intptr_t), target :: hu_device, hv_device, ht_device
+  integer(c_intptr_t), target :: e1u_device, e1v_device, e1t_device
+  integer(c_intptr_t), target :: e2u_device, e2v_device, e2t_device
+  integer(c_intptr_t), target :: e12u_device, e12v_device, e12t_device
+  integer(c_intptr_t), target :: gphiu_device, gphiv_device
+  integer(c_intptr_t), target :: tmask_device
+  ! Scratch space for logging messages
+  character(len=160) :: log_str
 
-  nx = 128
-  ny = 128
-  allocate(un(nx, ny), vn(nx, ny), sshn_u(nx, ny),   &
-           sshn_v(nx, ny), sshn(nx,ny), ssha(nx, ny), hu(nx, ny), &
-           hv(nx, ny), e12t(nx, ny), stat=iallocerr)
-  if(iallocerr /= 0) stop 'Allocate of fields failed'
-  un = 1.0d0
-  vn = 1.0d0
-  sshn_u = 1.0d0
-  sshn_v = 1.0d0
-  ssha = 1.0d0
-  hu = 1.0d0
-  hv = 1.0d0
+  ! Create the model grid. We use a NE offset (i.e. the U, V and F
+  ! points immediately to the North and East of a T point all have the
+  ! same i,j index).  This is the same offset scheme as used by NEMO.
+  model_grid = grid_type(ARAKAWA_C, &
+  !  BC_PERIODIC, BC_NON_PERIODIC ??
+                         (/BC_EXTERNAL,BC_EXTERNAL,BC_NONE/), &
+                         OFFSET_NE)
+
+  !! read in model parameters and configure the model grid 
+  CALL model_init(model_grid)
+
+  ! Create fields on this grid
+
+  ! Sea-surface height now (current time step)
+  sshn_u_fld = r2d_field(model_grid, U_POINTS)
+  sshn_v_fld = r2d_field(model_grid, V_POINTS)
+  sshn_t_fld = r2d_field(model_grid, T_POINTS)
+
+  ! Sea-surface height 'after' (next time step)
+  ssha_u_fld = r2d_field(model_grid, U_POINTS)
+  ssha_v_fld = r2d_field(model_grid, V_POINTS)
+  ssha_t_fld = r2d_field(model_grid, T_POINTS)
+
+  ! Distance from sea-bed to mean sea level
+  hu_fld = r2d_field(model_grid, U_POINTS)
+  hv_fld = r2d_field(model_grid, V_POINTS)
+  ht_fld = r2d_field(model_grid, T_POINTS)
+
+  ! Velocity components now (current time step)
+  un_fld = r2d_field(model_grid, U_POINTS)
+  vn_fld = r2d_field(model_grid, V_POINTS)
+
+  ! Velocity components 'after' (next time step)
+  ua_fld = r2d_field(model_grid, U_POINTS)
+  va_fld = r2d_field(model_grid, V_POINTS)
+
+  !! setup model initial conditions
+  call initialisation(ht_fld, hu_fld, hv_fld, &
+                      sshn_u_fld, sshn_v_fld, sshn_t_fld, &
+                      un_fld, vn_fld)
+
+  call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
+
+  write(log_str, "('Simulation domain = (',I4,':',I4,',',I4,':',I4,')')") &
+                       model_grid%simulation_domain%xstart, &
+                       model_grid%simulation_domain%xstop,  &
+                       model_grid%simulation_domain%ystart, &
+                       model_grid%simulation_domain%ystop
+  call model_write_log("((A))", TRIM(log_str))
+
   
   ! Initialise the OpenCL device
   call init_device(device, version_str, context)
@@ -107,7 +166,7 @@ program nemolite2d
   ierr = clReleaseProgram(prog)
   call check_status('clReleaseProgram', ierr)
 
-  size_in_bytes = int(nx*ny,8)*8_8
+  size_in_bytes = int(model_grid%nx*model_grid%ny, 8)*8_8
   ! Size of an element, typically: 
   ! 4_8 for integer or real 
   ! 8_8 for double precision or complex 
@@ -166,47 +225,47 @@ program nemolite2d
 
   num_buffers = 1;
   ierr = clEnqueueWriteBuffer(cmd_queues(1), ssha_device, CL_TRUE, 0_8, &
- 			      size_in_bytes, C_LOC(ssha), 0,            &
+ 			      size_in_bytes, C_LOC(ssha_t_fld%data), 0,   &
 			      C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_device, CL_TRUE, 0_8, &
-			      size_in_bytes, C_LOC(sshn), 0,            &
+			      size_in_bytes, C_LOC(sshn_t_fld%data), 0,   &
 			      C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_u_device, CL_TRUE,0_8, &
-			      size_in_bytes, C_LOC(sshn_u), 0,           &
+			      size_in_bytes, C_LOC(sshn_u_fld%data), 0,  &
 			      C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_v_device, CL_TRUE,0_8, &
-			      size_in_bytes, C_LOC(sshn_v), 0,           &
+			      size_in_bytes, C_LOC(sshn_v_fld%data), 0,  &
 			      C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queues(1), hu_device, CL_TRUE,0_8, &
-			     size_in_bytes, C_LOC(hu), 0, &
+			     size_in_bytes, C_LOC(hu_fld%data), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queues(1), hv_device, CL_TRUE,0_8, &
-			     size_in_bytes, C_LOC(hv), 0, &
+			     size_in_bytes, C_LOC(hv_fld%data), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queues(1), un_device, CL_TRUE,0_8, &
-			     size_in_bytes, C_LOC(un), 0, &
+			     size_in_bytes, C_LOC(un_fld%data), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queues(1), vn_device, CL_TRUE,0_8, &
-			     size_in_bytes, C_LOC(vn), 0, &
+			     size_in_bytes, C_LOC(vn_fld%data), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queues(1), e12t_device, CL_TRUE,0_8, &
-			     size_in_bytes, C_LOC(e12t), 0, &
+			     size_in_bytes, C_LOC(model_grid%area_t), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
 
@@ -228,6 +287,26 @@ program nemolite2d
                            vn_device,             &
                            rdt,                   &
                            e12t_device)
+
+  call set_momu_args(kernels(K_MOM_U), &
+		           nx,        &
+		           ua_device, &
+		           un_device, &
+		           vn_device, &
+		           hu_device, &
+		           hv_device, &
+		           ht_device, &
+		           ssha_u_device, &
+		           sshn_device,   &
+		           sshn_u_device, &
+		           sshn_v_device, &
+		           tmask_device, &
+		           e1u_device, e1v_device, &
+		           e1t_device, e2u_device, &
+		           e2t_device, e12u_device,&
+		           gphiu_device,           &
+		           rdt, cbfr, visc)
+
   globalsize(1) = nx
   globalsize(2) = ny
 
@@ -242,7 +321,7 @@ program nemolite2d
 
   ! read the resulting vector from device memory
   ierr = clEnqueueReadBuffer(cmd_queues(1), ssha_device, &
-                             CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha), &
+                             CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha_t_fld), &
                              0, C_NULL_PTR, C_LOC(write_events(1)))
   if (ierr.ne.0) stop 'clEnqueueReadBuffer'
 
