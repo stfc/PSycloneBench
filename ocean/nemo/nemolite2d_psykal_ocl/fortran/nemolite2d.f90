@@ -2,9 +2,10 @@
 ! uses module clfortran.mod
 !
 program nemolite2d
+  use iso_c_binding
   use clfortran
   use opencl_utils_mod
-  use iso_c_binding
+  use kernel_args_mod, only: set_continuity_args
   implicit none
 
   integer irec, i, iallocerr
@@ -22,6 +23,22 @@ program nemolite2d
   real(kind=wp), allocatable, dimension(:,:), target :: sshn_u, sshn_v, ssha
   real(kind=wp), allocatable, dimension(:,:), target :: hu, hv, e12t
 
+  enum, bind(c)
+     enumerator :: K_CONTINUITY = 1 ! Start from 1 rather than 0
+     enumerator K_MOM_U
+     enumerator K_MOM_V
+     enumerator K_BC_SSH
+     enumerator K_BC_SOLID_U
+     enumerator K_BC_SOLID_V
+     enumerator K_BC_FLATHER_U
+     enumerator K_BC_FLATHER_V
+     enumerator K_NEXT_SSH_U
+     enumerator K_NEXT_SSH_V
+     ! Add any new kernels before this line
+     enumerator K_NUM_KERNELS_PLUS_ONE
+  end enum
+  integer, PARAMETER :: K_NUM_KERNELS = K_NUM_KERNELS_PLUS_ONE - 1
+
   ! C_LOC determines the C address of an object
   ! The variable type must be either a pointer or a target
   integer, target :: nx, ny, num_buffers
@@ -30,7 +47,10 @@ program nemolite2d
   integer(c_int32_t), target :: build_log
   integer(c_intptr_t), allocatable, target :: write_events(:)
   integer(c_intptr_t), target :: device
-  integer(c_intptr_t), target :: context, prog, kernel
+  integer(c_intptr_t), target :: context, prog
+  !> Array of kernel objects used in the program
+  integer(c_intptr_t), target :: kernels(K_NUM_KERNELS)
+  !> Array of command queues - used to achieve concurrent execution
   integer(c_intptr_t), target :: cmd_queues(NUM_CMD_QUEUES)
   ! Pointers to device memory
   integer(c_intptr_t), target :: ssha_device
@@ -65,7 +85,7 @@ program nemolite2d
   filename = "../kernels/nemolite2d_kernels.aocx"
   prog = get_program(context, device, version_str, filename)
 
-  kernel = get_kernel(prog, 'continuity_code')
+  kernels(K_CONTINUITY) = get_kernel(prog, 'continuity_code')
 
   ierr=clReleaseProgram(prog)
   if (ierr.ne.0) stop 'clReleaseProgram'
@@ -178,55 +198,24 @@ program nemolite2d
   ierr = clWaitForEvents(num_buffers, C_LOC(write_events));
   call check_status("clWaitForEvents", ierr)
 
-  ! set the kernel arguments
-  arg_idx = 0
-  ierr = clSetKernelArg(kernel, arg_idx, sizeof(nx), C_LOC(nx))
-  call check_status("clSetKernelArg", ierr)
-  arg_idx = arg_idx + 1
-  ierr = clSetKernelArg(kernel, arg_idx, sizeof(ssha_device), &
-		       C_LOC(ssha_device))
-  call check_status("clSetKernelArg", ierr)
-  arg_idx = arg_idx + 1
-  ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_device), &
-		       C_LOC(sshn_device))
-  call check_status("clSetKernelArg", ierr)
-  arg_idx = arg_idx + 1
-  ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_u_device), &
-		       C_LOC(sshn_u_device))
-  call check_status("clSetKernelArg", ierr)
-  arg_idx = arg_idx + 1
-  ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_v_device), &
-		       C_LOC(sshn_v_device))
-  call check_status("clSetKernelArg", ierr)
-  arg_idx = arg_idx + 1
-  ierr = clSetKernelArg(kernel, arg_idx, sizeof(hu_device), &
-		       C_LOC(hu_device))
-  call check_status("clSetKernelArg", ierr)
-  arg_idx = arg_idx + 1
-  ierr = clSetKernelArg(kernel, arg_idx, sizeof(hv_device), &
-		       C_LOC(hv_device))
-  call check_status("clSetKernelArg", ierr)
-  arg_idx = arg_idx + 1
-  ierr = clSetKernelArg(kernel, arg_idx, sizeof(un_device), &
-		       C_LOC(un_device))
-  call check_status("clSetKernelArg", ierr)
-  arg_idx = arg_idx + 1
-  ierr = clSetKernelArg(kernel, arg_idx, sizeof(vn_device), &
-		       C_LOC(vn_device))
-  call check_status("clSetKernelArg", ierr)
-  arg_idx = arg_idx + 1
-  ierr = clSetKernelArg(kernel, arg_idx, sizeof(rdt), C_LOC(rdt))
-  call check_status("clSetKernelArg", ierr)
-  arg_idx = arg_idx + 1
-  ierr = clSetKernelArg(kernel, arg_idx, sizeof(e12t_device), &
-                        C_LOC(e12t_device))
-  call check_status("clSetKernelArg", ierr)
-
+  ! Set-up the kernel arguments
+  call set_continuity_args(kernels(K_CONTINUITY), &
+                           nx,                    &
+                           ssha_device,           &
+                           sshn_device,           &
+                           sshn_u_device,         &
+                           sshn_v_device,         &
+                           hu_device,             &
+                           hv_device,             &
+                           un_device,             &
+                           vn_device,             &
+                           rdt,                   &
+                           e12t_device)
   globalsize(1) = nx
   globalsize(2) = ny
 
   ! execute the kernel
-  ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel, &
+  ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_CONTINUITY), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
           0, C_NULL_PTR,C_NULL_PTR)
   call check_status('clEnqueueNDRangeKernel', ierr)
@@ -243,7 +232,7 @@ program nemolite2d
   ierr = clWaitForEvents(1, C_LOC(write_events))
   call check_status('clWaitForEvents', ierr)
 
-  ierr=clReleaseKernel(kernel)
+  ierr=clReleaseKernel(kernels(K_CONTINUITY))
   if (ierr.ne.0) stop 'clReleaseKernel'
   do i=1, NUM_CMD_QUEUES
      ierr=clReleaseCommandQueue(cmd_queues(i))

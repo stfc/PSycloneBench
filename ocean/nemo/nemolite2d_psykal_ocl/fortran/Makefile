@@ -1,7 +1,7 @@
 CLFORTRAN_PATH = ${HOME}/Projects/clfortran
 CLFORTRAN_INCLUDE = -I${CLFORTRAN_PATH}
 
-COMMON_MODULES = opencl_utils_mod.o nemolite2d.o
+COMMON_MODULES = opencl_utils_mod.o kernel_args_mod.o nemolite2d.o
 nemolite2d.exe: ${COMMON_MODULES}
 	${F90} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} $(LDFLAGS)
 
