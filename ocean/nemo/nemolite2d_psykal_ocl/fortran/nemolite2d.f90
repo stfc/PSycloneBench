@@ -71,7 +71,7 @@ program nemolite2d
 
   ! C_LOC determines the C address of an object
   ! The variable type must be either a pointer or a target
-  integer, target :: nx, ny, num_buffers
+  integer, target :: num_buffers
   integer(c_size_t),target :: globalsize(2), localsize(2)
   integer(c_int32_t), target :: build_log
   integer(c_intptr_t), allocatable, target :: write_events(:)
@@ -82,7 +82,7 @@ program nemolite2d
   !> Array of command queues - used to achieve concurrent execution
   integer(c_intptr_t), target :: cmd_queues(NUM_CMD_QUEUES)
   ! Pointers to device memory
-  integer(c_intptr_t), target :: ssha_device, ssha_u_device
+  integer(c_intptr_t), target :: ssha_device, ssha_u_device, ssha_v_device
   integer(c_intptr_t), target :: sshn_device, sshn_u_device, sshn_v_device
   integer(c_intptr_t), target :: un_device, vn_device
   integer(c_intptr_t), target :: ua_device, va_device
@@ -179,6 +179,15 @@ program nemolite2d
                                size_in_bytes, C_NULL_PTR, ierr)
   call check_status('clCreateBuffer', ierr)
   num_buffers = num_buffers + 1
+  ssha_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, &
+                               size_in_bytes, C_NULL_PTR, ierr)
+  call check_status('clCreateBuffer', ierr)
+  num_buffers = num_buffers + 1
+  ssha_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, &
+                               size_in_bytes, C_NULL_PTR, ierr)
+  call check_status('clCreateBuffer', ierr)
+  num_buffers = num_buffers + 1
+
   sshn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			       C_NULL_PTR, ierr)
   call check_status("clCreateBuffer", ierr)
@@ -191,6 +200,7 @@ program nemolite2d
 				 C_NULL_PTR, ierr)
   call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
+
   hu_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
   call check_status("clCreateBuffer", ierr)
@@ -199,8 +209,20 @@ program nemolite2d
 			     C_NULL_PTR, ierr)
   call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
+  ht_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+			     C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
 
   ! Velocity fields
+  ua_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+			     C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
+  va_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+			     C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
   un_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
 			     C_NULL_PTR, ierr)
   call check_status("clCreateBuffer", ierr)
@@ -209,9 +231,48 @@ program nemolite2d
 			     C_NULL_PTR, ierr)
   call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
+  gphiu_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+	 		        C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
+  gphiv_device = clCreateBuffer(context, CL_MEM_READ_WRITE, size_in_bytes, &
+	 		        C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
 
+  ! Mesh scale factors
+  e1u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, size_in_bytes, &
+                               C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
+  e1v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, size_in_bytes, &
+                               C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
+  e1t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, size_in_bytes, &
+                               C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
+  e2u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, size_in_bytes, &
+                               C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
+  e2t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, size_in_bytes, &
+                               C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
+  e12u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, size_in_bytes, &
+                               C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
   e12t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, size_in_bytes, &
                                C_NULL_PTR, ierr)
+  call check_status("clCreateBuffer", ierr)
+  num_buffers = num_buffers + 1
+
+  !> TODO size_in_bytes should be reduced here because only need 4-byte int
+  tmask_device = clCreateBuffer(context, CL_MEM_READ_ONLY, size_in_bytes, &
+                                C_NULL_PTR, ierr)
   call check_status("clCreateBuffer", ierr)
   num_buffers = num_buffers + 1
 
@@ -254,6 +315,16 @@ program nemolite2d
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
   call check_status("clEnqueueWriteBuffer", ierr)
   num_buffers = num_buffers + 1
+  ierr = clEnqueueWriteBuffer(cmd_queues(1), ua_device, CL_TRUE,0_8, &
+			     size_in_bytes, C_LOC(ua_fld%data), 0, &
+			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  call check_status("clEnqueueWriteBuffer", ierr)
+  num_buffers = num_buffers + 1
+  ierr = clEnqueueWriteBuffer(cmd_queues(1), va_device, CL_TRUE,0_8, &
+			     size_in_bytes, C_LOC(va_fld%data), 0, &
+			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  call check_status("clEnqueueWriteBuffer", ierr)
+  num_buffers = num_buffers + 1
   ierr = clEnqueueWriteBuffer(cmd_queues(1), un_device, CL_TRUE,0_8, &
 			     size_in_bytes, C_LOC(un_fld%data), 0, &
 			     C_NULL_PTR, C_LOC(write_events(num_buffers)))
@@ -276,7 +347,7 @@ program nemolite2d
 
   ! Set-up the kernel arguments
   call set_continuity_args(kernels(K_CONTINUITY), &
-                           nx,                    &
+                           model_grid%nx,         &
                            ssha_device,           &
                            sshn_device,           &
                            sshn_u_device,         &
@@ -289,26 +360,26 @@ program nemolite2d
                            e12t_device)
 
   call set_momu_args(kernels(K_MOM_U), &
-		           nx,        &
-		           ua_device, &
-		           un_device, &
-		           vn_device, &
-		           hu_device, &
-		           hv_device, &
-		           ht_device, &
-		           ssha_u_device, &
-		           sshn_device,   &
-		           sshn_u_device, &
-		           sshn_v_device, &
-		           tmask_device, &
-		           e1u_device, e1v_device, &
-		           e1t_device, e2u_device, &
-		           e2t_device, e12u_device,&
-		           gphiu_device,           &
-		           rdt, cbfr, visc)
+                     model_grid%nx,    &
+		     ua_device, &
+		     un_device, &
+		     vn_device, &
+		     hu_device, &
+		     hv_device, &
+		     ht_device, &
+		     ssha_u_device, &
+		     sshn_device,   &
+		     sshn_u_device, &
+		     sshn_v_device, &
+		     tmask_device, &
+		     e1u_device, e1v_device, &
+		     e1t_device, e2u_device, &
+		     e2t_device, e12u_device,&
+		     gphiu_device,           &
+		     rdt, cbfr, visc)
 
-  globalsize(1) = nx
-  globalsize(2) = ny
+  globalsize(1) = model_grid%nx
+  globalsize(2) = model_grid%ny
 
   ! execute the kernel
   ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_CONTINUITY), &
@@ -321,7 +392,8 @@ program nemolite2d
 
   ! read the resulting vector from device memory
   ierr = clEnqueueReadBuffer(cmd_queues(1), ssha_device, &
-                             CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha_t_fld), &
+                             CL_TRUE, 0_8, size_in_bytes, &
+                             C_LOC(ssha_t_fld%data), &
                              0, C_NULL_PTR, C_LOC(write_events(1)))
   if (ierr.ne.0) stop 'clEnqueueReadBuffer'
 

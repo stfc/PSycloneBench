@@ -6,10 +6,12 @@ API_VERSION=1.0
 API_DIR = ../../../api_v${API_VERSION}
 API_LIB = ${API_DIR}/gocean_api.a
 
+# Location of the dl_timer library
 TIMER_LIB = ${HOME}/Projects/dl_timer/dl_timer_lib.a
 TIMER_INC = ${HOME}/Projects/dl_timer/src
 
-COMMON_MODULES = opencl_utils_mod.o kernel_args_mod.o gocean2d_io_mod.o model_mod.o initialisation_mod.o nemolite2d.o ${API_LIB}
+COMMON_MODULES = opencl_utils_mod.o kernel_args_mod.o gocean2d_io_mod.o \
+                 model_mod.o initialisation_mod.o nemolite2d.o ${API_LIB}
 
 nemolite2d.exe: ${API_LIB} ${COMMON_MODULES}
 	${F90} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${TIMER_LIB} $(LDFLAGS)

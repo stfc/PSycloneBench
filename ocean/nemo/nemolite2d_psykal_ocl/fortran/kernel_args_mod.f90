@@ -74,6 +74,8 @@ contains
          C_LOC(e12t_device))
     call check_status("clSetKernelArg", ierr)
 
+    write(*,"('Set ',I2,' arguments for Continuity kernel')") arg_idx
+
   end subroutine set_continuity_args
 
   subroutine set_momu_args(kern,      &
@@ -151,11 +153,10 @@ contains
     arg_idx = arg_idx + 1
     ret = clSetKernelArg(kern, arg_idx, sizeof(e1u_device), &
 		         C_LOC(e1u_device))
-    arg_idx = arg_idx + 1
     call check_status("clSetKernelArg", ret)
+    arg_idx = arg_idx + 1
     ret = clSetKernelArg(kern, arg_idx, sizeof(e1v_device), &
 		         C_LOC(e1v_device))
-    arg_idx = arg_idx + 1
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
     ret = clSetKernelArg(kern, arg_idx, sizeof(e1t_device), &
