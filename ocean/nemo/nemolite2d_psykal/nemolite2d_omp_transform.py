@@ -3,7 +3,7 @@ def trans(psy):
     function via the -s option. Applies OpenMP to every loop before
     enclosing them all within a single OpenMP PARALLEL region. '''
 
-    from psyGen import TransInfo
+    from psyclone.psyGen import TransInfo
     tinfo = TransInfo()
     ltrans = tinfo.get_trans_name('GOceanOMPLoopTrans')
     rtrans = tinfo.get_trans_name('OMPParallelTrans')
