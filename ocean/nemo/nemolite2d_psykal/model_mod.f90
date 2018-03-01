@@ -12,9 +12,9 @@ MODULE model_mod
   !> type (source?) of grid
   integer, save  :: jphgr_msh
 
-  real(wp), save :: rdt             !< time step
-  REAL(wp), save :: cbfr            !< bottom friction coefficient
-  REAL(wp), save :: visc            !< backgroud/constant viscosity 
+  real(wp), target, save :: rdt             !< time step
+  REAL(wp), target, save :: cbfr            !< bottom friction coefficient
+  REAL(wp), target, save :: visc            !< backgroud/constant viscosity 
 
   REAL(wp), save :: dep_const       !< constant depth
 

@@ -19,65 +19,6 @@
 /** Maximum number of OpenCL devices we will query */
 #define MAX_DEVICES 4
 
-/** Compute a checksum for a double precision array of unknown no. of rows
-    but with each row containing width entries */
-double checksum(double *array, int width,
-		int nx, int ny, int xstart, int ystart){
-  int i, j, jidx;
-  double sum = 0.0;
-  for(j=ystart; j<ny; j++){
-    jidx = j*width;
-    for(i=xstart; i<nx; i++){
-      sum += array[i+jidx];
-    }
-  }
-  return sum;
-}
-
-/** Write the supplied integer field data to the specified file. Data
-    formatted for use with gnuplot's splot command. */
-void write_ifield(const char *filename, int nx, int ny,
-		 int xstart, int ystart, int *field){
-  int ji, jj, idx;
-  FILE *fp = fopen(filename, "w");
-  if(!fp){
-    fprintf(stderr, "write_ifield: failed to open file %s\n", filename);
-    return;
-  }
-
-  idx = 0;
-  for(jj=ystart; jj<ny; jj++){
-    for(ji=xstart; ji<nx; ji++){
-      fprintf(fp, "%d %d\n", ji, field[idx++]);
-    }
-    fprintf(fp, "\n");
-  }
-
-  fclose(fp);
-}
-
-/** Write the supplied double-precision field data to the specified
-    file. Data formatted for use with gnuplot's splot command. */
-void write_field(const char *filename, int nx, int ny,
-		 int xstart, int ystart, double *field){
-  int ji, jj, idx;
-  FILE *fp = fopen(filename, "w");
-  if(!fp){
-    fprintf(stderr, "write_field: failed to open file %s\n", filename);
-    return;
-  }
-
-  idx = 0;
-  for(jj=ystart; jj<ny; jj++){
-    for(ji=xstart; ji<nx; ji++){
-      fprintf(fp, "%d %e\n", ji, field[idx++]);
-    }
-    fprintf(fp, "\n");
-  }
-
-  fclose(fp);
-}
-
 /** Top-level driver program. Queries the hardware to find OpenCL devices,
     creates OpenCL kernels and runs them. Also runs the same kernels on
     the CPU and compares the results. */

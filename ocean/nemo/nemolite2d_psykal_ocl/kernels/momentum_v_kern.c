@@ -175,7 +175,7 @@ void momentum_v_code(int ji, int jj, int width,
   //if(jj==0 || jj > (nrow-2))return;
 #endif
   
-#if 1
+#ifdef SIMPLE_MOMENTUM
   va[idx] = (vn[idx] * (hv[idx] + sshn_v[idx]) + 
 	       rdt * (1.0) / e12v[idx] ) / 
     ((hv[idx] + ssha_v[idx])) / (1.0 + cbfr * rdt) ;
