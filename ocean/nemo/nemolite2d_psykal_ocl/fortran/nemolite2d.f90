@@ -5,7 +5,7 @@ program nemolite2d
   use iso_c_binding
   use clfortran
   use opencl_utils_mod
-  use kernel_args_mod, only: set_continuity_args, set_momu_args, set_momv_args
+  use kernel_args_mod
   use grid_mod
   use field_mod
   use initialisation_mod, only: initialisation
@@ -477,6 +477,28 @@ program nemolite2d
 		     e2v_device, e2t_device, e12v_device,&
 		     gphiv_device, &
 		     rdt, cbfr, visc)
+
+  call set_bc_ssh_args(kernels(K_BC_SSH), &
+                       model_grid%nx,     &
+                       ssha_device)
+  call set_bc_solid_u_args(kernels(K_BC_SOLID_U), &
+                           model_grid%nx,         &
+                           ua_device)
+  call set_bc_solid_v_args(kernels(K_BC_SOLID_V), &
+                           model_grid%nx,         &
+                           va_device)
+  call set_bc_flather_u_args(kernels(K_BC_FLATHER_U), &
+                             model_grid%nx,           &
+                             ua_device, hu_device, sshn_u_device)
+  call set_bc_flather_v_args(kernels(K_BC_FLATHER_V), &
+                             model_grid%nx,           &
+                             va_device, hv_device, sshn_v_device)
+  call set_next_sshu_args(kernels(K_NEXT_SSH_U), &
+                          model_grid%nx,         &
+                          sshn_u_device, sshn_device)
+  call set_next_sshv_args(kernels(K_NEXT_SSH_V), &
+                          model_grid%nx,         &
+                          sshn_v_device, sshn_device)
 
   globalsize(1) = model_grid%nx
   globalsize(2) = model_grid%ny

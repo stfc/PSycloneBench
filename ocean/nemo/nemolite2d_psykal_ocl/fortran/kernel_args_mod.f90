@@ -300,11 +300,174 @@ contains
     arg_idx = arg_idx + 1    
     ret = clSetKernelArg(kern, arg_idx, sizeof(cbfr), C_LOC(cbfr))
     call check_status("clSetKernelArg", ret);
-    arg_idx = arg_idx + 1    
+    arg_idx = arg_idx + 1
     ret = clSetKernelArg(kern, arg_idx, sizeof(visc), C_LOC(visc))
     call check_status("clSetKernelArg", ret);
+    arg_idx = arg_idx + 1
+
     write(*,"('Set ',I2,' arguments for Momentum-v kernel')") arg_idx
 
   end subroutine set_momv_args
+
+  subroutine set_bc_ssh_args(kern, nx, ssha)
+    integer(c_intptr_t), target :: kern
+    integer, target, intent(in) :: nx
+    integer(c_intptr_t), target :: ssha
+    ! Locals
+    integer :: arg_idx, ierr
+
+    ! set the kernel arguments
+    arg_idx = 0
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ! This argument is actually the current time step so we will
+    ! set it (again) during the time-stepping loop.
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(ssha), C_LOC(ssha))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+
+    write(*,"('Set ',I2,' arguments for bc-ssh kernel')") arg_idx
+
+  end subroutine set_bc_ssh_args
+
+  subroutine set_bc_solid_u_args(kern, nx, ua)
+    integer(c_intptr_t), target :: kern
+    integer, target, intent(in) :: nx
+    integer(c_intptr_t), target :: ua
+    ! Locals
+    integer :: arg_idx, ierr
+
+    ! set the kernel arguments
+    arg_idx = 0
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(ua), C_LOC(ua))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+
+    write(*,"('Set ',I2,' arguments for bc-solid-u kernel')") arg_idx
+    
+  end subroutine set_bc_solid_u_args
+
+  subroutine set_bc_solid_v_args(kern, nx, va)
+    integer(c_intptr_t), target :: kern
+    integer, target, intent(in) :: nx
+    integer(c_intptr_t), target :: va
+    ! Locals
+    integer :: arg_idx, ierr
+
+    ! set the kernel arguments
+    arg_idx = 0
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(va), C_LOC(va))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+
+    write(*,"('Set ',I2,' arguments for bc-solid-v kernel')") arg_idx
+  end subroutine set_bc_solid_v_args
+
+  subroutine set_bc_flather_u_args(kern, nx, ua, hu, sshn_u)
+    integer(c_intptr_t), target :: kern
+    integer, target, intent(in) :: nx
+    integer(c_intptr_t), target :: ua, hu, sshn_u
+    ! Locals
+    integer :: arg_idx, ierr
+
+    ! set the kernel arguments
+    arg_idx = 0
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(ua), C_LOC(ua))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(hu), C_LOC(hu))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn_u), C_LOC(sshn_u))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+
+    write(*,"('Set ',I2,' arguments for bc-flather-u kernel')") arg_idx
+  end subroutine set_bc_flather_u_args
+
+  subroutine set_bc_flather_v_args(kern, nx, va, hv, sshn_v)
+    integer(c_intptr_t), target :: kern
+    integer, target, intent(in) :: nx
+    integer(c_intptr_t), target :: va, hv, sshn_v
+    ! Locals
+    integer :: arg_idx, ierr
+
+    ! set the kernel arguments
+    arg_idx = 0
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(va), C_LOC(va))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(hv), C_LOC(hv))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn_v), C_LOC(sshn_v))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+
+    write(*,"('Set ',I2,' arguments for bc-flather-v kernel')") arg_idx
+    
+  end subroutine set_bc_flather_v_args
+
+  subroutine set_next_sshu_args(kern, nx, sshn_u, sshn)
+    integer(c_intptr_t), target :: kern
+    integer, target, intent(in) :: nx
+    integer(c_intptr_t), target :: sshn, sshn_u
+    ! Locals
+    integer :: arg_idx, ierr
+
+    ! set the kernel arguments
+    arg_idx = 0
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn_u), C_LOC(sshn_u))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn), C_LOC(sshn))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+
+    write(*,"('Set ',I2,' arguments for next-sshu kernel')") arg_idx
+  end subroutine set_next_sshu_args
+
+  subroutine set_next_sshv_args(kern, nx, sshn_v, sshn)
+    integer(c_intptr_t), target :: kern
+    integer, target, intent(in) :: nx
+    integer(c_intptr_t), target :: sshn, sshn_v
+    ! Locals
+    integer :: arg_idx, ierr
+
+    ! set the kernel arguments
+    arg_idx = 0
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1    
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn_v), C_LOC(sshn_v))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn), C_LOC(sshn))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+
+    write(*,"('Set ',I2,' arguments for next-sshv kernel')") arg_idx
+
+  end subroutine set_next_sshv_args
 
 end module kernel_args_mod
