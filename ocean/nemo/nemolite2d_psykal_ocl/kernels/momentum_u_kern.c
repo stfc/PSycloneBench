@@ -197,7 +197,7 @@ void momentum_u_code(int ji, int jj, int width,
   //if(jj==0 || jj > (nrow-2))return;
 #endif
 
-#if 1
+#ifdef SIMPLE_MOMENTUM
   ua[idx] = (un[idx] * (hu[idx] + sshn_u[idx]) + rdt * 
 	     (1.0) / e12u[idx]) / 
     (hu[idx] + ssha_u[idx]) / (1.0 + cbfr * rdt) ;

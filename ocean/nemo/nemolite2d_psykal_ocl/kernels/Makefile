@@ -20,6 +20,11 @@ AOC_FLAGS += -march=emulator
 #-emulator-channel-depth-model=strict
 AOC_FLAGS += -I../c
 
+# This causes us to use the chopped-down version of the u/v Momentum kernels
+# which simplifies testing with the FPGA.
+#AOC_FLAGS += "-DSIMPLE_MOMENTUM"
+#CFLAGS += "-DSIMPLE_MOMENTUM"
+
 all: fpga
 
 # Compile all the kernels into a single file so that we can put them all on
