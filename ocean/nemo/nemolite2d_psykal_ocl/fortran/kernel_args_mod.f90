@@ -309,10 +309,11 @@ contains
 
   end subroutine set_momv_args
 
-  subroutine set_bc_ssh_args(kern, nx, ssha)
+  subroutine set_bc_ssh_args(kern, nx, ssha, tmask, rdt)
     integer(c_intptr_t), target :: kern
     integer, target, intent(in) :: nx
-    integer(c_intptr_t), target :: ssha
+    integer(c_intptr_t), target :: ssha, tmask
+    real(kind=wp), target :: rdt
     ! Locals
     integer :: arg_idx, ierr
 
@@ -330,15 +331,21 @@ contains
     ierr = clSetKernelArg(kern, arg_idx, sizeof(ssha), C_LOC(ssha))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(rdt), C_LOC(rdt))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
 
     write(*,"('Set ',I2,' arguments for bc-ssh kernel')") arg_idx
 
   end subroutine set_bc_ssh_args
 
-  subroutine set_bc_solid_u_args(kern, nx, ua)
+  subroutine set_bc_solid_u_args(kern, nx, ua, tmask)
     integer(c_intptr_t), target :: kern
     integer, target, intent(in) :: nx
-    integer(c_intptr_t), target :: ua
+    integer(c_intptr_t), target :: ua, tmask
     ! Locals
     integer :: arg_idx, ierr
 
@@ -350,15 +357,18 @@ contains
     ierr = clSetKernelArg(kern, arg_idx, sizeof(ua), C_LOC(ua))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
 
     write(*,"('Set ',I2,' arguments for bc-solid-u kernel')") arg_idx
     
   end subroutine set_bc_solid_u_args
 
-  subroutine set_bc_solid_v_args(kern, nx, va)
+  subroutine set_bc_solid_v_args(kern, nx, va, tmask)
     integer(c_intptr_t), target :: kern
     integer, target, intent(in) :: nx
-    integer(c_intptr_t), target :: va
+    integer(c_intptr_t), target :: va, tmask
     ! Locals
     integer :: arg_idx, ierr
 
@@ -370,14 +380,17 @@ contains
     ierr = clSetKernelArg(kern, arg_idx, sizeof(va), C_LOC(va))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
 
     write(*,"('Set ',I2,' arguments for bc-solid-v kernel')") arg_idx
   end subroutine set_bc_solid_v_args
 
-  subroutine set_bc_flather_u_args(kern, nx, ua, hu, sshn_u)
+  subroutine set_bc_flather_u_args(kern, nx, ua, hu, sshn_u, tmask)
     integer(c_intptr_t), target :: kern
     integer, target, intent(in) :: nx
-    integer(c_intptr_t), target :: ua, hu, sshn_u
+    integer(c_intptr_t), target :: ua, hu, sshn_u, tmask
     ! Locals
     integer :: arg_idx, ierr
 
@@ -395,14 +408,17 @@ contains
     ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn_u), C_LOC(sshn_u))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
 
     write(*,"('Set ',I2,' arguments for bc-flather-u kernel')") arg_idx
   end subroutine set_bc_flather_u_args
 
-  subroutine set_bc_flather_v_args(kern, nx, va, hv, sshn_v)
+  subroutine set_bc_flather_v_args(kern, nx, va, hv, sshn_v, tmask)
     integer(c_intptr_t), target :: kern
     integer, target, intent(in) :: nx
-    integer(c_intptr_t), target :: va, hv, sshn_v
+    integer(c_intptr_t), target :: va, hv, sshn_v, tmask
     ! Locals
     integer :: arg_idx, ierr
 
@@ -420,15 +436,18 @@ contains
     ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn_v), C_LOC(sshn_v))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
 
     write(*,"('Set ',I2,' arguments for bc-flather-v kernel')") arg_idx
     
   end subroutine set_bc_flather_v_args
 
-  subroutine set_next_sshu_args(kern, nx, sshn_u, sshn)
+  subroutine set_next_sshu_args(kern, nx, sshn_u, sshn, tmask, e12t, e12u)
     integer(c_intptr_t), target :: kern
     integer, target, intent(in) :: nx
-    integer(c_intptr_t), target :: sshn, sshn_u
+    integer(c_intptr_t), target :: sshn, sshn_u, tmask, e12t, e12u
     ! Locals
     integer :: arg_idx, ierr
 
@@ -443,14 +462,23 @@ contains
     ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn), C_LOC(sshn))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(e12t), C_LOC(e12t))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(e12u), C_LOC(e12u))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
 
     write(*,"('Set ',I2,' arguments for next-sshu kernel')") arg_idx
   end subroutine set_next_sshu_args
 
-  subroutine set_next_sshv_args(kern, nx, sshn_v, sshn)
+  subroutine set_next_sshv_args(kern, nx, sshn_v, sshn, tmask, e12t, e12v)
     integer(c_intptr_t), target :: kern
     integer, target, intent(in) :: nx
-    integer(c_intptr_t), target :: sshn, sshn_v
+    integer(c_intptr_t), target :: sshn, sshn_v, tmask, e12t, e12v
     ! Locals
     integer :: arg_idx, ierr
 
@@ -463,6 +491,15 @@ contains
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
     ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn), C_LOC(sshn))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(e12t), C_LOC(e12t))
+    call check_status("clSetKernelArg", ierr)
+    arg_idx = arg_idx + 1
+    ierr = clSetKernelArg(kern, arg_idx, sizeof(e12v), C_LOC(e12v))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
 

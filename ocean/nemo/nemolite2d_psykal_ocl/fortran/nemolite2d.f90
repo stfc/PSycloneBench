@@ -480,25 +480,29 @@ program nemolite2d
 
   call set_bc_ssh_args(kernels(K_BC_SSH), &
                        model_grid%nx,     &
-                       ssha_device)
+                       ssha_device,       &
+                       tmask_device,      &
+                       rdt)
   call set_bc_solid_u_args(kernels(K_BC_SOLID_U), &
                            model_grid%nx,         &
-                           ua_device)
+                           ua_device, tmask_device)
   call set_bc_solid_v_args(kernels(K_BC_SOLID_V), &
                            model_grid%nx,         &
-                           va_device)
+                           va_device, tmask_device)
   call set_bc_flather_u_args(kernels(K_BC_FLATHER_U), &
                              model_grid%nx,           &
-                             ua_device, hu_device, sshn_u_device)
+                             ua_device, hu_device, sshn_u_device, tmask_device)
   call set_bc_flather_v_args(kernels(K_BC_FLATHER_V), &
                              model_grid%nx,           &
-                             va_device, hv_device, sshn_v_device)
+                             va_device, hv_device, sshn_v_device, tmask_device)
   call set_next_sshu_args(kernels(K_NEXT_SSH_U), &
                           model_grid%nx,         &
-                          sshn_u_device, sshn_device)
+                          sshn_u_device, sshn_device, &
+                          tmask_device, e12t_device, e12u_device)
   call set_next_sshv_args(kernels(K_NEXT_SSH_V), &
                           model_grid%nx,         &
-                          sshn_v_device, sshn_device)
+                          sshn_v_device, sshn_device, &
+                          tmask_device, e12t_device, e12v_device)
 
   globalsize(1) = model_grid%nx
   globalsize(2) = model_grid%ny
@@ -506,20 +510,68 @@ program nemolite2d
   ! Execute the Continuity kernel
   ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_CONTINUITY), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
-          0, C_NULL_PTR,C_NULL_PTR)
+          0, C_NULL_PTR, C_NULL_PTR)
   call check_status('clEnqueueNDRangeKernel', ierr)
 
   ! Execute the u-Momentum kernel
   ierr = clEnqueueNDRangeKernel(cmd_queues(2), kernels(K_MOM_U), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
-          0, C_NULL_PTR,C_NULL_PTR)
+          0, C_NULL_PTR, C_NULL_PTR)
   call check_status('clEnqueueNDRangeKernel', ierr)
 
   ! Execute the v-Momentum kernel
   ierr = clEnqueueNDRangeKernel(cmd_queues(2), kernels(K_MOM_V), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
-          0, C_NULL_PTR,C_NULL_PTR)
+          0, C_NULL_PTR, C_NULL_PTR)
   call check_status('clEnqueueNDRangeKernel', ierr)
+  
+  ierr = clEnqueueNDRangeKernel(cmd_queues(2), kernels(K_BC_SSH), &
+       2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
+       0, C_NULL_PTR, C_NULL_PTR)
+  call check_status("clEnqueueNDRangeKernel(bc-ssh)", ierr)
+
+  ! Apply boundary conditions
+  ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_BC_SOLID_U), &
+       2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
+       0, C_NULL_PTR, C_NULL_PTR)
+  call check_status("clEnqueueNDRangeKernel(bc-solid-u)", ierr)
+  
+  ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_BC_SOLID_V), &
+       2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
+       0, C_NULL_PTR, C_NULL_PTR)
+  call check_status("clEnqueueNDRangeKernel(bc-solid-v)", ierr)
+  
+  ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_BC_FLATHER_U), &
+       2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
+       0, C_NULL_PTR, C_NULL_PTR);
+  call check_status("clEnqueueNDRangeKernel(bc-flather-u)", ierr)
+  
+  ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_BC_FLATHER_V), &
+       2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
+       0, C_NULL_PTR, C_NULL_PTR);
+  call check_status("clEnqueueNDRangeKernel(bc-flather-v)", ierr)
+
+  ! Copy 'after' fields to 'now' fields !
+  ierr = clEnqueueCopyBuffer(cmd_queues(1), ua_device, un_device, 0_8, 0_8, &
+       size_in_bytes,0,C_NULL_PTR,C_NULL_PTR)
+  call check_status("clEnqueueCopyBuffer", ierr)
+  ierr = clEnqueueCopyBuffer(cmd_queues(1), va_device, vn_device, 0_8, 0_8, &
+       size_in_bytes,0,C_NULL_PTR,C_NULL_PTR)
+  call check_status("clEnqueueCopyBuffer", ierr)
+  ierr = clEnqueueCopyBuffer(cmd_queues(1), ssha_device, sshn_device, 0_8, 0_8, &
+       size_in_bytes,0,C_NULL_PTR,C_NULL_PTR)
+  call check_status("clEnqueueCopyBuffer", ierr)
+
+  ! Update of sshu and sshv fields
+  ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_NEXT_SSH_U), &
+       2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
+       0, C_NULL_PTR, C_NULL_PTR)
+  call check_status("clEnqueueNDRangeKernel(next-sshu)", ierr)
+                                 
+  ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_NEXT_SSH_V), &
+       2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
+       0, C_NULL_PTR, C_NULL_PTR)
+  call check_status("clEnqueueNDRangeKernel(next-sshv)", ierr)
 
   do i=1, NUM_CMD_QUEUES
      ierr=clFinish(cmd_queues(i))
