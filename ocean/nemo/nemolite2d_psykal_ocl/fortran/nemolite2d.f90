@@ -156,6 +156,7 @@ program nemolite2d
      call check_status('clCreateCommandQueue', ierr)
   end do
 
+  ! Get a program object containing all of our kernels
   filename = "../kernels/nemolite2d_kernels.aocx"
   prog = get_program(context, device, version_str, filename)
 
@@ -595,21 +596,36 @@ program nemolite2d
 
   end do ! End of time-stepping loop
 
-
+  ! Make sure that everything is finished (should be unnecessary)
   do i=1, NUM_CMD_QUEUES
      ierr=clFinish(cmd_queues(i))
      call check_status('clFinish', ierr)
   end do
   
-  ! read the resulting vector from device memory
-  ierr = clEnqueueReadBuffer(cmd_queues(1), ssha_device, &
-                             CL_TRUE, 0_8, size_in_bytes, &
-                             C_LOC(ssha_t_fld%data), &
-                             0, C_NULL_PTR, C_LOC(write_events(1)))
-  if (ierr.ne.0) stop 'clEnqueueReadBuffer'
+  ! Read the resulting fields from device memory
+  num_buffers = 1
+  ierr = clEnqueueReadBuffer(cmd_queues(1), sshn_device, CL_TRUE, 0_8, &
+                             size_in_bytes, C_LOC(sshn_t_fld%data),    &
+                             0, C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  call check_status('clEnqueueReadBuffer', ierr)
+  num_buffers = num_buffers + 1
+  ierr = clEnqueueReadBuffer(cmd_queues(2), un_device, CL_TRUE, 0_8, &
+                             size_in_bytes, C_LOC(un_fld%data),      &
+                             0, C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  call check_status('clEnqueueReadBuffer', ierr)
+  num_buffers = num_buffers + 1
+  ierr = clEnqueueReadBuffer(cmd_queues(3), vn_device, CL_TRUE, 0_8, &
+                             size_in_bytes, C_LOC(vn_fld%data),      &
+                             0, C_NULL_PTR, C_LOC(write_events(num_buffers)))
+  call check_status('clEnqueueReadBuffer', ierr)
 
-  ierr = clWaitForEvents(1, C_LOC(write_events))
+  ierr = clWaitForEvents(num_buffers, C_LOC(write_events))
   call check_status('clWaitForEvents', ierr)
+
+  ! Dump the final fields to disk
+  call model_write(model_grid, nitend, ht_fld, sshn_t_fld, un_fld, vn_fld)
+
+  ! Clean-up
 
   do i=1, K_NUM_KERNELS
      ierr = clReleaseKernel(kernels(i))
