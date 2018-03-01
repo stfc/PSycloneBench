@@ -17,7 +17,7 @@ program nemolite2d
 
   integer irec, i, iallocerr
   ! The number of OpenCL command queues we will use
-  integer, parameter :: NUM_CMD_QUEUES = 2
+  integer, parameter :: NUM_CMD_QUEUES = 3
 
   character(len=CL_UTIL_STR_LEN) :: version_str, filename
 
@@ -75,6 +75,7 @@ program nemolite2d
   integer(c_size_t),target :: globalsize(2), localsize(2)
   integer(c_int32_t), target :: build_log
   integer(c_intptr_t), allocatable, target :: write_events(:)
+  integer(c_intptr_t), target :: ssh_events(2)
   integer(c_intptr_t), target :: device
   integer(c_intptr_t), target :: context, prog
   !> Array of kernel objects used in the program
@@ -522,7 +523,7 @@ program nemolite2d
      call check_status('clEnqueueNDRangeKernel', ierr)
 
      ! Execute the v-Momentum kernel
-     ierr = clEnqueueNDRangeKernel(cmd_queues(2), kernels(K_MOM_V), &
+     ierr = clEnqueueNDRangeKernel(cmd_queues(3), kernels(K_MOM_V), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
           0, C_NULL_PTR, C_NULL_PTR)
      call check_status('clEnqueueNDRangeKernel', ierr)
@@ -531,54 +532,66 @@ program nemolite2d
      ierr = clSetKernelArg(kernels(K_BC_SSH), 1, sizeof(istp), C_LOC(istp))
      call check_status("clSetKernelArg", ierr)
 
-     ierr = clEnqueueNDRangeKernel(cmd_queues(2), kernels(K_BC_SSH), &
+     ! This kernel updates ssha_t and therefore has a dependence on the
+     ! continuity kernel
+     ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_BC_SSH), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
           0, C_NULL_PTR, C_NULL_PTR)
      call check_status("clEnqueueNDRangeKernel(bc-ssh)", ierr)
 
      ! Apply boundary conditions
-     ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_BC_SOLID_U), &
+     ierr = clEnqueueNDRangeKernel(cmd_queues(2), kernels(K_BC_SOLID_U), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
           0, C_NULL_PTR, C_NULL_PTR)
      call check_status("clEnqueueNDRangeKernel(bc-solid-u)", ierr)
 
-     ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_BC_SOLID_V), &
+     ierr = clEnqueueNDRangeKernel(cmd_queues(3), kernels(K_BC_SOLID_V), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
           0, C_NULL_PTR, C_NULL_PTR)
      call check_status("clEnqueueNDRangeKernel(bc-solid-v)", ierr)
 
-     ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_BC_FLATHER_U), &
+     ierr = clEnqueueNDRangeKernel(cmd_queues(2), kernels(K_BC_FLATHER_U), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
           0, C_NULL_PTR, C_NULL_PTR);
      call check_status("clEnqueueNDRangeKernel(bc-flather-u)", ierr)
 
-     ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_BC_FLATHER_V), &
+     ierr = clEnqueueNDRangeKernel(cmd_queues(3), kernels(K_BC_FLATHER_V), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
           0, C_NULL_PTR, C_NULL_PTR);
      call check_status("clEnqueueNDRangeKernel(bc-flather-v)", ierr)
 
      ! Copy 'after' fields to 'now' fields. We could simply swap
      ! pointers around here but that's an optimisation.
-     ierr = clEnqueueCopyBuffer(cmd_queues(1), ua_device, un_device, &
+     ierr = clEnqueueCopyBuffer(cmd_queues(2), ua_device, un_device, &
           0_8, 0_8, size_in_bytes, 0, C_NULL_PTR, C_NULL_PTR)
      call check_status("clEnqueueCopyBuffer", ierr)
-     ierr = clEnqueueCopyBuffer(cmd_queues(1), va_device, vn_device, &
+     ierr = clEnqueueCopyBuffer(cmd_queues(3), va_device, vn_device, &
           0_8, 0_8, size_in_bytes, 0, C_NULL_PTR, C_NULL_PTR)
      call check_status("clEnqueueCopyBuffer", ierr)
      ierr = clEnqueueCopyBuffer(cmd_queues(1), ssha_device, sshn_device, &
-          0_8, 0_8, size_in_bytes, 0, C_NULL_PTR, C_NULL_PTR)
+          0_8, 0_8, size_in_bytes, 0, C_NULL_PTR, C_LOC(write_events(1)))
      call check_status("clEnqueueCopyBuffer", ierr)
 
      ! Update of sshu and sshv fields
+     ! We do sshu in the same queue as used to perform the copy of ssha to
+     ! sshn so correct ordering is guaranteed.
      ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_NEXT_SSH_U), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
-          0, C_NULL_PTR, C_NULL_PTR)
+          0, C_NULL_PTR, C_LOC(ssh_events(1)))
      call check_status("clEnqueueNDRangeKernel(next-sshu)", ierr)
 
-     ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernels(K_NEXT_SSH_V), &
+     ! This can be done in parallel with next_sshu but we need to ensure
+     ! it only happens after the copy of ssha to sshn.
+     ierr = clEnqueueNDRangeKernel(cmd_queues(2), kernels(K_NEXT_SSH_V), &
           2, C_NULL_PTR, C_LOC(globalsize), C_NULL_PTR, &
-          0, C_NULL_PTR, C_NULL_PTR)
+          1, C_LOC(write_events(1)), C_LOC(ssh_events(2)))
      call check_status("clEnqueueNDRangeKernel(next-sshv)", ierr)
+
+     ! Wait for the ssh updates to complete as we can't execute the
+     ! Continuity kernel (at the beginning of the next loop iteration)
+     ! until they have.
+     ierr = clWaitForEvents(2, C_LOC(ssh_events));
+     call check_status("clWaitForEvents", ierr)
 
   end do ! End of time-stepping loop
 
