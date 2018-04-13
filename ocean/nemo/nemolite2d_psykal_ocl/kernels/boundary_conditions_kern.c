@@ -35,7 +35,7 @@
 
   type, extends(kernel_type) :: bc_solid_u
      type(arg), dimension(2) :: meta_args =  &
-          (/ arg(WRITE, CU, POINTWISE),      &
+          (/ arg(READWRITE, CU, POINTWISE),  &
              arg(READ,      GRID_MASK_T)     &
            /)
 
@@ -61,7 +61,7 @@
 /*
   type, extends(kernel_type) :: bc_solid_v
      type(arg), dimension(2) :: meta_args =  &
-          (/ arg(WRITE, CV, POINTWISE),      &
+          (/ arg(READWRITE, CV, POINTWISE),  &
              arg(READ,      GRID_MASK_T)     &
            /)
 
