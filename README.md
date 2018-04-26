@@ -23,11 +23,16 @@ populate them you can do:
     git submodule init
     git submodule update
 
-## PSyKAl Version of the Code ##
+## Ocean benchmarks ##
 
-The `src/psykal` directory contains a version of the benchmark code
-that has been re-structured following the Parallel System Kernel
-Algorithm (PSyKAl) separation of concerns. It also makes use of the
-dl_esm_inf infrastructure support for the creation of grid and field
-objects.
+Are contained in directories beneath the `ocean` directory.
+
+### NEMOLite2D ###
+
+`ocean/nemo` contains various versions of the NEMOLite2D benchmark.
+
+### Shallow ###
+
+`ocean/shallow` contains various versions of the Shallow benchmark,
+originally developed by Paul Swarztrauber of NCAR.
 
