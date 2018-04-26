@@ -1,0 +1,3 @@
+[submodule "ocean/dl_esm_inf"]
+	path = ocean/dl_esm_inf
+	url = https://github.com/stfc/dl_esm_inf
