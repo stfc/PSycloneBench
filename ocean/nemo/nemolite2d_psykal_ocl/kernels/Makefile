@@ -1,3 +1,5 @@
+# Makefile for the OpenCL kernels for NEMOLite2D.
+#
 # You must define:
 #
 #   CC - the C compiler

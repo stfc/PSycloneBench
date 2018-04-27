@@ -12,9 +12,9 @@ OpenCL infrastructure. The Fortran version uses clFortran
 Dependencies
 ============
 
-You will need Make, a C compiler and a working OpenCL installation.
-This code has been tested using AMD's OpenCL dispatch library
-with NVIDIA's OpenCL library as a back-end.
+You will need Make, Fortran and C compilers and a working OpenCL
+installation.  This code has been tested using AMD's OpenCL dispatch
+library with NVIDIA's OpenCL library as a back-end.
 
 Building
 ========
