@@ -156,7 +156,6 @@ libclean:
 	${MAKE} -C ${INF_DIR} clean
 
 allclean: clean
-	rm -f infrastructure_mod.f90
 	rm -f *.exe fparser.log
 	rm -f *.lst *.cg *.opt *.optrpt *.s
 	rm -rf *_wpl_dir/
