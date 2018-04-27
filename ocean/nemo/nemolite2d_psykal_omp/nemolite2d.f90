@@ -76,7 +76,8 @@ program gocean2d
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
 
   ! Start timer for time-stepping section
-  CALL timer_start('Time-stepping', itimer0, (nitend-nit000+1) )
+  CALL timer_start(itimer0, label='Time-stepping', &
+                   num_repeats=INT((nitend-nit000+1),8) )
 
   !! time stepping 
   do istp = nit000, nitend, 1

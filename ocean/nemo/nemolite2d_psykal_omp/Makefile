@@ -1,15 +1,12 @@
-# Makefile.include is a symbolic link to the desired
-# Makefile.include.<compiler> file.
-include Makefile.include
+# Makefile for manual OpenMP version of PSyKAl'd NEMOLite2D.
 
-# Location of the psyclone source files (for doing the code
-# generation)
-PSYCLONE_DIR = ../../PSyclone/src
-
-# Location of the code defining the GOcean API
-API_VERSION=1.0
-API_DIR = ../api_v${API_VERSION}
-API_LIB = ${API_DIR}/gocean_api.a
+# Location of the dl_timer and infrastucture code
+TIMER_DIR = ../../../shared/dl_timer
+TIMER_INC = ${TIMER_DIR}/src
+TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
+INF_DIR = ../../../shared/dl_esm_inf/finite_difference
+INF_INC = ${INF_DIR}/src
+INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
 
 # The targets that this Makefile supports
 EXECS = nemolite2d
@@ -25,44 +22,33 @@ GENERATED_MODULES = psy.o
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
-COMMON_MODULES = $(MODULES) ${API_LIB}
+COMMON_MODULES = $(MODULES) ${INF_LIB}
+
+timer_lib:
+	make -C ${TIMER_DIR} sm_lib
+
+inf_lib:
+	make -C ${INF_DIR}
 
 all: $(EXECS)
 
-# Targets involving the code-generation framework
-shallow_gen.f90: shallow_gocean.f90
-	python ${PSYCLONE_DIR}/generator.py -api gocean shallow_gocean.f90 -oalg shallow_gen.f90 -opsy psy.f90
-
-# psy.f90 is generated at the same time as shallow_gen.f90
-psy.f90: shallow_gen.f90
-
-# The generated code depends on the generated Psy middle-layer
-shallow_gen:
-	@echo "Code generation not yet working for version 0.2 of the GOcean API!"
-	#${MAKE} MODULE_LIST="${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
-
 # Normal targets
 .PHONY: nemolite2d
-nemolite2d: 
+nemolite2d: timer_lib inf_lib
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
-
-${API_LIB}: ${API_DIR}/*.?90
-	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS} ${OMPFLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
 
 nemolite2d.o: $(COMMON_MODULES)
 
-shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
-
 # Interdependencies between modules, alphabetical order
 
-boundary_conditions_mod.o: physical_params_mod.o ${API_LIB} model_mod.o
-continuity_mod.o: model_mod.o ${API_LIB}
-gocean2d_io_mod.o: ${API_LIB}
-model_mod.o: ${API_LIB} gocean2d_io_mod.o
-momentum_mod.o: model_mod.o physical_params_mod.o ${API_DIR}/kind_params_mod.o
-time_step_mod.o: ${API_LIB} momentum_mod.o continuity_mod.o \
+boundary_conditions_mod.o: physical_params_mod.o inf_lib model_mod.o
+continuity_mod.o: model_mod.o inf_lib
+gocean2d_io_mod.o: inf_lib
+model_mod.o: inf_lib gocean2d_io_mod.o
+momentum_mod.o: model_mod.o physical_params_mod.o inf_lib
+time_step_mod.o: inf_lib momentum_mod.o continuity_mod.o \
                  time_update_mod.o boundary_conditions_mod.o
-time_update_mod.o: model_mod.o ${API_LIB}
+time_update_mod.o: model_mod.o inf_lib
 
 # Generic rules
 
@@ -70,14 +56,14 @@ time_update_mod.o: model_mod.o ${API_LIB}
 	$(F90) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS}
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${INF_INC} -I${TIMER_INC} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${INF_INC} -I${TIMER_INC} -c $<
 
 clean: 
-	${MAKE} -C ${API_DIR} clean
-	rm -f *.o *.mod *.MOD *~ psy.f90
+	${MAKE} -C ${INF_DIR} clean
+	rm -f *.o *.mod *.MOD *~
 
 allclean: clean
 	rm -f *.exe fparser.log
