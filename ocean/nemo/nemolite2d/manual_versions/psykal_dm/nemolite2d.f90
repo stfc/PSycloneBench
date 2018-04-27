@@ -6,7 +6,7 @@ program gocean2d
   use model_mod
   use boundary_conditions_mod
   use gocean2d_io_mod, only: model_write
-  use gocean_mod,      only: model_write_log
+  use gocean_mod,      only: gocean_init, model_write_log
 
   !> A Horizontal 2D hydrodynamic ocean model which
   !!   1) using structured grid
@@ -31,6 +31,8 @@ program gocean2d
   ! time stepping index
   integer :: istp   
   integer :: itimer0
+
+  call gocean_init()
 
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
   ! points immediately to the North and East of a T point all have the

@@ -24,7 +24,6 @@ CONTAINS
   !================================================
 
   subroutine model_init(grid)
-    use parallel_mod, only: parallel_init
     use gocean2d_io_mod
     implicit none
     type(grid_type), intent(inout) :: grid
@@ -34,8 +33,6 @@ CONTAINS
     real(wp) :: dx, dy
     integer  :: ierr
     integer, dimension(:,:), allocatable :: tmask
-
-    call parallel_init()
 
     ! Initialise timing system
     call timer_init()
