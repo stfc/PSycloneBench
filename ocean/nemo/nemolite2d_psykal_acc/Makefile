@@ -2,14 +2,13 @@
 # Makefile.include.<compiler> file.
 include Makefile.include
 
-# Location of the psyclone source files (for doing the code
-# generation)
-PSYCLONE = ${PSYCLONE_DIR}
-
-# Location of the code defining the GOcean API
-API_VERSION=1.0
-API_DIR = ../api_v${API_VERSION}
-API_LIB = ${API_DIR}/gocean_api.a
+# Location of the dl_timer and infrastucture code
+TIMER_DIR = ../../../shared/dl_timer
+TIMER_INC = ${TIMER_DIR}/src
+TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
+INF_DIR = ../../../shared/dl_esm_inf/finite_difference
+INF_INC = ${INF_DIR}/src
+INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
 
 # The targets that this Makefile supports
 EXECS = nemolite2d
@@ -23,36 +22,32 @@ MODULES = model_mod.o \
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
-COMMON_MODULES = $(MODULES) ${API_LIB}
+COMMON_MODULES = $(MODULES) ${INF_LIB}
 
 all: $(EXECS)
 
-# Out module providing fake infrastructure kernels is in the API directory
-# but we need it to be in the same directory as all of the other kernel
-# files.
-infrastructure_mod.f90:
-	ln -sf ${API_DIR}/infrastructure_mod.f90 .
+timer_lib:
+	make -C ${TIMER_DIR} sm_lib
+
+inf_lib:
+	make -C ${INF_DIR}
 
 # Normal targets
 .PHONY: nemolite2d
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
-${API_LIB}: ${API_DIR}/*.?90
-	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" \
-            AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
-
 nemolite2d.o: $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
 
-boundary_conditions_mod.o: physical_params_mod.o ${API_LIB} model_mod.o
-gocean2d_io_mod.o: ${API_LIB}
-infrastructure_mod.o: ${API_LIB}
-model_mod.o: ${API_LIB} gocean2d_io_mod.o
-time_step_mod.o: ${API_LIB} physical_params_mod.o
+boundary_conditions_mod.o: physical_params_mod.o inf_lib model_mod.o
+gocean2d_io_mod.o: inf_lib
+infrastructure_mod.o: inf_lib
+model_mod.o: inf_lib gocean2d_io_mod.o
+time_step_mod.o: inf_lib physical_params_mod.o
 # boundary_conditions_mod.o
-time_update_mod.o: model_mod.o ${API_LIB}
+time_update_mod.o: model_mod.o inf_lib
 
 # Generic rules
 
@@ -60,13 +55,13 @@ time_update_mod.o: model_mod.o ${API_LIB}
 	$(F90) $(OMPFLAGS) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS)
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
 
 clean: 
-	${MAKE} -C ${API_DIR} clean
+	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~
 
 allclean: clean
