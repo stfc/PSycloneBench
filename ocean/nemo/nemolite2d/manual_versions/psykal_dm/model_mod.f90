@@ -24,6 +24,7 @@ CONTAINS
   !================================================
 
   subroutine model_init(grid)
+    use parallel_mod, only: parallel_init
     use gocean2d_io_mod
     implicit none
     type(grid_type), intent(inout) :: grid
@@ -33,6 +34,8 @@ CONTAINS
     real(wp) :: dx, dy
     integer  :: ierr
     integer, dimension(:,:), allocatable :: tmask
+
+    call parallel_init()
 
     ! Initialise timing system
     call timer_init()
@@ -64,15 +67,18 @@ CONTAINS
   !================================================
 
   SUBROUTINE model_finalise()
+    use parallel_mod, only: parallel_finalise
     use gocean2d_io_mod, only: model_write_finalise
     IMPLICIT none
 
-    CALL model_write_finalise()
+    call model_write_finalise()
 
-    CALL timer_report()
+    call timer_report()
 
-    CALL model_dealloc()
-  
+    call model_dealloc()
+
+    call parallel_finalise()
+
   end subroutine model_finalise
 
   !================================================

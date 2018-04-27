@@ -1,11 +1,10 @@
-# Makefile for manual OpenMP version of PSyKAl'd NEMOLite2D.
+# Makefile for manual MPI version of PSyKAl'd NEMOLite2D.
 #
 # This Makefile picks up the compiler to use any flags from
 # environment variables. e.g. to use gfortran:
 # 
-# export F90=gfortran
+# export F90=mpif90
 # export F90FLAGS="-O3"
-# export OMPFLAGS=" -fopenmp"
 # export AR=ar
 
 # Location of the dl_timer and infrastucture code
@@ -28,14 +27,12 @@ MODULES = model_mod.o boundary_conditions_mod.o \
           time_update_mod.o gocean2d_io_mod.o \
           time_step_mod.o
 
-GENERATED_MODULES = psy.o
-
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
 COMMON_MODULES = $(MODULES) ${INF_LIB}
 
 timer_lib:
-	make -C ${TIMER_DIR} sm_lib
+	make -C ${TIMER_DIR} dm_lib
 
 inf_lib:
 	make -C ${INF_DIR}
@@ -76,6 +73,8 @@ clean:
 	rm -f *.o *.mod *.MOD *~
 
 allclean: clean
+	make -C ${TIMER_DIR} allclean
+	make -C ${INF_DIR} distclean
 	rm -f *.exe fparser.log
 	rm -rf *_wpl_dir/
 
