@@ -3,10 +3,11 @@ OpenCL version of the NEMOLite2D benchmark.
 
 Andrew Porter, STFC Daresbury Laboratory, April 2017.
 
-The directory containing this file contains the OpenCL version of
-the PSyKAl NEMOLite2D benchmark. It has been created by converting
-the Fortran version into C and then adding the necessary OpenCL
-infrastructure.
+The directory containing this file contains C and Fortran OpenCL
+versions of the PSyKAl NEMOLite2D benchmark. It has been created by
+converting the Fortran version into C and then adding the necessary
+OpenCL infrastructure. The Fortran version uses clFortran
+(github.com/cass-support/clfortran) for the driver layer.
 
 Dependencies
 ============
