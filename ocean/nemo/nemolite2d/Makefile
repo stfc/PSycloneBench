@@ -51,4 +51,4 @@ clean:
 allclean: clean
 	rm -f *.exe
 	rm -rf *_wpl_dir
-
+	rm -f *.opt *.optrpt gnu_opt_report.txt
