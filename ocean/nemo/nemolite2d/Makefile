@@ -1,17 +1,23 @@
-# Makefile.include is a symbolic link to the desired
-# Makefile.include.<compiler> file.
-include Makefile.include
+# This Makefile expects the following env. vars to be set:
+#
+# F90       - How to invoke the Fortran compiler
+# F90FLAGS  - Flags to pass to the Fortran compiler
+# OMPFLAGS  - Flags for compiling with OpenMP
+# AR        - Command to use when creating an archive (.a)
 
-# Location of the code defining the GOcean API
-API_VERSION=1.0
-API_DIR = ../api_v${API_VERSION}
-API_LIB = ${API_DIR}/gocean_api.a
+# Location of the dl_timer and infrastucture code
+TIMER_DIR = ../../../shared/dl_timer
+TIMER_INC = ${TIMER_DIR}/src
+TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
+INF_DIR = ../../../shared/dl_esm_inf/finite_difference
+INF_INC = ${INF_DIR}/src
+INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
 
 EXECS = nemolite2d
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
-COMMON_MODULES = ${API_LIB}
+COMMON_MODULES = ${INF_LIB}
 
 all: $(EXECS)
 
@@ -20,8 +26,11 @@ all: $(EXECS)
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
-${API_LIB}: ${API_DIR}/*.?90
-	${MAKE} -C ${API_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" AR="${AR}" ARFLAGS="${ARFLAGS}" API_LIB="gocean_api.a"
+timer_lib:
+	make -C ${TIMER_DIR} sm_lib
+
+inf_lib:
+	make -C ${INF_DIR}
 
 nemolite2d.o: $(COMMON_MODULES)
 
@@ -31,13 +40,12 @@ nemolite2d.o: $(COMMON_MODULES)
 	$(F90) $(OMPFLAGS) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS)
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) -I${API_DIR} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
 
 clean: 
-	${MAKE} -C ${API_DIR} clean
 	rm -f *.o *.mod *.MOD *~
 
 allclean: clean

@@ -68,8 +68,8 @@ PROGRAM nemolite2d
          istp = 0
          CALL output
 
-         call timer_start('Time-stepping',idxt, &
-                          nitend-nit000+1)
+         call timer_start(idxt, label='Time-stepping', &
+                          num_repeats=INT(nitend-nit000+1,8))
 
          !! time stepping 
          DO istp = nit000, nitend, 1
@@ -406,7 +406,7 @@ CONTAINS
           implicit none
           integer :: idxt
 
-          call timer_start('Continuity', idxt)
+          call timer_start(idxt, label='Continuity')
 
 !kernel continuity
           DO jj = 1, jpj
@@ -440,7 +440,7 @@ CONTAINS
           REAL(wp) :: adv, vis, hpg, cor
           integer :: idxt
 
-          call timer_start('Momentum', idxt)
+          call timer_start(idxt, label='Momentum')
 
           ! u equation
           DO jj = 1, jpj
@@ -448,7 +448,7 @@ CONTAINS
 
 ! kernel u adv 
 
-             IF(pt(ji,jj) + pt(ji+1,jj) <= 0)  CYCLE                    !jump over non-computatinal domain
+             IF(pt(ji,jj) + pt(ji+1,jj) <= 0)  CYCLE !jump over non-computatinal domain
              IF(pt(ji,jj) <= 0 .OR. pt(ji+1,jj) <= 0)  CYCLE                    !jump over boundary u
 
              u_e  = 0.5 * (un(ji,jj) + un(ji+1,jj)) * e2t(ji+1,jj)      !add length scale.
@@ -637,7 +637,7 @@ CONTAINS
           INTEGER :: jiu, jiv
           integer :: idxt
 
-          call timer_start('BCs',idxt)
+          call timer_start(idxt, label='BCs')
 
           !open boundary condition of clamped ssh
 
@@ -725,7 +725,7 @@ CONTAINS
           integer :: idxt
           ! update the now-velocity and ssh
 
-          call timer_start('Next',idxt)
+          call timer_start(idxt, label='Next')
 
 ! kernel  un updating
           DO jj = 1, jpj

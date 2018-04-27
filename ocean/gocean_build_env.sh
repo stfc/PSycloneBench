@@ -1,12 +1,6 @@
 # Build settings for gfortran compiler
 export F90=gfortran
 
-#NETCDF_INC = ${HOME}/MyInstalls/GCC/gcc_4.9.3/include
-#NETCDF_LIB = ${HOME}/MyInstalls/GCC/gcc_4.9.3/lib64
-
-export TIMER_LIB=${HOME}/Projects/dl_timer/dl_timer_lib.a
-export TIMER_INC=${HOME}/Projects/dl_timer/src
-
 F90FLAGS="-Wall -Wsurprising -Wuninitialized"
 #F90FLAGS += -O0
 #F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g
@@ -20,9 +14,6 @@ F90FLAGS+=" -ffree-line-length-none"
 
 OMPFLAGS=""
 OMPFLAGS+=" -fopenmp"
-
-#F90FLAGS+=-I${NETCDF_INC}
-#LDFLAGS+=-L${NETCDF_LIB} -lnetcdff -lnetcdf
 
 AR=ar
 
