@@ -1,1 +1,1 @@
-../../nemolite2d_psykal/model_mod.f90
+../../../psykal/model_mod.f90

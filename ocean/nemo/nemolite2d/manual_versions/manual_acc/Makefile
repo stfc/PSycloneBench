@@ -3,10 +3,12 @@
 include Makefile.include
 
 # Location of the dl_timer and infrastucture code
-TIMER_DIR = ../../../shared/dl_timer
+SHARED_DIR = ../../../../../shared
+
+TIMER_DIR = ${SHARED_DIR}/dl_timer
 TIMER_INC = ${TIMER_DIR}/src
 TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
-INF_DIR = ../../../shared/dl_esm_inf/finite_difference
+INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
 
@@ -45,10 +47,10 @@ inf_lib:
 	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
 
 timer_lib:
-        make -C ${TIMER_DIR} sm_lib
+	make -C ${TIMER_DIR} sm_lib
 
 inf_lib:
-        make -C ${INF_DIR}
+	make -C ${INF_DIR}
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
