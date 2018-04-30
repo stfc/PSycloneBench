@@ -27,8 +27,8 @@ contains
     type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
     type(r2d_field), intent(in)    :: hu, hv, ht
     ! Locals
-    integer :: it, ji, jj, jiu, jiv
-    integer :: M, N, idxt
+    integer :: it, ji, jj
+    integer :: idxt
 
 !    call timer_start('Continuity',idxt)
 
@@ -63,6 +63,11 @@ contains
                              un%grid%dy_t,   &
                              un%grid%area_u, &
                              un%grid%gphiu)
+      end do
+    end do
+
+    do jj = va%internal%ystart, va%internal%ystop, 1
+      do ji = va%internal%xstart, va%internal%xstop, 1
 
         call momentum_v_code(ji, jj, &
                              va%data, un%data, vn%data, &
