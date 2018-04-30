@@ -88,6 +88,8 @@ CONTAINS
   !================================================
 
   subroutine setup_tpoints_mask(jpi, jpj, tmask)
+    !> Set-up the global T-points mask that defines the simulation
+    !! domain.
     implicit none
     integer, intent(in) :: jpi, jpj
     integer, dimension(:,:), intent(inout) :: tmask
