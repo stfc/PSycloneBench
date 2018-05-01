@@ -17,9 +17,6 @@ INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
 
-# The targets that this Makefile supports
-EXECS = nemolite2d
-
 # The modules that are common to both targets
 MODULES = model_mod.o boundary_conditions_mod.o \
           continuity_mod.o initialisation_mod.o \
@@ -31,13 +28,15 @@ MODULES = model_mod.o boundary_conditions_mod.o \
 # passed to the linker
 COMMON_MODULES = $(MODULES) ${INF_LIB}
 
+all: nemolite2d
+
+.PHONY: timer_lib
 timer_lib:
-	make -C ${TIMER_DIR} dm_lib
+	${MAKE} -C ${TIMER_DIR} F90=${F90} MPIF90=${F90} dm_lib
 
+.PHONY: inf_lib
 inf_lib:
-	make -C ${INF_DIR}
-
-all: $(EXECS)
+	${MAKE} -C ${INF_DIR} F90=${F90}
 
 # Normal targets
 .PHONY: nemolite2d
