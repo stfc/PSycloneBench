@@ -1,0 +1,5 @@
+In this subroutine we modify the vanilla PSyKAl version of NEMOlite2D
+and add in OmpSS directives to the PSy-layer
+
+To build type 'make'
+
