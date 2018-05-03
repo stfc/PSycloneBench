@@ -57,7 +57,7 @@ CONTAINS
     call setup_tpoints_mask(grid%subdomain, jpiglo, jpjglo, tmask)
 
     ! Having specified the T points mask, we can set up mesh parameters
-    call grid_init(grid, jpiglo, jpjglo, dx, dy, tmask)
+    call grid_init(grid, dx, dy, tmask)
 
     call dump_tmask(tmask, grid)
 
