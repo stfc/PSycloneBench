@@ -29,6 +29,28 @@ contains
     ! Locals
     integer :: it, ji, jj
     integer :: idxt
+    integer :: idepth = 1
+!!$    integer :: umask(3,3) = reshape([0,0,0, 1,1,0, 0,0,0], shape(3,3))
+!!$    ! We don't know the state of a field's halos on entry to this
+!!$    ! invoke so we have to check...
+!!$    if(sshn_u%is_dirty(depth=idepth))then
+!!$       call sshn_u%halo_exch(depth=idepth)
+!!$    end if
+!!$    if(sshn_v%is_dirty(depth=idepth))then
+!!$       call sshn_v%halo_exch(depth=idepth)
+!!$    end if
+!!$    if(hu%is_dirty(depth=idepth))then
+!!$       call hu%halo_exch(depth=idepth)
+!!$    end if
+!!$    if(hv%is_dirty(depth=idepth))then
+!!$       call hv%halo_exch(depth=idepth)
+!!$    end if
+!!$    if(un%is_dirty(depth=idepth))then
+!!$       call un%halo_exch(depth=idepth)
+!!$    end if
+!!$    if(vn%is_dirty(depth=idepth))then
+!!$       call vn%halo_exch(depth=idepth)
+!!$    end if
 
 !    call timer_start('Continuity',idxt)
 
@@ -42,6 +64,8 @@ contains
                              rdt, sshn_t%grid%area_t)
       end do
     end do
+
+    !call ssha%set_dirty(from_depth=1)
 
 !    call timer_stop(idxt)
 
