@@ -1,0 +1,47 @@
+export PATH=$PATH:/home/rupert/ompss/bin
+
+# to compile and run the examples serially
+gfortran -o examplex examplex.f90
+./examplex
+# This will print out the indices in order as it is serial
+
+# to compile and run with ompss
+mfc --ompss -o examplex examplex.f90
+./examplex
+# This will print out the indices in a random order as the tasks are
+# independent and parallel
+
+Note Example 6 shows the proposed solution for using OmpSs with
+PSyclone's GOcean1.0 API.
+
+
+1) general tests
+
+Example 1 shows the basic use of task in fortran
+
+Example 2 shows two task declarations with no dependencies specified
+so a taskwait is added
+
+Example 3 is the same as example 2 but uses whole array dependencies
+instead of taskwait
+
+Example 4 is the same as example 3 but uses array iteration
+dependencies. This allows iterations from the second task declaration
+to be computed before non-dependent iterations in the first.
+
+2) gocean psy-layer tests
+
+Example 5 uses gocean style fields and code similar to the PSy layer
+and whole type dependencies
+
+Example 6 is the same as example 5 but uses array iteration
+dependencies with the data in the field type. This example shows the
+easiest way to generate OmpSs with PSyclone. Note this was failing
+occasionally until I added a taskwait at the end of the code.
+
+Example 7 is the same as example 6 but it assumes that we need to
+dereference the array before specifying OmpSs array iteration
+dependencies
+
+Example 8 splts the PSy-layer into two parts with the dereferencing
+being done at a higher level.
