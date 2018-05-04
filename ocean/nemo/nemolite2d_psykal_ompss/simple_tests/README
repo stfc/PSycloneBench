@@ -45,3 +45,15 @@ dependencies
 
 Example 8 splts the PSy-layer into two parts with the dereferencing
 being done at a higher level.
+
+3) compilation tests
+
+The Makefile compiles a representative algorithm, psy, kernel
+separation example. You can use gfortran or OmpSs (mfc) by commenting
+the appropriate lines
+
+The Makefile.mixed tries (and fails) to compile the psy.f90 file with
+mfc and the rest with gfortran. This seems to fail as the module
+(.mod) formats are different. If this is not possible it is unclear to
+me how we would mix mpi and ompss (as both want to use their own
+compiler wrapper). I've emailed Paul Carpenter at BSC about this.
