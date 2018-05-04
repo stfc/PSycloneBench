@@ -13,7 +13,7 @@ SHARED_DIR = ../../../../../shared
 TIMER_DIR = ${SHARED_DIR}/dl_timer
 TIMER_INC = ${TIMER_DIR}/src
 TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
-INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
+INF_DIR = ${HOME}/Projects/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
 
@@ -36,11 +36,23 @@ timer_lib:
 
 .PHONY: inf_lib
 inf_lib:
-	${MAKE} -C ${INF_DIR} F90=${F90}
+	${MAKE} -C ${INF_DIR} F90=${F90} dm_fd_lib
+
+.PHONY: timer_lib_serial
+timer_lib_serial:
+	${MAKE} -C ${TIMER_DIR} F90=${F90} MPIF90=${F90} sm_lib
+
+.PHONY: inf_lib_serial
+inf_lib_serial:
+	${MAKE} -C ${INF_DIR} F90=${F90} fd_lib
 
 # Normal targets
 .PHONY: nemolite2d
 nemolite2d: timer_lib inf_lib
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
+
+.PHONY: nemolite2d-serial
+nemolite2d-serial: timer_lib_serial inf_lib_serial
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
 nemolite2d.o: $(COMMON_MODULES)
