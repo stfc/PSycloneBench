@@ -9,12 +9,12 @@ module time_update_mod
   !=======================================
 
   type, extends(kernel_type) :: next_sshu
-     type(arg), dimension(5) :: meta_args =  &
-          (/ arg(READWRITE, CU, POINTWISE),  &
-             arg(READ,      CU, POINTWISE),  &
-             arg(READ,      GRID_MASK_T),    &
-             arg(READ,      GRID_AREA_T),    &
-             arg(READ,      GRID_AREA_U)     &
+     type(arg), dimension(5) :: meta_args =            &
+          (/ arg(READWRITE, CU, POINTWISE),            &
+             arg(READ,      CU, STENCIL(000,011,000),  &
+             arg(READ,      GRID_MASK_T),              &
+             arg(READ,      GRID_AREA_T),              &
+             arg(READ,      GRID_AREA_U)               &
            /)
 
      !> We update only those points within the internal region
@@ -39,7 +39,7 @@ module time_update_mod
   type, extends(kernel_type) :: next_sshv
      type(arg), dimension(5) :: meta_args =  &
           (/ arg(READWRITE, CV, POINTWISE),  &
-             arg(READ,      CV, POINTWISE),  &
+             arg(READ,      CV, STENCIL(010,010,000)),  &
              arg(READ,      GRID_MASK_T),    &
              arg(READ,      GRID_AREA_T),    &
              arg(READ,      GRID_AREA_V)     &

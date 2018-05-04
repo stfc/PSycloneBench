@@ -1,11 +1,13 @@
-F90 = gfortran
-F90FLAGS= -Wall -Wsurprising -Wuninitialized
+#F90 = gfortran
+F90 = mfc
+F90FLAGS = --ompss
 #F90FLAGS += -O0
 #F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g
-F90FLAGS+= -faggressive-function-elimination
-F90FLAGS+= -Ofast -mtune=native -finline-limit=50000 -fopt-info-all=gnu_opt_report.txt
-F90FLAGS+= -march=core2 -mtune=core2
-F90FLAGS+= -ffree-line-length-none
+#F90FLAGS= -Wall -Wsurprising -Wuninitialized
+#F90FLAGS+= -faggressive-function-elimination
+#F90FLAGS+= -Ofast -mtune=native -finline-limit=50000 -fopt-info-all=gnu_opt_report.txt
+#F90FLAGS+= -march=core2 -mtune=core2
+#F90FLAGS+= -ffree-line-length-none
 
 # Location of the code defining the GOcean API
 API_VERSION=1.0
@@ -16,7 +18,7 @@ API_LIB = ${API_DIR}/gocean_api.a
 TIMER_INC = /home/rupert/proj/dl_timer/src
 TIMER_LIB = /home/rupert/proj/dl_timer/dl_timer_lib.a
 
-# Location of the 
+# Location of the kernel code
 RDIR=../nemolite2d_psykal
 
 KERNELS = continuity_mod.o \

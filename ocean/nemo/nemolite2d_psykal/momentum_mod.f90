@@ -15,25 +15,25 @@ module momentum_mod
   !=======================================
 
   type, extends(kernel_type) :: momentum_u
-     type(arg), dimension(18) :: meta_args =  &
-          (/ arg(READWRITE, CU, POINTWISE),  & ! ua
-             arg(READ,      CU, POINTWISE),  & ! un
-             arg(READ,      CV, POINTWISE),  & ! vn
-             arg(READ,      CU, POINTWISE),  & ! hu
-             arg(READ,      CV, POINTWISE),  & ! hv
-             arg(READ,      CT, POINTWISE),  & ! ht
-             arg(READ,      CU, POINTWISE),  & ! ssha_u
-             arg(READ,      CT, POINTWISE),  & ! sshn_t
-             arg(READ,      CU, POINTWISE),  & ! sshn_u
-             arg(READ,      CV, POINTWISE),  & ! sshn_v
-             arg(READ,      GRID_MASK_T),    &
-             arg(READ,      GRID_DX_U),      &
-             arg(READ,      GRID_DX_V),      &
-             arg(READ,      GRID_DX_T),      &
-             arg(READ,      GRID_DY_U),      &
-             arg(READ,      GRID_DY_T),      &
-             arg(READ,      GRID_AREA_U),    &
-             arg(READ,      GRID_LAT_U)      &
+     type(arg), dimension(18) :: meta_args =            &
+          (/ arg(READWRITE, CU, POINTWISE),             & ! ua
+             arg(READ,      CU, STENCIL(010,111,010)),  & ! un
+             arg(READ,      CV, STENCIL(000,011,011)),  & ! vn
+             arg(READ,      CU, STENCIL(010,010,010)),  & ! hu
+             arg(READ,      CV, STENCIL(000,011,011)),  & ! hv
+             arg(READ,      CT, STENCIL(000,011,000)),  & ! ht
+             arg(READ,      CU, POINTWISE),             & ! ssha_u
+             arg(READ,      CT, STENCIL(000,011,000)),  & ! sshn_t
+             arg(READ,      CU, STENCIL(010,010,010)),  & ! sshn_u
+             arg(READ,      CV, STENCIL(000,011,011)),  & ! sshn_v
+             arg(READ,      GRID_MASK_T),               &
+             arg(READ,      GRID_DX_U),                 &
+             arg(READ,      GRID_DX_V),                 &
+             arg(READ,      GRID_DX_T),                 &
+             arg(READ,      GRID_DY_U),                 &
+             arg(READ,      GRID_DY_T),                 &
+             arg(READ,      GRID_AREA_U),               &
+             arg(READ,      GRID_LAT_U)                 &
            /)
 
      !> We update only those points within the internal region
@@ -56,25 +56,25 @@ module momentum_mod
   !=======================================
 
   type, extends(kernel_type) :: momentum_v
-     type(arg), dimension(18) :: meta_args =  &
-          (/ arg(READWRITE, CV, POINTWISE),  & ! va
-             arg(READ,      CU, POINTWISE),  & ! un
-             arg(READ,      CV, POINTWISE),  & ! vn
-             arg(READ,      CU, POINTWISE),  & ! hu
-             arg(READ,      CV, POINTWISE),  & ! hv
-             arg(READ,      CT, POINTWISE),  & ! ht
-             arg(READ,      CV, POINTWISE),  & ! ssha_v
-             arg(READ,      CT, POINTWISE),  & ! sshn_t
-             arg(READ,      CU, POINTWISE),  & ! sshn_u
-             arg(READ,      CV, POINTWISE),  & ! sshn_v
-             arg(READ,      GRID_MASK_T),    &
-             arg(READ,      GRID_DX_V),      &
-             arg(READ,      GRID_DX_T),      &
-             arg(READ,      GRID_DY_U),      &
-             arg(READ,      GRID_DY_V),      &
-             arg(READ,      GRID_DY_T),      &
-             arg(READ,      GRID_AREA_V),    &
-             arg(READ,      GRID_LAT_V)      &
+     type(arg), dimension(18) :: meta_args =            &
+          (/ arg(READWRITE, CV, POINTWISE),             & ! va
+             arg(READ,      CU, STENCIL(110,110,000)),  & ! un
+             arg(READ,      CV, STENCIL(010,111,010)),  & ! vn
+             arg(READ,      CU, STENCIL(110,110,000)),  & ! hu
+             arg(READ,      CV, STENCIL(000,111,000)),  & ! hv
+             arg(READ,      CT, STENCIL(010,010,000)),  & ! ht
+             arg(READ,      CV, POINTWISE),             & ! ssha_v
+             arg(READ,      CT, STENCIL(010,010,000)),  & ! sshn_t
+             arg(READ,      CU, STENCIL(110,110,000)),  & ! sshn_u
+             arg(READ,      CV, STENCIL(000,111,000)),  & ! sshn_v
+             arg(READ,      GRID_MASK_T),               &
+             arg(READ,      GRID_DX_V),                 &
+             arg(READ,      GRID_DX_T),                 &
+             arg(READ,      GRID_DY_U),                 &
+             arg(READ,      GRID_DY_V),                 &
+             arg(READ,      GRID_DY_T),                 &
+             arg(READ,      GRID_AREA_V),               &
+             arg(READ,      GRID_LAT_V)                 &
            /)
 
      !> We update only those points within the internal region
