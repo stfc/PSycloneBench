@@ -27,14 +27,23 @@ enum, bind(c)
    enumerator :: MIN, MAX, SUM
 end enum
 
+type :: stencil
+   integer :: first_row
+   integer :: second_row
+   integer :: third_row
+end type stencil
+
+public stencil
+
   !args(fs,stencil,arg_intent) ! this need defining
 type :: arg
   integer(kind(READ)) :: arg_intent
   integer :: element
-  integer(kind(FE)) :: stencil=0
+  type(stencil) :: stencil_type = stencil(0,0,0)
 end type arg
 
-
+type(stencil), parameter :: POINTWISE = stencil(000,010,000)
+public POINTWISE
 !-------------------------------------------------------------------------------
 ! Expose public types
 !-------------------------------------------------------------------------------
@@ -82,7 +91,6 @@ integer, public, parameter :: GRID_DY_CONST = 15
 public :: arg
 public :: READ, WRITE, READWRITE, INC
 public :: SUM, MIN, MAX
-
 !-------------------------------------------------------------------------------
 ! Member subroutines
 !-------------------------------------------------------------------------------
