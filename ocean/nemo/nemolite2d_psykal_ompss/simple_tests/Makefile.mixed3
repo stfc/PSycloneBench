@@ -1,0 +1,27 @@
+F90 = gfortran
+F90FLAGS = -g
+OMPSSF90 = mfc
+OMPSSF90FLAGS = --ompss -g
+FOBJ = field.o top.o main2.o psy_deref.o psy_target.o my_work1.o my_work2.o
+
+test_example: ${FOBJ}
+	${OMPSSF90} -o $@ ${FOBJ} ${OMPSSF90FLAGS}
+
+psy_target.o : psy_target.f90
+	${OMPSSF90} ${OMPSSF90FLAGS} -c $<
+my_work1.o : my_work1.f90
+	${OMPSSF90} ${OMPSSF90FLAGS} -c $<
+my_work2.o : my_work2.f90
+	${OMPSSF90} ${OMPSSF90FLAGS} -c $<
+top.o : top.f90
+	${OMPSSF90} ${OMPSSF90FLAGS} -c $<
+
+top.o : main2.o
+psy_target.o : my_work1.o my_work2.o
+psy_deref.o : field.o
+main2.o : psy_deref.o field.o
+
+%.o: %.f90
+	${F90} ${F90FLAGS} -c $<
+clean:
+	rm -f *.o *.mod test_example
