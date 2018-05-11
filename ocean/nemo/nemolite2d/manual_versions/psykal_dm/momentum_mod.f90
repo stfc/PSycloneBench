@@ -16,12 +16,12 @@ module momentum_mod
 
   type, extends(kernel_type) :: momentum_u
      type(arg), dimension(18) :: meta_args =  &
-          (/ arg(READWRITE, CU, POINTWISE),  & ! ua
-             arg(READ,      CU, POINTWISE),  & ! un
-             arg(READ,      CV, POINTWISE),  & ! vn
-             arg(READ,      CU, POINTWISE),  & ! hu
-             arg(READ,      CV, POINTWISE),  & ! hv
-             arg(READ,      CT, POINTWISE),  & ! ht
+          (/ arg(READWRITE, CU, POINTWISE),            & ! ua
+             arg(READ,      CU, STENCIL(000,111,000)), & ! un
+             arg(READ,      CV, STENCIL(000,011,011)), & ! vn
+             arg(READ,      CU, STENCIL(010,010,010)), & ! hu
+             arg(READ,      CV, STENCIL(000,011,011)), & ! hv
+             arg(READ,      CT, STENCIL(ARPDBG)),  & ! ht
              arg(READ,      CU, POINTWISE),  & ! ssha_u
              arg(READ,      CT, POINTWISE),  & ! sshn_t
              arg(READ,      CU, POINTWISE),  & ! sshn_u
