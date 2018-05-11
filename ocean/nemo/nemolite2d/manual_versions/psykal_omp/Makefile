@@ -21,12 +21,18 @@ INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
 # The targets that this Makefile supports
 EXECS = nemolite2d
 
+KERNELS = boundary_conditions_mod.o \
+          continuity_mod.o \
+          momentum_mod.o \
+          time_update_mod.o
+
 # The modules that are common to both targets
-MODULES = model_mod.o boundary_conditions_mod.o \
-          continuity_mod.o initialisation_mod.o \
-          momentum_mod.o physical_params_mod.o \
-          time_update_mod.o gocean2d_io_mod.o \
-          time_step_mod.o
+MODULES = model_mod.o \
+          initialisation_mod.o \
+          physical_params_mod.o \
+          gocean2d_io_mod.o \
+          time_step_mod.o \
+          ${KERNELS}
 
 GENERATED_MODULES = psy.o
 
@@ -79,6 +85,7 @@ clean:
 	rm -f *.o *.mod *.MOD *~
 
 allclean: clean
+	rm -f ${KERNELS:.o=.f90}
 	rm -f *.exe fparser.log
 	rm -rf *_wpl_dir/
 
