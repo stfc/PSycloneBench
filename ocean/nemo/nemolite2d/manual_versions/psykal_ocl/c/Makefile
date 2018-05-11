@@ -76,6 +76,10 @@ nemolite2d_kernels.aocx: ${KERNEL_MODULES:.o=.cl}
 %.cl: %.c
 	ln -sf $< $@
 
+# Kernel source is kept in the top-level kernels directory
+%.c:
+	ln -sf ../../../kernels/opencl/$< .
+
 %.o: %.c
 	$(CC) $(CFLAGS) ${OPENCL_INCLUDE} -c $<
 
