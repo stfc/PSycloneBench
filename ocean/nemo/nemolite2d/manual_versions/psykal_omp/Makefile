@@ -44,10 +44,10 @@ all: $(EXECS)
 
 # Normal targets
 .PHONY: nemolite2d
-nemolite2d: timer_lib inf_lib
+nemolite2d: timer_lib inf_lib kernels
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
-nemolite2d.o: $(COMMON_MODULES)
+nemolite2d.o: kernels $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
 
@@ -70,6 +70,9 @@ time_update_mod.o: model_mod.o inf_lib
 
 %.o: %.F90
 	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${INF_INC} -I${TIMER_INC} -c $<
+
+kernels:
+	ln -sf ../../kernels/fortran/*.?90 .
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
