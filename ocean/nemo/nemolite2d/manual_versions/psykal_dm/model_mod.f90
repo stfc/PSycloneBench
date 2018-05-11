@@ -25,8 +25,8 @@ CONTAINS
 
   subroutine model_init(grid)
     use gocean2d_io_mod
-    use subdomain_mod, only: subdomain_type, decompose
-    use parallel_mod, only: get_rank
+    use subdomain_mod, only: decomposition_type, decompose
+    use parallel_mod, only: get_rank, set_proc_grid
     implicit none
     type(grid_type), intent(inout) :: grid
 
@@ -35,7 +35,7 @@ CONTAINS
     real(wp) :: dx, dy
     integer  :: ierr
     integer, dimension(:,:), allocatable :: tmask
-    type(subdomain_type), allocatable :: tile_list(:)
+    type(decomposition_type) :: decomp
     integer :: rank
 
     ! Initialise timing system
@@ -46,19 +46,19 @@ CONTAINS
                        nit000, nitend, irecord, &
                        jphgr_msh, dep_const, rdt, cbfr, visc)
 
-    ! Work out the decomposition (uses the number of MPI ranks by
-    ! default)
-    tile_list = decompose(jpiglo, jpjglo)
-    rank = get_rank()
-    ! Take a copy of this process' subdomain definition
-    grid%subdomain = tile_list(rank)
+    ! Work out the decomposition of the global domain (uses the number
+    ! of MPI ranks by default)
+    decomp = decompose(jpiglo, jpjglo)
+    call set_proc_grid(decomp%nx, decomp%ny)
 
-    ! Set-up the T mask. This defines the model domain on this process.
-    call setup_tpoints_mask(grid%subdomain, jpiglo, jpjglo, tmask)
+    ! Set-up the T mask on this process. This defines the model domain.
+    rank = get_rank()
+    call setup_tpoints_mask(decomp%subdomains(rank), jpiglo, jpjglo, tmask)
 
     ! Having specified the T points mask, we can set up mesh parameters
-    call grid_init(grid, dx, dy, tmask)
+    call grid_init(grid, decomp, dx, dy, tmask)
 
+    ! Write generated, decomposed T-mask out to file
     call dump_tmask(tmask, grid)
 
     ! Initialise model IO 'system'
@@ -72,7 +72,6 @@ CONTAINS
   !================================================
 
   SUBROUTINE model_finalise()
-    use parallel_mod, only: parallel_finalise
     use gocean2d_io_mod, only: model_write_finalise
     IMPLICIT none
 
@@ -81,8 +80,6 @@ CONTAINS
     call timer_report()
 
     call model_dealloc()
-
-    call parallel_finalise()
 
   end subroutine model_finalise
 
