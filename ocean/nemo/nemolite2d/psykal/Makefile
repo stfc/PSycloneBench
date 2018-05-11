@@ -20,11 +20,17 @@ LIBS = ${TIMER_LIB} ${INF_LIB}
 # The targets that this Makefile supports
 EXECS = nemolite2d nemolite2d_gen nemolite2d_gen_omp
 
+KERNELS = boundary_conditions_mod.o \
+          continuity_mod.o \
+          momentum_mod.o \
+          time_update_mod.o
+
 # The modules that are common to both targets
-MODULES = model_mod.o boundary_conditions_mod.o \
-          continuity_mod.o initialisation_mod.o \
-          momentum_mod.o physical_params_mod.o \
-          time_update_mod.o gocean2d_io_mod.o
+MODULES = model_mod.o \
+          initialisation_mod.o \
+          physical_params_mod.o \
+          gocean2d_io_mod.o \
+          ${KERNELS}
 
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
@@ -131,9 +137,8 @@ continuity_mod.o: model_mod.o
 gocean2d_io_mod.o: inf_lib
 model_mod.o: inf_lib gocean2d_io_mod.o
 momentum_mod.o: model_mod.o physical_params_mod.o
-time_step_mod.o: inf_lib momentum_mod.o continuity_mod.o \
-                 time_update_mod.o boundary_conditions_mod.o
-time_update_mod.o: model_mod.o inf_lib
+time_step_mod.o: inf_lib ${KERNELS}
+time_update_mod.o: inf_lib
 
 # Generic rules
 
@@ -145,11 +150,18 @@ time_update_mod.o: model_mod.o inf_lib
 %.o: %.F90
 	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
 
+# If we need a .f90 file that doesn't exist then it must be a kernel.
+# Create a link to the required file...
+%.f90:
+	ln -sf ../kernels/fortran/$@ .
+
+.PHONY: inf_lib timer_lib
+
 timer_lib:
-	make -C ${TIMER_DIR} sm_lib
+	${MAKE} -C ${TIMER_DIR} sm_lib
 
 inf_lib:
-	make -C ${INF_DIR}
+	${MAKE} -C ${INF_DIR}
 
 clean: 
 	rm -f *.o *.mod *.MOD *~ *.pyc psy.f90 psy_omp.f90 nemolite2d_gen.f90
@@ -158,6 +170,7 @@ libclean:
 	${MAKE} -C ${INF_DIR} clean
 
 allclean: clean
+	rm -f ${KERNELS:.o=.f90}
 	rm -f *.exe fparser.log
 	rm -f *.lst *.cg *.opt *.optrpt gnu_opt_report.txt *.s
 	rm -rf *_wpl_dir/
