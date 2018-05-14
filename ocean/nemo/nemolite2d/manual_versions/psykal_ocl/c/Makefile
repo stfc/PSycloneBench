@@ -11,11 +11,14 @@
 # The targets that this Makefile supports
 EXECS = nemolite2d
 
+.PHONY: all nemolite2d fpga cont twokern twokernchannels
+
 all: $(EXECS)
 
 COMMON_MODULES = opencl_utils.o timing.o nemolite2d_utils.o
 
 # Source files containing (OpenCL) kernels
+KERNEL_DIR = ../../../kernels/opencl
 ALL_KERNEL_MODULES = continuity_kern.o momentum_u_kern.o momentum_v_kern.o \
                  boundary_conditions_kern.o time_update_kern.o
 
@@ -27,7 +30,6 @@ AOC_FLAGS += -march=emulator
 #-emulator-channel-depth-model=strict
 
 # Normal targets
-.PHONY: nemolite2d fpga cont twokern twokernchannels
 nemolite2d: 
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" KERNEL_MODULES="${ALL_KERNEL_MODULES}" nemolite2d.exe
 
@@ -78,7 +80,7 @@ nemolite2d_kernels.aocx: ${KERNEL_MODULES:.o=.cl}
 
 # Kernel source is kept in the top-level kernels directory
 %.c:
-	ln -sf ../../../kernels/opencl/$< .
+	ln -sf ${KERNEL_DIR}/$@ .
 
 %.o: %.c
 	$(CC) $(CFLAGS) ${OPENCL_INCLUDE} -c $<
