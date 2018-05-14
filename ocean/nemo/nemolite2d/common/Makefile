@@ -1,3 +1,5 @@
+# Makefile for the NEMOLite2D routines that are commone to all of the
+# various versions of the benchmark.
 SHARED_DIR = ../../../../shared
 TIMER_DIR = ${SHARED_DIR}/dl_timer
 TIMER_INC = ${TIMER_DIR}/src
