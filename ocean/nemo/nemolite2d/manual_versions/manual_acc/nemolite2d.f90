@@ -602,7 +602,8 @@ PROGRAM nemolite2d
          !$acc      pcopy(ssha, ssha_u, ssha_v) &
          !$acc      pcopy(un,  vn, ua,  va)
          
-         call timer_start('Time-stepping', idxt, (nitend-nit000+1))
+         call timer_start(idxt, label='Time-stepping',          &
+                          num_repeats=int((nitend-nit000+1),8))
 
          !! time stepping 
          DO istp = nit000, nitend, 1
