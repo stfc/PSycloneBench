@@ -32,4 +32,4 @@ clean:
 
 allclean: clean
 	rm -f *.mod
-	rm nemolite2d_common.a
+	rm -f nemolite2d_common.a
