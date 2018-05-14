@@ -1,6 +1,6 @@
-# Makefile.include is a symbolic link to the desired
-# Makefile.include.<compiler> file.
-include Makefile.include
+# Makefile for the manual OpenACC version of nemolite2d.
+# Makefile.include contains the settings for the PGI compiler
+include ../manual_acc/Makefile.include
 
 # Location of the dl_timer and infrastucture code
 SHARED_DIR = ../../../../../shared
