@@ -25,16 +25,19 @@ COMMON_DIR = ../../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
 COMMON_MODULES = clfortran.o opencl_utils_mod.o kernel_args_mod.o \
-                 nemolite2d.o ${COMMON_LIB} ${INF_LIB}
+                 nemolite2d.o
 
-nemolite2d.exe: inf_lib ${COMMON_MODULES}
-	${F90} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${TIMER_LIB} $(LDFLAGS)
+nemolite2d.exe: ${COMMON_LIB} inf_lib ${COMMON_MODULES}
+	${F90} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${INF_LIB} ${TIMER_LIB} $(LDFLAGS)
 
 timer_lib:
 	make -C ${TIMER_DIR} sm_lib
 
 inf_lib:
 	make -C ${INF_DIR}
+
+${COMMON_LIB}:
+	make -C ${COMMON_DIR}
 
 %.o: %.f90
 	${F90} ${F90FLAGS} -c -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} $<
