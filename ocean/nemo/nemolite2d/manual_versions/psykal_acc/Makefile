@@ -53,7 +53,6 @@ gocean2d_io_mod.o: inf_lib
 infrastructure_mod.o: inf_lib
 model_mod.o: inf_lib gocean2d_io_mod.o
 time_step_mod.o: inf_lib physical_params_mod.o
-# boundary_conditions_mod.o
 time_update_mod.o: model_mod.o inf_lib
 
 # Generic rules

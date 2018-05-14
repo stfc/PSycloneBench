@@ -50,10 +50,10 @@ ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR}
 
 # Normal targets
-nemolite2d: ${COMMON_LIB} timer_lib inf_lib kernels
+nemolite2d: ${COMMON_LIB} timer_lib inf_lib
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
-nemolite2d.o: kernels $(COMMON_MODULES)
+nemolite2d.o: $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
 
@@ -71,8 +71,10 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 %.o: %.F90
 	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
 
-kernels:
-	ln -sf ../../kernels/fortran/*.?90 .
+# If we need a .f90 file that doesn't exist then it must be a kernel.
+# Create a link to the required file...
+%.f90:
+	ln -sf ../../kernels/fortran/$@ .
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
@@ -82,6 +84,9 @@ allclean: clean
 	rm -f ${KERNELS:.o=.f90}
 	rm -f *.exe fparser.log
 	rm -rf *_wpl_dir/
+	${MAKE} -C ${COMMON_DIR} allclean
+	${MAKE} -C ${INF_DIR} distclean
+	${MAKE} -C ${TIMER_DIR} allclean
 
 docs:
 	doxygen gocean2d.doxy.config
