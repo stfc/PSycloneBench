@@ -11,7 +11,7 @@ MODULES = physical_params_mod.o \
           model_mod.o \
           initialisation_mod.o
 
-nemolite2d_common.a: inf_lib ${MODULES}
+nemolite2d_common.a: inf_lib timer_lib ${MODULES}
 	${AR} ${ARFLAGS} $@ ${MODULES}
 
 .PHONY: inf_lib timer_lib
@@ -26,3 +26,10 @@ inf_lib:
 	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
 %.o: %.F90
 	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
+
+clean:
+	rm -f *.o *~
+
+allclean: clean
+	rm -f *.mod
+	rm nemolite2d_common.a
