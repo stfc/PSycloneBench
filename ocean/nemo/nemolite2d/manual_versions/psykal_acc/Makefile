@@ -1,4 +1,8 @@
 # Makefile for the manual OpenACC version of nemolite2d.
+# Note, this does not yet use the 'common' routines in ../../common
+# because the versions here have been modified slightly to
+# support having data in a remote memory space.
+
 # Makefile.include contains the settings for the PGI compiler
 include ../manual_acc/Makefile.include
 
@@ -26,17 +30,18 @@ MODULES = model_mod.o \
 # passed to the linker
 COMMON_MODULES = $(MODULES) ${INF_LIB}
 
+.PHONY: all timer_lib inf_lib nemolite2d
+
 all: $(EXECS)
 
 timer_lib:
-	make -C ${TIMER_DIR} sm_lib
+	${MAKE} -C ${TIMER_DIR} sm_lib
 
 inf_lib:
-	make -C ${INF_DIR}
+	${MAKE} -C ${INF_DIR}
 
 # Normal targets
-.PHONY: nemolite2d
-nemolite2d: 
+nemolite2d: timer_lib inf_lib
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
 nemolite2d.o: $(COMMON_MODULES)
@@ -64,6 +69,7 @@ time_update_mod.o: model_mod.o inf_lib
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
+	${MAKE} -C ${TIMER_DIR} clean
 	rm -f *.o *.mod *.MOD *~
 
 allclean: clean
