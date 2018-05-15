@@ -75,7 +75,7 @@ contains
                              rdt, sshn_t%grid%area_t)
       end do
     end do
-    !$acc end parallel
+!$acc end parallel
 
 !$acc parallel default(present)
 !$acc loop collapse(2)

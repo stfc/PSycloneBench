@@ -1,5 +1,5 @@
 program gocean2d
-  use dl_timer
+  !use dl_timer
   use grid_mod
   use field_mod
   use initialisation_mod, only: initialisation
@@ -75,8 +75,8 @@ program gocean2d
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
 
   ! Start timer for time-stepping section
-  CALL timer_start(itimer0, label='Time-stepping', &
-                   num_repeats=int((nitend-nit000+1),8) )
+!  CALL timer_start(itimer0, label='Time-stepping', &
+!                   num_repeats=int((nitend-nit000+1),8) )
 
   !! time stepping 
   do istp = nit000, nitend, 1
@@ -95,13 +95,11 @@ program gocean2d
   end do
 
   ! Stop the timer for the time-stepping section
-  call timer_stop(itimer0)
+  !call timer_stop(itimer0)
 
   ! Compute and output some checksums for error checking
-  call model_write_log("('ua checksum = ',E16.8)", &
-                       field_checksum(ua_fld))
-  call model_write_log("('va checksum = ',E16.8)", &
-                       field_checksum(va_fld))
+  call model_write_log("('ssha_t checksum = ',E16.8)", &
+                       field_checksum(ssha_t_fld))
 
   !! finalise the model run
   call model_finalise()
