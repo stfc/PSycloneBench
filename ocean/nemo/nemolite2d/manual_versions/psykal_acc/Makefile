@@ -23,7 +23,8 @@ EXECS = nemolite2d
 MODULES = model_mod.o \
           initialisation_mod.o \
           physical_params_mod.o \
-          gocean2d_io_mod.o
+          gocean2d_io_mod.o \
+          momentum_mod.o
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
@@ -57,8 +58,8 @@ gocean2d_io_mod.o: inf_lib
 infrastructure_mod.o: inf_lib
 model_mod.o: inf_lib gocean2d_io_mod.o
 time_update_mod.o: model_mod.o inf_lib
-time_step_mod.o: model_mod.o physical_params_mod.o
-time_step_mod_arrays.o: model_mod.o physical_params_mod.o
+time_step_mod.o: model_mod.o physical_params_mod.o momentum_mod.o
+time_step_mod_arrays.o: model_mod.o physical_params_mod.o momentum_mod.o
 
 # Generic rules
 

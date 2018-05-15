@@ -2,7 +2,7 @@ MODULE model_mod
   use kind_params_mod
   use grid_mod
   use field_mod
-  use dl_timer, ONLY: timer_init, timer_report
+  !use dl_timer, ONLY: timer_init, timer_report
   implicit none
 
   public
@@ -15,6 +15,7 @@ MODULE model_mod
   real(wp), save :: rdt             !< time step
   REAL(wp), save :: cbfr            !< bottom friction coefficient
   REAL(wp), save :: visc            !< backgroud/constant viscosity 
+!$acc declare create(rdt, cbfr, visc)
 
   REAL(wp), save :: dep_const       !< constant depth
 
@@ -36,7 +37,7 @@ CONTAINS
     integer, dimension(:,:), allocatable :: tmask
 
     ! Initialise timing system
-    call timer_init()
+    !call timer_init()
 
     ! Read model configuration from namelist
     call read_namelist(jpiglo, jpjglo, dx, dy, &
@@ -73,7 +74,7 @@ CONTAINS
 
     CALL model_write_finalise()
 
-    CALL timer_report()
+    !CALL timer_report()
 
     CALL model_dealloc()
   

@@ -17,7 +17,7 @@ contains
     use model_mod,       only: rdt, cbfr, visc
     use physical_params_mod, only: g, omega, d2r
 !    use momentum_mod,    only: momentum_v_code
-!    use momentum_mod,    only: momentum_u_code
+    use momentum_mod,    only: momentum_u_code
 !    use continuity_mod,  only: continuity_code
 !    use time_update_mod, only: next_sshu_code, next_sshv_code
 !    use boundary_conditions_mod
@@ -55,9 +55,13 @@ contains
 ! on the GPU then that copy is used.
 !$acc enter data if(.not. ssha%data_on_device) &
 !$acc copyin(sshn_t, sshn_t%data, sshn_u, sshn_u%data, sshn_v, sshn_v%data, &
-!$acc        ssha, ssha%data, &
-!$acc        hu, hu%data, hv, hv%data, un, un%data, vn, vn%data, &
-!$acc        rdt, sshn_t%grid, sshn_t%grid%area_t)
+!$acc        ssha, ssha%data, ssha_u, ssha_u%data,  &
+!$acc        hu, hu%data, hv, hv%data, ht, ht%data, &
+!$acc        ua, ua%data, un, un%data, vn, vn%data, &
+!$acc        sshn_t%grid, sshn_t%grid%tmask, sshn_t%grid%area_t, &
+!$acc        sshn_t%grid%area_u, sshn_t%grid%dx_u, sshn_t%grid%dx_v,   &
+!$acc        sshn_t%grid%dx_t, sshn_t%grid%dy_u, sshn_t%grid%dy_t,   &
+!$acc        sshn_t%grid%gphiu, rdt, cbfr, visc)
 
 !$acc parallel default(present)
 !$acc loop collapse(2)
@@ -70,6 +74,28 @@ contains
                              hu%data, hv%data, un%data, vn%data, &
                              rdt, sshn_t%grid%area_t)
       end do
+    end do
+    !$acc end parallel
+
+!$acc parallel default(present)
+!$acc loop collapse(2)
+    do jj = 2, N, 1
+       do ji = 2, M-1, 1
+
+        call momentum_u_code(ji, jj, &
+                             ua%data, un%data, vn%data, &
+                             hu%data, hv%data, ht%data, &
+                             ssha_u%data, sshn_t%data,  &
+                             sshn_u%data, sshn_v%data,  &
+                             sshn_t%grid%tmask,  &
+                             sshn_t%grid%dx_u,   &
+                             sshn_t%grid%dx_v,   &
+                             sshn_t%grid%dx_t,   &
+                             sshn_t%grid%dy_u,   &
+                             sshn_t%grid%dy_t,   &
+                             sshn_t%grid%area_u, &
+                             sshn_t%grid%gphiu)
+       end do
     end do
 !$acc end parallel
 
