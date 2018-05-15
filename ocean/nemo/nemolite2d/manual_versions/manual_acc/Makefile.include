@@ -1,10 +1,16 @@
-# Build settings for gfortran compiler
+# Build settings for PGI compiler and OpenACC
+
 F90 = pgf90
 
-#F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g -O0
+# For NVIDIA K20
+#F90FLAGS += -i4 -r8 -O3 -acc -ta=tesla,cc35,maxregcount:80,nordc -Mcuda=cc35,maxregcount:80,nordc
+#LDFLAGS += -i4 -r8 -O3 -acc -ta=nvidia,cc35 -Mcuda=cc35,nordc
 
-F90FLAGS += -i4 -r8 -O3 -acc -ta=tesla,cc35,maxregcount:80,nordc -Mcuda=cc35,maxregcount:80,nordc
-LDFLAGS += -i4 -r8 -O3 -acc -ta=nvidia,cc35 -Mcuda=cc35,nordc
-#F90FLAGS = -O3 -fopenmp
+# For Quadro K600
+F90FLAGS += -O0 -g -acc -ta=tesla:cc30 -Mcuda=cc30
+#-i4 -r8
+LDFLAGS += -O0 -g -acc -ta=tesla:cc30 -Mcuda=cc30
+#-i4 -r8 -acc -ta=nvidia:cc30 -Mcuda=cc30
 
 
+F90FLAGS += -Minfo=all -Mprof=ccff

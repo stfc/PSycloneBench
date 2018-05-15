@@ -23,8 +23,7 @@ EXECS = nemolite2d
 MODULES = model_mod.o \
           initialisation_mod.o \
           physical_params_mod.o \
-          gocean2d_io_mod.o \
-          time_step_mod.o
+          gocean2d_io_mod.o
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
@@ -35,14 +34,19 @@ COMMON_MODULES = $(MODULES) ${INF_LIB}
 all: $(EXECS)
 
 timer_lib:
-	${MAKE} -C ${TIMER_DIR} sm_lib
+	${MAKE} -C ${TIMER_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}" sm_lib
 
 inf_lib:
-	${MAKE} -C ${INF_DIR}
+	${MAKE} -C ${INF_DIR} F90="${F90}" F90FLAGS="${F90FLAGS}"
 
 # Normal targets
-nemolite2d: timer_lib inf_lib
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
+# Target where we attempt to use derived types with OpenACC
+nemolite2d: timer_lib inf_lib time_step_mod.o
+	${MAKE} MODULE_LIST="time_step_mod.o nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
+
+# Target where OpenACC is only exposed to normal arrays
+nemolite2d_arrays: timer_lib inf_lib time_step_mod_arrays.o
+	${MAKE} MODULE_LIST="time_step_mod_arrays.o nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
 nemolite2d.o: $(COMMON_MODULES)
 
@@ -52,8 +56,9 @@ boundary_conditions_mod.o: physical_params_mod.o inf_lib model_mod.o
 gocean2d_io_mod.o: inf_lib
 infrastructure_mod.o: inf_lib
 model_mod.o: inf_lib gocean2d_io_mod.o
-time_step_mod.o: inf_lib physical_params_mod.o
 time_update_mod.o: model_mod.o inf_lib
+time_step_mod.o: model_mod.o physical_params_mod.o
+time_step_mod_arrays.o: model_mod.o physical_params_mod.o
 
 # Generic rules
 
