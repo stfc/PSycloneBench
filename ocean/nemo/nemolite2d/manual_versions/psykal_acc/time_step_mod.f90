@@ -13,14 +13,6 @@ contains
                               hu, hv, ht, ua, va, un, vn)
     !use dl_timer
     use field_mod
-!    use grid_mod
-!    use model_mod,       only: rdt, cbfr, visc
-!    use physical_params_mod, only: g, omega, d2r
-!    use momentum_mod,    only: momentum_v_code
-!    use momentum_mod,    only: momentum_u_code
-!    use continuity_mod,  only: continuity_code
-!    use time_update_mod, only: next_sshu_code, next_sshv_code
-!    use boundary_conditions_mod
     implicit none
     integer,         intent(in)    :: istp
     type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
@@ -52,6 +44,7 @@ contains
     integer :: ji, jj, jiu, jiv
     integer :: M, N
     integer :: cont_timer, mom_timer, bc_timer, next_timer
+    logical, save :: first_time = .true.
 
     M  = ssha%grid%simulation_domain%xstop
     N  = ssha%grid%simulation_domain%ystop
@@ -62,20 +55,14 @@ contains
 !      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
 ! Copy data to GPU. We use pcopyin so that if the data is already
     ! on the GPU then that copy is used.
-    if(.not. ssha%data_on_device .or. &
-       .not. sshn_t%data_on_device .or. &
-       .not. sshn_u%data_on_device .or. &
-       .not. sshn_v%data_on_device .or. &
-       .not. hu%data_on_device .or. &
-       .not. hv%data_on_device .or. &
-       .not. un%data_on_device .or. &
-       .not. vn%data_on_device)then
-!$acc enter data if(.not. ssha%data_on_device) &
+    if(first_time)then
+!$acc enter data &
 !$acc copyin(sshn_t, sshn_t%data, sshn_u, sshn_u%data, sshn_v, sshn_v%data, &
 !$acc        ssha, ssha%data,  &
 !$acc        hu, hu%data, hv, hv%data, ht, ht%data, &
 !$acc        un, un%data, vn, vn%data, &
 !$acc        sshn_t%grid, sshn_t%grid%tmask, sshn_t%grid%area_t)
+       first_time = .false.
        ssha%data_on_device = .true.
        sshn_t%data_on_device = .true.
        sshn_u%data_on_device = .true.
@@ -120,6 +107,7 @@ contains
     integer :: ji, jj, jiu, jiv
     integer :: M, N
     integer :: cont_timer, mom_timer, bc_timer, next_timer
+    logical, save :: first_time = .true.
 
     M  = ua%grid%simulation_domain%xstop
     N  = ua%grid%simulation_domain%ystop
@@ -130,16 +118,7 @@ contains
 !      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
 ! Copy data to GPU. We use pcopyin so that if the data is already
 ! on the GPU then that copy is used.
-    if(.not. ua%data_on_device .or. &
-       .not. un%data_on_device .or. &
-       .not. vn%data_on_device .or. &
-       .not. hu%data_on_device .or. &
-       .not. hv%data_on_device .or. &
-       .not. ht%data_on_device .or. &
-       .not. ssha_u%data_on_device .or. &
-       .not. sshn_t%data_on_device .or. &
-       .not. sshn_u%data_on_device .or. &
-       .not. sshn_v%data_on_device)then
+    if(first_time)then
 !$acc enter data &
 !$acc copyin(sshn_t, sshn_t%data, sshn_u, sshn_u%data, sshn_v, sshn_v%data, &
 !$acc        ssha_u, ssha_u%data,  &
@@ -149,6 +128,7 @@ contains
 !$acc        sshn_t%grid%area_u, sshn_t%grid%dx_u, sshn_t%grid%dx_v,   &
 !$acc        sshn_t%grid%dx_t, sshn_t%grid%dy_u, sshn_t%grid%dy_t,   &
 !$acc        sshn_t%grid%gphiu, rdt, cbfr, visc)
+       first_time = .false.
        ua%data_on_device = .true.
        un%data_on_device = .true.
        vn%data_on_device = .true.
