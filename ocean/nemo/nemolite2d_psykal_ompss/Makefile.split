@@ -8,7 +8,7 @@ OMPSSF90FLAGS = --ompss
 #F90FLAGS+= -faggressive-function-elimination
 #F90FLAGS+= -Ofast -mtune=native -finline-limit=50000 -fopt-info-all=gnu_opt_report.txt
 #F90FLAGS+= -march=core2 -mtune=core2
-#F90FLAGS+= -ffree-line-length-none
+F90FLAGS+= -ffree-line-length-none
 
 # Location of the code defining the GOcean API
 API_VERSION=1.0
@@ -35,14 +35,14 @@ SUPPORT = initialisation_mod.o \
 
 ALGORITHM = nemolite2d_gen.o
 
-PSY = psy.o
+PSY = psy_split.o
 
 FOBJ = ${KERNELS} ${SUPPORT} ${PSY} ${ALGORITHM}
 
 nemolite2d_ompss: ${FOBJ}
-	${F90} -o $@ ${FOBJ} ${TIMER_LIB} ${API_LIB} ${LDFLAGS}
+	${F90} -o $@ -fopenmp ${FOBJ} ${TIMER_LIB} ${API_LIB} ${LDFLAGS}
 
-psy.o: psy.f90
+psy_split.o: psy_split.f90
 	${F90} ${F90FLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
 
 nemolite2d_gen.o: nemolite2d_gen.f90

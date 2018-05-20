@@ -3,3 +3,8 @@ and add in OmpSS directives to the PSy-layer
 
 To build type 'make'
 
+expected result:
+
+ua checksum =   0.65214720E+08
+va checksum =   0.65214720E+08
+
