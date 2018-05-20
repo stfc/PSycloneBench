@@ -27,8 +27,6 @@ END MODULE psy_gocean2d
 
 SUBROUTINE invoke_0_deref(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, ua, ht, ssha_u, va, ssha_v, istp, istop, jstop, n, m, grid_area_t, gat_dim1, gat_dim2, grid_area_u, gau_dim1, gau_dim2, grid_area_v, gav_dim1, gav_dim2, grid_tmask, gtm_dim1, gtm_dim2, grid_dx_u, gxu_dim1, gxu_dim2, grid_dx_v, gxv_dim1, gxv_dim2, grid_dx_t, gxt_dim1, gxt_dim2, grid_dy_u, gyu_dim1, gyu_dim2, grid_dy_v, gyv_dim1, gyv_dim2, grid_dy_t, gyt_dim1, gyt_dim2, grid_gphiu, gphiu_dim1, gphiu_dim2, grid_gphiv, gphiv_dim1, gphiv_dim2)
   
-  USE time_update_mod, ONLY: next_sshu_code
-  USE infrastructure_mod, ONLY: field_copy_code
   USE boundary_conditions_mod, ONLY: bc_flather_v_code
   USE boundary_conditions_mod, ONLY: bc_flather_u_code
   USE boundary_conditions_mod, ONLY: bc_solid_v_code
@@ -108,22 +106,22 @@ SUBROUTINE invoke_0_deref(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, u
       END DO 
       DO j=1,jstop+1
         DO i=1,istop+1
-          CALL field_copy_code(i, j, un, ua)
+          CALL field_copy_code_wrap(i, j, un, size(un,1), size(un,2), ua, size(ua,1), size(ua,2))
         END DO 
       END DO 
       DO j=1,jstop+1
         DO i=1,istop+1
-          CALL field_copy_code(i, j, vn, va)
+          CALL field_copy_code_wrap(i, j, vn, size(vn,1), size(vn,2), va, size(va,1), size(va,2))
         END DO 
       END DO 
       DO j=1,jstop+1
         DO i=1,istop+1
-          CALL field_copy_code(i, j, sshn_t, ssha_t)
+          CALL field_copy_code_wrap(i, j, sshn_t, size(sshn_t,1), size(sshn_t,2), ssha_t, size(ssha_t,1), size(ssha_t,2))
         END DO 
       END DO 
       DO j=2,jstop
         DO i=2,istop-1
-          CALL next_sshu_code(i, j, sshn_u, sshn_t, grid_tmask, grid_area_t, grid_area_u)
+          CALL next_sshu_code_wrap(i, j, sshn_u, size(sshn_u,1), size(sshn_u,2), sshn_t, size(sshn_t,1), size(sshn_t,2), grid_tmask, size(grid_tmask,1), size(grid_tmask,2), grid_area_t, size(grid_area_t,1), size(grid_area_t,2), grid_area_u, size(grid_area_u,1), size(grid_area_u,2))
         END DO 
       END DO 
       DO j=2,jstop-1
@@ -133,10 +131,39 @@ SUBROUTINE invoke_0_deref(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, u
       END DO 
 END SUBROUTINE invoke_0_deref
 
+subroutine field_copy_code_wrap(i, j, field_out, out_dim1, out_dim2, field_in, in_dim1, in_dim2)
+  USE infrastructure_mod, ONLY: field_copy_code
+  implicit none
+  INTEGER, PARAMETER      :: wp = SELECTED_REAL_KIND(12,307)
+  integer, intent(in)     :: out_dim1, out_dim2, in_dim1, in_dim2
+  integer, intent(in)     :: i, j
+  real(wp), intent(inout) :: field_out(out_dim1, out_dim2)
+  real(wp), intent(in)    :: field_in(in_dim1, in_dim2)
+  !
+  CALL field_copy_code(i, j, field_out, field_in)
+  !
+end subroutine field_copy_code_wrap
+
+subroutine  next_sshu_code_wrap(i, j, sshn_u, u_dim1, u_dim2, sshn_t, t_dim1, t_dim2, grid_tmask, gtm_dim1, gtm_dim2, grid_area_t, gat_dim1, gat_dim2, grid_area_u, gau_dim1, gau_dim2)
+  USE time_update_mod, ONLY: next_sshu_code
+  implicit none
+  INTEGER, PARAMETER      :: wp = SELECTED_REAL_KIND(12,307)
+  integer, intent(in)     :: i, j
+  integer, intent(in)     :: u_dim1, u_dim2, t_dim1, t_dim2, gtm_dim1, gtm_dim2, gat_dim1, gat_dim2, gau_dim1, gau_dim2
+  real(wp), intent(inout) :: sshn_u(u_dim1, u_dim2)
+  real(wp), intent(in)    :: sshn_t(t_dim1, t_dim2)
+  integer, intent(in)     :: grid_tmask(gtm_dim1, gtm_dim2)
+  real(wp), intent(in)    :: grid_area_t(gat_dim1, gat_dim2)
+  real(wp), intent(in)    :: grid_area_u(gau_dim1, gau_dim2)
+  !
+  CALL next_sshu_code(i, j, sshn_u, sshn_t, grid_tmask, grid_area_t, grid_area_u)
+  !
+end subroutine next_sshu_code_wrap
+
 subroutine next_sshv_code_wrap(i, j, sshn_v, v_dim1, v_dim2, sshn_t, t_dim1, t_dim2, grid_tmask, gtm_dim1, gtm_dim2, grid_area_t, gat_dim1, gat_dim2, grid_area_v, gav_dim1, gav_dim2)
   USE time_update_mod, ONLY: next_sshv_code
   implicit none
-  INTEGER, PARAMETER :: wp = SELECTED_REAL_KIND(12,307)
+  INTEGER, PARAMETER      :: wp = SELECTED_REAL_KIND(12,307)
   integer,  intent(in)    :: i, j
   integer,  intent(in)    :: v_dim1, v_dim2, t_dim1, t_dim2, gtm_dim1, gtm_dim2, gat_dim1, gat_dim2, gav_dim1, gav_dim2
   integer,  intent(in)    :: grid_tmask(gtm_dim1, gtm_dim2)
