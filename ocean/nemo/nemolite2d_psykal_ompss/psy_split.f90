@@ -27,7 +27,6 @@ END MODULE psy_gocean2d
 
 SUBROUTINE invoke_0_deref(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, ua, ht, ssha_u, va, ssha_v, istp, istop, jstop, n, m, grid_area_t, gat_dim1, gat_dim2, grid_area_u, gau_dim1, gau_dim2, grid_area_v, gav_dim1, gav_dim2, grid_tmask, gtm_dim1, gtm_dim2, grid_dx_u, gxu_dim1, gxu_dim2, grid_dx_v, gxv_dim1, gxv_dim2, grid_dx_t, gxt_dim1, gxt_dim2, grid_dy_u, gyu_dim1, gyu_dim2, grid_dy_v, gyv_dim1, gyv_dim2, grid_dy_t, gyt_dim1, gyt_dim2, grid_gphiu, gphiu_dim1, gphiu_dim2, grid_gphiv, gphiv_dim1, gphiv_dim2)
   
-  USE momentum_mod, ONLY: momentum_u_code
   USE continuity_mod, ONLY: continuity_code
   IMPLICIT NONE
   
@@ -65,7 +64,7 @@ SUBROUTINE invoke_0_deref(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, u
   END DO
   DO j=2,jstop
      DO i=2,istop-1
-        CALL momentum_u_code(i, j, ua, un, vn, hu, hv, ht, ssha_u, sshn_t, sshn_u, sshn_v, grid_tmask, grid_dx_u, grid_dx_v, grid_dx_t, grid_dy_u, grid_dy_t, grid_area_u, grid_gphiu)
+        CALL momentum_u_code_wrap(i, j, ua, size(ua,1), size(ua,2), un, size(un,1), size(un,2), vn, size(vn,1), size(vn,2), hu, size(hu,1), size(hu,2), hv, size(hv,1), size(hv,2), ht, size(ht,1), size(ht,2), ssha_u, size(ssha_u,1), size(ssha_u,2), sshn_t, size(sshn_t,1), size(sshn_t,2), sshn_u, size(sshn_u,1), size(sshn_u,2), sshn_v, size(sshn_v,1), size(sshn_v,2), grid_tmask, size(grid_tmask,1), size(grid_tmask,2), grid_dx_u, size(grid_dx_u,1), size(grid_dx_u,2), grid_dx_v, size(grid_dx_v,1), size(grid_dx_v,2), grid_dx_t, size(grid_dx_t,1), size(grid_dx_t,2), grid_dy_u, size(grid_dy_u,1), size(grid_dy_u,2), grid_dy_t, size(grid_dy_t,1), size(grid_dy_t,2), grid_area_u, size(grid_area_u,1), size(grid_area_u,2), grid_gphiu, size(grid_gphiu,1), size(grid_gphiu,2))
      END DO
   END DO
       DO j=2,jstop-1
@@ -124,6 +123,34 @@ SUBROUTINE invoke_0_deref(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, u
         END DO 
       END DO 
 END SUBROUTINE invoke_0_deref
+
+subroutine momentum_u_code_wrap(i, j, ua, ua_dim1, ua_dim2, un, un_dim1, un_dim2, vn, vn_dim1, vn_dim2, hu, hu_dim1, hu_dim2, hv, hv_dim1, hv_dim2, ht, ht_dim1, ht_dim2, ssha_u, ssha_u_dim1, ssha_u_dim2, sshn_t, sshn_t_dim1, sshn_t_dim2, sshn_u, sshn_u_dim1, sshn_u_dim2, sshn_v, sshn_v_dim1, sshn_v_dim2, grid_tmask, g_dim1, g_dim2, grid_dx_u, dxu_dim1, dxu_dim2, grid_dx_v, dxv_dim1, dxv_dim2, grid_dx_t, dxt_dim1, dxt_dim2, grid_dy_u, dyu_dim1, dyu_dim2, grid_dy_t, dyt_dim1, dyt_dim2, grid_area_u, gau_dim1, gau_dim2, grid_gphiu, gphiu_dim1, gphiu_dim2)
+  USE momentum_mod, ONLY: momentum_u_code
+  INTEGER, PARAMETER      :: wp = SELECTED_REAL_KIND(12,307)
+  integer, intent(in)     :: i, j
+  integer, intent(in)     :: ua_dim1, ua_dim2, un_dim1, un_dim2, vn_dim1, vn_dim2, hu_dim1, hu_dim2, hv_dim1, hv_dim2, ht_dim1, ht_dim2, ssha_u_dim1, ssha_u_dim2, sshn_t_dim1, sshn_t_dim2, sshn_u_dim1, sshn_u_dim2, sshn_v_dim1, sshn_v_dim2, g_dim1, g_dim2, dxu_dim1, dxu_dim2, dxv_dim1, dxv_dim2, dxt_dim1, dxt_dim2, dyu_dim1, dyu_dim2, dyt_dim1, dyt_dim2, gau_dim1, gau_dim2, gphiu_dim1, gphiu_dim2
+  real(wp), intent(inout) :: ua(ua_dim1, ua_dim2)
+  real(wp), intent(in)    :: un(un_dim1, un_dim2)
+  real(wp), intent(in)    :: vn(vn_dim1, vn_dim2)
+  real(wp), intent(in)    :: hu(hu_dim1, hu_dim2)
+  real(wp), intent(in)    :: hv(hv_dim1, hv_dim2)
+  real(wp), intent(in)    :: ht(ht_dim1, ht_dim2)
+  real(wp), intent(in)    :: ssha_u(ssha_u_dim1, ssha_u_dim2)
+  real(wp), intent(in)    :: sshn_t(sshn_t_dim1, sshn_t_dim2)
+  real(wp), intent(in)    :: sshn_u(sshn_u_dim1, sshn_u_dim2)
+  real(wp), intent(in)    :: sshn_v(sshn_v_dim1, sshn_v_dim2)
+  integer,  intent(in)    :: grid_tmask(g_dim1, g_dim2)
+  real(wp), intent(in)    :: grid_dx_u(dxu_dim1, dxu_dim2)
+  real(wp), intent(in)    :: grid_dx_v(dxv_dim1, dxv_dim2)
+  real(wp), intent(in)    :: grid_dx_t(dxt_dim1, dxt_dim2)
+  real(wp), intent(in)    :: grid_dy_u(dyu_dim1, dyu_dim2)
+  real(wp), intent(in)    :: grid_dy_t(dyt_dim1, dyt_dim2)
+  real(wp), intent(in)    :: grid_area_u(gau_dim1, gau_dim2)
+  real(wp), intent(in)    :: grid_gphiu(gphiu_dim1, gphiu_dim2)
+  !
+  CALL momentum_u_code(i, j, ua, un, vn, hu, hv, ht, ssha_u, sshn_t, sshn_u, sshn_v, grid_tmask, grid_dx_u, grid_dx_v, grid_dx_t, grid_dy_u, grid_dy_t, grid_area_u, grid_gphiu)
+  !
+end subroutine momentum_u_code_wrap
 
 subroutine momentum_v_code_wrap(i, j, va, va_dim1, va_dim2, un, un_dim1, un_dim2, vn, vn_dim1, vn_dim2, hu, hu_dim1, hu_dim2, hv, hv_dim1, hv_dim2, ht, ht_dim1, ht_dim2, ssha_v, ssha_v_dim1, ssha_v_dim2, sshn_t, sshn_t_dim1, sshn_t_dim2, sshn_u, sshn_u_dim1, sshn_u_dim2, sshn_v, sshn_v_dim1, sshn_v_dim2, grid_tmask, g_dim1, g_dim2, grid_dx_v, dxv_dim1, dxv_dim2, grid_dx_t, dxt_dim1, dxt_dim2, grid_dy_u, dyu_dim1, dyu_dim2, grid_dy_v, dyv_dim1, dyv_dim2, grid_dy_t, dyt_dim1, dyt_dim2, grid_area_v, gav_dim1, gav_dim2, grid_gphiv, gphiv_dim1, gphiv_dim2)
   USE momentum_mod, ONLY: momentum_v_code
