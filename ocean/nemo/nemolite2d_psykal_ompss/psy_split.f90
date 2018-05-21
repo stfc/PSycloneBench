@@ -27,7 +27,6 @@ END MODULE psy_gocean2d
 
 SUBROUTINE invoke_0_deref(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, ua, ht, ssha_u, va, ssha_v, istp, istop, jstop, n, m, grid_area_t, gat_dim1, gat_dim2, grid_area_u, gau_dim1, gau_dim2, grid_area_v, gav_dim1, gav_dim2, grid_tmask, gtm_dim1, gtm_dim2, grid_dx_u, gxu_dim1, gxu_dim2, grid_dx_v, gxv_dim1, gxv_dim2, grid_dx_t, gxt_dim1, gxt_dim2, grid_dy_u, gyu_dim1, gyu_dim2, grid_dy_v, gyv_dim1, gyv_dim2, grid_dy_t, gyt_dim1, gyt_dim2, grid_gphiu, gphiu_dim1, gphiu_dim2, grid_gphiv, gphiv_dim1, gphiv_dim2)
   
-  USE continuity_mod, ONLY: continuity_code
   IMPLICIT NONE
   
   INTEGER, PARAMETER :: wp = SELECTED_REAL_KIND(12,307)
@@ -59,7 +58,7 @@ SUBROUTINE invoke_0_deref(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, u
   !
   DO j=2,jstop
      DO i=2,istop
-        CALL continuity_code(i, j, ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, grid_area_t)
+        CALL continuity_code_wrap(i, j, ssha_t, size(ssha_t,1), size(ssha_t,2), sshn_t, size(sshn_t,1), size(sshn_t,2), sshn_u, size(sshn_u,1), size(sshn_u,2), sshn_v, size(sshn_v,1), size(sshn_v,2), hu, size(hu,1), size(hu,2), hv, size(hv,1), size(hv,2), un, size(un,1), size(un,2), vn, size(vn,1), size(vn,2), rdt, grid_area_t, size(grid_area_t,1), size(grid_area_t,2))
      END DO
   END DO
   DO j=2,jstop
@@ -123,6 +122,26 @@ SUBROUTINE invoke_0_deref(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, u
         END DO 
       END DO 
 END SUBROUTINE invoke_0_deref
+
+subroutine continuity_code_wrap(i, j, ssha_t, at_dim1, at_dim2, sshn_t, nt_dim1, nt_dim2, sshn_u, nu_dim1, nu_dim2, sshn_v, nv_dim1, nv_dim2, hu, hu_dim1, hu_dim2, hv, hv_dim1, hv_dim2, un, un_dim1, un_dim2, vn, vn_dim1, vn_dim2, rdt, grid_area_t, gat_dim1, gat_dim2)
+  USE continuity_mod, ONLY: continuity_code
+  INTEGER, PARAMETER      :: wp = SELECTED_REAL_KIND(12,307)
+  integer, intent(in)     :: i, j
+  integer, intent(in)     ::at_dim1, at_dim2, nt_dim1, nt_dim2, nu_dim1, nu_dim2, nv_dim1, nv_dim2, hu_dim1, hu_dim2, hv_dim1, hv_dim2, un_dim1, un_dim2, vn_dim1, vn_dim2, gat_dim1, gat_dim2
+  real(wp), intent(inout) :: ssha_t(at_dim1, at_dim2)
+  real(wp), intent(in)    :: sshn_t(nt_dim1, nt_dim2)
+  real(wp), intent(in)    :: sshn_u(nu_dim1, nu_dim2)
+  real(wp), intent(in)    :: sshn_v(nv_dim1, nv_dim2)
+  real(wp), intent(in)    :: hu(hu_dim1, hu_dim2)
+  real(wp), intent(in)    :: hv(hv_dim1, hv_dim2)
+  real(wp), intent(in)    :: un(un_dim1, un_dim2)
+  real(wp), intent(in)    :: vn(vn_dim1, vn_dim2)
+  real(wp), intent(in)    :: rdt
+  real(wp), intent(in)    :: grid_area_t(gat_dim1, gat_dim2)
+  !
+  CALL continuity_code(i, j, ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, grid_area_t)
+  !
+end subroutine continuity_code_wrap
 
 subroutine momentum_u_code_wrap(i, j, ua, ua_dim1, ua_dim2, un, un_dim1, un_dim2, vn, vn_dim1, vn_dim2, hu, hu_dim1, hu_dim2, hv, hv_dim1, hv_dim2, ht, ht_dim1, ht_dim2, ssha_u, ssha_u_dim1, ssha_u_dim2, sshn_t, sshn_t_dim1, sshn_t_dim2, sshn_u, sshn_u_dim1, sshn_u_dim2, sshn_v, sshn_v_dim1, sshn_v_dim2, grid_tmask, g_dim1, g_dim2, grid_dx_u, dxu_dim1, dxu_dim2, grid_dx_v, dxv_dim1, dxv_dim2, grid_dx_t, dxt_dim1, dxt_dim2, grid_dy_u, dyu_dim1, dyu_dim2, grid_dy_t, dyt_dim1, dyt_dim2, grid_area_u, gau_dim1, gau_dim2, grid_gphiu, gphiu_dim1, gphiu_dim2)
   USE momentum_mod, ONLY: momentum_u_code
