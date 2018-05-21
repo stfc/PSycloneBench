@@ -35,14 +35,20 @@ SUPPORT = initialisation_mod.o \
 
 ALGORITHM = nemolite2d_gen.o
 
-PSY = psy_split.o
+PSY = psy_kern_wrap.o psy_split.o psy_alg_deref.o
 
 FOBJ = ${KERNELS} ${SUPPORT} ${PSY} ${ALGORITHM}
 
 nemolite2d_ompss: ${FOBJ}
 	${F90} -o $@ -fopenmp ${FOBJ} ${TIMER_LIB} ${API_LIB} ${LDFLAGS}
 
+psy_kern_wrap.o: psy_kern_wrap.f90
+	${F90} ${F90FLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
+
 psy_split.o: psy_split.f90
+	${F90} ${F90FLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
+
+psy_alg_deref.o: psy_alg_deref.f90
 	${F90} ${F90FLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
 
 nemolite2d_gen.o: nemolite2d_gen.f90
@@ -64,6 +70,9 @@ momentum_mod.o: model_mod.o physical_params_mod.o ${API_DIR}/kind_params_mod.o
 time_step_mod.o: ${API_LIB} momentum_mod.o continuity_mod.o \
                  time_update_mod.o boundary_conditions_mod.o
 time_update_mod.o: model_mod.o ${API_LIB}
+psy_split.o: psy_kern_wrap.o
+psy_alg_deref.o: psy_split.o
+nemolite_gen.o: psy_alg_deref.o
 
 # Generic rules
 
