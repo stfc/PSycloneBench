@@ -46,7 +46,7 @@ psy_kern_wrap.o: psy_kern_wrap.f90
 	${F90} ${F90FLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
 
 psy_split.o: psy_split.f90
-	${F90} ${F90FLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
+	${OMPSSF90} ${OMPSSF90FLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
 
 psy_alg_deref.o: psy_alg_deref.f90
 	${F90} ${F90FLAGS} -I${API_DIR} -I${TIMER_INC} -c $<
