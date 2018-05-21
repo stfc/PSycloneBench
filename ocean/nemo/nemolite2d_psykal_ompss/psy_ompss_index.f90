@@ -1,124 +1,124 @@
-  MODULE psy_gocean2d
-    USE field_mod
-    USE kind_params_mod
-    IMPLICIT NONE
-    CONTAINS
-    SUBROUTINE invoke_0(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, ua, ht, ssha_u, va, ssha_v, istp)
-      USE time_update_mod, ONLY: next_sshv_code
-      USE time_update_mod, ONLY: next_sshu_code
-      USE infrastructure_mod, ONLY: field_copy_code
-      USE boundary_conditions_mod, ONLY: bc_flather_v_code
-      USE boundary_conditions_mod, ONLY: bc_flather_u_code
-      USE boundary_conditions_mod, ONLY: bc_solid_v_code
-      USE boundary_conditions_mod, ONLY: bc_solid_u_code
-      USE boundary_conditions_mod, ONLY: bc_ssh_code
-      USE momentum_mod, ONLY: momentum_v_code
-      USE momentum_mod, ONLY: momentum_u_code
-      USE continuity_mod, ONLY: continuity_code
-      TYPE(r2d_field), intent(inout) :: ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v
-      REAL(KIND=wp), intent(inout) :: rdt
-      INTEGER, intent(inout) :: istp
-      INTEGER j
-      INTEGER i
-      INTEGER istop, jstop
-      !
-      ! Look-up loop bounds
-      istop = ssha_t%grid%simulation_domain%xstop
-      jstop = ssha_t%grid%simulation_domain%ystop
-      !
-      DO j=2,jstop
-        DO i=2,istop
-          !$omp task out(ssha_t%data(i,j)) in(sshn_t%data(i,j), sshn_u%data(i,j), sshn_u%data(i-1,j), sshn_v%data(i,j), sshn_v%data(i,j-1), hu%data(i,j), hu%data(i-1,j), hv%data(i,j), hv%data(i,j-1), un%data(i,j), un%data(i-1,j), vn%data(i,j), vn%data(i,j-1))
-          CALL continuity_code(i, j, ssha_t%data, sshn_t%data, sshn_u%data, sshn_v%data, hu%data, hv%data, un%data, vn%data, rdt, sshn_t%grid%area_t)
-          !$omp end task
-        END DO 
-      END DO 
-      DO j=2,jstop
-        DO i=2,istop-1
-          !$omp task inout(ua%data(i,j)), in(un%data(i,j), un%data(i+1,j), un%data(i-1,j), un%data(i,j-1), un%data(i,j+1), vn%data(i,j), vn%data(i,j-1), vn%data(i+1,j-1), vn%data(i+1,j), hu%data(i,j), hu%data(i,j-1), hu%data(i,j+1), hv%data(i,j), hv%data(i,j-1), hv%data(i+1,j-1), hv%data(i+1,j), ht%data(i,j), ht%data(i+1,j), ssha_u%data(i,j), sshn_t%data(i,j), sshn_t%data(i+1,j), sshn_u%data(i,j), sshn_u%data(i,j-1), sshn_u%data(i,j+1), sshn_v%data(i,j), sshn_v%data(i,j-1), sshn_v%data(i+1,j-1), sshn_v%data(i+1,j))
-          CALL momentum_u_code(i, j, ua%data, un%data, vn%data, hu%data, hv%data, ht%data, ssha_u%data, sshn_t%data, sshn_u%data, sshn_v%data, un%grid%tmask, un%grid%dx_u, un%grid%dx_v, un%grid%dx_t, un%grid%dy_u, un%grid%dy_t, un%grid%area_u, un%grid%gphiu)
-          !$omp end task
-        END DO
-      END DO 
-      DO j=2,jstop-1
-        DO i=2,istop
-          !$omp task inout(va%data(i,j)) in(***TBD un, vn, hu, hv, ht, ssha_v, sshn_t, sshn_u, sshn_v)
-          CALL momentum_v_code(i, j, va%data, un%data, vn%data, hu%data, hv%data, ht%data, ssha_v%data, sshn_t%data, sshn_u%data, sshn_v%data, un%grid%tmask, un%grid%dx_v, un%grid%dx_t, un%grid%dy_u, un%grid%dy_v, un%grid%dy_t, un%grid%area_v, un%grid%gphiv)
-          !$omp end task
-        END DO
-      END DO 
-      DO j=2,jstop
-        DO i=2,istop
-          !$omp task inout(ssha_t%data(i,j))
-           CALL bc_ssh_code(i, j, istp, ssha_t%data, ssha_t%grid%tmask)
-          !$omp end task
-        END DO
-      END DO 
-      DO j=1,jstop+1
-        DO i=1,istop
-          !$omp task inout(ua%data(i,j))
-          CALL bc_solid_u_code(i, j, ua%data, ua%grid%tmask)
-          !$omp end task
-        END DO 
-      END DO 
-      DO j=1,jstop
-        DO i=1,istop+1
-          !$omp task inout(va%data(i,j))
-          CALL bc_solid_v_code(i, j, va%data, va%grid%tmask)
-        END DO 
-      END DO 
-      DO j=1,jstop+1
-        DO i=1,istop
-          !$omp task inout(ua%data(i,j)) in(hu, sshn_u)???????? writer has a stencil for boundary
-          CALL bc_flather_u_code(i, j, ua%data, hu%data, sshn_u%data, hu%grid%tmask)
-          !$omp end task
-        END DO 
-      END DO 
-      DO j=1,jstop
-        DO i=1,istop+1
-          !$omp task inout(va%data(i,j)) in(hv, sshn_v)???????? writer has a stencil for boundary
-          CALL bc_flather_v_code(i, j, va%data, hv%data, sshn_v%data, hv%grid%tmask)
-          !$omp end task
-        END DO 
-      END DO 
-      DO j=1,jstop+1
-        DO i=1,istop+1
-          !$omp task out(un%data(i,j)) in(ua%data(i,j))
-          CALL field_copy_code(i, j, un%data, ua%data)
-          !$omp end task
-        END DO 
-      END DO 
-      DO j=1,jstop+1
-        DO i=1,istop+1
-          !$omp task out(vn%data(i,j)) in(va%data(i,j))
-          CALL field_copy_code(i, j, vn%data, va%data)
-          !$omp end task
-        END DO 
-      END DO 
-      DO j=1,jstop+1
-        DO i=1,istop+1
-          !$omp task out(sshn_t%data(i,j)) in(ssha_t%data(i,j))
-          CALL field_copy_code(i, j, sshn_t%data, ssha_t%data)
-          !$omp end task
-        END DO 
-      END DO 
-      DO j=2,jstop
-        DO i=2,istop-1
-          !$omp task inout(sshn_u%data(i,j)) in(sshn_t%data(i,j), sshn_t%data(i+1,j))
-          CALL next_sshu_code(i, j, sshn_u%data, sshn_t%data, sshn_t%grid%tmask, sshn_t%grid%area_t, sshn_t%grid%area_u)
-          !$omp end task
-        END DO 
-      END DO 
-      DO j=2,jstop-1
-        DO i=2,istop
-          !$omp task inout(sshn_v%data(i,j)) in(sshn_t%data(i,j), sshn_t%data(i,j+1))
-          CALL next_sshv_code(i, j, sshn_v%data, sshn_t%data, sshn_t%grid%tmask, sshn_t%grid%area_t, sshn_t%grid%area_v)
-          !$omp end task
-        END DO 
-      END DO
-     
-      ! synchronise at the end of the invoke to be safe
-      !$omp taskwait
+SUBROUTINE invoke_0_deref(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, ua, ht, ssha_u, va, ssha_v, istp, istop, jstop, n, m, grid_area_t, gat_dim1, gat_dim2, grid_area_u, gau_dim1, gau_dim2, grid_area_v, gav_dim1, gav_dim2, grid_tmask, gtm_dim1, gtm_dim2, grid_dx_u, gxu_dim1, gxu_dim2, grid_dx_v, gxv_dim1, gxv_dim2, grid_dx_t, gxt_dim1, gxt_dim2, grid_dy_u, gyu_dim1, gyu_dim2, grid_dy_v, gyv_dim1, gyv_dim2, grid_dy_t, gyt_dim1, gyt_dim2, grid_gphiu, gphiu_dim1, gphiu_dim2, grid_gphiv, gphiv_dim1, gphiv_dim2)
+  
+  IMPLICIT NONE
+  
+  INTEGER, PARAMETER :: wp = SELECTED_REAL_KIND(12,307)
 
-    END SUBROUTINE invoke_0
-  END MODULE psy_gocean2d
+  integer, intent(in) :: gat_dim1, gat_dim2, gau_dim1, gau_dim2, gav_dim1, gav_dim2, gtm_dim1, gtm_dim2
+  integer, intent(in) :: gxu_dim1, gxu_dim2, gxv_dim1, gxv_dim2, gxt_dim1, gxt_dim2
+  integer, intent(in) :: gyu_dim1, gyu_dim2, gyv_dim1, gyv_dim2, gyt_dim1, gyt_dim2
+  integer, intent(in) :: gphiu_dim1, gphiu_dim2, gphiv_dim1, gphiv_dim2
+  REAL(KIND=wp), intent(in) :: grid_area_t(gat_dim1, gat_dim2)
+  REAL(KIND=wp), intent(in) :: grid_area_u(gau_dim1, gau_dim2)
+  REAL(KIND=wp), intent(in) :: grid_area_v(gav_dim1, gav_dim2)
+  integer, intent(in) :: grid_tmask(gtm_dim1, gtm_dim2)
+  REAL(KIND=wp), intent(in) :: grid_dx_u(gxu_dim1, gxu_dim2)
+  REAL(KIND=wp), intent(in) :: grid_dx_v(gxv_dim1, gxv_dim2)
+  REAL(KIND=wp), intent(in) :: grid_dx_t(gxt_dim1, gxt_dim2)
+  REAL(KIND=wp), intent(in) :: grid_dy_u(gyu_dim1, gyu_dim2)
+  REAL(KIND=wp), intent(in) :: grid_dy_v(gyv_dim1, gyv_dim2)
+  REAL(KIND=wp), intent(in) :: grid_dy_t(gyt_dim1, gyt_dim2)
+  REAL(KIND=wp), intent(in) :: grid_gphiu(gphiu_dim1, gphiu_dim2)
+  REAL(KIND=wp), intent(in) :: grid_gphiv(gphiv_dim1, gphiv_dim2)
+  
+  REAL(KIND=wp), dimension(n,m), intent(inout)  :: ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v
+  REAL(KIND=wp), intent(in) :: rdt
+  INTEGER, intent(in) :: istp
+  INTEGER, intent(in) :: istop, jstop
+  INTEGER, intent(in) :: n, m
+  !
+  INTEGER :: j, i
+  !
+  DO j=2,jstop
+     !$omp task out(ssha_t(2:istop,j)) in(sshn_t(2:istop,j), sshn_u(2:istop,j), sshn_v(2:istop,j-1:j), hu(2:istop,j), hv(2:istop,j-1:j), un(2:istop,j-1:j), vn(2:istop,j-1:j), grid_area_t(2:istop,j))
+     DO i=2,istop
+        CALL continuity_code_wrap(i, j, ssha_t, size(ssha_t,1), size(ssha_t,2), sshn_t, size(sshn_t,1), size(sshn_t,2), sshn_u, size(sshn_u,1), size(sshn_u,2), sshn_v, size(sshn_v,1), size(sshn_v,2), hu, size(hu,1), size(hu,2), hv, size(hv,1), size(hv,2), un, size(un,1), size(un,2), vn, size(vn,1), size(vn,2), rdt, grid_area_t, size(grid_area_t,1), size(grid_area_t,2))
+     END DO
+     !$omp end task
+  END DO
+  DO j=2,jstop
+     !$omp task inout(ua(2:istop-1,j)) in(un(2:istop-1,j-1:j+1), vn(2:istop-1,j-1:j), hu(2:istop-1,j-1:j+1), hv(2:istop-1,j-1:j), ht(2:istop-1,j), ssha_u(2:istop-1,j), sshn_t(2:istop-1,j), sshn_u(2:istop-1,j-1:j+1), sshn_v(2:istop-1,j-1:j), grid_tmask(2:istop-1,j), grid_dx_u(2:istop-1,j), grid_dx_v(2:istop-1,j), grid_dx_t(2:istop-1,j), grid_dy_u(2:istop-1,j), grid_dy_t(2:istop-1,j), grid_area_u(2:istop-1,j), grid_gphiu(2:istop-1,j))
+     DO i=2,istop-1
+        CALL momentum_u_code_wrap(i, j, ua, size(ua,1), size(ua,2), un, size(un,1), size(un,2), vn, size(vn,1), size(vn,2), hu, size(hu,1), size(hu,2), hv, size(hv,1), size(hv,2), ht, size(ht,1), size(ht,2), ssha_u, size(ssha_u,1), size(ssha_u,2), sshn_t, size(sshn_t,1), size(sshn_t,2), sshn_u, size(sshn_u,1), size(sshn_u,2), sshn_v, size(sshn_v,1), size(sshn_v,2), grid_tmask, size(grid_tmask,1), size(grid_tmask,2), grid_dx_u, size(grid_dx_u,1), size(grid_dx_u,2), grid_dx_v, size(grid_dx_v,1), size(grid_dx_v,2), grid_dx_t, size(grid_dx_t,1), size(grid_dx_t,2), grid_dy_u, size(grid_dy_u,1), size(grid_dy_u,2), grid_dy_t, size(grid_dy_t,1), size(grid_dy_t,2), grid_area_u, size(grid_area_u,1), size(grid_area_u,2), grid_gphiu, size(grid_gphiu,1), size(grid_gphiu,2))
+     END DO
+     !$omp end task
+  END DO
+  DO j=2,jstop-1
+     !$omp task inout(va) in(un, vn, hu, hv, ht, ssha_v, sshn_t, sshn_u, sshn_v, grid_tmask, grid_dx_v, grid_dx_t, grid_dy_u, grid_dy_v, grid_dy_t, grid_area_v, grid_gphiv)
+     DO i=2,istop
+        CALL momentum_v_code_wrap(i, j, va, size(va,1), size(va,2), un, size(un,1), size(un,2), vn, size(vn,1), size(vn,2), hu, size(hu,1), size(hu,2), hv, size(hv,1), size(hv,2), ht, size(ht,1), size(ht,2), ssha_v, size(ssha_v,1), size(ssha_v,2), sshn_t, size(sshn_t,1), size(sshn_t,2), sshn_u, size(sshn_u,1), size(sshn_u,2), sshn_v, size(sshn_v,1), size(sshn_v,2), grid_tmask, size(grid_tmask,1), size(grid_tmask,2), grid_dx_v, size(grid_dx_v,1), size(grid_dx_v,2), grid_dx_t, size(grid_dx_t,1), size(grid_dx_t,2), grid_dy_u, size(grid_dy_u,1), size(grid_dy_u,2), grid_dy_v, size(grid_dy_v,1), size(grid_dy_v,2), grid_dy_t, size(grid_dy_t,1), size(grid_dy_t,2), grid_area_v, size(grid_area_v,1), size(grid_area_v,2), grid_gphiv, size(grid_gphiv,1), size(grid_gphiv,2))
+     END DO
+     !$omp end task
+  END DO
+  DO j=2,jstop
+     !$omp task inout(ssha_t) in(grid_tmask)
+     DO i=2,istop
+        CALL bc_ssh_code_wrap(i, j, istp, ssha_t, size(ssha_t,1), size(ssha_t,2), grid_tmask, size(grid_tmask,1), size(grid_tmask,2))
+     END DO
+     !$omp end task
+  END DO
+  DO j=1,jstop+1
+     !$omp task inout(ua) in(grid_tmask)
+     DO i=1,istop
+        CALL bc_solid_u_code_wrap(i, j, ua, size(ua,1), size(ua,2), grid_tmask, size(grid_tmask,1), size(grid_tmask,2))
+     END DO
+     !$omp end task
+  END DO
+  DO j=1,jstop
+     !$omp task inout(va) in(grid_tmask)
+     DO i=1,istop+1
+        CALL bc_solid_v_code_wrap(i, j, va, size(va,1), size(va,2), grid_tmask, size(grid_tmask,1), size(grid_tmask,2))
+     END DO
+     !$omp end task
+  END DO
+  DO j=1,jstop+1
+     !$omp task inout(ua) in(hu, sshn_u, grid_tmask)
+     DO i=1,istop
+        CALL bc_flather_u_code_wrap(i, j, ua, size(ua,1), size(ua,2), hu, size(hu,1), size(hu,2), sshn_u, size(sshn_u,1), size(sshn_u,2), grid_tmask, size(grid_tmask,1), size(grid_tmask,2))
+      END DO
+      !$omp end task
+  END DO
+  DO j=1,jstop
+     !$omp task inout(va) in(hv, sshn_v, grid_tmask)
+     DO i=1,istop+1
+        CALL bc_flather_v_code_wrap(i, j, va, size(va,1), size(va,2), hv, size(hv,1), size(hv,2), sshn_v, size(sshn_v,1), size(sshn_v,2), grid_tmask, size(grid_tmask,1), size(grid_tmask,2))
+     END DO
+     !$omp end task
+  END DO
+  DO j=1,jstop+1
+     !$omp task out(un) in(ua)
+     DO i=1,istop+1
+        CALL field_copy_code_wrap(i, j, un, size(un,1), size(un,2), ua, size(ua,1), size(ua,2))
+     END DO
+     !$omp end task
+  END DO
+  DO j=1,jstop+1
+     !$omp task out(vn) in(va)
+     DO i=1,istop+1
+        CALL field_copy_code_wrap(i, j, vn, size(vn,1), size(vn,2), va, size(va,1), size(va,2))
+     END DO
+     !$omp end task
+  END DO
+  DO j=1,jstop+1
+     !$omp task out(sshn_t) in(ssha_t)
+     DO i=1,istop+1
+        CALL field_copy_code_wrap(i, j, sshn_t, size(sshn_t,1), size(sshn_t,2), ssha_t, size(ssha_t,1), size(ssha_t,2))
+     END DO
+     !$omp end task
+  END DO
+  DO j=2,jstop
+     !$omp task inout(sshn_u) in(sshn_t, grid_tmask, grid_area_t, grid_area_u)
+     DO i=2,istop-1
+        CALL next_sshu_code_wrap(i, j, sshn_u, size(sshn_u,1), size(sshn_u,2), sshn_t, size(sshn_t,1), size(sshn_t,2), grid_tmask, size(grid_tmask,1), size(grid_tmask,2), grid_area_t, size(grid_area_t,1), size(grid_area_t,2), grid_area_u, size(grid_area_u,1), size(grid_area_u,2))
+     END DO
+     !$omp end task
+  END DO
+  DO j=2,jstop-1
+     !$omp task inout(sshn_v) in(sshn_t, grid_tmask, grid_area_t, grid_area_v)
+     DO i=2,istop
+        CALL next_sshv_code_wrap(i, j, sshn_v, size(sshn_v,1), size(sshn_v,2), sshn_t, size(sshn_t,1), size(sshn_t,2), grid_tmask, size(grid_tmask,1), size(grid_tmask,2), grid_area_t, size(grid_area_t,1), size(grid_area_t,2), grid_area_v, size(grid_area_v,1), size(grid_area_v,2))
+     END DO
+     !$omp end task
+  END DO
+  
+END SUBROUTINE invoke_0_deref
