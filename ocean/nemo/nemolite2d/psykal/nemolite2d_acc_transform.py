@@ -6,7 +6,7 @@ funcation via the -s option. Performs OpenACC transformations. '''
 def trans(psy):
     ''' Take the supplied psy object, apply OpenACC transformations
     to the schedule of invoke_0 and return the new psy object '''
-    from transformations import OpenACCParallelTrans, \
+    from psyclone.transformations import OpenACCParallelTrans, \
         OpenACCDataTrans
     atrans = OpenACCParallelTrans()
     dtrans = OpenACCDataTrans()
@@ -17,7 +17,7 @@ def trans(psy):
 
     # Apply the OpenMP Loop transformation to *every* loop
     # in the schedule
-    from psyGen import Loop
+    from psyclone.psyGen import Loop
     for child in schedule.children:
         if isinstance(child, Loop):
             newschedule, _ = atrans.apply(child)
@@ -31,8 +31,8 @@ def trans(psy):
 
 
 if __name__ == "__main__":
-    from parse import parse
-    from psyGen import PSyFactory
+    from psyclone.parse import parse
+    from psyclone.psyGen import PSyFactory
     API = "gocean1.0"
     FILENAME = "nemolite2d_alg.f90"
     _, INVOKEINFO = parse(FILENAME,

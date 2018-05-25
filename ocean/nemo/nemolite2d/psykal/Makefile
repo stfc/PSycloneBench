@@ -5,6 +5,8 @@
 # OMPFLAGS  - Flags for compiling with OpenMP
 # AR        - Command to use when creating an archive (.a)
 
+.PHONY: inf_lib timer_lib nemolite2d nemolite2d_gen nemolite2d_gen_omp
+
 # Location of the dl_timer and infrastucture code
 SHARED_DIR = ../../../../shared
 
@@ -35,7 +37,8 @@ KERNELS = boundary_conditions_mod.o \
 COMMON_MODULES = $(KERNELS) ${COMMON_LIB} ${INF_LIB}
 
 # Shorthand for invoking PSyclone
-PSYCLONE = psyclone -api gocean1.0 -d ${KERNEL_DIR}
+PSYCLONE = psyclone -l -api gocean1.0 -d ${KERNEL_DIR}
+
 
 all: $(EXECS)
 
@@ -62,49 +65,49 @@ nemolite2d: inf_lib ${KERNELS} time_step_mod.o nemolite2d.o
 
 # Version of nemolite2d with the time-stepping routine hacked to
 # encourage the Intel compiler to vectorise efficiently
-nemolite2d_align: ${COMMON_MODULES} time_step_mod_align.o nemolite2d.o
+nemolite2d_align: ${COMMON_MODULES} ${KERNELS} time_step_mod_align.o nemolite2d.o
         # Have to delete any existing time_step_mod because it contains a module
         # with the same name as that in time_step_mod_align
 	rm -f time_step_mod.o time_step_mod.mod
 	${MAKE} MODULE_LIST="time_step_mod_align.o nemolite2d.o ${COMMON_MODULES} ${LIBS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_align.exe
 
-nemolite2d_cont_only: ${COMMON_MODULES} time_step_mod_cont_only.o nemolite2d.o
+nemolite2d_cont_only: ${COMMON_MODULES} ${KERNELS} time_step_mod_cont_only.o nemolite2d.o
         # Have to delete any existing time_step_mod because it contains a module
         # with the same name as that in time_step_mod_align
 	rm -f time_step_mod.o time_step_mod.mod
 	${MAKE} MODULE_LIST="time_step_mod_cont_only.o nemolite2d.o ${COMMON_MODULES} ${LIBS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_cont_only.exe
 
-nemolite2d_nodiv: ${COMMON_MODULES} time_step_mod_align_nodiv.o nemolite2d.o
+nemolite2d_nodiv: ${COMMON_MODULES} ${KERNELS} time_step_mod_align_nodiv.o nemolite2d.o
         # Have to delete any existing time_step_mod because it contains a module
         # with the same name as that in time_step_mod_align_nodiv
 	rm -f time_step_mod.o time_step_mod.mod
 	${MAKE} MODULE_LIST="time_step_mod_align_nodiv.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_nodiv.exe
 
-nemolite2d_preload: ${COMMON_MODULES} time_step_mod_align_preload.o nemolite2d.o
+nemolite2d_preload: ${COMMON_MODULES} ${KERNELS} time_step_mod_align_preload.o nemolite2d.o
         # Have to delete any existing time_step_mod because it contains a module
         # with the same name as that in time_step_mod_align_preload
 	rm -f time_step_mod.o time_step_mod.mod
 	${MAKE} MODULE_LIST="time_step_mod_align_preload.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_preload.exe
 
-nemolite2d_alignall: ${COMMON_MODULES} time_step_mod_alignall_preload.o nemolite2d.o
+nemolite2d_alignall: ${COMMON_MODULES} ${KERNELS} time_step_mod_alignall_preload.o nemolite2d.o
         # Have to delete any existing time_step_mod because it contains a module
         # with the same name as that in time_step_mod_align_preload
 	rm -f time_step_mod*.o time_step_mod*.mod
 	${MAKE} MODULE_LIST="time_step_mod_alignall_preload.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_alignall.exe
 
-nemolite2d_nopeel: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel.o nemolite2d.o
+nemolite2d_nopeel: ${COMMON_MODULES} ${KERNELS} time_step_mod_alignall_preload_nopeel.o nemolite2d.o
         # Have to delete any existing time_step_mod because it contains a module
         # with the same name as that in time_step_mod_align_preload
 	rm -f time_step_mod*.o time_step_mod*.mod
 	${MAKE} MODULE_LIST="time_step_mod_alignall_preload_nopeel.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_nopeel.exe
 
-nemolite2d_8arrays: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel_8arrays.o nemolite2d.o
+nemolite2d_8arrays: ${COMMON_MODULES} ${KERNELS} time_step_mod_alignall_preload_nopeel_8arrays.o nemolite2d.o
         # Have to delete any existing time_step_mod because it contains a module
         # with the same name as that in time_step_mod_align_preload
 	rm -f time_step_mod*.o time_step_mod*.mod
@@ -115,25 +118,15 @@ nemolite2d_8arrays: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel_8arr
 nemolite2d_gen: time_step_mod.o psy.o ${KERNELS}
 	${MAKE} MODULE_LIST="psy.o nemolite2d_gen.o ${MODULES} time_step_mod.o ${LIBS}" LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen.exe
 
-nemolite2d_gen_omp:
+nemolite2d_gen_omp: ${KERNELS}
 	${MAKE} MODULE_LIST="psy_omp.o nemolite2d_gen.o time_step_mod.o ${COMMON_MODULES}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_omp.exe
 
-nemolite2d_gen_acc:
+nemolite2d_gen_acc: ${KERNELS}
 	${MAKE} MODULE_LIST="psy_acc.o time_step_mod.o ${COMMON_MODULES}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_acc.exe
-
-# Interdependencies between modules, alphabetical order
-
-boundary_conditions_mod.o: inf_lib ${COMMON_LIB}
-continuity_mod.o: ${COMMON_LIB}
-gocean2d_io_mod.o: inf_lib
-model_mod.o: inf_lib ${COMMON_LIB}
-momentum_mod.o: ${COMMON_LIB}
-time_step_mod.o: inf_lib ${KERNELS}
-time_update_mod.o: inf_lib
 
 # Generic rules
 
@@ -148,9 +141,7 @@ time_update_mod.o: inf_lib
 # If we need a .f90 file that doesn't exist then it must be a kernel.
 # Create a link to the required file...
 %.f90:
-	ln -sf ../kernels/fortran/$@ .
-
-.PHONY: inf_lib timer_lib
+	ln -sf ${KERNEL_DIR}/$@ .
 
 timer_lib:
 	${MAKE} -C ${TIMER_DIR} sm_lib
@@ -162,7 +153,8 @@ ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR}
 
 clean: 
-	rm -f *.o *.mod *.MOD *~ *.pyc psy.f90 psy_omp.f90 nemolite2d_gen.f90
+	rm -f *.o *.mod *.MOD *~ *.pyc psy.f90 psy_omp.f90 psy_acc.f90 \
+nemolite2d_gen.f90
 
 libclean:
 	${MAKE} -C ${INF_DIR} clean
