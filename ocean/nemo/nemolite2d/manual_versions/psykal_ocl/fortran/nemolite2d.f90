@@ -11,13 +11,11 @@ program nemolite2d
   use initialisation_mod, only: initialisation
   use model_mod
   use gocean2d_io_mod, only: model_write
-  use gocean_mod,      only: model_write_log
+  use gocean_mod,      only: model_write_log, get_num_queues, get_queues
   use psykalite_mod, only: invoke_kernels
   implicit none
 
   integer irec, i, iallocerr
-  ! The number of OpenCL command queues we will use
-  integer, parameter :: NUM_CMD_QUEUES = 3
 
   character(len=CL_UTIL_STR_LEN) :: version_str, filename
 
@@ -75,11 +73,9 @@ program nemolite2d
   integer(c_int32_t), target :: build_log
   integer(c_intptr_t), target :: ssh_events(2)
   integer(c_intptr_t), target :: device
-  integer(c_intptr_t), target :: context, prog
+  integer(c_intptr_t), target :: context
   !> Array of kernel objects used in the program
   integer(c_intptr_t), target :: kernels(K_NUM_KERNELS)
-  !> Array of command queues - used to achieve concurrent execution
-  integer(c_intptr_t), target :: cmd_queues(NUM_CMD_QUEUES)
   integer(c_intptr_t), target :: tmask_device
   ! Scratch space for logging messages
   character(len=160) :: log_str
@@ -134,71 +130,21 @@ program nemolite2d
                        model_grid%simulation_domain%ystop
   call model_write_log("((A))", TRIM(log_str))
 
-  
-  do i=1, NUM_CMD_QUEUES
-     cmd_queues(i) = clCreateCommandQueue(context, device, &
-                                          CL_QUEUE_PROFILING_ENABLE, ierr)
-     call check_status('clCreateCommandQueue', ierr)
-  end do
-
-  ! Get a program object containing all of our kernels
-  filename = "../../../kernels/opencl/nemolite2d_kernels.aocx"
-  prog = get_program(context, device, version_str, filename)
-
-  do i=1, K_NUM_KERNELS
-     kernels(i) = get_kernel(prog, kernel_names(i))
-  end do
-
-  ! Release the program now that we've created the kernels
-  ierr = clReleaseProgram(prog)
-  call check_status('clReleaseProgram', ierr)
+  ! Create the OpenCL kernels needed by this model
+  filename = "../kernels/nemolite2d_kernels.aocx"
+  call gocean_add_kernels(K_NUM_KERNELS, kernel_names, filename)
 
   do istp = nit000, nitend
      
      call invoke_kernels()
 
   end do ! End of time-stepping loop
-
-  ! Make sure that everything is finished (should be unnecessary)
-  do i=1, NUM_CMD_QUEUES
-     ierr=clFinish(cmd_queues(i))
-     call check_status('clFinish', ierr)
-  end do
   
-  ! Read the resulting fields from device memory
-  num_buffers = 1
-  ierr = clEnqueueReadBuffer(cmd_queues(1), sshn_device, CL_TRUE, 0_8, &
-                             size_in_bytes, C_LOC(sshn_t_fld%data),    &
-                             0, C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  call check_status('clEnqueueReadBuffer', ierr)
-  num_buffers = num_buffers + 1
-  ierr = clEnqueueReadBuffer(cmd_queues(2), un_device, CL_TRUE, 0_8, &
-                             size_in_bytes, C_LOC(un_fld%data),      &
-                             0, C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  call check_status('clEnqueueReadBuffer', ierr)
-  num_buffers = num_buffers + 1
-  ierr = clEnqueueReadBuffer(cmd_queues(3), vn_device, CL_TRUE, 0_8, &
-                             size_in_bytes, C_LOC(vn_fld%data),      &
-                             0, C_NULL_PTR, C_LOC(write_events(num_buffers)))
-  call check_status('clEnqueueReadBuffer', ierr)
-
-  ierr = clWaitForEvents(num_buffers, C_LOC(write_events))
-  call check_status('clWaitForEvents', ierr)
-
   ! Dump the final fields to disk
   call model_write(model_grid, nitend, ht_fld, sshn_t_fld, un_fld, vn_fld)
 
-  ! Clean-up
-
-  do i=1, K_NUM_KERNELS
-     ierr = clReleaseKernel(kernels(i))
-     call check_status('clReleaseKernel', ierr)
-  end do
-  do i=1, NUM_CMD_QUEUES
-     ierr=clReleaseCommandQueue(cmd_queues(i))
-     if (ierr.ne.0) stop 'clReleaseCommandQueue'
-  end do
-  ierr=clReleaseContext(context)
-  if (ierr.ne.0) stop 'clReleaseContext'
+  ! Clean-up.
+  !> \todo call this from gocean_finalise() once that's on master
+  call gocean_release()
 
  end program nemolite2d
