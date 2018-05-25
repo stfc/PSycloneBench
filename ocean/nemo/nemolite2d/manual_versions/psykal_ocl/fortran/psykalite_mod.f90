@@ -7,10 +7,9 @@ module psykalite_mod
 contains
 
   subroutine invoke_kernels(istp, fld1, fld2, ...)
-    character(len=*), intent(in) :: kernel1, kernel2, ...
-    integer, parameter :: NUM_KERNELS = 10
-    ! Array of kernel objects used in this invoke
-    integer(c_intptr_t), save, target :: kernels(NUM_KERNELS)
+    use gocean_mod, only: get_kernel_by_name
+    ! Kernel objects used in this invoke
+    integer(c_intptr_t), save, target :: continuity_kern
     integer, save :: num_cmd_queues
     ! Array of command queues - used to achieve concurrent execution
     integer(c_intptr_t), pointer, save :: cmd_queues(:)
@@ -18,17 +17,19 @@ contains
     integer(c_int32_t) :: ierr
     integer(c_size_t),target :: globalsize(2), localsize(2)
     integer(c_intptr_t), target :: write_event
-    logical, save :: first_time
+    logical, save :: first_time = .true.
 
     if(first_time)then
-       context = get_cl_context() ! TODO infrastructure
-       device = get_cl_device() ! TODO infrastructure
+       first_time = .false.
+
        num_cmd_queues = get_num_cmd_queues()
        cmd_queues = get_cmd_queues()
 
-       ! Get pointers to the kernel objects used in this invoke
-       kernels(1) = get_kernel(name="Name of kernel1 from meta-data")
-       kernels(2) = get_kernel(name="Name of kernel2 from meta-data")
+       ! Get pointers to the kernel objects used in this invoke using their
+       ! meta-data names
+       continuity_kern = get_kernel_by_name("continuity")
+       momu_kern = get_kernel_by_name("momentum-u")
+       ! etc...
 
        ! Make sure field data is on the device (they might have been put
        ! there by a previous invoke)
