@@ -106,6 +106,12 @@ contains
     
     if( l_out .and. (mod(istp, mprint) .eq. 0) ) then
 
+       ! Ensure we have up-to-date field values 
+       call update_local(ht)
+       call update_local(sshn)
+       call update_local(un)
+       call update_local(vn)
+
        ! output model results
        write(fname, '(I5.5)') istp
        open(21, file='go2d_'//fname//'.dat', STATUS='UNKNOWN', &
