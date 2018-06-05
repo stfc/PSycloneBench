@@ -123,8 +123,8 @@ nemolite2d_gen_omp: ${KERNELS}
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_omp.exe
 
-nemolite2d_gen_acc: ${KERNELS}
-	${MAKE} MODULE_LIST="psy_acc.o nemolite2d_gen.o time_step_mod.o ${COMMON_MODULES}" \
+nemolite2d_gen_acc: ${COMMON_LIB} ${KERNELS}
+	${MAKE} MODULE_LIST="psy_acc.o nemolite2d_gen.o ${COMMON_MODULES}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_acc.exe
 
@@ -158,6 +158,8 @@ nemolite2d_gen.f90
 
 libclean:
 	${MAKE} -C ${INF_DIR} clean
+	${MAKE} -C ${TIMER_DIR} clean
+	${MAKE} -C ${COMMON_DIR} allclean
 
 allclean: clean
 	rm -f ${KERNELS:.o=.f90}
