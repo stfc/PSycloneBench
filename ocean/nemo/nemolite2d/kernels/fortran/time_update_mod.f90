@@ -96,6 +96,8 @@ contains
     real(wp), dimension(:,:), intent(in)    :: sshn
     ! Locals
     real(wp) :: rtmp1
+    !TODO add the acc routine directive automatically
+    !$acc routine seq
 
     if(tmask(ji,jj) + tmask(ji+1,jj) <= 0)  return   !jump over non-computational domain
 
@@ -143,6 +145,8 @@ contains
     real(wp), dimension(:,:), intent(in)    :: sshn
     ! Locals
     real(wp) :: rtmp1
+    !TODO add the acc routine directive automatically
+    !$acc routine seq
 
     if(tmask(ji,jj) + tmask(ji,jj+1) <= 0)  return !jump over non-computational domain
     if(tmask(ji,jj) * tmask(ji,jj+1) > 0) then

@@ -158,6 +158,8 @@ contains
     real(wp) :: dudx_e, dudx_w
     real(wp) :: dudy_s, dudy_n
     real(wp) :: uu_e, uu_n, uu_s, uu_w
+    !TODO add the acc routine directive automatically
+    !$acc routine seq
 
     IF(tmask(ji,jj) + tmask(ji+1,jj) <= 0)  RETURN   !jump over non-computational domain
     IF(tmask(ji,jj) <= 0 .OR. tmask(ji+1,jj) <= 0)  RETURN !jump over boundary u
@@ -305,6 +307,8 @@ contains
     real(wp) :: depe, depw, deps, depn
     real(wp) :: hpg, adv, cor, vis
     real(wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
+    !TODO add the acc routine directive automatically
+    !$acc routine seq
 
     IF(tmask(ji,jj) + tmask(ji+1,jj) <= 0)  return !jump over non-computatinal domain
     IF(tmask(ji,jj) <= 0 .OR. tmask(ji,jj+1) <= 0) return !jump over v boundary cells

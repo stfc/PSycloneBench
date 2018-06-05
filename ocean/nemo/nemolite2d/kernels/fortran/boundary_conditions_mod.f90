@@ -182,6 +182,8 @@ contains
     real(wp), dimension(:,:), intent(inout) :: ssha
     ! Locals
     real(wp) :: amp_tide, omega_tide, rtime
+    !TODO add the acc routine directive automatically
+    !$acc routine seq
 
     amp_tide   = 0.2_wp
     omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
@@ -233,6 +235,8 @@ contains
     integer,                  intent(in)    :: ji, jj
     integer,  dimension(:,:), intent(in)    :: tmask
     real(wp), dimension(:,:), intent(inout) :: ua
+    !TODO add the acc routine directive automatically
+    !$acc routine seq
 
     if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
        ua(ji,jj) = 0._wp
@@ -266,6 +270,8 @@ contains
     integer,                 intent(in)    :: ji, jj
     integer, dimension(:,:), intent(in)    :: tmask
     real(wp),dimension(:,:), intent(inout) :: va
+    !TODO add the acc routine directive automatically
+    !$acc routine seq
 
     if(tmask(ji,jj) * tmask(ji,jj+1) == 0)then
        va(ji,jj) = 0._wp
@@ -310,6 +316,8 @@ contains
     real(wp), dimension(:,:), intent(in)    :: hu, sshn_u
     ! Locals
     integer  :: jiu
+    !TODO add the acc routine directive automatically
+    !$acc routine seq
 
     !                                  Du                 Dssh
     !Flather open boundary condition [---- = sqrt(g/H) * ------]
@@ -366,6 +374,8 @@ contains
     real(wp), dimension(:,:), intent(in) :: hv, sshn_v
     ! Locals
     integer  :: jiv
+    !TODO add the acc routine directive automatically
+    !$acc routine seq
 
     ! Check whether this point is inside the simulated domain
     !\todo I could set-up a V-mask using exactly the same code structure

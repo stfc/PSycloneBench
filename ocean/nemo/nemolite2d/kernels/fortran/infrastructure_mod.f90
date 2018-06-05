@@ -36,6 +36,8 @@ contains
     integer,                  intent(in)  :: ji, jj
     real(wp), dimension(:,:), intent(in)  :: input
     real(wp), dimension(:,:), intent(out) :: output
+    !TODO add the acc routine directive automatically
+    !$acc routine seq
 
     output(ji,jj) = input(ji,jj)
 

@@ -190,6 +190,8 @@ contains
                                              hu, hv, un, vn
     ! Locals
     real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    !TODO add the acc routine directive automatically
+    !$acc routine seq
 
     rtmp1 = (sshn_u(ji  ,jj  ) + hu(ji  ,jj  )) * un(ji  ,jj  )
     rtmp2 = (sshn_u(ji-1,jj  ) + hu(ji-1,jj  )) * un(ji-1,jj  )
