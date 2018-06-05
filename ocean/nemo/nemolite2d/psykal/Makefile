@@ -124,7 +124,7 @@ nemolite2d_gen_omp: ${KERNELS}
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_omp.exe
 
 nemolite2d_gen_acc: ${KERNELS}
-	${MAKE} MODULE_LIST="psy_acc.o time_step_mod.o ${COMMON_MODULES}" \
+	${MAKE} MODULE_LIST="psy_acc.o nemolite2d_gen.o time_step_mod.o ${COMMON_MODULES}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_acc.exe
 
