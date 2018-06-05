@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 '''Python script intended to be passed to PSyclone's generate()
 funcation via the -s option. Performs OpenACC transformations. '''
@@ -39,8 +40,8 @@ if __name__ == "__main__":
                           api=API,
                           invoke_name="invoke")
     PSY = PSyFactory(API).create(INVOKEINFO)
-    # print PSY.invokes.names
+    # print(PSY.invokes.names)
 
     NEW_PSY = trans(PSY)
 
-    print NEW_PSY.gen
+    print(NEW_PSY.gen)
