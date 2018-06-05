@@ -18,6 +18,9 @@ MODULE model_mod
 
   REAL(wp), save :: dep_const       !< constant depth
 
+  !> \TODO add the 'declare create' directives automatically
+  !$acc declare create(rdt, cbfr, visc)
+
   
 CONTAINS
 
