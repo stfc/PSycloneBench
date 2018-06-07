@@ -79,6 +79,7 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 clean: 
 	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~
+	rm -f gnu_opt_report.txt
 
 allclean: clean
 	rm -f ${KERNELS:.o=.f90}
