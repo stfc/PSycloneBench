@@ -1,7 +1,4 @@
-OpenCL version of the NEMOLite2D benchmark.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Andrew Porter, STFC Daresbury Laboratory, April 2017.
+# OpenCL version of the NEMOLite2D benchmark. #
 
 The directory containing this file contains C and Fortran OpenCL
 versions of the PSyKAl NEMOLite2D benchmark. It has been created by
@@ -9,45 +6,45 @@ converting the Fortran version into C and then adding the necessary
 OpenCL infrastructure. The Fortran version uses clFortran
 (github.com/cass-support/clfortran) for the driver layer.
 
-Dependencies
-============
+## Dependencies ##
 
 You will need Make, Fortran and C compilers and a working OpenCL
 installation.  This code has been tested using AMD's OpenCL dispatch
 library with NVIDIA's OpenCL library as a back-end.
 
-Building
-========
+## Building ##
 
 The Makefile picks up the compiler to use, the location of the
-OpenCL libraries and any flags from environment variables. e.g. to
-use AMD's dispatch library:
+OpenCL libraries and any flags from environment variables. 
+Examples of the non-OpenCL-specific settings can be found in the
+../../../../../compiler_setup directory.
+
+e.g. to use the Gnu compiler and AMD's dispatch library:
 
 export CC=gcc
-export OPENCL_LIBS="-L/opt/AMDAPPSDK-3.0/lib/x86_64 -lOpenCL"
-export OPENCL_INCLUDE=-I/opt/AMDAPPSDK-3.0/include
 export CFLAGS="-g -O0 -Wall"
 export LDFLAGS=-lm
+export OPENCL_LIBS="-L/opt/AMDAPPSDK-3.0/lib/x86_64 -lOpenCL"
+export OPENCL_INCLUDE=-I/opt/AMDAPPSDK-3.0/include
 
-Typing 'make' at the command prompt should then build the code.
+For FPGA *emulation* using the Intel (Altera) tools:
 
-For FPGA *emulation*:
+export CC=g++
+export CFLAGS="-g -fpermissive"
 
 export FPGA_BOARD=nalla_pcie
-export CC=g++
 export OPENCL_LIBS="-L${INTELFPGAOCLSDKROOT}/board/${BOARD}/linux64/lib -L${INTELFPGAOCLSDKROOT}/host/linux64/lib -Wl,--no-as-needed -lalteracl -l${BOARD}_mmd -lelf"
 export OPENCL_INCLUDE=-I${INTELFPGAOCLSDKROOT}/host/include
-export CFLAGS="-g -fpermissive"
+
 export CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1
 
 Typing 'make nemolite2d_fpga' should then build the kernels and driver
 code.
 
 Of course, if you want to run on the FPGA for real then you need to
-unset CL_CONTEXT_EMULATOR_DEVICE_ALTERA.
+(go to bed while the code compiles and) unset CL_CONTEXT_EMULATOR_DEVICE_ALTERA.
 
-Configuration and running
-=========================
+## Configuration and running ##
 
 By default, the application runs a 128x128 domain for 2000 time-steps.
 These settings may be configured at run-time through the following
@@ -69,8 +66,7 @@ results compared. The final values of these fields are also written to
 file (e.g. `ua_cpu.dat` and `ua_ocl.dat`) to permit visualisation with
 e.g. gnuplot.
 
-OpenCL Device Selection
-=======================
+## OpenCL Device Selection ##
 
 Currently the code queries some of the properties of all of the OpenCL
 devices it discovers and outputs this information to stdout.
