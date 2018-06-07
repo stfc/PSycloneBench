@@ -3,8 +3,8 @@ PROGRAM nemolite2d
          !!   1) using structured grid
          !!   2) using direct data addressig structures
          use dl_timer
-         use field_mod
-         use gocean_mod,      only: model_write_log
+         use field_mod,  only: field_checksum
+         use gocean_mod, only: model_write_log
          IMPLICIT NONE
 
          INTEGER,  PARAMETER :: sp = SELECTED_REAL_KIND(6, 37)
@@ -12,15 +12,15 @@ PROGRAM nemolite2d
          INTEGER,  PARAMETER :: wp = dp
 
          REAL(wp), PARAMETER :: pi    = 3.1415926535897932_wp  
-         REAL(wp), PARAMETER :: g     = 9.80665_wp                          ! gravity constant
-         REAL(wp), PARAMETER :: omega = 7.292116e-05_wp                     ! earth rotation speed (s^(-1))
-         REAL(wp), PARAMETER :: d2r   = pi / 180._wp                        ! degree to radian
+         REAL(wp), PARAMETER :: g     = 9.80665_wp         ! gravity constant
+         REAL(wp), PARAMETER :: omega = 7.292116e-05_wp    ! earth rotation speed (s^(-1))
+         REAL(wp), PARAMETER :: d2r   = pi / 180._wp       ! degree to radian
                                                                             
                                                                             
-         INTEGER, ALLOCATABLE :: pt(:,:)                                    ! properties of t-cells 
-                                                                            ! 1: water cell within computational domain
-                                                                            ! 0: land cell
-                                                                            !-1: water cell outside computational domain
+         INTEGER, ALLOCATABLE :: pt(:,:)     ! properties of t-cells 
+                                             ! 1: water cell within computational domain
+                                             ! 0: land cell
+                                             !-1: water cell outside computational domain
 
          REAL(wp), ALLOCATABLE :: e1t(:,:), e2t(:,:), e1u(:,:), e2u(:,:) 
          REAL(wp), ALLOCATABLE :: e1f(:,:), e2f(:,:), e1v(:,:), e2v(:,:) 
