@@ -31,6 +31,8 @@ KERNELS = boundary_conditions_mod.o \
 # passed to the linker
 COMMON_MODULES = $(KERNELS) ${COMMON_LIB} ${INF_LIB}
 
+.PHONY: all inf_lib timer_lib
+
 # The targets that this Makefile supports
 
 all: nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv \
@@ -113,8 +115,6 @@ time_step_mod.o: inf_lib ${KERNELS}
 # Create a link to the required file...
 %.f90:
 	ln -sf ../../kernels/fortran/$@ .
-
-.PHONY: inf_lib timer_lib
 
 timer_lib:
 	${MAKE} -C ${TIMER_DIR} sm_lib

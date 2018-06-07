@@ -101,7 +101,7 @@ contains
 !!$                                  un%grid%area_u, &
 !!$                                  un%grid%gphiu)
 
-    call timer_start('Momentum-u',idxt)
+    call timer_start(idxt, label='Momentum-u')
     !call likwid_markerStartRegion('Momentum-u')
 
 !    do jj = ua%internal%ystart, ua%internal%ystop, 1
@@ -219,7 +219,7 @@ contains
     !call likwid_markerStopRegion('Momentum-u')
     call timer_stop(idxt)
 
-    call timer_start('Momentum-v',idxt)
+    call timer_start(idxt, label='Momentum-v')
 
 !dir$ safe_address
     do jj = 2, N-1, 1
@@ -342,7 +342,7 @@ contains
 
     ! Apply open and solid boundary conditions
 
-    call timer_start('BCs', idxt)
+    call timer_start(idxt, label='BCs')
 
 !    DO jj = ssha%internal%ystart, ssha%internal%ystop 
 !       DO ji = ssha%internal%xstart, ssha%internal%xstop 
@@ -455,7 +455,7 @@ contains
 
     ! Time update of fields
 
-    call timer_start('Next', idxt)
+    call timer_start(idxt, label='Next')
 
 !    call copy_field(ua, un)
 !    call copy_field(va, vn)
@@ -535,7 +535,7 @@ contains
     ! Locals
     integer :: jj, ji, idxt
     real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
-    integer :: nrepeat
+    integer(kind=i_def64) :: nrepeat
 !DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
@@ -559,7 +559,7 @@ contains
 
     nrepeat = 1
 
-    call timer_start('Continuity',idxt,nrepeat)
+    call timer_start(idxt, label='Continuity', num_repeats=nrepeat)
     !call likwid_markerStartRegion('Continuity')
     !do ic=1, nrepeat
 !DIR$ VECTOR ALIGNED
@@ -614,7 +614,7 @@ contains
     real(wp) :: u_e, u_w, v_n, v_s, v_sc, v_nc, depe, depw, deps, depn
     real(wp) :: uu_e, uu_w, uu_s, uu_n, dudy_s, dudy_n, dudx_e, dudx_w
     real(wp) :: vis, adv, cor, hpg
-    call timer_start('Momentum-u',idxt)
+    call timer_start(idxt, label='Momentum-u')
     !call likwid_markerStartRegion('Momentum-u')
 
     do jj = 2, N, 1
