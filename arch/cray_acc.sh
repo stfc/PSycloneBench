@@ -1,4 +1,4 @@
-# Build settings for Cray compiler
+# Build settings for Cray compiler with OpenACC
 export F90=ftn
 
 # f2py does not break long lines so set the maximum
