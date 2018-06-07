@@ -1,5 +1,5 @@
 # Build settings for gfortran compiler
-export F90=gfortran
+F90=gfortran
 
 F90FLAGS="-Wall -Wsurprising -Wuninitialized"
 #F90FLAGS += -O0
@@ -17,6 +17,7 @@ OMPFLAGS+=" -fopenmp"
 
 AR=ar
 
+export F90
 export F90FLAGS
 export OMPFLAGS
 export AR
