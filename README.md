@@ -29,10 +29,26 @@ Are contained in directories beneath the `ocean` directory.
 
 ### NEMOLite2D ###
 
-`ocean/nemo` contains various versions of the NEMOLite2D benchmark.
+`ocean/nemo/nemolite2d` contains various versions of the NEMOLite2D
+benchmark.
 
 ### Shallow ###
 
 `ocean/shallow` contains various versions of the Shallow benchmark,
 originally developed by Paul Swarztrauber of NCAR.
 
+## Building ##
+
+The Makefiles for all of the various benchmarks pick-up which compiler
+to use (and associated flags) from environment variables. Bash scripts to
+set these variables for a variety of compilers are in the compiler_setup
+directory. When benchmarking you will need to edit the relevant file
+and ensure that the compiler flags are set appropriately. The flags that
+give the best performance for a particular compiler can vary from benchmark
+to benchmark and even by problem size.
+
+In order to use the settings for a particular compiler, you must source
+the appropriate Bash script. e.g. for the Intel compiler (assuming you are
+running a Bash shell):
+
+    > . compiler_setup/intel.sh
