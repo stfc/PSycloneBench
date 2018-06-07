@@ -37,8 +37,6 @@
       use shallow_io_mod, only: ascii_write
       IMPLICIT NONE
 
-      INCLUDE 'netcdf.inc'
-
       INTEGER :: m, n    ! global domain size
       INTEGER :: itmax   ! number of timesteps
       INTEGER :: mprint  ! frequency of output    
@@ -67,11 +65,6 @@
       !INTEGER :: c1, c2, r, max
       REAL(KIND=8) :: time, ptime
 
-      ! NetCDF variables
-      INTEGER :: ncid, t_id, p_id, u_id, v_id, iret, t_val
-      INTEGER, DIMENSION(3) :: istart, icount 
-      CHARACTER (LEN=13) :: ncfile = "shallowdat.nc"
- 
       ! namelist input 
       CHARACTER (LEN=8) :: nml_name = "namelist" 
       INTEGER :: input_unit = 99
@@ -92,7 +85,7 @@
       CALL check(ierr, "read "//nml_name)
 
       call timer_register(idxt0,     label='Time-stepping', &
-                          num_repeats=itmax)
+                          num_repeats=int(itmax,8))
       call timer_register(cu_timer,  label='Compute CU,CV,CZ,H')
       call timer_register(pbcs_timer,label='PBCs')
       call timer_register(unew_timer,label='Compute {U,V,P}NEW')
@@ -108,11 +101,6 @@
       ALLOCATE( cu(m_len,n_len), cv(m_len,n_len) ) 
       ALLOCATE( z(m_len,n_len), h(m_len,n_len), psi(m_len,n_len) ) 
  
-!     Prepare netCDF file to receive model output data
-      IF (l_out) THEN 
-         call netcdf_setup(ncfile,m,n,ncid,t_id,p_id,u_id,v_id,istart,icount)
-      ENDIF
-
 !     NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
 !     CYCLE AFTER WHICH IT IS RESET TO DT+DT.
       DT = 90.
@@ -196,10 +184,6 @@
               sum( abs(v(1:m,2:N+1)) )
 
 !        Write intial values of p, u, and v into a netCDF file   
-         t_val = 0   
-         call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
-         call my_ncwrite(ncid,u_id,istart,icount,u(2:m+1,1:n),m,n,t_id,t_val)
-         call my_ncwrite(ncid,v_id,istart,icount,v(1:m,2:n+1),m,n,t_id,t_val)
          call ascii_write(0,'u_array.dat'  ,u  ,m,n,2,1)
          call ascii_write(0,'cu_array.dat' ,cu ,m,n,2,1)
          call ascii_write(0,'v_array.dat'  ,v  ,m,n,1,2)
@@ -346,15 +330,6 @@
 !                   ' TIME AND MEGAFLOPS FOR LOOP 200 ', D15.6,2x,D6.1/   & 
 !                   ' TIME AND MEGAFLOPS FOR LOOP 300 ', D15.6,2x,D6.1/ )
 
-!           Append calculated values of p, u, and v to netCDF file
-            istart(3) = ncycle/mprint + 1
-            t_val = ncycle
-
-!           Shape of record to be written (one ncycle at a time)
-            call my_ncwrite(ncid,p_id,istart,icount,p(1:m,1:n),m,n,t_id,t_val)
-            call my_ncwrite(ncid,u_id,istart,icount,u(2:m+1,1:n),m,n,t_id,t_val)
-            call my_ncwrite(ncid,v_id,istart,icount,v(1:m,2:n+1),m,n,t_id,t_val)
-
             call ascii_write(ncycle,'u_array.dat'  ,u  ,m,n,2,1)
             call ascii_write(ncycle,'cu_array.dat' ,cu ,m,n,2,1)
             call ascii_write(ncycle,'cv_array.dat' ,cv ,m,n,1,2)
@@ -454,14 +429,6 @@
       WRITE(6,"('V CHECKSUM after ',I6,' steps = ',E24.16)") &
            itmax, SUM( ABS(VNEW(1:m,2:N+1)) )
 
- !     Close the netCDF file
-
-      IF (l_out) THEN 
-
-         iret = nf_close(ncid)
-         call check_err(iret)
-      ENDIF
-
       CALL timer_report()
 
 !     Free memory
@@ -485,117 +452,3 @@
       endif
 
       end subroutine check
-
-
-      subroutine check_err(iret)
-      integer iret
-      include 'netcdf.inc'
-      if(iret .ne. NF_NOERR) then
-         print *, nf_strerror(iret)
-         stop
-      endif
-      end subroutine
-
-
-      subroutine netcdf_setup(file,m,n,ncid,t_id,p_id,u_id,v_id,istart,icount)
-!     Input args: file, m, n
-!     Output args: ncid,t_id,p_id,u_id,v_id,istart,icount)
-      character(len=*) file
-      integer m,n
-!     declarations for netCDF library
-      include 'netcdf.inc'
-!     error status return
-      integer iret
-!     netCDF id
-      integer ncid
-!     dimension ids
-      integer m_dim
-      integer n_dim
-      integer time_dim      
-!     variable ids
-      integer t_id
-      integer p_id
-      integer u_id
-      integer v_id
-!     rank (number of dimensions) for each variable
-      integer p_rank, u_rank, v_rank
-      parameter (p_rank = 3)
-      parameter (u_rank = 3)
-      parameter (v_rank = 3)
-!     variable shapes
-      integer t_dims(1)
-      integer p_dims(p_rank)
-      integer u_dims(u_rank)
-      integer v_dims(v_rank)
-      integer istart(p_rank)
-      integer icount(p_rank)
-      
-!     enter define mode
-      iret = nf_create(file, NF_CLOBBER,ncid)
-      call check_err(iret)
-!     define dimensions
-      iret = nf_def_dim(ncid, 'm', m, m_dim)
-      call check_err(iret)
-      iret = nf_def_dim(ncid, 'n', n, n_dim)
-      call check_err(iret)
-!     time is an unlimited dimension so that any number of
-!     records can be added
-      iret = nf_def_dim(ncid, 'time', NF_UNLIMITED, time_dim)
-      call check_err(iret)
-!     define coordinate variable for time      
-      t_dims(1) = time_dim
-      iret = nf_def_var(ncid, 'time', NF_INT, 1, t_dims, t_id)
-      call check_err(iret)
-!     define variables
-      p_dims(1) = m_dim
-      p_dims(2) = n_dim
-      p_dims(3) = time_dim
-      iret = nf_def_var(ncid, 'p', NF_DOUBLE, p_rank, p_dims, p_id)
-      call check_err(iret)
-      u_dims(1) = m_dim
-      u_dims(2) = n_dim
-      u_dims(3) = time_dim
-      iret = nf_def_var(ncid, 'u', NF_DOUBLE, u_rank, u_dims, u_id)
-      call check_err(iret)
-      v_dims(1) = m_dim
-      v_dims(2) = n_dim
-      v_dims(3) = time_dim
-      iret = nf_def_var(ncid, 'v', NF_DOUBLE, v_rank, v_dims, v_id)
-      call check_err(iret)
-!     start netCDF write at the first (1,1,1) position of the array
-      istart(1) = 1
-      istart(2) = 1
-      istart(3) = 1
-!     shape of record to be written (one ncycle at a time)
-      icount(1) = m
-      icount(2) = n
-      icount(3) = 1
-      
-!     leave define mode
-      iret = nf_enddef(ncid)
-      call check_err(iret)
-      
-!     end of netCDF definitions
-      end subroutine netcdf_setup
- 
-     
-      subroutine my_ncwrite(id,varid,istart,icount,var,m,n,t_id,t_val)
-!     Input args: id, varid,istart,icount,var,m,n,t_id,t_val
-!     Write a whole array out to the netCDF file
-      integer id,varid,iret
-      integer icount(3)
-      integer istart(3)
-      integer m,n
-      real(kind=8) var (m,n)
-      integer t_id,t_val
-      integer t_start(1), t_count(1)
-
-      iret = nf_put_vara_double(id,varid,istart,icount,var)
-      call check_err(iret)
-      
-      t_start(1) = istart(3) 
-      t_count(1) = 1
-      iret = nf_put_vara_int(id,t_id,t_start,t_count,t_val)
-      call check_err(iret)
-
-      end subroutine my_ncwrite
