@@ -9,8 +9,9 @@ module shallow_io_mod
   integer :: mprint  !< frequency of output    
 
   ! NetCDF variables
+#ifdef WITH_NETCDF
   include 'netcdf.inc'
-
+#endif
   integer :: ncid, t_id, p_id, u_id, v_id, t_val
   integer, dimension(3) :: istart, icount 
   character (len=13) :: ncfile = "shallowdat.nc"
@@ -202,11 +203,12 @@ contains
     
     ! Close the netCDF file
 
+#ifdef WITH_NETCDF
     IF (l_out) THEN 
        iret = nf_close(ncid)
        call check_err(iret)
     ENDIF
-
+#endif
   END SUBROUTINE model_write_finalise
 
   !===================================================
@@ -217,7 +219,9 @@ contains
     character(len=*) file
     integer m,n
     !     declarations for netCDF library
+#ifdef WITH_NETCDF
     include 'netcdf.inc'
+#endif
     !     error status return
     integer iret
     !     netCDF id
@@ -244,6 +248,7 @@ contains
     integer istart(p_rank)
     integer icount(p_rank)
       
+#ifdef WITH_NETCDF
     !     enter define mode
     iret = nf_create(file, NF_CLOBBER,ncid)
     call check_err(iret)
@@ -288,7 +293,7 @@ contains
     !     leave define mode
     iret = nf_enddef(ncid)
     call check_err(iret)
-      
+#endif      
     !     end of netCDF definitions
   END SUBROUTINE netcdf_setup
 
@@ -297,14 +302,16 @@ contains
   SUBROUTINE check_err(iret)
     INTEGER, INTENT(in) :: iret
 
+#ifdef WITH_NETCDF
     if(iret .ne. NF_NOERR) then
        print *, nf_strerror(iret)
        stop
     endif
+#endif
   END SUBROUTINE check_err
 
   !===================================================
-     
+
   SUBROUTINE my_ncwrite(id,varid,istart,icount,var,m,n,t_id,t_val)
 !     Input args: id, varid,istart,icount,var,m,n,t_id,t_val
 !     Write a whole array out to the netCDF file
@@ -316,6 +323,7 @@ contains
       integer t_id,t_val
       integer t_start(1), t_count(1)
 
+#ifdef WITH_NETCDF
       iret = nf_put_vara_double(id,varid,istart,icount,var)
       call check_err(iret)
       
@@ -323,8 +331,9 @@ contains
       t_count(1) = 1
       iret = nf_put_vara_int(id,t_id,t_start,t_count,t_val)
       call check_err(iret)
+#endif
 
-      END SUBROUTINE my_ncwrite
+  END SUBROUTINE my_ncwrite
 
     !===================================================
 
