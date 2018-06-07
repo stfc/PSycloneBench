@@ -30,5 +30,5 @@ and execute like so:
 
 Note that for performance, you will probably need to ensure that threads
 are bound to processor cores in a sensible fashion. See e.g. taskset, likwid
-or Intels KMP_AFFINITY.
+or Intel's KMP_AFFINITY.
 
