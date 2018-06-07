@@ -29,3 +29,10 @@ Execution is then just `./shallow_base`. Note that if you are
 benchmarking performance then you probably need to ensure that the
 process is bound to a single processor core (see e.g. taskset, likwid
 or Intel's KMP_AFFINITY).
+
+## Output ##
+
+If output is enabled in the namelist file then various fields are dumped
+to disk during the model run. The created files are ASCII and formatted
+for use with `splot` in gnuplot.
+
