@@ -1,5 +1,8 @@
 # Build settings for PGI compiler
 F90=pgf90
+CC=pgcc
+
+CFLAGS="-O3"
 
 #F90FLAGS+=" -fcheck=all -fbacktrace -ffpe-trap=invalid -g -O0"
 

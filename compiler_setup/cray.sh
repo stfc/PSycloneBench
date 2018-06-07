@@ -1,5 +1,8 @@
 # Build settings for cray compiler
 F90=ftn
+CC=cc
+
+CFLAGS="-O3 -h c99 -h aggress"
 
 # f2py does not break long lines so set the maximum
 # line length to the maximum permitted by the Cray compiler
@@ -27,5 +30,7 @@ AR=ar
 
 export F90
 export F90FLAGS
+export CC
+export CFLAGS
 export LDFLAGS
 export AR

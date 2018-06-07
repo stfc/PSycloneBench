@@ -1,8 +1,10 @@
-# Build settings for Intel compiler
+# Build settings for the Intel compiler
 F90=ifort
-#F90=ftn
+CC=icc
 
-F90FLAGS =
+CFLAGS="-O3 -axCORE-AVX2 -opt-report"
+
+F90FLAGS=
 # -fp-model strict
 #F90FLAGS+=" -g -check all -traceback"
 #F90FLAGS+=" -O0"
@@ -47,6 +49,8 @@ ARFLAGS=cru
 
 export F90
 export F90FLAGS
+export CC
+export CFLAGS
 export OMPFLAGS
 export AR
 export ARFLAGS

@@ -1,6 +1,8 @@
 # Build settings for gfortran compiler
 F90=gfortran
+CC=gcc
 
+CFLAGS="-O3"
 F90FLAGS="-Wall -Wsurprising -Wuninitialized"
 #F90FLAGS += -O0
 #F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g
