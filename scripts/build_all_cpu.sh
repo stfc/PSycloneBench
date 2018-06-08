@@ -5,24 +5,16 @@
 
 . compiler_setup/gnu.sh
 
-# Create list of locations containing benchmarks that compile for CPU
-# (i.e. excluding those using OpenACC, OpenCL or Maxeler)
-dirs="./ocean/shallow/SEQ/original"
-dirs+=" ./ocean/shallow/SEQ"
-dirs+=" ./ocean/shallow/OMP"
-dirs+=" ./ocean/nemo/nemolite2d/manual_versions/psykal_serial"
-dirs+=" ./ocean/nemo/nemolite2d/manual_versions/psykal_omp"
-dirs+=" ./ocean/nemo/nemolite2d/original"
+# The Shallow benchmarks
+make -C ./ocean/shallow/SEQ/original
+make -C ./ocean/shallow/SEQ shallow_base
+make -C ./ocean/shallow/OMP
+# The NEMOLite2D benchmarks
+make -C  ./ocean/nemo/nemolite2d/manual_versions/psykal_serial
+make -C  ./ocean/nemo/nemolite2d/manual_versions/psykal_omp
+make -C  ./ocean/nemo/nemolite2d/original
+# Versions which require that PSyclone be available
 if hash psyclone 2>/dev/null; then
-  # Versions which require that PSyclone be available
-  dirs+=" ./ocean/nemo/nemolite2d/psykal"
-else
-  echo "PSyclone not found so skipping benchmarks requiring code generation"
+  make -C ./ocean/shallow/SEQ shallow_gen
+  make -C ./ocean/nemo/nemolite2d/psykal
 fi
-
-for dir in $dirs
-do
-  cd $dir
-  make
-  cd -
-done
