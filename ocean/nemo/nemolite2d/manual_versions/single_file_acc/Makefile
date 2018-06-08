@@ -1,6 +1,6 @@
-# Makefile.include includes the settings for the PGI compiler since
-# this code uses OpenACC
-include Makefile.include
+# Makefile for single-file, OpenACC version of NEMOLite2D.
+# Picks up the compiler, flags etc. to use from environment variables.
+# See e.g. ../../../../../compiler_setup/pgi_acc.sh
 
 # Location of the dl_timer and infrastucture code
 SHARED_DIR = ../../../../../shared
@@ -12,18 +12,15 @@ INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
 
-# Location of the code defining the GOcean API
-
-EXECS = nemolite2d
-
-# API lib is an archive that must come at the end of the list of objects
+# INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
 COMMON_MODULES = ${INF_LIB}
 
-all: $(EXECS)
+.PHONY: nemolite2d all timer_lib inf_lib
+
+all: nemolite2d
 
 # Normal targets
-.PHONY: nemolite2d
 nemolite2d: timer_lib inf_lib
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
 
