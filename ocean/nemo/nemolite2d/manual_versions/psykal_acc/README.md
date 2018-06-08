@@ -1,7 +1,9 @@
 # Manual OpenACC version of PSyKAl NEMOLite2D #
 
 This directory contains the manual OpenACC implementation of the
-PSyKAl form of NEMOLite2D.
+PSyKAl form of NEMOLite2D. It does not use the 'common' NEMOLite2D code
+base (in ../../common) because some of the routines have been modified
+to support having data in a remote memory space.
 
 ## Compiling ##
 
