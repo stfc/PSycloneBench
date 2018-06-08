@@ -90,3 +90,19 @@ running a Bash shell):
     > . compiler_setup/intel.sh
 
 Again, see the README.md file included with each benchmark.
+
+A top-level Makefile is provided that has targets to build all of the
+various NEMOLite2D and Shallow benchmarks for CPU:
+
+ * all - build all targets that do not require PSyclone
+ * all_gen - build all targets that use PSyclone code generation
+ * shallow_cpu - build all CPU versions of Shallow that do not require
+                 PSyclone
+ * shallow_gen - build Shallow using PSyclone for code generation
+ * nemolite_cpu - build all CPU versions of NEMOLite2D that do not require
+                  PSyclone
+ * nemolite_gen - build NEMOLite2D using PSyclone for code generation
+
+Since the set-up for OpenACC and OpenCL is more involved, it does not
+attempt to compile the benchmarks using those languages. See the Makefiles
+in the individual benchmark folders for those cases.
