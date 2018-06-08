@@ -33,7 +33,7 @@ export CC=g++
 export CFLAGS="-g -fpermissive"
 
 export FPGA_BOARD=nalla_pcie
-export OPENCL_LIBS="-L${INTELFPGAOCLSDKROOT}/board/${BOARD}/linux64/lib -L${INTELFPGAOCLSDKROOT}/host/linux64/lib -Wl,--no-as-needed -lalteracl -l${BOARD}_mmd -lelf"
+export OPENCL_LIBS="-L${INTELFPGAOCLSDKROOT}/board/${FPGA_BOARD}/linux64/lib -L${INTELFPGAOCLSDKROOT}/host/linux64/lib -Wl,--no-as-needed -lalteracl -l${FPGA_BOARD}_mmd -lelf"
 export OPENCL_INCLUDE=-I${INTELFPGAOCLSDKROOT}/host/include
 
 export CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1

@@ -2,6 +2,7 @@
 #
 #   CC - the C compiler
 #   OPENCL_INCLUDE - root of path to search for OpenCL headers
+#   OPENCL_LIBS - necessary paths and libs to link to OpenCL
 #
 # Optionally:
 #
@@ -96,7 +97,7 @@ clean:
 	rm -f *.o *~ *.cl
 
 allclean: clean
-	rm -f *.exe fparser.log
+	rm -f *.exe fparser.log gnu_opt_report.txt
 	rm -rf *_wpl_dir/
 
 # When we've gone through the pain of building kernels for real FPGA

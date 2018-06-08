@@ -44,7 +44,7 @@ ${COMMON_LIB}:
 	${F90} ${F90FLAGS} -c -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} $<
 
 clean:
-	rm -f *.o *~
+	rm -f *.o *~ gnu_opt_report.txt
 
 allclean: clean
 	rm -f *.exe *.mod
