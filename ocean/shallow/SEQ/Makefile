@@ -42,7 +42,7 @@ shallow_gen.f90: infrastructure_mod.f90 shallow_alg.f90
 psy.f90: shallow_gen.f90
 
 # The generated code depends on the generated Psy middle-layer
-shallow_gen:
+shallow_gen: inf_lib timer_lib
 	${MAKE} MODULE_LIST="shallow_gen.o ${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
 
 # Our module providing fake infrastructure kernels is in the INF directory
@@ -52,7 +52,7 @@ infrastructure_mod.f90:
 	ln -sf ${INF_INC}/infrastructure_mod.f90 .
 
 # Normal targets
-shallow_base: inf_lib
+shallow_base: inf_lib timer_lib
 	${MAKE} MODULE_LIST="shallow_base.o ${COMMON_MODULES}" shallow_base.exe
 
 shallow_base.o: $(COMMON_MODULES)
@@ -96,12 +96,16 @@ timer_lib:
 inf_lib:
 	${MAKE} -C ${INF_DIR}
 
+libclean:
+	${MAKE} -C ${INF_DIR} distclean
+	${MAKE} -C ${TIMER_DIR} allclean
+
 clean: 
 	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~ psy.f90 shallow_gen.f90
 	rm -f gnu_opt_report.txt
 
-allclean: clean
+allclean: clean libclean
 	rm -f *.exe
 	rm -rf *_wpl_dir
 	rm -f infrastructure_mod.f90

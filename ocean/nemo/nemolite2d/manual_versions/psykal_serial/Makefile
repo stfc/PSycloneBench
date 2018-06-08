@@ -29,9 +29,9 @@ KERNELS = boundary_conditions_mod.o \
 
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
-COMMON_MODULES = $(KERNELS) ${COMMON_LIB} ${INF_LIB}
+COMMON_MODULES = ${COMMON_LIB} ${KERNELS} ${INF_LIB}
 
-.PHONY: all inf_lib timer_lib
+.PHONY: all inf_lib timer_lib nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
 
 # The targets that this Makefile supports
 
@@ -39,7 +39,7 @@ all: nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv \
 nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
 
 # Normal targets. Need to link with OpenMP in order to use OMP timer
-nemolite2d: inf_lib ${KERNELS} time_step_mod.o nemolite2d.o
+nemolite2d: ${COMMON_MODULES} time_step_mod.o nemolite2d.o
 	${MAKE} MODULE_LIST="nemolite2d.o time_step_mod.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d.exe
 
@@ -82,8 +82,7 @@ nemolite2d_alignall: ${COMMON_MODULES} time_step_mod_alignall_preload.o nemolite
 	${MAKE} MODULE_LIST="time_step_mod_alignall_preload.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_alignall.exe
 
-nemolite2d_nopeel: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel.o \
-nemolite2d.o
+nemolite2d_nopeel: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel.o nemolite2d.o
         # Have to delete any existing time_step_mod because it contains a module
         # with the same name as that in time_step_mod_align_preload
 	rm -f time_step_mod*.o time_step_mod*.mod
@@ -122,16 +121,17 @@ timer_lib:
 inf_lib:
 	${MAKE} -C ${INF_DIR}
 
-${COMMON_LIB}:
+${COMMON_LIB}: inf_lib timer_lib
 	${MAKE} -C ${COMMON_DIR}
 
 clean: 
 	rm -f *.o *.mod *.MOD *~
 
 libclean:
-	${MAKE} -C ${INF_DIR} clean
+	${MAKE} -C ${INF_DIR} distclean
+	${MAKE} -C ${TIMER_DIR} allclean
 
-allclean: clean
+allclean: clean libclean
 	rm -f ${KERNELS:.o=.f90}
 	rm -f *.exe fparser.log
 	rm -f *.lst *.cg *.opt *.optrpt gnu_opt_report.txt *.s

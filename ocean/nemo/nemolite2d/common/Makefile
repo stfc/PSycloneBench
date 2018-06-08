@@ -28,7 +28,7 @@ inf_lib:
 	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
 
 clean:
-	rm -f *.o *~
+	rm -f *.o *~ gnu_opt_report.txt
 
 allclean: clean
 	rm -f *.mod
