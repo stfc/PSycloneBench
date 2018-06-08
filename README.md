@@ -30,12 +30,48 @@ Are contained in directories beneath the `ocean` directory.
 ### NEMOLite2D ###
 
 `ocean/nemo/nemolite2d` contains various versions of the NEMOLite2D
-benchmark.
+benchmark which is based upon the free-surface component of the NEMO
+ocean model (www.nemo-ocean.eu). This was originally constructed
+by Hedong Liu of the National Oceanography Centre, Liverpool, UK.
+
+#### Manual implementations ####
+
+The `manual_versions` directory contains various implementations of
+NEMOLite2D where the application has been split-up into Algorithm PSy
+and Kernel layers but the PSy layer has been written manually. In
+summary:
+
+* psykal_serial - serial versions with various optimisations applied
+                  to the PSy layer.
+* psykal_omp - PSy layer parallelised using OpenMP.
+* psykal_ocl - PSy layer parallelised using OpenCL.
+* single_file_acc - Original, single-file version parallelised using
+                    OpenACC.
+* psykal_acc - PSy layer paralellised using OpenACC.
+
+Please see the README.md files in each of the directories for more
+information.
+
+(Note that the OpenACC versions are based upon work by Jeremy
+Appleyard of NVIDIA).
+
+#### PSyclone code generation ####
+
+The `psykal` directory contains the version of NEMOLite2D that uses
+PSyclone to generate the PSy layer. Currently serial and OpenMP
+versions may be generated.
 
 ### Shallow ###
 
 `ocean/shallow` contains various versions of the Shallow benchmark,
-originally developed by Paul Swarztrauber of NCAR.
+originally developed by Paul Swarztrauber of NCAR. In summary these are:
+
+* SEQ/original - original single-file serial version in Fortran.
+* SEQ - PSyKAl version of Shallow including option to build with PSyclone.
+* OMP - manual OpenMP implementation in C.
+
+Please see the README.md files in the individual directories for more
+information.
 
 ## Building ##
 
@@ -52,3 +88,5 @@ the appropriate Bash script. e.g. for the Intel compiler (assuming you are
 running a Bash shell):
 
     > . compiler_setup/intel.sh
+
+Again, see the README.md file included with each benchmark.
