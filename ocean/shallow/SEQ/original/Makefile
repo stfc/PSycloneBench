@@ -1,8 +1,11 @@
-include ../Makefile.include
+# Makefile for the 'original', single-file version of Shallow.
+# You will need to set which compiler to use etc. via environment
+# variables. See e.g. ../../../../compiler_setup/gfortran.sh
 
-API_VERSION=1.0
-API_DIR = ../../../api_v${API_VERSION}
-API_LIB = ${API_DIR}/gocean_api.a
+SHARED_DIR=../../../../shared
+TIMER_DIR=${SHARED_DIR}/dl_timer
+TIMER_INC=${TIMER_DIR}/src
+TIMER_LIB=${TIMER_DIR}/dl_timer_lib.a
 
 # For timing module in new version of code
 F90FLAGS += -I${TIMER_INC}
@@ -10,13 +13,13 @@ F90FLAGS += -I${TIMER_INC}
 # For IO module
 F90FLAGS += -I../
 
-LDFLAGS += ${API_LIB} -lnetcdf -lnetcdff
-
 EXECS = shallow_base
+
+.PHONY: all timer_lib libclean
 
 all: $(EXECS)
 
-shallow_base.o: ${API_LIB} ../shallow_io_mod.o
+shallow_base.o: timer_lib ../shallow_io_mod.o
 
 ../shallow_io_mod.o:
 	${MAKE} -C ../
@@ -27,5 +30,14 @@ shallow_base.o: ${API_LIB} ../shallow_io_mod.o
 %.o: %.f90
 	$(F90) $(F90FLAGS) -c $<
 
+timer_lib:
+	${MAKE} -C ${TIMER_DIR} sm_lib
+
+libclean:
+	${MAKE} -C ${TIMER_DIR} allclean
+
 clean: 
-	rm -f *.o *.mod *.MOD $(EXECS)
+	rm -f *.o *.mod *.MOD gnu_opt_report.txt
+
+allclean: clean libclean
+	rm -f $(EXECS)
