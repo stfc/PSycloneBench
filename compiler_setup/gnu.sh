@@ -17,9 +17,12 @@ F90FLAGS+=" -ffree-line-length-none"
 OMPFLAGS=""
 OMPFLAGS+=" -fopenmp"
 
+LDFLAGS=""
+
 AR=ar
 
 export F90
 export F90FLAGS
 export OMPFLAGS
+export LDFLAGS
 export AR
