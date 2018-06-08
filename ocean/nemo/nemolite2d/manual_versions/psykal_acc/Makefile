@@ -1,10 +1,11 @@
-# Makefile for the manual OpenACC version of nemolite2d.
+# Makefile for the manual, PSyKAl, OpenACC version of nemolite2d.
 # Note, this does not yet use the 'common' routines in ../../common
 # because the versions here have been modified slightly to
 # support having data in a remote memory space.
 
-# Makefile.include contains the settings for the PGI compiler
-include ../manual_acc/Makefile.include
+# This Makefile picks up the compiler and flags etc. from environment
+# variables. Example settings for the PGI compiler can be found in 
+# ../../../../../compiler_setup/pgi_acc.sh
 
 # Location of the dl_timer and infrastucture code
 SHARED_DIR = ../../../../../shared
