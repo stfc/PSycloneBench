@@ -15,9 +15,11 @@ F90FLAGS += -I../
 
 EXECS = shallow_base
 
+.PHONY: all timer_lib libclean
+
 all: $(EXECS)
 
-shallow_base.o: ../shallow_io_mod.o
+shallow_base.o: timer_lib ../shallow_io_mod.o
 
 ../shallow_io_mod.o:
 	${MAKE} -C ../
@@ -28,8 +30,14 @@ shallow_base.o: ../shallow_io_mod.o
 %.o: %.f90
 	$(F90) $(F90FLAGS) -c $<
 
+timer_lib:
+	${MAKE} -C ${TIMER_DIR} sm_lib
+
+libclean:
+	${MAKE} -C ${TIMER_DIR} allclean
+
 clean: 
 	rm -f *.o *.mod *.MOD gnu_opt_report.txt
 
-allclean: clean
+allclean: clean libclean
 	rm -f $(EXECS)

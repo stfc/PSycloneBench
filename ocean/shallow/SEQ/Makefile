@@ -30,6 +30,8 @@ GENERATED_MODULES = infrastructure_mod.o psy.o
 # passed to the linker
 COMMON_MODULES = $(MODULES) ${INF_LIB} 
 
+.PHONY: all shallow_gen shallow_base inf_lib timer_lib
+
 all: $(EXECS)
 
 # Targets involving the PSyclone code-generation framework
@@ -40,7 +42,6 @@ shallow_gen.f90: infrastructure_mod.f90 shallow_alg.f90
 psy.f90: shallow_gen.f90
 
 # The generated code depends on the generated Psy middle-layer
-.PHONY: shallow_gen
 shallow_gen:
 	${MAKE} MODULE_LIST="shallow_gen.o ${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
 
@@ -51,7 +52,6 @@ infrastructure_mod.f90:
 	ln -sf ${INF_INC}/infrastructure_mod.f90 .
 
 # Normal targets
-.PHONY: shallow_base
 shallow_base: inf_lib
 	${MAKE} MODULE_LIST="shallow_base.o ${COMMON_MODULES}" shallow_base.exe
 
@@ -90,8 +90,6 @@ time_step_mod.o: ${INF_LIB} \
 %.o: %.F90
 	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
 
-.PHONY: inf_lib timer_lib
-
 timer_lib:
 	${MAKE} -C ${TIMER_DIR} sm_lib
 
@@ -101,12 +99,12 @@ inf_lib:
 clean: 
 	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~ psy.f90 shallow_gen.f90
+	rm -f gnu_opt_report.txt
 
 allclean: clean
 	rm -f *.exe
 	rm -rf *_wpl_dir
 	rm -f infrastructure_mod.f90
-	rm -f gnu_opt_report.txt
 
 docs:
 	doxygen shallow.doxy.config
