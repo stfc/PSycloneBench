@@ -7,23 +7,28 @@ funcation via the -s option. Performs OpenACC transformations. '''
 def trans(psy):
     ''' Take the supplied psy object, apply OpenACC transformations
     to the schedule of invoke_0 and return the new psy object '''
-    from psyclone.transformations import OpenACCParallelTrans, \
-        OpenACCDataTrans
-    atrans = OpenACCParallelTrans()
-    dtrans = OpenACCDataTrans()
+    from psyclone.transformations import ACCParallelTrans, \
+        ACCDataTrans, ACCLoopTrans
+    ptrans = ACCParallelTrans()
+    ltrans = ACCLoopTrans()
+    dtrans = ACCDataTrans()
 
     invoke = psy.invokes.get('invoke_0')
     schedule = invoke.schedule
     # schedule.view()
 
-    # Apply the OpenMP Loop transformation to *every* loop
-    # in the schedule
+    # Apply the OpenACC Loop transformation to *every* loop
+    # nest in the schedule
     from psyclone.psyGen import Loop
     for child in schedule.children:
         if isinstance(child, Loop):
-            newschedule, _ = atrans.apply(child)
+            newschedule, _ = ltrans.apply(child)
             schedule = newschedule
 
+    # Put all of the loops in a single parallel region
+    newschedule, _ = ptrans.apply(schedule.children)
+
+    # Add an enter-data directive
     newschedule, _ = dtrans.apply(schedule)
 
     invoke.schedule = newschedule
