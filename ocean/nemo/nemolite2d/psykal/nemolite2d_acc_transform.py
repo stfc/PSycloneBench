@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 '''Python script intended to be passed to PSyclone's generate()
-funcation via the -s option. Performs OpenACC transformations. '''
+function via the -s option. Performs OpenACC transformations. '''
 
 
 def trans(psy):
@@ -22,7 +22,7 @@ def trans(psy):
     from psyclone.psyGen import Loop
     for child in schedule.children:
         if isinstance(child, Loop):
-            newschedule, _ = ltrans.apply(child)
+            newschedule, _ = ltrans.apply(child, collapse=2)
             schedule = newschedule
 
     # Put all of the loops in a single parallel region
