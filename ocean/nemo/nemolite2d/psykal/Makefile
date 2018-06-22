@@ -50,12 +50,18 @@ psy.f90: nemolite2d_alg.f90
 # psy_omp.f90 is the same PSy layer but with OpenMP transformations
 # applied to it.
 psy_omp.f90: nemolite2d_alg.f90 omp_transform.py
-	${PSYCLONE} -s ./omp_transform.py -oalg nemolite2d_gen.f90 -opsy psy_omp.f90 nemolite2d_alg.f90
+	${PSYCLONE} -s ./omp_transform.py -oalg nemolite2d_gen.f90 \
+-opsy psy_omp.f90 nemolite2d_alg.f90
 
 # psy_acc.f90 is the same PSy layer but with OpenACC transformations
 # applied to it.
 psy_acc.f90: nemolite2d_alg.f90 acc_transform.py
-	${PSYCLONE} nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 -opsy psy_acc.f90 -s ./acc_transform.py
+	${PSYCLONE} nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 \
+-opsy psy_acc.f90 -s ./acc_transform.py
+
+psy_ocl.f90: nemolite2d_alg.f90 ocl_transform.py
+	${PSYCLONE} nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 \
+-opsy psy_ocl.f90 -s ./ocl_transform.py
 
 # The generated code depends on the generated Psy middle-layer
 nemolite2d_gen: timer_lib inf_lib ${KERNELS} psy.o
@@ -70,6 +76,11 @@ nemolite2d_gen_acc: timer_lib inf_lib ${KERNELS} psy_acc.o
 	${MAKE} MODULE_LIST="psy_acc.o ${COMMON_MODULES}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_acc.exe
+
+nemolite2d_gen_ocl: timer_lib inf_lib ${KERNELS} psy_ocl.o
+	${MAKE} MODULE_LIST="psy_ocl.o ${COMMON_MODULES}" \
+             F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_ocl.exe
 
 # Generic rules
 
