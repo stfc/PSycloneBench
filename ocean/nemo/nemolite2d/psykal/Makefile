@@ -14,6 +14,9 @@ TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
+OCL_DIR = ${SHARED_DIR}/dl_esm_inf/external/FortCL
+OCL_INC = ${OCL_DIR}/src
+OCL_LIB = ${OCL_DIR}/src/libFortCL.a
 COMMON_DIR = ../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
@@ -78,9 +81,14 @@ nemolite2d_gen_acc: timer_lib inf_lib ${KERNELS} psy_acc.o
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_acc.exe
 
 nemolite2d_gen_ocl: timer_lib inf_lib ${KERNELS} psy_ocl.o
-	${MAKE} MODULE_LIST="psy_ocl.o ${COMMON_MODULES}" \
+	${MAKE} MODULE_LIST="psy_ocl.o ${COMMON_MODULES} ${OCL_LIB}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_ocl.exe
+
+# The OpenCL PSy layer needs the FortCL modules
+psy_ocl.o: psy_ocl.f90
+	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${OCL_INC} -I${INF_INC} \
+-I${TIMER_INC} -c $<
 
 # Generic rules
 
@@ -108,7 +116,7 @@ ${COMMON_LIB}:
 
 clean: 
 	rm -f *.o *.mod *.MOD *~ *.pyc gnu_opt_report.txt
-	rm -f psy.f90 psy_omp.f90 psy_acc.f90 nemolite2d_gen.f90
+	rm -f psy*.f90 nemolite2d_gen.f90
 
 libclean:
 	${MAKE} -C ${INF_DIR} distclean
