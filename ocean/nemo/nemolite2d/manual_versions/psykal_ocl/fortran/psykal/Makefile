@@ -10,7 +10,7 @@
 # export LDFLAGS=-lm
 
 # Location of the dl_timer and infrastucture code
-SHARED_DIR = ../../../../../../shared
+SHARED_DIR = ../../../../../../../shared
 
 # The dl_timer library
 TIMER_DIR = ${SHARED_DIR}/dl_timer
@@ -21,7 +21,7 @@ INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
 # Shared NEMOLite2D routines
-COMMON_DIR = ../../../common
+COMMON_DIR = ../../../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
 COMMON_MODULES = opencl_utils_mod.o kernel_args_mod.o nemolite2d.o

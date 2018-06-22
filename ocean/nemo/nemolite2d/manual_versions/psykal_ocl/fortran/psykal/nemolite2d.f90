@@ -11,7 +11,8 @@ program nemolite2d
   use initialisation_mod, only: initialisation
   use model_mod
   use gocean2d_io_mod, only: model_write
-  use gocean_mod,      only: model_write_log, get_num_queues, get_queues
+  use gocean_mod,      only: model_write_log
+  use ocl_utils_mod, only: get_num_queues, get_queues
   use psykalite_mod, only: invoke_kernels
   implicit none
 
