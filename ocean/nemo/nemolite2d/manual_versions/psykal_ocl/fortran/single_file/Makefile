@@ -10,7 +10,7 @@
 # export LDFLAGS=-lm
 
 # Location of the dl_timer and infrastucture code
-SHARED_DIR = ../../../../../../shared
+SHARED_DIR = ../../../../../../../shared
 
 # The dl_timer library
 TIMER_DIR = ${SHARED_DIR}/dl_timer
@@ -20,16 +20,21 @@ TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
+# FortCL (Fortran wrapper to OpenCL)
+FCL_DIR = ${SHARED_DIR}/dl_esm_inf/external/FortCL
+FCL_INC = ${FCL_INC}/src
+FCL_LIB = ${FCL_DIR}/src/libFortCL.a
+
 # Shared NEMOLite2D routines
-COMMON_DIR = ../../../common
+COMMON_DIR = ../../../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
 COMMON_MODULES = clfortran.o opencl_utils_mod.o kernel_args_mod.o \
                  nemolite2d.o
 
 nemolite2d.exe: ${COMMON_LIB} inf_lib timer_lib ${COMMON_MODULES}
-	${F90} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${COMMON_LIB} \
-${INF_LIB} ${TIMER_LIB} $(LDFLAGS)
+	${F90} -o $@ ${COMMON_MODULES} ${COMMON_LIB} \
+${INF_LIB} ${TIMER_LIB} ${FCL_LIB} ${OPENCL_LIBS} $(LDFLAGS)
 
 timer_lib:
 	${MAKE} -C ${TIMER_DIR} sm_lib
