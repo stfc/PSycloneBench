@@ -20,16 +20,25 @@ TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
+# FortCL (provides OpenCL functionality in Fortran)
+FCL_DIR = ${SHARED_DIR}/dl_esm_inf/external/FortCL
+FCL_INC = ${FCL_DIR}/src
+
 # Shared NEMOLite2D routines
 COMMON_DIR = ../../../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
-COMMON_MODULES = opencl_utils_mod.o kernel_args_mod.o nemolite2d.o
 # Location of the kernel sources
 KERNEL_DIR = ../../../kernels/opencl
 
+COMMON_MODULES = kernel_args_mod.o psykalite_mod.o \
+                 nemolite2d.o
+
+all:
+	echo "Not building because I haven't finished all the boiler-plate"
+
 nemolite2d.exe: kernels ${COMMON_LIB} inf_lib timer_lib ${COMMON_MODULES}
-	${F90} ${OMPFLAGS} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${COMMON_LIB} \
+	${F90} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${COMMON_LIB} \
 ${INF_LIB} ${TIMER_LIB} $(LDFLAGS)
 
 timer_lib:
@@ -50,7 +59,7 @@ ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR}
 
 %.o: %.f90
-	${F90} ${F90FLAGS} -c -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} $<
+	${F90} ${F90FLAGS} -c -I${COMMON_DIR} -I${FCL_INC} -I${INF_INC} -I${TIMER_INC} $<
 
 clean:
 	rm -f *.o *~ gnu_opt_report.txt
