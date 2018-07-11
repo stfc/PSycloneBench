@@ -17,16 +17,16 @@ program gocean2d
   !> The grid on which our fields are defined
   type(grid_type), target :: model_grid
   !> Current ('now') sea-surface height at different grid points
-  type(r2d_field) :: sshn_u_fld, sshn_v_fld, sshn_t_fld
+  type(r2d_field), target :: sshn_u_fld, sshn_v_fld, sshn_t_fld
   !> 'After' sea-surface height at different grid points
-  type(r2d_field) :: ssha_u_fld, ssha_v_fld, ssha_t_fld
+  type(r2d_field), target :: ssha_u_fld, ssha_v_fld, ssha_t_fld
   !> Distance from sea-bed to mean sea level at the different grid points.
   !! This is not time varying.
-  type(r2d_field) :: ht_fld, hu_fld, hv_fld
+  type(r2d_field), target :: ht_fld, hu_fld, hv_fld
   !> Current ('now') velocity components
-  type(r2d_field) :: un_fld, vn_fld
+  type(r2d_field), target :: un_fld, vn_fld
   !> 'After' velocity components
-  type(r2d_field) :: ua_fld, va_fld
+  type(r2d_field), target :: ua_fld, va_fld
 
   ! time stepping index
   integer :: istp 
