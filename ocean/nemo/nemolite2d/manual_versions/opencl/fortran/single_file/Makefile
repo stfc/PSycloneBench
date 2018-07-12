@@ -33,7 +33,7 @@ COMMON_MODULES = clfortran.o opencl_utils_mod.o kernel_args_mod.o \
                  nemolite2d.o
 
 nemolite2d.exe: ${COMMON_LIB} inf_lib timer_lib ${COMMON_MODULES}
-	${F90} -o $@ ${COMMON_MODULES} ${COMMON_LIB} \
+	${F90} ${OMPFLAGS} -o $@ ${COMMON_MODULES} ${COMMON_LIB} \
 ${INF_LIB} ${TIMER_LIB} ${FCL_LIB} ${OPENCL_LIBS} $(LDFLAGS)
 
 timer_lib:
