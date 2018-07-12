@@ -76,12 +76,14 @@ nemolite2d_gen_omp: timer_lib inf_lib ${KERNELS} psy_omp.o
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_omp.exe
 
 nemolite2d_gen_acc: timer_lib inf_lib ${KERNELS} psy_acc.o
-	${MAKE} MODULE_LIST="psy_acc.o ${COMMON_MODULES}" \
+	${MAKE} MODULE_LIST="psy_acc.o  nemolite2d_gen.o ${COMMON_MODULES}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_acc.exe
 
-nemolite2d_gen_ocl: timer_lib inf_lib ${KERNELS} psy_ocl.o
-	${MAKE} MODULE_LIST="psy_ocl.o ${COMMON_MODULES} ${OCL_LIB}" \
+# The OpenCL version does not link with the kernels directly since they
+# are loaded at run-time.
+nemolite2d_gen_ocl: timer_lib inf_lib psy_ocl.o
+	${MAKE} MODULE_LIST="psy_ocl.o  nemolite2d_gen.o ${COMMON_LIB} ${INF_LIB} ${OCL_LIB}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_ocl.exe
 
