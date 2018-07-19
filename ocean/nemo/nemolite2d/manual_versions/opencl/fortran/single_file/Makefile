@@ -20,27 +20,32 @@ TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
-# FortCL (Fortran wrapper to OpenCL)
-FCL_DIR = ${SHARED_DIR}/dl_esm_inf/external/FortCL
-FCL_INC = ${FCL_INC}/src
-FCL_LIB = ${FCL_DIR}/src/libFortCL.a
-
 # Shared NEMOLite2D routines
 COMMON_DIR = ../../../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
+# Location of the OpenCL kernels
+KERNEL_DIR = ../../../../kernels/opencl
 
-COMMON_MODULES = clfortran.o opencl_utils_mod.o kernel_args_mod.o \
+COMMON_MODULES = opencl_utils_mod.o kernel_args_mod.o \
                  nemolite2d.o
 
-nemolite2d.exe: ${COMMON_LIB} inf_lib timer_lib ${COMMON_MODULES}
+nemolite2d.exe: kernels ${COMMON_LIB} inf_lib timer_lib ${COMMON_MODULES}
 	${F90} ${OMPFLAGS} -o $@ ${COMMON_MODULES} ${COMMON_LIB} \
-${INF_LIB} ${TIMER_LIB} ${FCL_LIB} ${OPENCL_LIBS} $(LDFLAGS)
+${INF_LIB} ${TIMER_LIB} ${OPENCL_LIBS} $(LDFLAGS)
 
 timer_lib:
 	${MAKE} -C ${TIMER_DIR} sm_lib
 
 inf_lib:
 	${MAKE} -C ${INF_DIR}
+
+kernels:
+	${MAKE} -C ${KERNEL_DIR} CC=g++
+
+# The clfortran module need only be compiled for its interface definitions.
+# It *must not* be linked in to the final executable as it collides with
+# the real OpenCL run-time and nothing works!
+opencl_utils_mod.o: clfortran.o
 
 ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR}
