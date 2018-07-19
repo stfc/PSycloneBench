@@ -10,7 +10,6 @@ program nemolite2d
   use field_mod
   use initialisation_mod, only: initialisation
   use model_mod
-!  use boundary_conditions_mod
   use gocean2d_io_mod, only: model_write
   use gocean_mod,      only: model_write_log
   implicit none
@@ -157,7 +156,7 @@ program nemolite2d
   end do
 
   ! Get a program object containing all of our kernels
-  filename = "../kernels/nemolite2d_kernels.aocx"
+  filename = "../../../kernels/opencl/nemolite2d_kernels.aocx"
   prog = get_program(context, device, version_str, filename)
 
   do i=1, K_NUM_KERNELS
@@ -530,7 +529,7 @@ program nemolite2d
      call check_status('clEnqueueNDRangeKernel', ierr)
 
      ! Pass the current time-step index to the bc-ssh kernel
-     ierr = clSetKernelArg(kernels(K_BC_SSH), 1, sizeof(istp), C_LOC(istp))
+     ierr = clSetKernelArg(kernels(K_BC_SSH), 1, c_sizeof(istp), C_LOC(istp))
      call check_status("clSetKernelArg", ierr)
 
      ! This kernel updates ssha_t and therefore has a dependence on the
