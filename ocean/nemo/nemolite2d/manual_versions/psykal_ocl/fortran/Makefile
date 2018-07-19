@@ -24,18 +24,27 @@ INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
 COMMON_DIR = ../../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
-COMMON_MODULES = clfortran.o opencl_utils_mod.o kernel_args_mod.o \
-                 nemolite2d.o
+COMMON_MODULES = opencl_utils_mod.o kernel_args_mod.o nemolite2d.o
+# Location of the kernel sources
+KERNEL_DIR = ../../../kernels/opencl
 
-nemolite2d.exe: ${COMMON_LIB} inf_lib timer_lib ${COMMON_MODULES}
-	${F90} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${COMMON_LIB} \
+nemolite2d.exe: kernels ${COMMON_LIB} inf_lib timer_lib ${COMMON_MODULES}
+	${F90} ${OMPFLAGS} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${COMMON_LIB} \
 ${INF_LIB} ${TIMER_LIB} $(LDFLAGS)
 
 timer_lib:
-	${MAKE} -C ${TIMER_DIR} sm_lib
+	${MAKE} -C ${TIMER_DIR} CC=${CC} sm_lib
 
 inf_lib:
 	${MAKE} -C ${INF_DIR}
+
+# We only need to compile clfortran in order to get the module interfaces.
+# We *do not* link it into the final executable otherwise it collides
+# with the real OpenCL run-time routines and nothing works!
+opencl_utils_mod.o: clfortran.o
+
+kernels:
+	${MAKE} -C ${KERNEL_DIR} CC=g++
 
 ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR}
