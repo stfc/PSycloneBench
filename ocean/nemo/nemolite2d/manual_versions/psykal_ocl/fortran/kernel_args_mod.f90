@@ -32,45 +32,45 @@ contains
 
     ! set the kernel arguments
     arg_idx = 0
-    ierr = clSetKernelArg(kernel, arg_idx, sizeof(nx), C_LOC(nx))
+    ierr = clSetKernelArg(kernel, arg_idx, c_sizeof(nx), C_LOC(nx))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kernel, arg_idx, sizeof(ssha_device), &
+    ierr = clSetKernelArg(kernel, arg_idx, c_sizeof(ssha_device), &
          C_LOC(ssha_device))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_device), &
+    ierr = clSetKernelArg(kernel, arg_idx, c_sizeof(sshn_device), &
          C_LOC(sshn_device))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_u_device), &
+    ierr = clSetKernelArg(kernel, arg_idx, c_sizeof(sshn_u_device), &
          C_LOC(sshn_u_device))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kernel, arg_idx, sizeof(sshn_v_device), &
+    ierr = clSetKernelArg(kernel, arg_idx, c_sizeof(sshn_v_device), &
          C_LOC(sshn_v_device))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kernel, arg_idx, sizeof(hu_device), &
+    ierr = clSetKernelArg(kernel, arg_idx, c_sizeof(hu_device), &
          C_LOC(hu_device))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kernel, arg_idx, sizeof(hv_device), &
+    ierr = clSetKernelArg(kernel, arg_idx, c_sizeof(hv_device), &
          C_LOC(hv_device))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kernel, arg_idx, sizeof(un_device), &
+    ierr = clSetKernelArg(kernel, arg_idx, c_sizeof(un_device), &
          C_LOC(un_device))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kernel, arg_idx, sizeof(vn_device), &
+    ierr = clSetKernelArg(kernel, arg_idx, c_sizeof(vn_device), &
          C_LOC(vn_device))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kernel, arg_idx, sizeof(rdt), C_LOC(rdt))
+    ierr = clSetKernelArg(kernel, arg_idx, c_sizeof(rdt), C_LOC(rdt))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kernel, arg_idx, sizeof(e12t_device), &
+    ierr = clSetKernelArg(kernel, arg_idx, c_sizeof(e12t_device), &
          C_LOC(e12t_device))
     call check_status("clSetKernelArg", ierr)
 
@@ -111,82 +111,82 @@ contains
     integer :: arg_idx, ret
 
     arg_idx = 0
-    ret = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(nx), C_LOC(nx))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(ua_device), C_LOC(ua_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(ua_device), C_LOC(ua_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(un_device), C_LOC(un_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(un_device), C_LOC(un_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(vn_device), C_LOC(vn_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(vn_device), C_LOC(vn_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(hu_device), C_LOC(hu_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(hu_device), C_LOC(hu_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(hv_device), C_LOC(hv_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(hv_device), C_LOC(hv_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(ht_device), C_LOC(ht_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(ht_device), C_LOC(ht_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(ssha_u_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(ssha_u_device), &
                          C_LOC(ssha_u_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(sshn_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(sshn_device), &
 		         C_LOC(sshn_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(sshn_u_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(sshn_u_device), &
                          C_LOC(sshn_u_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(sshn_v_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(sshn_v_device), &
 		         C_LOC(sshn_v_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(tmask_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(tmask_device), &
 		         C_LOC(tmask_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e1u_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e1u_device), &
 		         C_LOC(e1u_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e1v_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e1v_device), &
 		         C_LOC(e1v_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e1t_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e1t_device), &
 		         C_LOC(e1t_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e2u_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e2u_device), &
 		         C_LOC(e2u_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1    
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e2t_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e2t_device), &
 		         C_LOC(e2t_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1    
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e12u_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e12u_device), &
 		         C_LOC(e12u_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1    
-    ret = clSetKernelArg(kern, arg_idx, sizeof(gphiu_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(gphiu_device), &
 		         C_LOC(gphiu_device))
     call check_status("clSetKernelArg", ret);
     arg_idx = arg_idx + 1    
-    ret = clSetKernelArg(kern, arg_idx, sizeof(rdt), C_LOC(rdt))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(rdt), C_LOC(rdt))
     call check_status("clSetKernelArg", ret);
     arg_idx = arg_idx + 1    
-    ret = clSetKernelArg(kern, arg_idx, sizeof(cbfr), C_LOC(cbfr))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(cbfr), C_LOC(cbfr))
     call check_status("clSetKernelArg", ret);
     arg_idx = arg_idx + 1    
-    ret = clSetKernelArg(kern, arg_idx, sizeof(visc), C_LOC(visc))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(visc), C_LOC(visc))
     call check_status("clSetKernelArg", ret);
     write(*,"('Set ',I2,' arguments for Momentum-u kernel')") arg_idx
 
@@ -226,82 +226,82 @@ contains
     integer :: arg_idx, ret
 
     arg_idx = 0
-    ret = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(nx), C_LOC(nx))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(va_device), C_LOC(va_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(va_device), C_LOC(va_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(un_device), C_LOC(un_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(un_device), C_LOC(un_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(vn_device), C_LOC(vn_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(vn_device), C_LOC(vn_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(hu_device), C_LOC(hu_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(hu_device), C_LOC(hu_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(hv_device), C_LOC(hv_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(hv_device), C_LOC(hv_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(ht_device), C_LOC(ht_device))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(ht_device), C_LOC(ht_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(ssha_v_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(ssha_v_device), &
                          C_LOC(ssha_v_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(sshn_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(sshn_device), &
 		         C_LOC(sshn_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(sshn_u_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(sshn_u_device), &
                          C_LOC(sshn_u_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(sshn_v_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(sshn_v_device), &
 		         C_LOC(sshn_v_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(tmask_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(tmask_device), &
 		         C_LOC(tmask_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e1v_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e1v_device), &
 		         C_LOC(e1v_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e1t_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e1t_device), &
 		         C_LOC(e1t_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e2u_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e2u_device), &
 		         C_LOC(e2u_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e2v_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e2v_device), &
 		         C_LOC(e2v_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1    
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e2t_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e2t_device), &
 		         C_LOC(e2t_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1    
-    ret = clSetKernelArg(kern, arg_idx, sizeof(e12v_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(e12v_device), &
 		         C_LOC(e12v_device))
     call check_status("clSetKernelArg", ret)
     arg_idx = arg_idx + 1    
-    ret = clSetKernelArg(kern, arg_idx, sizeof(gphiv_device), &
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(gphiv_device), &
 		         C_LOC(gphiv_device))
     call check_status("clSetKernelArg", ret);
     arg_idx = arg_idx + 1    
-    ret = clSetKernelArg(kern, arg_idx, sizeof(rdt), C_LOC(rdt))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(rdt), C_LOC(rdt))
     call check_status("clSetKernelArg", ret);
     arg_idx = arg_idx + 1    
-    ret = clSetKernelArg(kern, arg_idx, sizeof(cbfr), C_LOC(cbfr))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(cbfr), C_LOC(cbfr))
     call check_status("clSetKernelArg", ret);
     arg_idx = arg_idx + 1
-    ret = clSetKernelArg(kern, arg_idx, sizeof(visc), C_LOC(visc))
+    ret = clSetKernelArg(kern, arg_idx, c_sizeof(visc), C_LOC(visc))
     call check_status("clSetKernelArg", ret);
     arg_idx = arg_idx + 1
 
@@ -319,22 +319,22 @@ contains
 
     ! set the kernel arguments
     arg_idx = 0
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(nx), C_LOC(nx))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
     ! This argument is actually the current time step so we will
     ! set it (again) during the time-stepping loop.
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(nx), C_LOC(nx))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
     
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(ssha), C_LOC(ssha))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(ssha), C_LOC(ssha))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(tmask), C_LOC(tmask))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(rdt), C_LOC(rdt))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(rdt), C_LOC(rdt))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
 
@@ -351,13 +351,13 @@ contains
 
     ! set the kernel arguments
     arg_idx = 0
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(nx), C_LOC(nx))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(ua), C_LOC(ua))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(ua), C_LOC(ua))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(tmask), C_LOC(tmask))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
 
@@ -374,13 +374,13 @@ contains
 
     ! set the kernel arguments
     arg_idx = 0
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(nx), C_LOC(nx))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(va), C_LOC(va))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(va), C_LOC(va))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(tmask), C_LOC(tmask))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
 
@@ -396,19 +396,19 @@ contains
 
     ! set the kernel arguments
     arg_idx = 0
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(nx), C_LOC(nx))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(ua), C_LOC(ua))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(ua), C_LOC(ua))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(hu), C_LOC(hu))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(hu), C_LOC(hu))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn_u), C_LOC(sshn_u))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(sshn_u), C_LOC(sshn_u))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(tmask), C_LOC(tmask))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
 
@@ -424,19 +424,19 @@ contains
 
     ! set the kernel arguments
     arg_idx = 0
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(nx), C_LOC(nx))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(va), C_LOC(va))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(va), C_LOC(va))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(hv), C_LOC(hv))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(hv), C_LOC(hv))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn_v), C_LOC(sshn_v))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(sshn_v), C_LOC(sshn_v))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(tmask), C_LOC(tmask))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
 
@@ -453,22 +453,22 @@ contains
 
     ! set the kernel arguments
     arg_idx = 0
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(nx), C_LOC(nx))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn_u), C_LOC(sshn_u))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(sshn_u), C_LOC(sshn_u))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn), C_LOC(sshn))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(sshn), C_LOC(sshn))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(tmask), C_LOC(tmask))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(e12t), C_LOC(e12t))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(e12t), C_LOC(e12t))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(e12u), C_LOC(e12u))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(e12u), C_LOC(e12u))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
 
@@ -484,22 +484,22 @@ contains
 
     ! set the kernel arguments
     arg_idx = 0
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(nx), C_LOC(nx))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(nx), C_LOC(nx))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1    
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn_v), C_LOC(sshn_v))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(sshn_v), C_LOC(sshn_v))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(sshn), C_LOC(sshn))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(sshn), C_LOC(sshn))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(tmask), C_LOC(tmask))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(tmask), C_LOC(tmask))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(e12t), C_LOC(e12t))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(e12t), C_LOC(e12t))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
-    ierr = clSetKernelArg(kern, arg_idx, sizeof(e12v), C_LOC(e12v))
+    ierr = clSetKernelArg(kern, arg_idx, c_sizeof(e12v), C_LOC(e12v))
     call check_status("clSetKernelArg", ierr)
     arg_idx = arg_idx + 1
 
