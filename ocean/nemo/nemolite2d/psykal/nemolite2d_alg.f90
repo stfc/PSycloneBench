@@ -129,7 +129,7 @@ subroutine step(istp,           &
   use boundary_conditions_mod, only: bc_ssh, bc_solid_u, bc_solid_v, &
                                      bc_flather_u, bc_flather_v
   use time_update_mod,    only: next_sshu, next_sshv
-  use infrastructure_mod, only: copy
+  !use infrastructure_mod, only: copy
   implicit none
   !> The current time step
   integer,         intent(inout) :: istp
@@ -149,9 +149,10 @@ subroutine step(istp,           &
               bc_solid_v(va),                                &
               bc_flather_u(ua, hu, sshn_u),                  &
               bc_flather_v(va, hv, sshn_v),                  &
-              copy(un, ua),                                  &
-              copy(vn, va),                                  &
-              copy(sshn_t, ssha_t),                          &
+              ! TODO implement copy as a built-in
+              !copy(un, ua),                                  &
+              !copy(vn, va),                                  &
+              !copy(sshn_t, ssha_t),                          &
               next_sshu(sshn_u, sshn_t),                     &
               next_sshv(sshn_v, sshn_t)                      &
              )
