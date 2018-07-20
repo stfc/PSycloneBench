@@ -83,7 +83,7 @@ nemolite2d_gen_acc: timer_lib inf_lib ${KERNELS} psy_acc.o
 nemolite2d_gen_ocl: timer_lib inf_lib psy_ocl.o
 	${MAKE} MODULE_LIST="psy_ocl.o  nemolite2d_gen.o ${COMMON_MODULES} ${OCL_LIB}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
-             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_ocl.exe
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS} ${OPENCL_LIBS}" nemolite2d_gen_ocl.exe
 
 # The OpenCL PSy layer needs the FortCL modules
 psy_ocl.o: psy_ocl.f90
