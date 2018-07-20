@@ -95,6 +95,7 @@ contains
   subroutine model_write(grid, istp, ht, sshn, un, vn)
     use kind_params_mod
     use grid_mod
+    use gocean_mod, only: gocean_stop
     implicit none
     type(grid_type), intent(in) :: grid
     integer, intent(in) :: istp
@@ -107,11 +108,21 @@ contains
     if( l_out .and. (mod(istp, mprint) .eq. 0) ) then
 
        ! Ensure we have up-to-date field values 
-       call update_local(ht)
-       call update_local(sshn)
-       call update_local(un)
-       call update_local(vn)
-
+       if(ht%data_on_device)then
+          ! \todo handle OpenACC/OpenCL case where data on host is
+          ! out of date.
+          call gocean_stop('model_write: implement copy-back from remote device!')
+       end if
+       if(sshn%data_on_device)then
+          call gocean_stop('model_write: implement copy-back from remote device!')
+       end if
+       if(un%data_on_device)then
+          call gocean_stop('model_write: implement copy-back from remote device!')
+       end if
+       if(vn%data_on_device)then
+          call gocean_stop('model_write: implement copy-back from remote device!')
+       end if
+       
        ! output model results
        write(fname, '(I5.5)') istp
        open(21, file='go2d_'//fname//'.dat', STATUS='UNKNOWN', &
