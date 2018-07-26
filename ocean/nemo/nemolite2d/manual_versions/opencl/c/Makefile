@@ -27,7 +27,7 @@ ALL_KERNEL_MODULES = continuity_kern.o momentum_u_kern.o momentum_v_kern.o \
 # because the kernel source files also include CPU code
 AOC_FLAGS = -v -board=p385a_sch_ax115 -D__OPENCL_VERSION__=100
 #AOC_FLAGS += -c
-AOC_FLAGS += -march=emulator
+#AOC_FLAGS += -march=emulator
 #-emulator-channel-depth-model=strict
 
 # Normal targets
@@ -42,9 +42,9 @@ cont_kern: continuity_kern.cl
 	aoc ${AOC_FLAGS} continuity_kern.cl
 
 # Two-kernel version
-twokern:
+twokern: twokern.o
 	${MAKE} KERNEL_MODULES="continuity_kern.o momentum_u_kern.o" fpga
-	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="twokern.o ${COMMON_MODULES}" KERNEL_MODULES="continuity_kern.o momentum_u_kern.o" twokern.exe
+	${MAKE} CFLAGS="${CFLAGS}" MODULE_LIST="${COMMON_MODULES} twokern.o" KERNEL_MODULES="continuity_kern.o momentum_u_kern.o" twokern.exe
 
 # Two-kernel version with streaming using FIFO buffers
 twokernchannels:
