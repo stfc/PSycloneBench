@@ -1,11 +1,17 @@
+# Makefile for nemolite2d using PSyclone to generate the
+# PSy layer.
+#
 # This Makefile expects the following env. vars to be set:
 #
 # F90       - How to invoke the Fortran compiler
 # F90FLAGS  - Flags to pass to the Fortran compiler
 # OMPFLAGS  - Flags for compiling with OpenMP
 # AR        - Command to use when creating an archive (.a)
+#
+# 'psyclone' must also be on your PATH.
 
-# Location of the dl_timer and infrastucture code
+# Location of the dl_timer, infrastucture and OpenCL-wrapper code
+# (all submodules in the git repo).
 SHARED_DIR = ../../../../shared
 
 TIMER_DIR = ${SHARED_DIR}/dl_timer
@@ -14,7 +20,7 @@ TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
-OCL_DIR = ${SHARED_DIR}/dl_esm_inf/external/FortCL
+OCL_DIR = ${SHARED_DIR}/FortCL
 OCL_INC = ${OCL_DIR}/src
 OCL_LIB = ${OCL_DIR}/src/libFortCL.a
 COMMON_DIR = ../common
@@ -26,6 +32,9 @@ LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
 
 .PHONY: all inf_lib timer_lib
 
+# We don't include the OpenACC or OpenCL targets here as they
+# have specialist compiler requirements so we require the user
+# to explicitly request that they be built.
 all: nemolite2d_gen nemolite2d_gen_omp
 
 # The kernels used by this application and their location
@@ -80,15 +89,15 @@ nemolite2d_gen_acc: timer_lib inf_lib ${KERNELS} psy_acc.o
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_acc.exe
 
-nemolite2d_gen_ocl: timer_lib inf_lib psy_ocl.o
+nemolite2d_gen_ocl: timer_lib inf_lib ${KERNELS} psy_ocl.o
 	${MAKE} MODULE_LIST="psy_ocl.o  nemolite2d_gen.o ${COMMON_MODULES} ${OCL_LIB}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS} ${OPENCL_LIBS}" nemolite2d_gen_ocl.exe
 
 # The OpenCL PSy layer needs the FortCL modules
-psy_ocl.o: psy_ocl.f90
+psy_ocl.o: fcl_lib psy_ocl.f90
 	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${OCL_INC} -I${INF_INC} \
--I${TIMER_INC} -c $<
+-I${TIMER_INC} -c psy_ocl.f90
 
 # Generic rules
 
@@ -110,6 +119,9 @@ timer_lib:
 
 inf_lib:
 	${MAKE} -C ${INF_DIR}
+
+fcl_lib:
+	${MAKE} -C ${OCL_DIR}
 
 ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR}
