@@ -554,7 +554,7 @@ int main(){
     local_size[1] = 1;
     if (local_size[0] > nx) local_size[0] = nx;
     ret = clEnqueueNDRangeKernel(command_queue, momu_kernel, 2, 0,
-				 global_size, local_size, 0, NULL, &momu_evt);
+				 global_size, NULL, 0, NULL, &momu_evt);
     check_status("clEnqueueNDRangeKernel(Mom-u)", ret);
 
   }

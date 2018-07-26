@@ -14,7 +14,7 @@
 #define MAX_DEVICES 4
 
 #define MAX_SOURCE_SIZE (0x100000)
-#define VERBOSE 1
+#define VERBOSE 0
 
 /** Query the available OpenCL devices and choose one */
 void init_device(cl_device_id *device,
