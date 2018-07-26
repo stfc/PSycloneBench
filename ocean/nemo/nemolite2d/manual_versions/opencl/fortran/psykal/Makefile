@@ -21,7 +21,7 @@ INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
 # FortCL (provides OpenCL functionality in Fortran)
-FCL_DIR = ${SHARED_DIR}/dl_esm_inf/external/FortCL
+FCL_DIR = ${SHARED_DIR}/FortCL
 FCL_INC = ${FCL_DIR}/src
 
 # Shared NEMOLite2D routines
@@ -34,10 +34,13 @@ KERNEL_DIR = ../../../kernels/opencl
 COMMON_MODULES = kernel_args_mod.o psykalite_mod.o \
                  nemolite2d.o
 
+# This implementation is not complete because it was quicker to extend
+# PSyclone to generate the necessary OpenCL boiler-plate that it was to
+# write it by hand!
 all:
 	echo "Not building because I haven't finished all the boiler-plate"
 
-nemolite2d.exe: kernels ${COMMON_LIB} inf_lib timer_lib ${COMMON_MODULES}
+nemolite2d.exe: kernels ${COMMON_LIB} inf_lib timer_lib fcl_lib ${COMMON_MODULES}
 	${F90} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${COMMON_LIB} \
 ${INF_LIB} ${TIMER_LIB} $(LDFLAGS)
 
@@ -46,6 +49,9 @@ timer_lib:
 
 inf_lib:
 	${MAKE} -C ${INF_DIR}
+
+fcl_lib:
+	${MAKE} -C ${FCL_DIR}
 
 # We only need to compile clfortran in order to get the module interfaces.
 # We *do not* link it into the final executable otherwise it collides
@@ -69,3 +75,4 @@ allclean: clean
 	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${TIMER_DIR} allclean
 	${MAKE} -C ${COMMON_DIR} allclean
+	${MAKE} -C ${FCL_DIR} allclean
