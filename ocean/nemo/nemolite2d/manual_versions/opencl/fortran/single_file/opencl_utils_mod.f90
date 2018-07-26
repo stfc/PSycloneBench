@@ -62,7 +62,7 @@ contains
     device = device_ids(idevice)
 
     ierr=clGetDeviceInfo(device_ids(idevice), &
-                         CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(device_cu), &
+                         CL_DEVICE_MAX_COMPUTE_UNITS, c_sizeof(device_cu), &
                          C_LOC(device_cu), iret)
     call check_status('clGetDeviceInfo', ierr)
     ierr=clGetDeviceInfo(device_ids(idevice), &
@@ -71,9 +71,10 @@ contains
 
     allocate(device_name(iret), stat=iallocerr)
     if (iallocerr.ne.0) stop 'allocate'
-
+    ! Assumes that a character string of iret characters is iret bytes
+    ! in size.
     ierr=clGetDeviceInfo(device_ids(idevice), CL_DEVICE_NAME, &
-                         sizeof(device_name), C_LOC(device_name), iret)
+                         iret, C_LOC(device_name), iret)
     if (ierr.ne.CL_SUCCESS) stop 'clGetDeviceInfo'
 
     write (*,'(a,i2,a,i3,a)',advance='no') &
@@ -151,7 +152,7 @@ contains
     if (ierr.ne.CL_SUCCESS) then
        print *,'clBuildProgram',ierr
        ierr=clGetProgramBuildInfo(prog, device, CL_PROGRAM_BUILD_LOG, &
-            sizeof(retinfo), C_LOC(retinfo),iret)
+                                  c_sizeof(retinfo), C_LOC(retinfo),iret)
        if (ierr.ne.0) stop 'clGetProgramBuildInfo'
        print '(a)','build log start'
        print '(1024a)',retinfo(1:min(iret,1024))
