@@ -25,6 +25,10 @@ KERNELS = boundary_conditions_mod.o \
           momentum_mod.o \
           time_update_mod.o
 
+.PHONY: all nemolite2d nemolite2d-serial timer_lib inf_lib timer_lib_serial inf_lib_serial
+
+all: nemolite2d
+
 ${KERNELS}: ${COMMON_LIB}
 
 # The modules that are common to both targets
@@ -32,11 +36,7 @@ MODULES = ${KERNELS} time_step_mod.o
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
-COMMON_MODULES = $(MODULES) ${INF_LIB}
-
-.PHONY: nemolite2d nemolite2d-serial timer_lib inf_lib timer_lib_serial inf_lib_serial
-
-all: nemolite2d
+COMMON_MODULES = $(MODULES) ${COMMON_LIB} ${INF_LIB}
 
 timer_lib:
 	${MAKE} -C ${TIMER_DIR} F90=${F90} MPIF90=${F90} dm_lib
@@ -69,10 +69,14 @@ time_step_mod.o: ${COMMON_LIB} inf_lib
 # Generic rules
 
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB}  $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS}
+	$(F90) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS}
 
+# If I merge the following two rules (by using %.[fF]90) then that seems
+# to break the target below that should create links to the kernel
+# source files.
 %.o: %.f90
 	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+
 %.o: %.F90
 	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
 
