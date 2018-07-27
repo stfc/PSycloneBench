@@ -25,6 +25,8 @@ KERNELS = boundary_conditions_mod.o \
           momentum_mod.o \
           time_update_mod.o
 
+${KERNELS}: ${COMMON_LIB}
+
 # The modules that are common to both targets
 MODULES = ${KERNELS} time_step_mod.o
 
@@ -67,7 +69,7 @@ time_step_mod.o: ${COMMON_LIB} inf_lib
 # Generic rules
 
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS}
+	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB}  $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS}
 
 %.o: %.f90
 	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
