@@ -1,6 +1,7 @@
 # Top-level Makefile for PSycloneBench benchmarks.
-# Only supports those benchmarks that target the CPU (i.e. excluding
-# OpenACC, OpenCL and Maxeler.)
+# By default only builds those benchmarks that target the CPU (i.e. excluding
+# OpenACC, OpenCL and Maxeler.) Separate targets for the OpenACC versions
+# are provided.
 #
 # Picks-up the compiler and compiler flags from environment
 # variables. See e.g. compiler_setup/gnu.sh
