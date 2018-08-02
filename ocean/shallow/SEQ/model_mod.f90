@@ -7,8 +7,8 @@ MODULE model_mod
 
   integer :: itmax   !< number of timesteps
 
-  real(wp) :: dt  !< model timestep (seconds)
-  real(wp) :: tdt !< 2xdt apart from first step when is just dt
+  real(go_wp) :: dt  !< model timestep (seconds)
+  real(go_wp) :: tdt !< 2xdt apart from first step when is just dt
 
   ! solution arrays
   ! Fields are allocated with extents (M+1,N+1).
@@ -64,6 +64,9 @@ CONTAINS
 
   subroutine model_init(grid)
     use physical_params_mod, only: physical_params_init
+    use subdomain_mod, only: decomposition_type
+    use subdomain_mod, only: decompose
+    use parallel_mod, only: get_rank, set_proc_grid
     use time_smooth_mod, only: time_smooth_init
     use grid_mod, only: grid_type, grid_init
     implicit none
@@ -71,13 +74,15 @@ CONTAINS
 
     !> Grid spacings currently hard-wired, as in original
     !! version of code.
-    REAL(KIND=wp), PARAMETER :: dxloc=1.0D5, dyloc=1.0D5
+    REAL(KIND=go_wp), PARAMETER :: dxloc=1.0D5, dyloc=1.0D5
     !> Parameter for time smoothing
-    REAL(KIND=wp), PARAMETER :: alpha_loc = .001d0
+    REAL(KIND=go_wp), PARAMETER :: alpha_loc = .001d0
     !> Hardwired model time-step (seconds)
-    REAL(KIND=wp), PARAMETER :: dt_loc = 90.0d0
+    REAL(KIND=go_wp), PARAMETER :: dt_loc = 90.0d0
     !> Problem size, read from namelist
     integer :: m, n
+    !> The domain decomposition of the model
+    type(decomposition_type) :: decomp
 
     call timer_init()
 
@@ -85,12 +90,17 @@ CONTAINS
 
     call read_namelist(m,n,itmax)
 
+    ! Work out the decomposition of the global domain (uses the number
+    ! of MPI ranks by default)
+    decomp = decompose(m, n)
+    call set_proc_grid(decomp%nx, decomp%ny)
+
     ! Assume the namelist specifies the extent of the
     ! internal domain so allow for boundaries/halos used
     ! to implement periodic boundary conditions.
 
     ! Set up mesh parameters
-    CALL grid_init(grid, m, n, dxloc, dyloc)
+    CALL grid_init(grid, decomp, dxloc, dyloc)
 
     ! Set model time-step
     dt = dt_loc
