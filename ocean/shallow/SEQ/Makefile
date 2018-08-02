@@ -61,17 +61,18 @@ shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
 # Interdependencies between modules, alphabetical order
 
-apply_bcs_mod.o: ${INF_LIB}
-compute_cu_mod.o: ${INF_LIB}
-infrastructure_mod.o: ${INF_LIB}
+apply_bcs_mod.o: inf_lib
+compute_cu_mod.o: inf_lib
+infrastructure_mod.o: inf_lib
 initial_conditions_mod.o: physical_params_mod.o model_mod.o
-model_mod.o: ${INF_LIB} \
+model_mod.o: inf_lib \
              physical_params_mod.o \
              shallow_io_mod.o \
              time_smooth_mod.o
-physical_params_mod.o:  ${INF_LIB}
-time_smooth_mod.o: ${INF_LIB}
-time_step_mod.o: ${INF_LIB} \
+physical_params_mod.o:  inf_lib
+shallow_io_mod.o: inf_lib
+time_smooth_mod.o: inf_lib
+time_step_mod.o: inf_lib \
                  apply_bcs_mod.o \
                  compute_cu_mod.o \
                  compute_cv_mod.o \
