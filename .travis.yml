@@ -33,8 +33,10 @@
 # -----------------------------------------------------------------------------
 
 language: c
+sudo: required
+before_install:
+  - sudo apt-get install gfortran
 
-apt:
-  packages:
-    gfortran
+script:
+  - make
 
