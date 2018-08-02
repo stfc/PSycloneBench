@@ -64,7 +64,7 @@ CONTAINS
 
   subroutine model_init(grid)
     use physical_params_mod, only: physical_params_init
-    use subdomain_mod, only: decomposition_type
+    use decomposition_mod, only: decomposition_type
     use subdomain_mod, only: decompose
     use parallel_mod, only: get_rank, set_proc_grid
     use time_smooth_mod, only: time_smooth_init
