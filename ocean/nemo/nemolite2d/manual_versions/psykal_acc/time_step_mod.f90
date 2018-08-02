@@ -25,8 +25,8 @@ contains
                      
     call invoke_time_step_arrays(istp,                                  &
                                  ua%grid%nx, ua%grid%ny,                &
-                                 ua%grid%simulation_domain%xstop,       &
-                                 ua%grid%simulation_domain%ystop,       &
+                                 ua%grid%subdomain%internal%xstop,      &
+                                 ua%grid%subdomain%internal%ystop,      &
                                  ua%grid%area_t,                        &
                                  ua%grid%area_u,                        &
                                  ua%grid%area_v,                        &
@@ -84,31 +84,31 @@ contains
     integer,         intent(in) :: nx, ny
     !> The loop bounds for the simulated domain
     integer,         intent(in) :: M, N
-    real(wp), dimension(nx,ny), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
-    real(wp), dimension(nx,ny), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
-    real(wp), dimension(nx,ny), intent(in)    :: hu, hv, ht
-    real(wp), dimension(nx,ny), intent(in)    :: area_t, area_u, area_v
-    real(wp), dimension(nx,ny), intent(in)    :: dx_t, dx_u, dx_v
-    real(wp), dimension(nx,ny), intent(in)    :: dy_t, dy_u, dy_v
-    real(wp), dimension(nx,ny), intent(in)    :: gphiu, gphiv
+    real(go_wp), dimension(nx,ny), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
+    real(go_wp), dimension(nx,ny), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
+    real(go_wp), dimension(nx,ny), intent(in)    :: hu, hv, ht
+    real(go_wp), dimension(nx,ny), intent(in)    :: area_t, area_u, area_v
+    real(go_wp), dimension(nx,ny), intent(in)    :: dx_t, dx_u, dx_v
+    real(go_wp), dimension(nx,ny), intent(in)    :: dy_t, dy_u, dy_v
+    real(go_wp), dimension(nx,ny), intent(in)    :: gphiu, gphiv
     integer,  dimension(nx,ny), intent(in)    :: tmask
     type(grid_type), intent(in) :: grid
     ! Locals
     integer :: it, ji, jj, jiu, jiv
     integer :: idxt
     ! Locals for momentum
-    REAL(wp) :: u_e, u_w, v_n, v_s
-    real(wp) :: v_nc, v_sc
-    real(wp) :: depe, depw, deps, depn
-    real(wp) :: hpg, adv, cor, vis
-    real(wp) :: dudx_e, dudx_w, dudy_s, dudy_n
-    real(wp) :: uu_e, uu_n, uu_s, uu_w
-    real(wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
-    real(wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
-    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    REAL(go_wp) :: u_e, u_w, v_n, v_s
+    real(go_wp) :: v_nc, v_sc
+    real(go_wp) :: depe, depw, deps, depn
+    real(go_wp) :: hpg, adv, cor, vis
+    real(go_wp) :: dudx_e, dudx_w, dudy_s, dudy_n
+    real(go_wp) :: uu_e, uu_n, uu_s, uu_w
+    real(go_wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
+    real(go_wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
+    real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     ! end locals for momentum
     ! Locals for BCs
-    real(wp) :: amp_tide, omega_tide, rtime
+    real(go_wp) :: amp_tide, omega_tide, rtime
 
     integer, dimension(:,:), pointer :: tmaskptr
 
@@ -183,34 +183,34 @@ contains
     u_w  = 0.5 * (un(ji,jj) + un(ji-1,jj)) * dy_t(ji,jj)     !add length scale
     depw = ht(ji,jj) + sshn_t(ji,jj)
 
-    v_sc = 0.5_wp * (vn(ji,jj-1) + vn(ji+1,jj-1))
-    v_s  = 0.5_wp * v_sc * (dx_v(ji,jj-1) + dx_v(ji+1,jj-1))
-    deps = 0.5_wp * (hv(ji,jj-1) + sshn_v(ji,jj-1) + hv(ji+1,jj-1) + &
+    v_sc = 0.5_go_wp * (vn(ji,jj-1) + vn(ji+1,jj-1))
+    v_s  = 0.5_go_wp * v_sc * (dx_v(ji,jj-1) + dx_v(ji+1,jj-1))
+    deps = 0.5_go_wp * (hv(ji,jj-1) + sshn_v(ji,jj-1) + hv(ji+1,jj-1) + &
                      sshn_v(ji+1,jj-1))
 
-    v_nc = 0.5_wp * (vn(ji,jj) + vn(ji+1,jj))
-    v_n  = 0.5_wp * v_nc * (dx_v(ji,jj) + dx_v(ji+1,jj))
-    depn = 0.5_wp * (hv(ji,jj) + sshn_v(ji,jj) + hv(ji+1,jj) + &
+    v_nc = 0.5_go_wp * (vn(ji,jj) + vn(ji+1,jj))
+    v_n  = 0.5_go_wp * v_nc * (dx_v(ji,jj) + dx_v(ji+1,jj))
+    depn = 0.5_go_wp * (hv(ji,jj) + sshn_v(ji,jj) + hv(ji+1,jj) + &
                      sshn_v(ji+1,jj))
 
     ! -advection (currently first order upwind)
-    uu_w = (0.5_wp - SIGN(0.5_wp, u_w)) * un(ji,jj)              + & 
-         & (0.5_wp + SIGN(0.5_wp, u_w)) * un(ji-1,jj) 
-    uu_e = (0.5_wp + SIGN(0.5_wp, u_e)) * un(ji,jj)              + & 
-         & (0.5_wp - SIGN(0.5_wp, u_e)) * un(ji+1,jj) 
+    uu_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * un(ji,jj)              + & 
+         & (0.5_go_wp + SIGN(0.5_go_wp, u_w)) * un(ji-1,jj) 
+    uu_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * un(ji,jj)              + & 
+         & (0.5_go_wp - SIGN(0.5_go_wp, u_e)) * un(ji+1,jj) 
 
     IF(tmask(ji,jj-1) <=0 .OR. tmask(ji+1,jj-1) <= 0) THEN   
-       uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji,jj)   
+       uu_s = (0.5_go_wp - SIGN(0.5_go_wp, v_s)) * un(ji,jj)   
     ELSE
-       uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un(ji,jj)              + & 
-            & (0.5_wp + SIGN(0.5_wp, v_s)) * un(ji,jj-1) 
+       uu_s = (0.5_go_wp - SIGN(0.5_go_wp, v_s)) * un(ji,jj)              + & 
+            & (0.5_go_wp + SIGN(0.5_go_wp, v_s)) * un(ji,jj-1) 
     END If
 
     IF(tmask(ji,jj+1) <=0 .OR. tmask(ji+1,jj+1) <= 0) THEN   
-       uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un(ji,jj)
+       uu_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * un(ji,jj)
     ELSE
-       uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un(ji,jj)              + & 
-            & (0.5_wp - SIGN(0.5_wp, v_n)) * un(ji,jj+1)
+       uu_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * un(ji,jj)              + & 
+            & (0.5_go_wp - SIGN(0.5_go_wp, v_n)) * un(ji,jj+1)
     END IF
 
     adv = uu_w * u_w * depw - uu_e * u_e * depe + &
@@ -225,28 +225,28 @@ contains
     dudx_w = (un(ji,  jj) - un(ji-1,jj)) / dx_t(ji,  jj) * &
              (ht(ji,  jj) + sshn_t(ji,  jj))
     IF(tmask(ji,jj-1) <=0 .OR. tmask(ji+1,jj-1) <= 0) THEN   
-       dudy_s = 0.0_wp !slip boundary
+       dudy_s = 0.0_go_wp !slip boundary
     ELSE
        dudy_s = (un(ji,jj) - un(ji,jj-1)) / (dy_u(ji,jj) + dy_u(ji,jj-1)) * &
             & (hu(ji,jj) + sshn_u(ji,jj) + hu(ji,jj-1) + sshn_u(ji,jj-1))
     END IF
 
     IF(tmask(ji,jj+1) <= 0 .OR. tmask(ji+1,jj+1) <= 0) THEN   
-       dudy_n = 0.0_wp ! slip boundary
+       dudy_n = 0.0_go_wp ! slip boundary
     ELSE
        dudy_n = (un(ji,jj+1) - un(ji,jj)) / (dy_u(ji,jj) + dy_u(ji,jj+1)) * &
             & (hu(ji,jj) + sshn_u(ji,jj) + hu(ji,jj+1) + sshn_u(ji,jj+1))
     END If
 
     vis = (dudx_e - dudx_w ) * dy_u(ji,jj)  + &
-         & (dudy_n - dudy_s ) * dx_u(ji,jj) * 0.5_wp  
+         & (dudy_n - dudy_s ) * dx_u(ji,jj) * 0.5_go_wp  
     vis = visc * vis   !visc will be an array visc(1:jpijglou) 
     !for variable viscosity, such as turbulent viscosity
     !End  kernel u vis 
 
     ! -Coriolis' force (can be implemented implicitly)
     !kernel cor 
-    cor = 0.5_wp * (2._wp * omega * SIN(gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * &
+    cor = 0.5_go_wp * (2._go_wp * omega * SIN(gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * &
          & area_u(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj))
     !end kernel cor 
 
@@ -259,7 +259,7 @@ contains
     !kernel ua calculation 
     ua(ji,jj) = (un(ji,jj) * (hu(ji,jj) + sshn_u(ji,jj)) + rdt * &
                  (adv + vis + cor + hpg) / area_u(ji,jj)) / &
-                (hu(ji,jj) + ssha_u(ji,jj)) / (1.0_wp + cbfr * rdt) 
+                (hu(ji,jj) + ssha_u(ji,jj)) / (1.0_go_wp + cbfr * rdt) 
 
       end do
     end do
@@ -296,34 +296,34 @@ contains
     v_s  = 0.5 * (vn(ji,jj) + vn(ji,jj-1)) * dx_t(ji,jj)    !add length scale
     deps = ht(ji,jj) + sshn_t(ji,jj)
 
-    u_wc = 0.5_wp * (un(ji-1,jj) + un(ji-1,jj+1))
-    u_w  = 0.5_wp * u_wc * (dy_u(ji-1,jj) + dy_u(ji-1,jj+1))
-    depw = 0.50_wp * (hu(ji-1,jj) + sshn_u(ji-1,jj) + &
+    u_wc = 0.5_go_wp * (un(ji-1,jj) + un(ji-1,jj+1))
+    u_w  = 0.5_go_wp * u_wc * (dy_u(ji-1,jj) + dy_u(ji-1,jj+1))
+    depw = 0.50_go_wp * (hu(ji-1,jj) + sshn_u(ji-1,jj) + &
                       hu(ji-1,jj+1) + sshn_u(ji-1,jj+1))
 
-    u_ec = 0.5_wp * (un(ji,jj) + un(ji,jj+1))
-    u_e  = 0.5_wp * u_ec * (dy_u(ji,jj) + dy_u(ji,jj+1))
-    depe = 0.50_wp * (hu(ji,jj) + sshn_u(ji,jj) + &
+    u_ec = 0.5_go_wp * (un(ji,jj) + un(ji,jj+1))
+    u_e  = 0.5_go_wp * u_ec * (dy_u(ji,jj) + dy_u(ji,jj+1))
+    depe = 0.50_go_wp * (hu(ji,jj) + sshn_u(ji,jj) + &
                       hu(ji,jj+1) + sshn_u(ji,jj+1))
 
     ! -advection (currently first order upwind)
-    vv_s = (0.5_wp - SIGN(0.5_wp, v_s)) * vn(ji,jj)     + & 
-         & (0.5_wp + SIGN(0.5_wp, v_s)) * vn(ji,jj-1) 
-    vv_n = (0.5_wp + SIGN(0.5_wp, v_n)) * vn(ji,jj)     + & 
-         & (0.5_wp - SIGN(0.5_wp, v_n)) * vn(ji,jj+1) 
+    vv_s = (0.5_go_wp - SIGN(0.5_go_wp, v_s)) * vn(ji,jj)     + & 
+         & (0.5_go_wp + SIGN(0.5_go_wp, v_s)) * vn(ji,jj-1) 
+    vv_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * vn(ji,jj)     + & 
+         & (0.5_go_wp - SIGN(0.5_go_wp, v_n)) * vn(ji,jj+1) 
 
     IF(tmask(ji-1,jj) <= 0 .OR. tmask(ji-1,jj+1) <= 0) THEN   
-       vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn(ji,jj)  
+       vv_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * vn(ji,jj)  
     ELSE
-       vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn(ji,jj)    + & 
-            & (0.5_wp + SIGN(0.5_wp, u_w)) * vn(ji-1,jj) 
+       vv_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * vn(ji,jj)    + & 
+            & (0.5_go_wp + SIGN(0.5_go_wp, u_w)) * vn(ji-1,jj) 
     END If
 
     IF(tmask(ji+1,jj) <= 0 .OR. tmask(ji+1,jj+1) <= 0) THEN
-       vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn(ji,jj)
+       vv_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * vn(ji,jj)
     ELSE
-       vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn(ji,jj)  + & 
-              (0.5_wp - SIGN(0.5_wp, u_e)) * vn(ji+1,jj)
+       vv_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * vn(ji,jj)  + & 
+              (0.5_go_wp - SIGN(0.5_go_wp, u_e)) * vn(ji+1,jj)
     END IF
 
     adv = vv_w * u_w * depw - vv_e * u_e * depe + &
@@ -341,7 +341,7 @@ contains
                           (ht(ji,  jj) + sshn_t(ji,  jj))
 
     IF(tmask(ji-1,jj) <= 0 .OR. tmask(ji-1,jj+1) <= 0) THEN
-       dvdx_w = 0.0_wp !slip boundary
+       dvdx_w = 0.0_go_wp !slip boundary
     ELSE
        dvdx_w = (vn(ji,jj) - vn(ji-1,jj)) / &
                 (dx_v(ji,jj) + dx_v(ji-1,jj)) * &
@@ -349,14 +349,14 @@ contains
     END IF
 
     IF(tmask(ji+1,jj) <= 0 .OR. tmask(ji+1,jj+1) <= 0) THEN
-       dvdx_e = 0.0_wp ! slip boundary
+       dvdx_e = 0.0_go_wp ! slip boundary
     ELSE
        dvdx_e = (vn(ji+1,jj) - vn(ji,jj)) / (dx_v(ji,jj) + dx_v(ji+1,jj)) * &
                   (hv(ji,jj) + sshn_v(ji,jj) + hv(ji+1,jj) + sshn_v(ji+1,jj))
     END If
 
     vis = (dvdy_n - dvdy_s ) * dx_v(ji,jj)  + &
-          (dvdx_e - dvdx_w ) * dy_v(ji,jj) * 0.5_wp  
+          (dvdx_e - dvdx_w ) * dy_v(ji,jj) * 0.5_go_wp  
 
     vis = visc * vis   !visc will be a array visc(1:jpijglou) 
     !for variable viscosity, such as turbulent viscosity
@@ -364,7 +364,7 @@ contains
 
     ! -Coriolis' force (can be implemented implicitly)
     !kernel v cor 
-    cor = -0.5_wp*(2._wp * omega * SIN(gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * &
+    cor = -0.5_go_wp*(2._go_wp * omega * SIN(gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * &
                area_v(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj))
     !end kernel v cor 
 
@@ -378,7 +378,7 @@ contains
     !kernel ua calculation 
     va(ji,jj) = (vn(ji,jj) * (hv(ji,jj) + sshn_v(ji,jj)) + &
                  rdt * (adv + vis + cor + hpg) / area_v(ji,jj) ) / &
-                 ((hv(ji,jj) + ssha_v(ji,jj))) / (1.0_wp + cbfr * rdt) 
+                 ((hv(ji,jj) + ssha_v(ji,jj))) / (1.0_go_wp + cbfr * rdt) 
 
       end do
     end do
@@ -401,9 +401,9 @@ contains
 !          call bc_ssh_code(ji, jj, &
 !                           istp, ssha, sshn_t%grid%tmask)
 
-          amp_tide   = 0.2_wp
-          omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
-          rtime = real(istp, wp) * rdt
+          amp_tide   = 0.2_go_wp
+          omega_tide = 2.0_go_wp * 3.14159_go_wp / (12.42_go_wp * 3600._go_wp)
+          rtime = real(istp, go_wp) * rdt
 
           if(tmask(ji,jj) <= 0) cycle
 
@@ -433,7 +433,7 @@ contains
 !> \todo It's more compiler-friendly to separately compare these two
 !! integer masks with zero but that's a kernel-level optimisation.
 !          if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
-!             ua(ji,jj) = 0._wp
+!             ua(ji,jj) = 0._go_wp
 !          end if
 
        end do
@@ -449,7 +449,7 @@ contains
 !          call bc_solid_v_code(ji,jj, &
 !                               va, ua%grid%tmask)
     if(tmask(ji,jj) * tmask(ji,jj+1) == 0)then
-       va(ji,jj) = 0._wp
+       va(ji,jj) = 0._go_wp
     end if
 
       end do
@@ -554,7 +554,7 @@ contains
          IF(tmask(ji,jj) * tmask(ji+1,jj) > 0) THEN
             rtmp1 = area_t(ji,jj) * sshn_t(ji,jj) + &
                  area_t(ji+1,jj) * sshn_t(ji+1,jj)
-            sshn_u(ji,jj) = 0.5_wp * rtmp1 / area_u(ji,jj) 
+            sshn_u(ji,jj) = 0.5_go_wp * rtmp1 / area_u(ji,jj) 
          ELSE IF(tmask(ji,jj) <= 0) THEN
             sshn_u(ji,jj) = sshn_t(ji+1,jj)
          ELSE IF(tmask(ji+1,jj) <= 0) THEN
@@ -580,7 +580,7 @@ contains
          if(tmask(ji,jj) * tmask(ji,jj+1) > 0) then
             rtmp1 = area_t(ji,jj)*sshn_t(ji,jj) + &
                  area_t(ji,jj+1) * sshn_t(ji,jj+1)
-            sshn_v(ji,jj) = 0.5_wp * rtmp1 / area_v(ji,jj) 
+            sshn_v(ji,jj) = 0.5_go_wp * rtmp1 / area_v(ji,jj) 
          else if(tmask(ji,jj) <= 0) then
             sshn_v(ji,jj) = sshn_t(ji,jj+1)
          else if(tmask(ji,jj+1) <= 0) then
@@ -605,13 +605,13 @@ contains
     implicit none
 !$acc routine seq
     integer,                  intent(in)  :: ji, jj
-    real(wp),                 intent(in)  :: rdt
-    real(wp), dimension(:,:), intent(in)  :: e12t
-    real(wp), dimension(:,:), intent(out) :: ssha
-    real(wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, &
+    real(go_wp),                 intent(in)  :: rdt
+    real(go_wp), dimension(:,:), intent(in)  :: e12t
+    real(go_wp), dimension(:,:), intent(out) :: ssha
+    real(go_wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, &
                                              hu, hv, un, vn
     ! Locals
-    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
 
     rtmp1 = (sshn_u(ji  ,jj  ) + hu(ji  ,jj  )) * un(ji  ,jj  )
     rtmp2 = (sshn_u(ji-1,jj  ) + hu(ji-1,jj  )) * un(ji-1,jj  )
@@ -628,10 +628,10 @@ contains
 !$acc routine seq
     integer,                  intent(in)    :: ji, jj
     integer,  dimension(:,:), intent(in)    :: tmask
-    real(wp), dimension(:,:), intent(inout) :: ua
+    real(go_wp), dimension(:,:), intent(inout) :: ua
 
     if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
-       ua(ji,jj) = 0._wp
+       ua(ji,jj) = 0._go_wp
     end if
 
   end subroutine bc_solid_u_code
