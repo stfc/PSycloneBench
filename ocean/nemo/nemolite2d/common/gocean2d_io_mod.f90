@@ -104,24 +104,15 @@ contains
     integer :: ji, jj
     real(wp) :: rtmp1, rtmp2
     character(len=5) :: fname
-    
+    real(wp), dimension(:,:), pointer :: htptr, sshnptr, unptr, vnptr
+
     if( l_out .and. (mod(istp, mprint) .eq. 0) ) then
 
-       ! Ensure we have up-to-date field values 
-       if(ht%data_on_device)then
-          ! \todo handle OpenACC/OpenCL case where data on host is
-          ! out of date.
-          call gocean_stop('model_write: implement copy-back from remote device!')
-       end if
-       if(sshn%data_on_device)then
-          call gocean_stop('model_write: implement copy-back from remote device!')
-       end if
-       if(un%data_on_device)then
-          call gocean_stop('model_write: implement copy-back from remote device!')
-       end if
-       if(vn%data_on_device)then
-          call gocean_stop('model_write: implement copy-back from remote device!')
-       end if
+       ! Ensure we have up-to-date field values
+       htptr => ht%get_data()
+       sshnptr => sshn%get_data()
+       unptr => un%get_data()
+       vnptr => vn%get_data()
        
        ! output model results
        write(fname, '(I5.5)') istp
@@ -136,14 +127,14 @@ contains
        DO jj = sshn%internal%ystart, sshn%internal%ystop, 1
           DO ji = sshn%internal%xstart, sshn%internal%xstop, 1
 
-             rtmp1 = 0.5_wp * (un%data(ji-1,jj) + un%data(ji,jj))
-             rtmp2 = 0.5_wp * (vn%data(ji,jj-1) + vn%data(ji,jj))
+             rtmp1 = 0.5_wp * (unptr(ji-1,jj) + unptr(ji,jj))
+             rtmp2 = 0.5_wp * (vnptr(ji,jj-1) + vnptr(ji,jj))
 
              ! write "x-coord, y-coord, depth, ssh, u-velocity,
              ! v-velocity" to ASCII files
 
               write(21,'(6e16.7)') grid%xt(ji,jj), grid%yt(ji,jj), &
-                                   ht%data(ji,jj), sshn%data(ji,jj), &
+                                   htptr(ji,jj), sshnptr(ji,jj), &
                                    rtmp1, rtmp2 
           END DO
           WRITE(21,*)

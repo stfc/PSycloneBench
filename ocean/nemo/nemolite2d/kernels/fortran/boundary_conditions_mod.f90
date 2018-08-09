@@ -161,11 +161,14 @@ contains
     type(r2d_field),    intent(inout) :: ssha
     ! Locals
     integer  :: ji, jj
-
+    real(wp), dimension(:,:), pointer :: ssha_ptr
+    
+    ssha_ptr => ssha%get_data()
+    
     DO jj = ssha%internal%ystart, ssha%internal%ystop
        DO ji = ssha%internal%xstart, ssha%internal%xstop
           call bc_ssh_code(ji, jj, &
-                           istep, ssha%data, ssha%grid%tmask)
+                           istep, ssha_ptr, ssha%grid%tmask)
        END DO
     END DO
 
