@@ -119,11 +119,9 @@ timer_lib:
 inf_lib:
 	${MAKE} -C ${INF_DIR}
 
+# OpenCL-enabled infrastructure library
 inf_lib_cl:
 	${MAKE} -C ${INF_DIR} fd_lib_cl
-
-fcl_lib:
-	${MAKE} -C ${OCL_DIR}
 
 ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR}
