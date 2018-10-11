@@ -5,7 +5,8 @@
 # OMPFLAGS  - Flags for compiling with OpenMP
 # AR        - Command to use when creating an archive (.a)
 
-.PHONY: inf_lib timer_lib nemolite2d nemolite2d_gen nemolite2d_gen_omp
+.PHONY: inf_lib timer_lib nemolite2d nemolite2d_gen nemolite2d_gen_omp \
+nemolite2d_gen_acc
 
 # Location of the dl_timer and infrastucture code
 SHARED_DIR = ../../../../shared
@@ -24,17 +25,24 @@ LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
 # The targets that this Makefile supports
 EXECS = nemolite2d nemolite2d_gen nemolite2d_gen_omp
 
-# The kernels used by this application and their location
+# The kernels used by this application and their location. We use
+# wildcards so as to pick-up any transformed kernels produced
+# by PSyclone.
 KERNEL_DIR = ../kernels/fortran
-KERNELS = boundary_conditions_mod.o \
-          continuity_mod.o \
-          momentum_mod.o \
-          time_update_mod.o \
-          infrastructure_mod.o
+#KERNELS = boundary_conditions_mod.o \
+#          continuity_mod.o \
+#          momentum_mod.o \
+#          time_update_mod.o \
+#          infrastructure_mod.o
+KERNELS = boundary_conditions_*.f90 \
+          continuity_*.f90 \
+          momentum_*.f90 \
+          time_update_*.f90 \
+          infrastructure_*.f90
 
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
-COMMON_MODULES = $(KERNELS) ${COMMON_LIB} ${INF_LIB}
+COMMON_MODULES = $(KERNELS:.f90=.o) ${COMMON_LIB} ${INF_LIB}
 
 # Shorthand for invoking PSyclone
 PSYCLONE = psyclone -l -api gocean1.0 -d ${KERNEL_DIR}
@@ -123,10 +131,21 @@ nemolite2d_gen_omp: ${KERNELS}
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_omp.exe
 
-nemolite2d_gen_acc: ${COMMON_LIB} ${KERNELS}
+nemolite2d_gen_acc: ${COMMON_LIB} psy_acc.f90
+        # Ensure we get the original kernel files
+	ln -sf	${KERNEL_DIR}/*.f90 .
+        # Build all kernels (generated and original)
+	${MAKE} kernels
+        # Build the generated PSy layer
+	${MAKE} psy_acc.o
 	${MAKE} MODULE_LIST="psy_acc.o nemolite2d_gen.o ${COMMON_MODULES}" \
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_acc.exe
+
+kernels:
+	# Expand the wildcard expression in $KERNELS so as to pick-up any
+        # generated kernels. Then replace the .f90 with .o and build...
+	${MAKE} $(patsubst %.f90,%.o,$(wildcard ${KERNELS}))
 
 # Generic rules
 
@@ -162,7 +181,7 @@ libclean:
 	${MAKE} -C ${COMMON_DIR} allclean
 
 allclean: clean
-	rm -f ${KERNELS:.o=.f90}
+	rm -f ${KERNELS}
 	rm -f *.exe fparser.log
 	rm -f *.lst *.cg *.opt *.optrpt gnu_opt_report.txt *.s
 	rm -rf *_wpl_dir/

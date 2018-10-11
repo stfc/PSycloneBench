@@ -8,10 +8,11 @@ def trans(psy):
     ''' Take the supplied psy object, apply OpenACC transformations
     to the schedule of invoke_0 and return the new psy object '''
     from psyclone.transformations import ACCParallelTrans, \
-        ACCDataTrans, ACCLoopTrans
+        ACCDataTrans, ACCLoopTrans, ACCRoutineTrans
     ptrans = ACCParallelTrans()
     ltrans = ACCLoopTrans()
     dtrans = ACCDataTrans()
+    ktrans = ACCRoutineTrans()
 
     invoke = psy.invokes.get('invoke_0')
     schedule = invoke.schedule
@@ -30,6 +31,10 @@ def trans(psy):
 
     # Add an enter-data directive
     newschedule, _ = dtrans.apply(schedule)
+
+    # Put an 'acc routine' directive inside each kernel
+    for kern in schedule.kern_calls():
+        _, _ = ktrans.apply(kern)
 
     invoke.schedule = newschedule
     newschedule.view()
