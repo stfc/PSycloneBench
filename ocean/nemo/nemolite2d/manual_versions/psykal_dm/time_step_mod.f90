@@ -30,6 +30,7 @@ contains
     integer :: it, ji, jj
     integer :: idxt
     integer :: idepth = 1
+
 !!$    integer :: umask(3,3) = reshape([0,0,0, 1,1,0, 0,0,0], shape(3,3))
 !!$    ! We don't know the state of a field's halos on entry to this
 !!$    ! invoke so we have to check...
@@ -106,7 +107,6 @@ contains
                              vn%grid%dy_t,     &
                              vn%grid%area_v,   &
                              vn%grid%gphiv)
- 
       end do
     end do
 
@@ -115,23 +115,26 @@ contains
     ! Apply open and solid boundary conditions
 
 !    call timer_start('BCs', idxt)
+    call ssha%halo_exch(depth=1)
 
     DO jj = ssha%internal%ystart, ssha%internal%ystop 
        DO ji = ssha%internal%xstart, ssha%internal%xstop 
           call bc_ssh_code(ji, jj, &
                            istp, ssha%data, sshn_t%grid%tmask)
-
        END DO
     END DO
 
+    call ua%halo_exch(depth=1)
+    
     do jj = ua%whole%ystart, ua%whole%ystop, 1
        do ji = ua%whole%xstart, ua%whole%xstop, 1
           call bc_solid_u_code(ji, jj, &
                                ua%data, va%grid%tmask)
-
        end do
     end do
 
+    call va%halo_exch(depth=1)
+    
     DO jj = va%whole%ystart, va%whole%ystop, 1 
        DO ji = va%whole%xstart, va%whole%xstop, 1
           call bc_solid_v_code(ji,jj, &
@@ -166,7 +169,9 @@ contains
     call copy_field(ua, un)
     call copy_field(va, vn)
     call copy_field(ssha, sshn_t)
-
+    
+    call sshn_t%halo_exch(depth=1)
+    
     do jj = sshn_u%internal%ystart, sshn_u%internal%ystop
       do ji = sshn_u%internal%xstart, sshn_u%internal%xstop
 
