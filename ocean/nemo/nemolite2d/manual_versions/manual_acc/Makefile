@@ -23,9 +23,13 @@ COMMON_MODULES = ${INF_LIB}
 all: $(EXECS)
 
 # Normal targets
-.PHONY: nemolite2d
+.PHONY: nemolite2d nemolite2d_nocuda
 nemolite2d: timer_lib inf_lib
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
+
+# Simpler version that does not use CUDA Fortran
+nemolite2d_nocuda: timer_lib inf_lib
+	${MAKE} MODULE_LIST="nemolite2d_nocuda.o ${COMMON_MODULES}" nemolite2d.exe
 
 nemolite2d.o: $(COMMON_MODULES)
 
