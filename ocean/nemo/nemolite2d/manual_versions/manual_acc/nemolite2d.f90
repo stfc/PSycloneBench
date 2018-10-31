@@ -588,7 +588,7 @@ PROGRAM nemolite2d
          CALL output
 
          
-         call acc_init()
+         !call acc_init()
          
          !$acc data pcopy(pt) &
          !$acc      pcopy(e1t, e2t, e1u, e2u) &
