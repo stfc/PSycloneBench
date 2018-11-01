@@ -319,12 +319,14 @@ CONTAINS
           IF(ANY(ierr /= 0, 1)) STOP "in SUBROUTINE ALLOCATION: failed to allocate arrays"
 
           ! Initialise all solution arrays
-          init_val = -999.0
+          init_val = 0.0
           ht = init_val ; hu = init_val ; hv = init_val ; hf = init_val
           sshb = init_val ; sshb_u = init_val ; sshb_v = init_val
           sshn = init_val ; sshn_u = init_val ; sshn_v = init_val
           ssha = init_val ; ssha_u = init_val ; ssha_v = init_val
           un = init_val ; vn = init_val ; ua = init_val ; va = init_val
+          xt = init_val; yt = init_val
+          pt = init_val
 
         END SUBROUTINE allocation
 
