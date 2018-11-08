@@ -28,8 +28,7 @@ inf_lib:
 	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
 
 clean:
-	rm -f *.o *~ gnu_opt_report.txt
+	rm -f *.o *~ gnu_opt_report.txt *.mod
 
 allclean: clean
-	rm -f *.mod
 	rm -f nemolite2d_common.a
