@@ -147,7 +147,7 @@ CONTAINS
 
        ! Define Model solid/open Boundaries via the properties of t-cells
 
-       tmask(:,:) = -1 ! Default all cells to being outside the domain
+       tmask(:,:) = 0 ! Default all cells to being dry !outside the domain
 
        ! Mark all inner cells
        tmask(subdomain%internal%xstart:subdomain%internal%xstop, &
@@ -155,26 +155,28 @@ CONTAINS
              
        ! -define solid/open boundaries
        if(subdomain%global%xstart == 1)then
-          do jj = 1, subdomain%internal%ny
+          do jj = subdomain%internal%ystart, subdomain%internal%ystop
              tmask(subdomain%internal%xstart, jj) = 0 ! west solid boundary
           end do
        end if
 
        if(subdomain%global%xstop == jpi)then
-          do jj = 1, subdomain%internal%ny
+          do jj = subdomain%internal%ystart, subdomain%internal%ystop
              tmask(subdomain%internal%xstop, jj) = 0 ! east solid boundary
           end do
        end if
 
        if(subdomain%global%ystop == jpj)then
-          do ji = 1, subdomain%internal%nx
+          do ji = subdomain%internal%xstart, subdomain%internal%xstop
              tmask(ji, subdomain%internal%ystop) = 0 ! north solid boundary
           end do
        end if
 
        if(subdomain%global%ystart == 1)then
-          do ji = 1, subdomain%internal%nx
-             tmask(ji, subdomain%internal%ystart) = -1 ! south open boundary
+          do ji = subdomain%internal%xstart, subdomain%internal%xstop
+             ! Make the open boundary outside the computational domain
+             ! (i.e. ystart - 1)
+             tmask(ji, subdomain%internal%ystart-1) = -1 ! south open boundary
           end do
        end if
 
@@ -202,15 +204,15 @@ CONTAINS
          action='write')
 
     ! Loop over 'internal' T points
-    DO jj = grid%subdomain%internal%ystart, grid%subdomain%internal%ystop, 1
-       DO ji = grid%subdomain%internal%xstart, grid%subdomain%internal%xstop, 1
+    do jj = grid%subdomain%internal%ystart, grid%subdomain%internal%ystop, 1
+       do ji = grid%subdomain%internal%xstart, grid%subdomain%internal%xstop, 1
 
           write(21,'(2e16.7,1x,I3)') grid%xt(ji,jj), grid%yt(ji,jj), &
                tmask(ji,jj)
-       END DO
-       WRITE(21,*)
-    END DO
-          
+       end do
+       write(21,*)
+    end do
+
     close(21)
   end subroutine dump_tmask
 

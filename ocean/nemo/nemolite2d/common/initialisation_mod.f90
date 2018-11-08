@@ -28,7 +28,7 @@ contains
     hu_fld%data(:,:) = dep_const 
     hv_fld%data(:,:) = dep_const 
 
-    ! Sea surface height at T points ?
+    ! Sea surface height at T points
     sshn_t_fld%data(:,:) = 0.0_go_wp
 
     ! Sea-surface height at u points
