@@ -86,7 +86,6 @@ time_step_mod.o: ${COMMON_LIB} inf_lib
 	ln -sf ../../kernels/fortran/$@ .
 
 clean: 
-	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~
 
 allclean: clean
