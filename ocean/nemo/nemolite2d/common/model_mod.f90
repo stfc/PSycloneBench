@@ -60,7 +60,7 @@ CONTAINS
     call grid_init(grid, decomp, dx, dy, tmask)
 
     ! Write generated, decomposed T-mask out to file
-    call dump_tmask(tmask, grid)
+    call dump_tmask(grid, raw=.true.)
 
     call map_comms(decomp, tmask, .false., ierr)
 
@@ -170,6 +170,11 @@ CONTAINS
           do ji = subdomain%internal%xstart, subdomain%internal%xstop
              tmask(ji, subdomain%internal%ystop) = 0 ! north solid boundary
           end do
+       else
+          ! Subdomain is not at the northernmost extent of the domain so
+          ! does not have a solid boundary
+          tmask(subdomain%internal%xstart+1:subdomain%internal%xstop-1, &
+                subdomain%internal%ystop:) = 1
        end if
 
        if(subdomain%global%ystart == 1)then
@@ -178,6 +183,11 @@ CONTAINS
              ! (i.e. ystart - 1)
              tmask(ji, subdomain%internal%ystart-1) = -1 ! south open boundary
           end do
+       else
+          ! Subdomain is not at the southernmost extent of the domain so
+          ! does not have an open boundary
+          tmask(subdomain%internal%xstart+1:subdomain%internal%xstop-1, &
+                1:subdomain%internal%ystart-1) = 1
        end if
 
     case DEFAULT
@@ -189,13 +199,14 @@ CONTAINS
 
   end subroutine setup_tpoints_mask
 
-  subroutine dump_tmask(tmask, grid)
+  subroutine dump_tmask(grid, raw)
     use parallel_mod, only: get_rank
     use grid_mod, only: grid_type
     implicit none
     type(grid_type), intent(in) :: grid
-    integer, dimension(:,:), intent(in) :: tmask
+    logical, optional, intent(in) :: raw
     ! Locals
+    logical :: lraw
     integer :: ji, jj
     character(len=20) :: fname
 
@@ -203,16 +214,30 @@ CONTAINS
     open(21, file='tmask_'//TRIM(fname)//'.dat', STATUS='UNKNOWN', &
          action='write')
 
-    ! Loop over 'internal' T points
-    do jj = grid%subdomain%internal%ystart, grid%subdomain%internal%ystop, 1
-       do ji = grid%subdomain%internal%xstart, grid%subdomain%internal%xstop, 1
-
-          write(21,'(2e16.7,1x,I3)') grid%xt(ji,jj), grid%yt(ji,jj), &
-               tmask(ji,jj)
+    if(present(raw))then
+       lraw = raw
+    else
+       lraw = .false.
+    end if
+    
+    if(lraw)then
+       do jj = 1, grid%subdomain%global%ny
+          do ji = 1, grid%subdomain%global%nx
+             write(21,'(3(I4,1x))') ji, jj, grid%tmask(ji,jj)
+          end do
+          write(21,*)
        end do
-       write(21,*)
-    end do
+    else
+       ! Loop over 'internal' T points
+       do jj = grid%subdomain%internal%ystart, grid%subdomain%internal%ystop, 1
+          do ji = grid%subdomain%internal%xstart, grid%subdomain%internal%xstop, 1
 
+             write(21,'(2e16.7,1x,I3)') grid%xt(ji,jj), grid%yt(ji,jj), &
+                  grid%tmask(ji,jj)
+          end do
+          write(21,*)
+       end do
+    end if
     close(21)
   end subroutine dump_tmask
 
