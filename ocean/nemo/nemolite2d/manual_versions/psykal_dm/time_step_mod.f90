@@ -35,10 +35,10 @@ contains
 !!$    ! We don't know the state of a field's halos on entry to this
 !!$    ! invoke so we have to check...
 !!$    if(sshn_u%is_dirty(depth=idepth))then
-!!$       call sshn_u%halo_exch(depth=idepth)
+       call sshn_u%halo_exch(depth=idepth)
 !!$    end if
 !!$    if(sshn_v%is_dirty(depth=idepth))then
-!!$       call sshn_v%halo_exch(depth=idepth)
+       call sshn_v%halo_exch(depth=idepth)
 !!$    end if
 !!$    if(hu%is_dirty(depth=idepth))then
 !!$       call hu%halo_exch(depth=idepth)
@@ -47,10 +47,10 @@ contains
 !!$       call hv%halo_exch(depth=idepth)
 !!$    end if
 !!$    if(un%is_dirty(depth=idepth))then
-!!$       call un%halo_exch(depth=idepth)
+       call un%halo_exch(depth=idepth)
 !!$    end if
 !!$    if(vn%is_dirty(depth=idepth))then
-!!$       call vn%halo_exch(depth=idepth)
+       call vn%halo_exch(depth=idepth)
 !!$    end if
 
 !    call timer_start('Continuity',idxt)
