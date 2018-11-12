@@ -133,6 +133,20 @@ contains
           
        close(21)
 
+       write(fname, '("sshn_",I5.5)') get_rank()
+       open(21, file=trim(fname)//'.dat', STATUS='UNKNOWN', action='write')
+
+       ! ARPDBG remove this debug-output code
+       DO jj = 1, sshn%whole%ny, 1
+          DO ji = 1, sshn%whole%nx, 1
+             !write(21,*) grid%xt(ji,jj), grid%yt(ji,jj), sshn%data(ji,jj)
+             write(21,*) ji, jj, sshn%data(ji,jj)
+          end do
+          write(21,*)
+       end do
+
+       close(21)
+       
     end if ! we're doing output
 
   end subroutine model_write
