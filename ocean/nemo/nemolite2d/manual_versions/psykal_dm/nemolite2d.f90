@@ -1,5 +1,6 @@
 program gocean2d
   use dl_timer
+  use parallel_utils_mod, only: get_rank, parallel_abort !ARPDBG
   use grid_mod
   use field_mod
   use initialisation_mod, only: initialisation
@@ -29,7 +30,7 @@ program gocean2d
   type(r2d_field) :: ua_fld, va_fld
 
   ! time stepping index
-  integer :: istp   
+  integer :: istp, jj
   integer :: itimer0
 
   call gocean_initialise()
@@ -75,8 +76,21 @@ program gocean2d
                       sshn_u_fld, sshn_v_fld, sshn_t_fld, &
                       un_fld, vn_fld)
 
+  ! Initialise field to rank and do halo exchange to test
+  ! ARPDBG remove once debugging complete
+  !do jj = sshn_t_fld%internal%ystart, sshn_t_fld%internal%ystop
+  !   sshn_t_fld%data(sshn_t_fld%internal%xstart:sshn_t_fld%internal%xstop,jj) = get_rank() !jj + sshn_t_fld%grid%subdomain%global%ystart - sshn_t_fld%internal%ystart
+  !end do
+  !sshn_t_fld%data = get_rank()
+  call sshn_t_fld%halo_exch(depth=1)
+  call ht_fld%halo_exch(depth=1)
+  call un_fld%halo_exch(depth=1)
+  call vn_fld%halo_exch(depth=1)
+  
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
 
+  !call parallel_abort('Test done')
+  
   ! Start timer for time-stepping section
   CALL timer_start(itimer0, label='Time-stepping', &
                    num_repeats=INT((nitend-nit000+1),8) )
