@@ -5,12 +5,11 @@ module initialisation_mod
 contains
 
   subroutine initialisation(ht_fld, hu_fld, hv_fld, &
-                            sshn_t_fld, sshn_u_fld, sshn_v_fld, &
+                            sshn_u_fld, sshn_v_fld, sshn_t_fld, &
                             un_fld, vn_fld)
     use kind_params_mod
     use model_mod
     use grid_mod
-    !use boundary_conditions_mod, only: bc
     implicit none
     type(r2d_field), intent(inout) :: ht_fld, hu_fld, hv_fld
     type(r2d_field), intent(inout) :: sshn_t_fld, sshn_u_fld, sshn_v_fld
@@ -60,12 +59,6 @@ contains
 
     ! Vertical component of velocity (at V pts)
     vn_fld%data(:,:) = 0._go_wp
-  
-    ! Original bc() routine acts on ssha, ua and va. None of which
-    ! this initialisation routine sets. Therefore, don't think it's
-    ! needed here.
-    !CALL bc(0._go_wp, sshn_u_fld, sshn_v_fld, ssha_t_fld, &
-    !        ua_fld, va_fld, hu_fld, hv_fld)
   
   end subroutine initialisation
 
