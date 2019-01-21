@@ -9,17 +9,17 @@ module time_update_mod
   !=======================================
 
   type, extends(kernel_type) :: next_sshu
-     type(arg), dimension(5) :: meta_args =  &
-          (/ arg(READWRITE, CU, POINTWISE),  &
-             arg(READ,      CU, POINTWISE),  &
-             arg(READ,      GRID_MASK_T),    &
-             arg(READ,      GRID_AREA_T),    &
-             arg(READ,      GRID_AREA_U)     &
+     type(go_arg), dimension(5) :: meta_args =  &
+          (/ go_arg(GO_READWRITE, GO_CU, GO_POINTWISE),  &
+             go_arg(GO_READ,      GO_CU, GO_POINTWISE),  &
+             go_arg(GO_READ,      GO_GRID_MASK_T),    &
+             go_arg(GO_READ,      GO_GRID_AREA_T),    &
+             go_arg(GO_READ,      GO_GRID_AREA_U)     &
            /)
 
      !> We update only those points within the internal region
      !! of the simulated domain.
-     integer :: ITERATES_OVER = INTERNAL_PTS
+     integer :: ITERATES_OVER = GO_INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -28,7 +28,7 @@ module time_update_mod
      !! point. This kernel assumes that the U,V and F points that
      !! share the same index as a given T point are those immediately
      !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
+     integer :: index_offset = GO_OFFSET_NE
 
   contains
     procedure, nopass :: code => next_sshu_code
@@ -37,17 +37,17 @@ module time_update_mod
   !=======================================
 
   type, extends(kernel_type) :: next_sshv
-     type(arg), dimension(5) :: meta_args =  &
-          (/ arg(READWRITE, CV, POINTWISE),  &
-             arg(READ,      CV, POINTWISE),  &
-             arg(READ,      GRID_MASK_T),    &
-             arg(READ,      GRID_AREA_T),    &
-             arg(READ,      GRID_AREA_V)     &
+     type(go_arg), dimension(5) :: meta_args =  &
+          (/ go_arg(GO_READWRITE, GO_CV, GO_POINTWISE),  &
+             go_arg(GO_READ,      GO_CV, GO_POINTWISE),  &
+             go_arg(GO_READ,      GO_GRID_MASK_T),    &
+             go_arg(GO_READ,      GO_GRID_AREA_T),    &
+             go_arg(GO_READ,      GO_GRID_AREA_V)     &
            /)
 
      !> We update only those points within the internal region
      !! of the simulated domain.
-     integer :: ITERATES_OVER = INTERNAL_PTS
+     integer :: ITERATES_OVER = GO_INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -56,7 +56,7 @@ module time_update_mod
      !! point. This kernel assumes that the U,V and F points that
      !! share the same index as a given T point are those immediately
      !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
+     integer :: index_offset = GO_OFFSET_NE
 
   contains
     procedure, nopass :: code => next_sshv_code
