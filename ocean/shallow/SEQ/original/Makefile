@@ -22,7 +22,7 @@ all: $(EXECS)
 shallow_base.o: timer_lib ../shallow_io_mod.o
 
 ../shallow_io_mod.o:
-	${MAKE} -C ../
+	${MAKE} -C ../ shallow_io_mod.o
 
 %: %.o 
 	$(F90) $(OMPFLAGS) $(F90FLAGS) -o $@ $^ ../shallow_io_mod.o $(TIMER_LIB) $(LDFLAGS)
