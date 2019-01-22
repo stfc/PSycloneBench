@@ -6,4 +6,4 @@
 	url = https://bitbucket.org/apeg/dl_timer
 [submodule "shared/FortCL"]
 	path = shared/FortCL
-	url = git@github.com:stfc/FortCL.git
+	url = https://github.com/stfc/FortCL
