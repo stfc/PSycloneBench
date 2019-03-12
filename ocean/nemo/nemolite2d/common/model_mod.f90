@@ -60,7 +60,7 @@ CONTAINS
     call grid_init(grid, decomp, dx, dy, tmask)
 
     ! Write generated, decomposed T-mask out to file
-    call dump_tmask(grid, raw=.true.)
+    call dump_tmask(grid, raw=.false.)
 
     call map_comms(decomp, tmask, .false., ierr)
 
@@ -139,36 +139,34 @@ CONTAINS
 
     case(1)
 
-       !##### a manually defined grid
-
-       ! -size of each grid cell
-       ! -depth on each T points
-       ! -grid dimension
-
+       ! A manually defined T mask
        ! Define Model solid/open Boundaries via the properties of t-cells
 
-       tmask(:,:) = 0 ! Default all cells to being dry !outside the domain
+       tmask(:,:) = 0 ! Default all cells to being dry/outside the domain
 
-       ! Mark all inner cells
+       ! Mark all inner (wet) cells
        tmask(subdomain%internal%xstart:subdomain%internal%xstop, &
              subdomain%internal%ystart:subdomain%internal%ystop) = 1
              
        ! -define solid/open boundaries
        if(subdomain%global%xstart == 1)then
+          ! West solid boundary
           do jj = subdomain%internal%ystart, subdomain%internal%ystop
-             tmask(subdomain%internal%xstart, jj) = 0 ! west solid boundary
+             tmask(1:subdomain%internal%xstart-1, jj) = 0
           end do
        end if
 
        if(subdomain%global%xstop == jpi)then
+           ! East solid boundary
           do jj = subdomain%internal%ystart, subdomain%internal%ystop
-             tmask(subdomain%internal%xstop, jj) = 0 ! east solid boundary
+             tmask(subdomain%internal%xstop+1:, jj) = 0
           end do
        end if
 
        if(subdomain%global%ystop == jpj)then
+          ! North solid boundary
           do ji = subdomain%internal%xstart, subdomain%internal%xstop
-             tmask(ji, subdomain%internal%ystop) = 0 ! north solid boundary
+             tmask(ji, subdomain%internal%ystop) = 0
           end do
        else
           ! Subdomain is not at the northernmost extent of the domain so
@@ -178,10 +176,11 @@ CONTAINS
        end if
 
        if(subdomain%global%ystart == 1)then
+          ! South open boundary
           do ji = subdomain%internal%xstart, subdomain%internal%xstop
              ! Make the open boundary outside the computational domain
              ! (i.e. ystart - 1)
-             tmask(ji, subdomain%internal%ystart-1) = -1 ! south open boundary
+             tmask(ji, subdomain%internal%ystart-1) = -1
           end do
        else
           ! Subdomain is not at the southernmost extent of the domain so
