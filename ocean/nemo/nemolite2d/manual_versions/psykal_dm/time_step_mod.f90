@@ -31,21 +31,16 @@ contains
     integer :: idxt
     integer :: idepth = 1
 
-!!$    integer :: umask(3,3) = reshape([0,0,0, 1,1,0, 0,0,0], shape(3,3))
-!!$    ! We don't know the state of a field's halos on entry to this
-!!$    ! invoke so we have to check...
+    ! We don't know the state of a field's halos on entry to this
+    ! invoke so we have to check...
+    ! (hu, hv and ht are constant so no need to worry about them)
 !!$    if(sshn_u%is_dirty(depth=idepth))then
        call sshn_u%halo_exch(depth=idepth)
 !!$    end if
 !!$    if(sshn_v%is_dirty(depth=idepth))then
        call sshn_v%halo_exch(depth=idepth)
 !!$    end if
-!!$    if(hu%is_dirty(depth=idepth))then
-!!$       call hu%halo_exch(depth=idepth)
-!!$    end if
-!!$    if(hv%is_dirty(depth=idepth))then
-!!$       call hv%halo_exch(depth=idepth)
-!!$    end if
+       call sshn_t%halo_exch(depth=idepth)
 !!$    if(un%is_dirty(depth=idepth))then
        call un%halo_exch(depth=idepth)
 !!$    end if

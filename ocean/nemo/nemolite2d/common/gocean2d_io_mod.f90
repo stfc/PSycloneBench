@@ -99,34 +99,40 @@ contains
     implicit none
     type(grid_type), intent(in) :: grid
     integer, intent(in) :: istp
-    type(r2d_field), intent(in) :: ht, sshn, un, vn
+    type(r2d_field), intent(inout) :: ht, sshn, un, vn
     ! Locals
     integer :: ji, jj
     real(go_wp) :: rtmp1, rtmp2
     character(len=11) :: fname
-    
+
     if( l_out .and. (mod(istp, mprint) .eq. 0) ) then
+
+       ! Ensure halos are up-to-date for debug output (i.e. in case
+       ! we write out the halos)
+       call ht%halo_exch(depth=1)
+       call sshn%halo_exch(depth=1)
+       call un%halo_exch(depth=1)
+       call vn%halo_exch(depth=1)
 
        ! output model results
        write(fname, '(I5.5,"_",I5.5)') istp, get_rank()
        open(21, file='go2d_'//fname//'.dat', STATUS='UNKNOWN', &
             action='write')
 
-       rewind(21)
-
        ! Loop over 'internal' T points
        DO jj = sshn%internal%ystart, sshn%internal%ystop, 1
           DO ji = sshn%internal%xstart, sshn%internal%xstop, 1
 
+             ! Avoid underflow in the output of computed un and vn
+             ! values at T points
              rtmp1 = 0.5_go_wp * (un%data(ji-1,jj) + un%data(ji,jj))
              rtmp2 = 0.5_go_wp * (vn%data(ji,jj-1) + vn%data(ji,jj))
 
              ! write "x-coord, y-coord, depth, ssh, u-velocity,
              ! v-velocity" to ASCII files
-
-              write(21,'(6e16.7)') grid%xt(ji,jj), grid%yt(ji,jj), &
-                                   ht%data(ji,jj), sshn%data(ji,jj), &
-                                   rtmp1, rtmp2 
+              write(21,'(6e16.7e3)') grid%xt(ji,jj), grid%yt(ji,jj),   &
+                                     ht%data(ji,jj), sshn%data(ji,jj), &
+                                     rtmp1, rtmp2 
           END DO
           WRITE(21,*)
        END DO
