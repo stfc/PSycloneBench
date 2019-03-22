@@ -205,13 +205,6 @@ contains
     ! Locals
     integer  :: ji, jj
 
-! Original loop was:
-!            DO jj = 1, jpj
-!              DO ji = 0, jpi
-! In original code, tmask is declared with one more row and column than
-! any other field. ji==jpi IS last column of u field.
-! 1/ How do I determine the full range of array indices to loop over for ua?
-! 2/ If I do that, is tmask(ji+1,jj) going to stay within bounds?
     do jj = ua%whole%ystart, ua%whole%ystop, 1
        do ji = ua%whole%xstart, ua%whole%xstop, 1
           call bc_solid_u_code(ji, jj, ua%data, ua%grid%tmask)
@@ -336,8 +329,6 @@ contains
     type(r2d_field), intent(in)    :: hv, sshn_v
     ! Locals
     integer  :: ji, jj
-
-    !kernel Flather v 
 
     DO jj = va%whole%ystart, va%whole%ystop, 1
        DO ji = va%whole%xstart, va%whole%xstop, 1
