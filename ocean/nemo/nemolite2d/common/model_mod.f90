@@ -154,6 +154,12 @@ CONTAINS
           do jj = subdomain%internal%ystart, subdomain%internal%ystop
              tmask(1:subdomain%internal%xstart-1, jj) = 0
           end do
+       else
+          ! Subdomain is not at the westernmost extent of the global
+          ! domain so boundary is wet.
+          do jj = subdomain%internal%ystart, subdomain%internal%ystop
+             tmask(1:subdomain%internal%xstart-1, jj) = 1
+          end do          
        end if
 
        if(subdomain%global%xstop == jpi)then
@@ -161,12 +167,18 @@ CONTAINS
           do jj = subdomain%internal%ystart, subdomain%internal%ystop
              tmask(subdomain%internal%xstop+1:, jj) = 0
           end do
+       else
+          ! Subdomain is not at the easternmost extent of the global
+          ! domain so boundary is wet.
+          do jj = subdomain%internal%ystart, subdomain%internal%ystop
+             tmask(subdomain%internal%xstop+1:, jj) = 1
+          end do
        end if
 
        if(subdomain%global%ystop == jpj)then
           ! North solid boundary
           do ji = subdomain%internal%xstart, subdomain%internal%xstop
-             tmask(ji, subdomain%internal%ystop) = 0
+             tmask(ji, subdomain%internal%ystop+1) = 0
           end do
        else
           ! Subdomain is not at the northernmost extent of the domain so
