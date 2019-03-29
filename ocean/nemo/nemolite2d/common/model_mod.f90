@@ -60,9 +60,9 @@ CONTAINS
     call grid_init(grid, decomp, dx, dy, tmask)
 
     ! Write generated, decomposed T-mask out to file
-    call dump_tmask(grid, raw=.false.)
+    call dump_tmask(grid, raw=.true.)
 
-    call map_comms(decomp, tmask, .false., ierr)
+    call map_comms(decomp, tmask, .false., (/1,1/), ierr)
 
     ! Initialise model IO 'system'
     call model_write_init(jpiglo, jpjglo, irecord)
@@ -148,57 +148,86 @@ CONTAINS
        tmask(subdomain%internal%xstart:subdomain%internal%xstop, &
              subdomain%internal%ystart:subdomain%internal%ystop) = 1
              
-       ! -define solid/open boundaries
+       ! Define solid/open boundaries
+
+       ! Western boundary
        if(subdomain%global%xstart == 1)then
-          ! West solid boundary
-          do jj = subdomain%internal%ystart, subdomain%internal%ystop
-             tmask(1:subdomain%internal%xstart-1, jj) = 0
-          end do
+          ! Global Western boundary is solid
+          tmask(1:subdomain%internal%xstart-1, :) = 0
        else
           ! Subdomain is not at the westernmost extent of the global
           ! domain so boundary is wet.
           do jj = subdomain%internal%ystart, subdomain%internal%ystop
              tmask(1:subdomain%internal%xstart-1, jj) = 1
-          end do          
+          end do
+          
+          if(subdomain%global%ystop /= jpj)then
+             ! NW corner of this sub-domain is internal so corner halo
+             ! points are all wet
+             tmask(:subdomain%internal%xstart-1,subdomain%internal%ystop+1:) = 1
+          end if
        end if
 
+       ! Eastern boundary
        if(subdomain%global%xstop == jpi)then
-           ! East solid boundary
-          do jj = subdomain%internal%ystart, subdomain%internal%ystop
-             tmask(subdomain%internal%xstop+1:, jj) = 0
-          end do
+          ! Eastern boundary of global domain is solid
+          tmask(subdomain%internal%xstop+1:, :) = 0
        else
           ! Subdomain is not at the easternmost extent of the global
           ! domain so boundary is wet.
           do jj = subdomain%internal%ystart, subdomain%internal%ystop
              tmask(subdomain%internal%xstop+1:, jj) = 1
           end do
+
+          if(subdomain%global%ystop /= jpj)then
+             ! NE corner of this sub-domain is internal so corner halo
+             ! points are all wet
+             tmask(subdomain%internal%xstop+1:,subdomain%internal%ystop+1:) = 1
+          end if
        end if
 
+       ! Northern boundary
        if(subdomain%global%ystop == jpj)then
           ! North solid boundary
-          do ji = subdomain%internal%xstart, subdomain%internal%xstop
-             tmask(ji, subdomain%internal%ystop+1) = 0
-          end do
+          tmask(:, subdomain%internal%ystop+1:) = 0
        else
           ! Subdomain is not at the northernmost extent of the domain so
           ! does not have a solid boundary
-          tmask(subdomain%internal%xstart+1:subdomain%internal%xstop-1, &
-                subdomain%internal%ystop:) = 1
+          tmask(subdomain%internal%xstart:subdomain%internal%xstop, &
+               subdomain%internal%ystop:) = 1
+
+          if(subdomain%global%xstart /= 1)then
+             ! NW corner of this subdomain is internal therefore halo pts
+             ! are wet.
+             tmask(:subdomain%internal%xstart-1,subdomain%internal%ystop+1:) = 1
+          end if
+          if(subdomain%global%xstop /= jpi)then
+             ! NE corner is internal and thus halo pts are wet
+             tmask(subdomain%internal%xstop+1:,subdomain%internal%ystop+1:) = 1
+          end if
        end if
 
+       ! Southern boundary
        if(subdomain%global%ystart == 1)then
-          ! South open boundary
-          do ji = subdomain%internal%xstart, subdomain%internal%xstop
-             ! Make the open boundary outside the computational domain
-             ! (i.e. ystart - 1)
-             tmask(ji, subdomain%internal%ystart-1) = -1
-          end do
+          ! Southern global boundary is open (tidally forced)
+          ! Make the open boundary outside the computational domain
+          ! (i.e. ystart - 1)
+          tmask(:, :subdomain%internal%ystart-1) = -1
        else
           ! Subdomain is not at the southernmost extent of the domain so
           ! does not have an open boundary
-          tmask(subdomain%internal%xstart+1:subdomain%internal%xstop-1, &
-                1:subdomain%internal%ystart-1) = 1
+          tmask(subdomain%internal%xstart:subdomain%internal%xstop, &
+                :subdomain%internal%ystart-1) = 1
+
+          if(subdomain%global%xstart /= 1)then
+             ! SW corner of this subdomain is internal therefore halo pts
+             ! are wet.
+             tmask(:subdomain%internal%xstart-1,:subdomain%internal%ystart-1) = 1
+          end if
+          if(subdomain%global%xstop /= jpi)then
+             ! SE corner is internal and thus halo pts are wet
+             tmask(subdomain%internal%xstop+1:,:subdomain%internal%ystart-1) = 1
+          end if
        end if
 
     case DEFAULT
