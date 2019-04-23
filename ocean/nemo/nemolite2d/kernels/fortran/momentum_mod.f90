@@ -17,11 +17,11 @@ module momentum_mod
   type, extends(kernel_type) :: momentum_u
      type(go_arg), dimension(18) :: meta_args =  &
           (/ go_arg(GO_READWRITE, GO_CU, GO_POINTWISE),  & ! ua
-             go_arg(GO_READ,      GO_CU, STENCIL(000,111,000)), & ! un
-             go_arg(GO_READ,      GO_CV, STENCIL(000,011,011)), & ! vn
-             go_arg(GO_READ,      GO_CU, STENCIL(010,010,010)), & ! hu
-             go_arg(GO_READ,      GO_CV, STENCIL(000,011,011)), & ! hv
-             go_arg(GO_READ,      GO_CT, STENCIL(000,011,000)), & ! ht
+             go_arg(GO_READ,      GO_CU, GO_STENCIL(000,111,000)), & ! un
+             go_arg(GO_READ,      GO_CV, GO_STENCIL(000,011,011)), & ! vn
+             go_arg(GO_READ,      GO_CU, GO_STENCIL(010,010,010)), & ! hu
+             go_arg(GO_READ,      GO_CV, GO_STENCIL(000,011,011)), & ! hv
+             go_arg(GO_READ,      GO_CT, GO_STENCIL(000,011,000)), & ! ht
              go_arg(GO_READ,      GO_CU, GO_POINTWISE),  & ! ssha_u
              go_arg(GO_READ,      GO_CT, GO_POINTWISE),  & ! sshn_t
              go_arg(GO_READ,      GO_CU, GO_POINTWISE),  & ! sshn_u

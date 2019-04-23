@@ -10,12 +10,12 @@ module continuity_mod
      type(go_arg), dimension(10) :: meta_args =         &
            (/ go_arg(GO_WRITE, GO_CT, GO_POINTWISE),            & ! ssha
               go_arg(GO_READ,  GO_CT, GO_POINTWISE),            & ! sshn
-              go_arg(GO_READ,  GO_CU, STENCIL(000,110,000)), & ! sshn_u
-              go_arg(GO_READ,  GO_CV, STENCIL(000,010,010)), & ! sshn_v
-              go_arg(GO_READ,  GO_CU, STENCIL(000,110,000)), & ! hu
-              go_arg(GO_READ,  GO_CV, STENCIL(000,010,010)), & ! hv
-              go_arg(GO_READ,  GO_CU, STENCIL(000,110,000)), & ! un
-              go_arg(GO_READ,  GO_CV, STENCIL(000,010,010)), & ! vn
+              go_arg(GO_READ,  GO_CU, GO_STENCIL(000,110,000)), & ! sshn_u
+              go_arg(GO_READ,  GO_CV, GO_STENCIL(000,010,010)), & ! sshn_v
+              go_arg(GO_READ,  GO_CU, GO_STENCIL(000,110,000)), & ! hu
+              go_arg(GO_READ,  GO_CV, GO_STENCIL(000,010,010)), & ! hv
+              go_arg(GO_READ,  GO_CU, GO_STENCIL(000,110,000)), & ! un
+              go_arg(GO_READ,  GO_CV, GO_STENCIL(000,010,010)), & ! vn
               go_arg(GO_READ,  GO_TIME_STEP),            &
               go_arg(GO_READ,  GO_GRID_AREA_T)           &
            /)
