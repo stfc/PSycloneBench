@@ -51,14 +51,14 @@ inf_lib_serial:
 	${MAKE} -C ${INF_DIR} F90=${F90} fd_lib
 
 ${COMMON_LIB}:
-	${MAKE} -C ${COMMON_DIR}
+	${MAKE} -C ${COMMON_DIR} MPI=${MPI}
 
 # Normal targets
 nemolite2d: timer_lib inf_lib
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" MPI=yes nemolite2d.exe
 
 nemolite2d-serial: timer_lib_serial inf_lib_serial
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" MPI=no nemolite2d.exe
 
 nemolite2d.o: $(COMMON_MODULES)
 
