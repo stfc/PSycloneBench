@@ -107,21 +107,14 @@ contains
 
     if( l_out .and. (mod(istp, mprint) .eq. 0) ) then
 
-       ! Ensure halos are up-to-date for debug output (i.e. in case
-       ! we write out the halos)
-       call ht%halo_exch(depth=1)
-       call sshn%halo_exch(depth=1)
-       call un%halo_exch(depth=1)
-       call vn%halo_exch(depth=1)
-
-       ! output model results
+       ! Output model results. Each MPI rank writes to its own file.
        write(fname, '(I5.5,"_",I5.5)') istp, get_rank()
        open(21, file='go2d_'//fname//'.dat', STATUS='UNKNOWN', &
             action='write')
 
        ! Loop over 'internal' T points
-       DO jj = sshn%internal%ystart, sshn%internal%ystop, 1
-          DO ji = sshn%internal%xstart, sshn%internal%xstop, 1
+       do jj = sshn%internal%ystart, sshn%internal%ystop, 1
+          do ji = sshn%internal%xstart, sshn%internal%xstop, 1
 
              ! Avoid underflow in the output of computed un and vn
              ! values at T points
@@ -133,22 +126,9 @@ contains
               write(21,'(6e16.7e3)') grid%xt(ji,jj), grid%yt(ji,jj),   &
                                      ht%data(ji,jj), sshn%data(ji,jj), &
                                      rtmp1, rtmp2 
-          END DO
-          WRITE(21,*)
-       END DO
-          
-       close(21)
-
-       write(fname, '("sshn_",I5.5)') get_rank()
-       open(21, file=trim(fname)//'.dat', STATUS='UNKNOWN', action='write')
-
-       ! ARPDBG remove this debug-output code
-       DO jj = 1, sshn%whole%ny, 1
-          DO ji = 1, sshn%whole%nx, 1
-             !write(21,*) grid%xt(ji,jj), grid%yt(ji,jj), sshn%data(ji,jj)
-             write(21,*) ji, jj, sshn%data(ji,jj)
-          end do
-          write(21,*)
+           end do
+           ! Blank line to signal end of scan (in x) to gnuplot
+           write(21,*)
        end do
 
        close(21)

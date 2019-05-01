@@ -30,7 +30,7 @@ program gocean2d
   type(r2d_field) :: ua_fld, va_fld
 
   ! time stepping index
-  integer :: istp, jj
+  integer :: istp
   integer :: itimer0
 
   call gocean_initialise()

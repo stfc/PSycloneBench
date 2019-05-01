@@ -28,7 +28,6 @@ contains
     type(r2d_field), intent(in)    :: hu, hv, ht
     ! Locals
     integer :: it, ji, jj
-    integer :: idxt
     integer :: idepth = 1
 
     ! We don't know the state of a field's halos on entry to this
@@ -48,8 +47,6 @@ contains
        call vn%halo_exch(depth=idepth)
 !!$    end if
 
-!    call timer_start('Continuity',idxt)
-
     do jj = ssha%internal%ystart, ssha%internal%ystop, 1
       do ji = ssha%internal%xstart, ssha%internal%xstop, 1
 
@@ -62,10 +59,6 @@ contains
     end do
 
     !call ssha%set_dirty(from_depth=1)
-
-!    call timer_stop(idxt)
-
-!    call timer_start('Momentum',idxt)
 
     do jj = ua%internal%ystart, ua%internal%ystop, 1
       do ji = ua%internal%xstart, ua%internal%xstop, 1
@@ -105,11 +98,8 @@ contains
       end do
     end do
 
-!    call timer_stop(idxt)
-
     ! Apply open and solid boundary conditions
 
-!    call timer_start('BCs', idxt)
     call ssha%halo_exch(depth=1)
 
     DO jj = ssha%internal%ystart, ssha%internal%ystop 
@@ -153,14 +143,10 @@ contains
        END DO
     END DO
 
-!    call timer_stop(idxt)
-
     ! Time update of fields
 
-!    call timer_start('Next', idxt)
-
-!> \todo It would be more efficient to merge these copies into the 
-!! subsequent loops that update ssh{u,v}
+    !> \todo It would be more efficient to merge these copies into the 
+    !! subsequent loops that update ssh{u,v}
     call copy_field(ua, un)
     call copy_field(va, vn)
     call copy_field(ssha, sshn_t)
@@ -185,8 +171,6 @@ contains
                             sshn_t%grid%area_t, sshn_t%grid%area_v)
       end do
     end do
-
-!    call timer_stop(idxt)
 
   end subroutine invoke_time_step
 
