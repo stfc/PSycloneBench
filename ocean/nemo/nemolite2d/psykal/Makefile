@@ -14,6 +14,8 @@ TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
+FORTCL_INC = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/
+FORTCL_LIB = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/libFortCL.a
 COMMON_DIR = ../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
@@ -23,7 +25,7 @@ LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
 
 .PHONY: all inf_lib timer_lib
 
-all: nemolite2d_gen nemolite2d_gen_omp
+all: nemolite2d_gen
 
 # The kernels used by this application and their location
 KERNEL_DIR = ../kernels/fortran
@@ -46,16 +48,23 @@ PSYCLONE = psyclone -api gocean1.0 -d ${KERNEL_DIR}
 # the definition of the Algorithm.
 psy.f90: nemolite2d_alg.f90
 	${PSYCLONE} -oalg nemolite2d_gen.f90 -opsy psy.f90 nemolite2d_alg.f90
+	sed -i s/subdomain%internal/simulation_domain/ psy.f90
 
 # psy_omp.f90 is the same PSy layer but with OpenMP transformations
 # applied to it.
 psy_omp.f90: nemolite2d_alg.f90 nemolite2d_omp_transform.py
 	${PSYCLONE} -s ./nemolite2d_omp_transform.py -oalg nemolite2d_gen.f90 -opsy psy_omp.f90 nemolite2d_alg.f90
+	sed -i s/subdomain%internal/simulation_domain/ psy_omp.f90
 
 # psy_acc.f90 is the same PSy layer but with OpenACC transformations
 # applied to it.
 psy_acc.f90: nemolite2d_alg.f90 nemolite2d_acc_transform.py
 	${PSYCLONE} nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 -opsy psy_acc.f90 -s ./nemolite2d_acc_transform.py
+	sed -i s/subdomain%internal/simulation_domain/ psy_acc.f90
+
+psy_ocl.f90: nemolite2d_alg.f90 nemolite2d_acc_transform.py
+	${PSYCLONE} nemolite2d_alg.f90 -oalg nemolite2d_gen.f90 -opsy psy_ocl.f90 -okern . -s ./ocl_trans.py
+	sed -i s/subdomain%internal/simulation_domain/ psy_ocl.f90
 
 # The generated code depends on the generated Psy middle-layer
 nemolite2d_gen: timer_lib inf_lib ${KERNELS} psy.o
@@ -71,13 +80,19 @@ nemolite2d_gen_acc: timer_lib inf_lib ${KERNELS} psy_acc.o
              F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_acc.exe
 
+
+nemolite2d_gen_ocl: timer_lib inf_lib ${KERNELS} psy_ocl.o
+	${MAKE} MODULE_LIST="psy_ocl.o ${COMMON_MODULES}" \
+             F90FLAGS="${F90FLAGS} ${OMPFLAGS}" \
+             LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_gen_ocl.exe
+
 # Generic rules
 
 %.exe: $(MODULE_LIST)
 	$(F90) -o $@ $(MODULE_LIST) ${TIMER_LIB} $(LDFLAGS)
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -I${FORTCL_INC} -c $<
 %.o: %.F90
 	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
 
@@ -96,8 +111,8 @@ ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR}
 
 clean: 
-	rm -f *.o *.mod *.MOD *~ *.pyc gnu_opt_report.txt
-	rm -f psy.f90 psy_omp.f90 psy_acc.f90 nemolite2d_gen.f90
+	rm -f *.o *.mod *.MOD *~ *.pyc gnu_opt_report.txt *.cl *.ll *.spir *.spirv
+	rm -f psy.f90 psy_omp.f90 psy_acc.f90 psy_ocl.f90 nemolite2d_gen.f90
 
 libclean:
 	${MAKE} -C ${INF_DIR} distclean
