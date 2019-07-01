@@ -4,3 +4,6 @@
 [submodule "shared/dl_timer"]
 	path = shared/dl_timer
 	url = https://bitbucket.org/apeg/dl_timer
+[submodule "shared/FortCL"]
+	path = shared/FortCL
+	url = https://github.com/stfc/FortCL

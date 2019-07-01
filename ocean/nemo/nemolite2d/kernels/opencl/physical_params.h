@@ -1,1 +1,1 @@
-../../manual_versions/psykal_ocl/c/physical_params.h
+../../manual_versions/opencl/c/physical_params.h

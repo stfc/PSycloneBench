@@ -65,14 +65,14 @@ contains
                          CL_DEVICE_MAX_COMPUTE_UNITS, c_sizeof(device_cu), &
                          C_LOC(device_cu), iret)
     call check_status('clGetDeviceInfo', ierr)
-    ! Get the length of the string required to hold the device name
     ierr=clGetDeviceInfo(device_ids(idevice), &
-                         CL_DEVICE_NAME, zero_size, C_NULL_PTR, iret)
+                         CL_DEVICE_NAME, zero_size, C_NULL_PTR,iret)
     call check_status('clGetDeviceInfo', ierr)
-    ! Allocate the string
+
     allocate(device_name(iret), stat=iallocerr)
     if (iallocerr.ne.0) stop 'allocate'
-    ! Now actually get the name
+    ! Assumes that a character string of iret characters is iret bytes
+    ! in size.
     ierr=clGetDeviceInfo(device_ids(idevice), CL_DEVICE_NAME, &
                          iret, C_LOC(device_name), iret)
     if (ierr.ne.CL_SUCCESS) stop 'clGetDeviceInfo'

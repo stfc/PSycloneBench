@@ -16,11 +16,12 @@ on performance (and the ability of Habakkuk
 
 OpenACC version of the PSyKAl form of NEMOLite2D.
 
-## psykal_ocl ##
+## opencl ##
 
-OpenCL versions of the PSyKAl form of NEMOLite2D. One with a C driver layer,
-the second with a Fortran driver layer (using clFortran). The OpenCL kernels
-for these benchmarks are in ../kernels/opencl.
+OpenCL versions of both the single-file and the PSyKAl form of NEMOLite2D.
+There are C and Fortran (using clFortran) implementations of the non-PSyKAl
+form. A Fortran, PSyKAl-structured example is in opencl/fortran/psykal.
+The OpenCL kernels for all three of these benchmarks are in ../kernels/opencl.
 
 ## psykal_omp ##
 

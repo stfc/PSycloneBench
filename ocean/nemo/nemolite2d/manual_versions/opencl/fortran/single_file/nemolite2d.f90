@@ -156,7 +156,7 @@ program nemolite2d
   end do
 
   ! Get a program object containing all of our kernels
-  filename = "../../../kernels/opencl/nemolite2d_kernels.aocx"
+  filename = "../../../../kernels/opencl/nemolite2d_kernels.aocx"
   prog = get_program(context, device, version_str, filename)
 
   do i=1, K_NUM_KERNELS

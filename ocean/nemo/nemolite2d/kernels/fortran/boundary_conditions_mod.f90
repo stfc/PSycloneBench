@@ -19,10 +19,10 @@ module boundary_conditions_mod
   !=======================================
 
   type, extends(kernel_type) :: bc_ssh
-     type(go_arg), dimension(3) :: meta_args =        &
+     type(go_arg), dimension(3) :: meta_args =                 &
           (/ go_arg(GO_READ,      GO_I_SCALAR, GO_POINTWISE),  &
              go_arg(GO_READWRITE, GO_CT,       GO_POINTWISE),  &
-             go_arg(GO_READ,      GO_GRID_MASK_T)           &
+             go_arg(GO_READ,      GO_GRID_MASK_T)              &
            /)
 
      !> Although this is a boundary-conditions kernel, it only
@@ -73,7 +73,7 @@ module boundary_conditions_mod
   type, extends(kernel_type) :: bc_solid_v
      type(go_arg), dimension(2) :: meta_args =  &
           (/ go_arg(GO_READWRITE, GO_CV, GO_POINTWISE),  &
-             go_arg(GO_READ,      GO_GRID_MASK_T)     &
+             go_arg(GO_READ,      GO_GRID_MASK_T)        &
            /)
 
      !> This is a boundary-conditions kernel and therefore
@@ -160,11 +160,14 @@ contains
     type(r2d_field),    intent(inout) :: ssha
     ! Locals
     integer  :: ji, jj
-
+    real(wp), dimension(:,:), pointer :: ssha_ptr
+    
+    ssha_ptr => ssha%get_data()
+    
     DO jj = ssha%internal%ystart, ssha%internal%ystop
        DO ji = ssha%internal%xstart, ssha%internal%xstop
           call bc_ssh_code(ji, jj, &
-                           istep, ssha%data, ssha%grid%tmask)
+                           istep, ssha_ptr, ssha%grid%tmask)
        END DO
     END DO
 

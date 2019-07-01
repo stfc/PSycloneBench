@@ -4,7 +4,6 @@ program gocean2d
   use field_mod
   use initialisation_mod, only: initialisation
   use model_mod
-  use boundary_conditions_mod
   use gocean2d_io_mod, only: model_write
   use gocean_mod,      only: model_write_log
 
@@ -17,16 +16,16 @@ program gocean2d
   !> The grid on which our fields are defined
   type(grid_type), target :: model_grid
   !> Current ('now') sea-surface height at different grid points
-  type(r2d_field) :: sshn_u_fld, sshn_v_fld, sshn_t_fld
+  type(r2d_field), target :: sshn_u_fld, sshn_v_fld, sshn_t_fld
   !> 'After' sea-surface height at different grid points
-  type(r2d_field) :: ssha_u_fld, ssha_v_fld, ssha_t_fld
+  type(r2d_field), target :: ssha_u_fld, ssha_v_fld, ssha_t_fld
   !> Distance from sea-bed to mean sea level at the different grid points.
   !! This is not time varying.
-  type(r2d_field) :: ht_fld, hu_fld, hv_fld
+  type(r2d_field), target :: ht_fld, hu_fld, hv_fld
   !> Current ('now') velocity components
-  type(r2d_field) :: un_fld, vn_fld
+  type(r2d_field), target :: un_fld, vn_fld
   !> 'After' velocity components
-  type(r2d_field) :: ua_fld, va_fld
+  type(r2d_field), target :: ua_fld, va_fld
 
   ! time stepping index
   integer :: istp 
@@ -129,7 +128,7 @@ subroutine step(istp,           &
   use boundary_conditions_mod, only: bc_ssh, bc_solid_u, bc_solid_v, &
                                      bc_flather_u, bc_flather_v
   use time_update_mod,    only: next_sshu, next_sshv
-  use infrastructure_mod, only: copy
+  !use infrastructure_mod, only: copy
   implicit none
   !> The current time step
   integer,         intent(inout) :: istp
@@ -149,9 +148,10 @@ subroutine step(istp,           &
               bc_solid_v(va),                                &
               bc_flather_u(ua, hu, sshn_u),                  &
               bc_flather_v(va, hv, sshn_v),                  &
-              copy(un, ua),                                  &
-              copy(vn, va),                                  &
-              copy(sshn_t, ssha_t),                          &
+              ! TODO implement copy as a built-in
+              !copy(un, ua),                                  &
+              !copy(vn, va),                                  &
+              !copy(sshn_t, ssha_t),                          &
               next_sshu(sshn_u, sshn_t),                     &
               next_sshv(sshn_v, sshn_t)                      &
              )

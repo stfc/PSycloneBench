@@ -95,6 +95,7 @@ contains
   subroutine model_write(grid, istp, ht, sshn, un, vn)
     use kind_params_mod
     use grid_mod
+    use gocean_mod, only: gocean_stop
     implicit none
     type(grid_type), intent(in) :: grid
     integer, intent(in) :: istp
@@ -103,9 +104,16 @@ contains
     integer :: ji, jj
     real(wp) :: rtmp1, rtmp2
     character(len=5) :: fname
-    
+    real(wp), dimension(:,:), pointer :: htptr, sshnptr, unptr, vnptr
+
     if( l_out .and. (mod(istp, mprint) .eq. 0) ) then
 
+       ! Ensure we have up-to-date field values
+       htptr => ht%get_data()
+       sshnptr => sshn%get_data()
+       unptr => un%get_data()
+       vnptr => vn%get_data()
+       
        ! output model results
        write(fname, '(I5.5)') istp
        open(21, file='go2d_'//fname//'.dat', STATUS='UNKNOWN', &
@@ -119,14 +127,14 @@ contains
        DO jj = sshn%internal%ystart, sshn%internal%ystop, 1
           DO ji = sshn%internal%xstart, sshn%internal%xstop, 1
 
-             rtmp1 = 0.5_wp * (un%data(ji-1,jj) + un%data(ji,jj))
-             rtmp2 = 0.5_wp * (vn%data(ji,jj-1) + vn%data(ji,jj))
+             rtmp1 = 0.5_wp * (unptr(ji-1,jj) + unptr(ji,jj))
+             rtmp2 = 0.5_wp * (vnptr(ji,jj-1) + vnptr(ji,jj))
 
              ! write "x-coord, y-coord, depth, ssh, u-velocity,
              ! v-velocity" to ASCII files
 
               write(21,'(6e16.7)') grid%xt(ji,jj), grid%yt(ji,jj), &
-                                   ht%data(ji,jj), sshn%data(ji,jj), &
+                                   htptr(ji,jj), sshnptr(ji,jj), &
                                    rtmp1, rtmp2 
           END DO
           WRITE(21,*)

@@ -10,7 +10,7 @@
 # export LDFLAGS=-lm
 
 # Location of the dl_timer and infrastucture code
-SHARED_DIR = ../../../../../../shared
+SHARED_DIR = ../../../../../../../shared
 
 # The dl_timer library
 TIMER_DIR = ${SHARED_DIR}/dl_timer
@@ -20,16 +20,28 @@ TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
+# FortCL (provides OpenCL functionality in Fortran)
+FCL_DIR = ${SHARED_DIR}/FortCL
+FCL_INC = ${FCL_DIR}/src
+
 # Shared NEMOLite2D routines
-COMMON_DIR = ../../../common
+COMMON_DIR = ../../../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
-COMMON_MODULES = opencl_utils_mod.o kernel_args_mod.o nemolite2d.o
 # Location of the kernel sources
 KERNEL_DIR = ../../../kernels/opencl
 
-nemolite2d.exe: kernels ${COMMON_LIB} inf_lib timer_lib ${COMMON_MODULES}
-	${F90} ${OMPFLAGS} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${COMMON_LIB} \
+COMMON_MODULES = kernel_args_mod.o psykalite_mod.o \
+                 nemolite2d.o
+
+# This implementation is not complete because it was quicker to extend
+# PSyclone to generate the necessary OpenCL boiler-plate that it was to
+# write it by hand!
+all:
+	echo "Not building because I haven't finished all the boiler-plate"
+
+nemolite2d.exe: kernels ${COMMON_LIB} inf_lib timer_lib fcl_lib ${COMMON_MODULES}
+	${F90} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${COMMON_LIB} \
 ${INF_LIB} ${TIMER_LIB} $(LDFLAGS)
 
 timer_lib:
@@ -37,6 +49,9 @@ timer_lib:
 
 inf_lib:
 	${MAKE} -C ${INF_DIR}
+
+fcl_lib:
+	${MAKE} -C ${FCL_DIR}
 
 # We only need to compile clfortran in order to get the module interfaces.
 # We *do not* link it into the final executable otherwise it collides
@@ -50,7 +65,7 @@ ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR}
 
 %.o: %.f90
-	${F90} ${F90FLAGS} -c -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} $<
+	${F90} ${F90FLAGS} -c -I${COMMON_DIR} -I${FCL_INC} -I${INF_INC} -I${TIMER_INC} $<
 
 clean:
 	rm -f *.o *~ gnu_opt_report.txt
@@ -60,3 +75,4 @@ allclean: clean
 	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${TIMER_DIR} allclean
 	${MAKE} -C ${COMMON_DIR} allclean
+	${MAKE} -C ${FCL_DIR} allclean

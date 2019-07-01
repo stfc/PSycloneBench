@@ -7,17 +7,17 @@ module continuity_mod
   implicit none
 
   type, extends(kernel_type) :: continuity
-     type(go_arg), dimension(10) :: meta_args =         &
-          (/ go_arg(GO_WRITE, GO_CT,       GO_POINTWISE),        & ! ssha
-             go_arg(GO_READ,  GO_CT,       GO_POINTWISE),        & ! sshn
-             go_arg(GO_READ,  GO_CU,       GO_POINTWISE),        & ! sshn_u
-             go_arg(GO_READ,  GO_CV,       GO_POINTWISE),        & ! sshn_v
-             go_arg(GO_READ,  GO_CU,       GO_POINTWISE),        & ! hu
-             go_arg(GO_READ,  GO_CV,       GO_POINTWISE),        & ! hv
-             go_arg(GO_READ,  GO_CU,       GO_POINTWISE),        & ! un
-             go_arg(GO_READ,  GO_CV,       GO_POINTWISE),        & ! vn
-             go_arg(GO_READ,  GO_R_SCALAR, GO_POINTWISE),        & ! Time-step
-             go_arg(GO_READ,  GO_GRID_AREA_T)                 &
+     type(go_arg), dimension(10) :: meta_args =              &
+          (/ go_arg(GO_WRITE, GO_CT,       GO_POINTWISE),    & ! ssha
+             go_arg(GO_READ,  GO_CT,       GO_POINTWISE),    & ! sshn
+             go_arg(GO_READ,  GO_CU,       GO_POINTWISE),    & ! sshn_u
+             go_arg(GO_READ,  GO_CV,       GO_POINTWISE),    & ! sshn_v
+             go_arg(GO_READ,  GO_CU,       GO_POINTWISE),    & ! hu
+             go_arg(GO_READ,  GO_CV,       GO_POINTWISE),    & ! hv
+             go_arg(GO_READ,  GO_CU,       GO_POINTWISE),    & ! un
+             go_arg(GO_READ,  GO_CV,       GO_POINTWISE),    & ! vn
+             go_arg(GO_READ,  GO_R_SCALAR, GO_POINTWISE),    & ! Time-step
+             go_arg(GO_READ,  GO_GRID_AREA_T)                &
            /)
      !> This kernel updates only internal points of the simulation
      !! domain
