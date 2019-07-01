@@ -72,14 +72,14 @@ contains
     use dl_timer, only: timer_start, timer_stop, i_def64
     implicit none
     integer, intent(in) :: nx, ny, M, N
-    real(wp), intent(in) :: rdt
-    real(wp), intent(out) :: ssha(nx,ny)
-    real(wp), intent(in)  :: sshn_u(nx,ny), sshn_v(nx,ny), sshn_t(nx,ny)
-    real(wp), intent(in)  :: un(nx,ny), vn(nx,ny)
-    real(wp), intent(in)  :: hu(nx,ny), hv(nx,ny), area_t(nx,ny)
+    real(go_wp), intent(in) :: rdt
+    real(go_wp), intent(out) :: ssha(nx,ny)
+    real(go_wp), intent(in)  :: sshn_u(nx,ny), sshn_v(nx,ny), sshn_t(nx,ny)
+    real(go_wp), intent(in)  :: un(nx,ny), vn(nx,ny)
+    real(go_wp), intent(in)  :: hu(nx,ny), hv(nx,ny), area_t(nx,ny)
     ! Locals
     integer :: jj, ji
-    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     !> For timing
     integer, save :: idxt
     integer :: ic
@@ -135,14 +135,14 @@ contains
     use dl_timer, only: timer_start, timer_stop, i_def64
     implicit none
     integer, intent(in) :: nx, ny, M, N
-    real(wp), intent(in) :: rdt
-    real(wp), intent(out) :: ssha(nx,ny)
-    real(wp), intent(in)  :: sshn_u(nx,ny), sshn_v(nx,ny), sshn_t(nx,ny)
-    real(wp), intent(in)  :: un(nx,ny), vn(nx,ny)
-    real(wp), intent(in)  :: hu(nx,ny), hv(nx,ny), area_t(nx,ny)
+    real(go_wp), intent(in) :: rdt
+    real(go_wp), intent(out) :: ssha(nx,ny)
+    real(go_wp), intent(in)  :: sshn_u(nx,ny), sshn_v(nx,ny), sshn_t(nx,ny)
+    real(go_wp), intent(in)  :: un(nx,ny), vn(nx,ny)
+    real(go_wp), intent(in)  :: hu(nx,ny), hv(nx,ny), area_t(nx,ny)
     ! Locals
     integer :: jj, ji
-    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     !> For timing
     integer, save :: idxt
     integer(i_def64) :: nrepeat
@@ -183,13 +183,13 @@ contains
                              hu, hv, un, vn, rdt, e12t)
     implicit none
     integer,                  intent(in)  :: ji, jj
-    real(wp),                 intent(in)  :: rdt
-    real(wp), dimension(:,:), intent(in)  :: e12t
-    real(wp), dimension(:,:), intent(out) :: ssha
-    real(wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, &
+    real(go_wp),                 intent(in)  :: rdt
+    real(go_wp), dimension(:,:), intent(in)  :: e12t
+    real(go_wp), dimension(:,:), intent(out) :: ssha
+    real(go_wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, &
                                              hu, hv, un, vn
     ! Locals
-    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
 
     rtmp1 = (sshn_u(ji  ,jj  ) + hu(ji  ,jj  )) * un(ji  ,jj  )
     rtmp2 = (sshn_u(ji-1,jj  ) + hu(ji-1,jj  )) * un(ji-1,jj  )
