@@ -2,7 +2,6 @@ module boundary_conditions_mod
   use kind_params_mod
   use kernel_mod
   use argument_mod
-  use physical_params_mod
   use grid_mod
   use field_mod
   implicit none
@@ -48,7 +47,7 @@ module boundary_conditions_mod
   type, extends(kernel_type) :: bc_solid_u
      type(go_arg), dimension(2) :: meta_args =  &
           (/ go_arg(GO_READWRITE, GO_CU, GO_POINTWISE),  &
-             go_arg(GO_READ,      GO_GRID_MASK_T)        &
+             go_arg(GO_READ,      GO_GRID_MASK_T)     &
            /)
 
      !> This is a boundary-conditions kernel and therefore
@@ -182,13 +181,13 @@ contains
     integer, intent(in)  :: ji, jj
     integer, dimension(:,:),  intent(in)    :: tmask
     integer,                  intent(in)    :: istep
-    real(wp), dimension(:,:), intent(inout) :: ssha
+    real(go_wp), dimension(:,:), intent(inout) :: ssha
     ! Locals
-    real(wp) :: amp_tide, omega_tide, rtime
+    real(go_wp) :: amp_tide, omega_tide, rtime
 
-    amp_tide   = 0.2_wp
-    omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
-    rtime = real(istep,wp) * rdt
+    amp_tide   = 0.2_go_wp
+    omega_tide = 2.0_go_wp * 3.14159_go_wp / (12.42_go_wp * 3600._go_wp)
+    rtime = real(istep) * rdt
 
     if(tmask(ji,jj) <= 0) return
     IF     (tmask(ji,jj-1) < 0) THEN
@@ -235,10 +234,10 @@ contains
     implicit none
     integer,                  intent(in)    :: ji, jj
     integer,  dimension(:,:), intent(in)    :: tmask
-    real(wp), dimension(:,:), intent(inout) :: ua
+    real(go_wp), dimension(:,:), intent(inout) :: ua
 
     if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
-       ua(ji,jj) = 0._wp
+       ua(ji,jj) = 0._go_wp
     end if
 
   end subroutine bc_solid_u_code
@@ -268,10 +267,10 @@ contains
     implicit none
     integer,                 intent(in)    :: ji, jj
     integer, dimension(:,:), intent(in)    :: tmask
-    real(wp),dimension(:,:), intent(inout) :: va
+    real(go_wp),dimension(:,:), intent(inout) :: va
 
     if(tmask(ji,jj) * tmask(ji,jj+1) == 0)then
-       va(ji,jj) = 0._wp
+       va(ji,jj) = 0._go_wp
     end if
 
   end subroutine bc_solid_v_code
@@ -306,11 +305,12 @@ contains
 
   !> Kernel to apply Flather condition to U
   subroutine bc_flather_u_code(ji, jj, ua, hu, sshn_u, tmask)
+    use physical_params_mod, only: g
     implicit none
     integer,                  intent(in)    :: ji, jj
     integer,  dimension(:,:), intent(in)    :: tmask
-    real(wp), dimension(:,:), intent(inout) :: ua
-    real(wp), dimension(:,:), intent(in)    :: hu, sshn_u
+    real(go_wp), dimension(:,:), intent(inout) :: ua
+    real(go_wp), dimension(:,:), intent(in)    :: hu, sshn_u
     ! Locals
     integer  :: jiu
 
@@ -362,11 +362,12 @@ contains
   !> Kernel to apply Flather boundary condition to v component
   !! of velocity
   subroutine bc_flather_v_code(ji, jj, va, hv, sshn_v, tmask)
+    use physical_params_mod, only: g
     implicit none
     integer,                  intent(in) :: ji, jj
     integer,  dimension(:,:), intent(in) :: tmask
-    real(wp), dimension(:,:), intent(inout) :: va
-    real(wp), dimension(:,:), intent(in) :: hv, sshn_v
+    real(go_wp), dimension(:,:), intent(inout) :: va
+    real(go_wp), dimension(:,:), intent(in) :: hv, sshn_v
     ! Locals
     integer  :: jiv
 

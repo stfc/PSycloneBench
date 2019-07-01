@@ -91,17 +91,17 @@ contains
     implicit none
     integer,                  intent(in)    :: ji, jj
     integer,  dimension(:,:), intent(in)    :: tmask
-    real(wp), dimension(:,:), intent(in)    :: e12t, e12u
-    real(wp), dimension(:,:), intent(inout) :: sshn_u
-    real(wp), dimension(:,:), intent(in)    :: sshn
+    real(go_wp), dimension(:,:), intent(in)    :: e12t, e12u
+    real(go_wp), dimension(:,:), intent(inout) :: sshn_u
+    real(go_wp), dimension(:,:), intent(in)    :: sshn
     ! Locals
-    real(wp) :: rtmp1
+    real(go_wp) :: rtmp1
 
     if(tmask(ji,jj) + tmask(ji+1,jj) <= 0)  return   !jump over non-computational domain
 
     IF(tmask(ji,jj) * tmask(ji+1,jj) > 0) THEN
       rtmp1 = e12t(ji,jj) * sshn(ji,jj) + e12t(ji+1,jj) * sshn(ji+1,jj)
-      sshn_u(ji,jj) = 0.5_wp * rtmp1 / e12u(ji,jj) 
+      sshn_u(ji,jj) = 0.5_go_wp * rtmp1 / e12u(ji,jj) 
     ELSE IF(tmask(ji,jj) <= 0) THEN
       sshn_u(ji,jj) = sshn(ji+1,jj)
     ELSE IF(tmask(ji+1,jj) <= 0) THEN
@@ -138,16 +138,16 @@ contains
     implicit none
     integer,                  intent(in)    :: ji, jj
     integer,  dimension(:,:), intent(in)    :: tmask
-    real(wp), dimension(:,:), intent(in)    :: e12t, e12v
-    real(wp), dimension(:,:), intent(inout) :: sshn_v
-    real(wp), dimension(:,:), intent(in)    :: sshn
+    real(go_wp), dimension(:,:), intent(in)    :: e12t, e12v
+    real(go_wp), dimension(:,:), intent(inout) :: sshn_v
+    real(go_wp), dimension(:,:), intent(in)    :: sshn
     ! Locals
-    real(wp) :: rtmp1
+    real(go_wp) :: rtmp1
 
     if(tmask(ji,jj) + tmask(ji,jj+1) <= 0)  return !jump over non-computational domain
     if(tmask(ji,jj) * tmask(ji,jj+1) > 0) then
       rtmp1 = e12t(ji,jj) * sshn(ji,jj) + e12t(ji,jj+1) * sshn(ji,jj+1)
-      sshn_v(ji,jj) = 0.5_wp * rtmp1 / e12v(ji,jj) 
+      sshn_v(ji,jj) = 0.5_go_wp * rtmp1 / e12v(ji,jj) 
     else if(tmask(ji,jj) <= 0) then
       sshn_v(ji,jj) = sshn(ji,jj+1)
     else if(tmask(ji,jj+1) <= 0) then
