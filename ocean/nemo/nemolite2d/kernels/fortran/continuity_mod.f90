@@ -16,7 +16,7 @@ module continuity_mod
               go_arg(GO_READ,  GO_CV, GO_STENCIL(000,010,010)), & ! hv
               go_arg(GO_READ,  GO_CU, GO_STENCIL(000,110,000)), & ! un
               go_arg(GO_READ,  GO_CV, GO_STENCIL(000,010,010)), & ! vn
-              go_arg(GO_READ,  GO_TIME_STEP),            &
+              go_arg(GO_READ,  GO_R_SCALAR, GO_POINTWISE),      & ! Time-step
               go_arg(GO_READ,  GO_GRID_AREA_T)           &
            /)
      !> This kernel updates only internal points of the simulation
