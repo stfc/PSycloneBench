@@ -25,9 +25,9 @@ module boundary_conditions_mod
              go_arg(GO_READ,      GO_GRID_MASK_T)           &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = GO_DOFS
+     !> Although this is a boundary-conditions kernel, it only
+     !! acts on the internal points of the domain
+     integer :: ITERATES_OVER = GO_INTERNAL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -50,9 +50,10 @@ module boundary_conditions_mod
              go_arg(GO_READ,      GO_GRID_MASK_T)     &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = GO_DOFS
+     !> This is a boundary-conditions kernel and therefore
+     !! acts on all points of the domain rather than just
+     !! those that are internal
+     integer :: ITERATES_OVER = GO_ALL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -75,9 +76,10 @@ module boundary_conditions_mod
              go_arg(GO_READ,      GO_GRID_MASK_T)     &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = GO_DOFS
+     !> This is a boundary-conditions kernel and therefore
+     !! acts on all points of the domain rather than just
+     !! those that are internal
+     integer :: ITERATES_OVER = GO_ALL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -102,9 +104,10 @@ module boundary_conditions_mod
              go_arg(GO_READ,      GO_GRID_MASK_T)     &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = GO_DOFS
+     !> This is a boundary-conditions kernel and therefore
+     !! acts on all points of the domain rather than just
+     !! those that are internal
+     integer :: ITERATES_OVER = GO_ALL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
@@ -129,9 +132,10 @@ module boundary_conditions_mod
              go_arg(GO_READ,      GO_GRID_MASK_T)     &
            /)
 
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = GO_DOFS
+     !> This is a boundary-conditions kernel and therefore
+     !! acts on all points of the domain rather than just
+     !! those that are internal
+     integer :: ITERATES_OVER = GO_ALL_PTS
 
      !> Although the staggering of variables used in an Arakawa
      !! C grid is well defined, the way in which they are indexed is
