@@ -2,7 +2,8 @@ module boundary_conditions_mod
   use kind_params_mod
   use argument_mod, only: GO_READ, GO_READWRITE, &
        GO_ARG, GO_R_SCALAR, GO_CU, GO_CV, GO_CT, GO_GRID_MASK_T
-  use kernel_mod, only: kernel_type, GO_POINTWISE, GO_DOFS
+  use kernel_mod, only: kernel_type, GO_POINTWISE, GO_DOFS, &
+      GO_ALL_PTS, GO_INTERNAL_PTS
   use physical_params_mod
   use grid_mod
   use field_mod
