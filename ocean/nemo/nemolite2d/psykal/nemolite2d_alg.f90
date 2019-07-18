@@ -36,10 +36,10 @@ program gocean2d
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
   ! points immediately to the North and East of a T point all have the
   ! same i,j index).  This is the same offset scheme as used by NEMO.
-  model_grid = grid_type(ARAKAWA_C, &
+  model_grid = grid_type(GO_ARAKAWA_C, &
   !  BC_PERIODIC, BC_NON_PERIODIC ??
-                         (/BC_EXTERNAL,BC_EXTERNAL,BC_NONE/), &
-                         OFFSET_NE)
+                         (/GO_BC_EXTERNAL,GO_BC_EXTERNAL,GO_BC_NONE/), &
+                         GO_OFFSET_NE)
 
   !! read in model parameters and configure the model grid 
   CALL model_init(model_grid)
@@ -47,27 +47,27 @@ program gocean2d
   ! Create fields on this grid
 
   ! Sea-surface height now (current time step)
-  sshn_u_fld = r2d_field(model_grid, U_POINTS)
-  sshn_v_fld = r2d_field(model_grid, V_POINTS)
-  sshn_t_fld = r2d_field(model_grid, T_POINTS)
+  sshn_u_fld = r2d_field(model_grid, GO_U_POINTS)
+  sshn_v_fld = r2d_field(model_grid, GO_V_POINTS)
+  sshn_t_fld = r2d_field(model_grid, GO_T_POINTS)
 
   ! Sea-surface height 'after' (next time step)
-  ssha_u_fld = r2d_field(model_grid, U_POINTS)
-  ssha_v_fld = r2d_field(model_grid, V_POINTS)
-  ssha_t_fld = r2d_field(model_grid, T_POINTS)
+  ssha_u_fld = r2d_field(model_grid, GO_U_POINTS)
+  ssha_v_fld = r2d_field(model_grid, GO_V_POINTS)
+  ssha_t_fld = r2d_field(model_grid, GO_T_POINTS)
 
   ! Distance from sea-bed to mean sea level
-  hu_fld = r2d_field(model_grid, U_POINTS)
-  hv_fld = r2d_field(model_grid, V_POINTS)
-  ht_fld = r2d_field(model_grid, T_POINTS)
+  hu_fld = r2d_field(model_grid, GO_U_POINTS)
+  hv_fld = r2d_field(model_grid, GO_V_POINTS)
+  ht_fld = r2d_field(model_grid, GO_T_POINTS)
 
   ! Velocity components now (current time step)
-  un_fld = r2d_field(model_grid, U_POINTS)
-  vn_fld = r2d_field(model_grid, V_POINTS)
+  un_fld = r2d_field(model_grid, GO_U_POINTS)
+  vn_fld = r2d_field(model_grid, GO_V_POINTS)
 
   ! Velocity components 'after' (next time step)
-  ua_fld = r2d_field(model_grid, U_POINTS)
-  va_fld = r2d_field(model_grid, V_POINTS)
+  ua_fld = r2d_field(model_grid, GO_U_POINTS)
+  va_fld = r2d_field(model_grid, GO_V_POINTS)
 
   !! setup model initial conditions
   call initialisation(ht_fld, hu_fld, hv_fld, &

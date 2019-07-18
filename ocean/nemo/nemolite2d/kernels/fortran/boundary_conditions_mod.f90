@@ -1,6 +1,6 @@
 module boundary_conditions_mod
   use kind_params_mod
-  use argument_mod, only: GO_READ, GO_READWRITE, &
+  use argument_mod, only: GO_READ, GO_READWRITE, GO_I_SCALAR, &
        GO_ARG, GO_R_SCALAR, GO_CU, GO_CV, GO_CT, GO_GRID_MASK_T
   use kernel_mod, only: kernel_type, GO_POINTWISE, GO_DOFS, &
       GO_ALL_PTS, GO_INTERNAL_PTS
@@ -11,6 +11,7 @@ module boundary_conditions_mod
 
   private
 
+  public bc_ssh, bc_solid_u, bc_solid_v, bc_flather_u, bc_flather_v
   public invoke_bc_solid_u,   invoke_bc_solid_v
   public invoke_bc_flather_u, invoke_bc_flather_v
   public invoke_bc_ssh
@@ -21,7 +22,7 @@ module boundary_conditions_mod
 
   type, extends(kernel_type) :: bc_ssh
      type(go_arg), dimension(3) :: meta_args =        &
-          (/ go_arg(GO_READ,      GO_R_SCALAR, GO_POINTWISE),  &
+          (/ go_arg(GO_READ,      GO_I_SCALAR, GO_POINTWISE),  &
              go_arg(GO_READWRITE, GO_CT,       GO_POINTWISE),  &
              go_arg(GO_READ,      GO_GRID_MASK_T)           &
            /)
