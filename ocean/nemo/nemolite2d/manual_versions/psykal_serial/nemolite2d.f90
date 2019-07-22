@@ -6,7 +6,7 @@ program gocean2d
   use model_mod
   use boundary_conditions_mod
   use gocean2d_io_mod, only: model_write
-  use gocean_mod,      only: model_write_log
+  use gocean_mod,      only: model_write_log, gocean_initialise
   !use likwid
 
   !> A Horizontal 2D hydrodynamic ocean model which
@@ -36,6 +36,9 @@ program gocean2d
 
   ! Scratch space for logging messages
   character(len=160) :: log_str
+
+  ! Initialise GOcean infrastructure
+  call gocean_initialise()
 
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
   ! points immediately to the North and East of a T point all have the

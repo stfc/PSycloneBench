@@ -25,9 +25,8 @@ CONTAINS
 
   subroutine model_init(grid)
     use gocean2d_io_mod
-    use decomposition_mod, only: decomposition_type
-    use subdomain_mod, only: decompose
-    use parallel_mod, only: get_rank, set_proc_grid, map_comms
+    use parallel_comms_mod, only: map_comms
+    !use decomposition_mod, only: decomposition_type
     implicit none
     type(grid_type), intent(inout) :: grid
 
@@ -36,8 +35,6 @@ CONTAINS
     real(go_wp) :: dx, dy
     integer  :: ierr
     integer, dimension(:,:), allocatable :: tmask
-    type(decomposition_type) :: decomp
-    integer :: rank
 
     ! Initialise timing system
     call timer_init()
@@ -49,20 +46,19 @@ CONTAINS
 
     ! Work out the decomposition of the global domain (uses the number
     ! of MPI ranks by default)
-    decomp = decompose(jpiglo, jpjglo)
-    call set_proc_grid(decomp%nx, decomp%ny)
+    call grid%decompose(jpiglo, jpjglo)
 
     ! Set-up the T mask on this process. This defines the model domain.
-    rank = get_rank()
-    call setup_tpoints_mask(decomp%subdomains(rank), jpiglo, jpjglo, tmask)
+    call setup_tpoints_mask(grid%subdomain, jpiglo, jpjglo, tmask)
 
     ! Having specified the T points mask, we can set up mesh parameters
-    call grid_init(grid, decomp, dx, dy, tmask)
+    call grid_init(grid, dx, dy, tmask)
 
     ! Write generated, decomposed T-mask out to file
     call dump_tmask(grid, raw=.true.)
 
-    call map_comms(decomp, tmask, .false., (/1,1/), ierr)
+    ! This is called from within grid_init now
+    !call map_comms(grid%decomp, tmask, .false., (/1,1/), ierr)
 
     ! Initialise model IO 'system'
     call model_write_init(jpiglo, jpjglo, irecord)
@@ -240,7 +236,7 @@ CONTAINS
   end subroutine setup_tpoints_mask
 
   subroutine dump_tmask(grid, raw)
-    use parallel_mod, only: get_rank
+    use parallel_utils_mod, only: get_rank
     use grid_mod, only: grid_type
     implicit none
     type(grid_type), intent(in) :: grid
