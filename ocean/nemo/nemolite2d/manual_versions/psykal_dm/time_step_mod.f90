@@ -34,17 +34,17 @@ contains
     ! invoke so we have to check...
     ! (hu, hv and ht are constant so no need to worry about them)
 !!$    if(sshn_u%is_dirty(depth=idepth))then
-       call sshn_u%halo_exch(depth=idepth)
+       call sshn_u%halo_exchange(depth=idepth)
 !!$    end if
 !!$    if(sshn_v%is_dirty(depth=idepth))then
-       call sshn_v%halo_exch(depth=idepth)
+       call sshn_v%halo_exchange(depth=idepth)
 !!$    end if
-       call sshn_t%halo_exch(depth=idepth)
+       call sshn_t%halo_exchange(depth=idepth)
 !!$    if(un%is_dirty(depth=idepth))then
-       call un%halo_exch(depth=idepth)
+       call un%halo_exchange(depth=idepth)
 !!$    end if
 !!$    if(vn%is_dirty(depth=idepth))then
-       call vn%halo_exch(depth=idepth)
+       call vn%halo_exchange(depth=idepth)
 !!$    end if
 
     do jj = ssha%internal%ystart, ssha%internal%ystop, 1
@@ -100,7 +100,7 @@ contains
 
     ! Apply open and solid boundary conditions
 
-    call ssha%halo_exch(depth=1)
+    call ssha%halo_exchange(depth=1)
 
     DO jj = ssha%internal%ystart, ssha%internal%ystop 
        DO ji = ssha%internal%xstart, ssha%internal%xstop 
@@ -109,7 +109,7 @@ contains
        END DO
     END DO
 
-    call ua%halo_exch(depth=1)
+    call ua%halo_exchange(depth=1)
     
     do jj = ua%whole%ystart, ua%whole%ystop, 1
        do ji = ua%whole%xstart, ua%whole%xstop, 1
@@ -118,7 +118,7 @@ contains
        end do
     end do
 
-    call va%halo_exch(depth=1)
+    call va%halo_exchange(depth=1)
     
     DO jj = va%whole%ystart, va%whole%ystop, 1 
        DO ji = va%whole%xstart, va%whole%xstop, 1
@@ -151,7 +151,7 @@ contains
     call copy_field(va, vn)
     call copy_field(ssha, sshn_t)
     
-    call sshn_t%halo_exch(depth=1)
+    call sshn_t%halo_exchange(depth=1)
     
     do jj = sshn_u%internal%ystart, sshn_u%internal%ystop
       do ji = sshn_u%internal%xstart, sshn_u%internal%xstop
