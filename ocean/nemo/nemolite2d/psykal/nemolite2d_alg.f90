@@ -6,7 +6,7 @@ program gocean2d
   use model_mod
   use boundary_conditions_mod
   use gocean2d_io_mod, only: model_write
-  use gocean_mod,      only: model_write_log
+  use gocean_mod,      only: model_write_log, gocean_initialise
 
   !> A Horizontal 2D hydrodynamic ocean model which
   !!   1) using structured grid
@@ -32,6 +32,8 @@ program gocean2d
   integer :: istp 
   integer :: itimer0
   integer(i_def64) :: nrepeat
+
+  call gocean_initialise()
 
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
   ! points immediately to the North and East of a T point all have the
@@ -78,6 +80,7 @@ program gocean2d
 
   ! Start timer for time-stepping section
   nrepeat = nitend - nit000 + 1
+  call model_write_log("((A))", '=== Start Time-stepping ===')
   CALL timer_start(itimer0, label='Time-stepping', num_repeats=nrepeat)
 
   !! time stepping 
@@ -98,6 +101,7 @@ program gocean2d
 
   ! Stop the timer for the time-stepping section
   call timer_stop(itimer0)
+  call model_write_log("((A))", '=== Time-stepping finished ===')
 
   ! Compute and output some checksums for error checking
   call model_write_log("('ua checksum = ',E16.8)", &
