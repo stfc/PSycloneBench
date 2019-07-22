@@ -64,9 +64,6 @@ CONTAINS
 
   subroutine model_init(grid)
     use physical_params_mod, only: physical_params_init
-    use decomposition_mod, only: decomposition_type
-    use subdomain_mod, only: decompose
-    use parallel_mod, only: get_rank, set_proc_grid
     use time_smooth_mod, only: time_smooth_init
     use grid_mod, only: grid_type, grid_init
     implicit none
@@ -81,8 +78,6 @@ CONTAINS
     REAL(KIND=go_wp), PARAMETER :: dt_loc = 90.0d0
     !> Problem size, read from namelist
     integer :: m, n
-    !> The domain decomposition of the model
-    type(decomposition_type) :: decomp
 
     call timer_init()
 
@@ -90,17 +85,10 @@ CONTAINS
 
     call read_namelist(m,n,itmax)
 
-    ! Work out the decomposition of the global domain (uses the number
-    ! of MPI ranks by default)
-    decomp = decompose(m, n)
-    call set_proc_grid(decomp%nx, decomp%ny)
-
-    ! Assume the namelist specifies the extent of the
-    ! internal domain so allow for boundaries/halos used
-    ! to implement periodic boundary conditions.
+    call grid%decompose(m, n)
 
     ! Set up mesh parameters
-    CALL grid_init(grid, decomp, dxloc, dyloc)
+    CALL grid_init(grid, dxloc, dyloc)
 
     ! Set model time-step
     dt = dt_loc

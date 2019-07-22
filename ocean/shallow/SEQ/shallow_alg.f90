@@ -38,7 +38,8 @@ program shallow
 
   use shallow_io_mod
   use dl_timer
-  use gocean_mod, only: model_write_log
+  use gocean_mod, only: model_write_log, gocean_initialise, &
+                        gocean_finalise
   use model_mod
   use grid_mod
   use field_mod
@@ -77,6 +78,7 @@ program shallow
   !> Integer tags for timers
   INTEGER :: idxt0, idxt1
 
+  call gocean_initialise()
   ! Create the model grid
   !> \todo The call to grid_type here should *not* specify the grid
   !! offset choice as that is an implementation detail. PSyclone
@@ -246,5 +248,6 @@ program shallow
                        itmax, field_checksum(vnew_fld))
 
   call model_finalise()
+  call gocean_finalise()
 
 end program shallow
