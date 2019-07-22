@@ -6,7 +6,8 @@ program gocean2d
   use model_mod
   use boundary_conditions_mod
   use gocean2d_io_mod, only: model_write
-  use gocean_mod,      only: model_write_log, gocean_initialise
+  use gocean_mod,      only: model_write_log, gocean_initialise, &
+                             gocean_finalise
   !use likwid
 
   !> A Horizontal 2D hydrodynamic ocean model which
@@ -126,6 +127,8 @@ program gocean2d
   !call likwid_markerClose()
 
   call model_write_log("((A))", 'Simulation finished!!')
+
+  call gocean_finalise()
 
 end program gocean2d
 
