@@ -1,28 +1,30 @@
 module boundary_conditions_mod
   use kind_params_mod
-  use kernel_mod
-  use argument_mod
+  use argument_mod, only: GO_READ, GO_READWRITE, GO_I_SCALAR, &
+       GO_ARG, GO_R_SCALAR, GO_CU, GO_CV, GO_CT, GO_GRID_MASK_T
+  use kernel_mod, only: kernel_type, GO_POINTWISE, GO_DOFS, &
+      GO_ALL_PTS, GO_INTERNAL_PTS
+  use physical_params_mod
   use grid_mod
   use field_mod
   implicit none
 
   private
 
+  public bc_ssh, bc_solid_u, bc_solid_v, bc_flather_u, bc_flather_v
   public invoke_bc_solid_u,   invoke_bc_solid_v
   public invoke_bc_flather_u, invoke_bc_flather_v
   public invoke_bc_ssh
-  public bc_ssh, bc_solid_u, bc_solid_v
-  public bc_flather_u, bc_flather_v
   public bc_ssh_code, bc_solid_u_code, bc_solid_v_code
   public bc_flather_u_code, bc_flather_v_code
 
   !=======================================
 
   type, extends(kernel_type) :: bc_ssh
-     type(go_arg), dimension(3) :: meta_args =                 &
+     type(go_arg), dimension(3) :: meta_args =        &
           (/ go_arg(GO_READ,      GO_I_SCALAR, GO_POINTWISE),  &
              go_arg(GO_READWRITE, GO_CT,       GO_POINTWISE),  &
-             go_arg(GO_READ,      GO_GRID_MASK_T)              &
+             go_arg(GO_READ,      GO_GRID_MASK_T)           &
            /)
 
      !> Although this is a boundary-conditions kernel, it only
@@ -160,7 +162,7 @@ contains
     type(r2d_field),    intent(inout) :: ssha
     ! Locals
     integer  :: ji, jj
-    real(wp), dimension(:,:), pointer :: ssha_ptr
+    real(go_wp), dimension(:,:), pointer :: ssha_ptr
     
     ssha_ptr => ssha%get_data()
     
@@ -212,13 +214,6 @@ contains
     ! Locals
     integer  :: ji, jj
 
-! Original loop was:
-!            DO jj = 1, jpj
-!              DO ji = 0, jpi
-! In original code, tmask is declared with one more row and column than
-! any other field. ji==jpi IS last column of u field.
-! 1/ How do I determine the full range of array indices to loop over for ua?
-! 2/ If I do that, is tmask(ji+1,jj) going to stay within bounds?
     do jj = ua%whole%ystart, ua%whole%ystop, 1
        do ji = ua%whole%xstart, ua%whole%xstop, 1
           call bc_solid_u_code(ji, jj, ua%data, ua%grid%tmask)
@@ -344,8 +339,6 @@ contains
     type(r2d_field), intent(in)    :: hv, sshn_v
     ! Locals
     integer  :: ji, jj
-
-    !kernel Flather v 
 
     DO jj = va%whole%ystart, va%whole%ystop, 1
        DO ji = va%whole%xstart, va%whole%xstop, 1

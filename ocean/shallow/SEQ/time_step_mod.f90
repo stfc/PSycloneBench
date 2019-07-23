@@ -24,11 +24,11 @@ contains
     type(r2d_field), intent(inout) :: hfld, zfld, pfld, &
                                                ufld, vfld
     type(r2d_field), intent(inout) :: uold, vold, pold
-    real(wp),        intent(in)    :: tdt
+    real(go_wp),     intent(in)    :: tdt
 
     ! Locals
-    integer :: I, J, idim1, idim2
-    real(wp) :: dx, dy
+    integer     :: I, J, idim1, idim2
+    real(go_wp) :: dx, dy
 
     ! COMPUTE CAPITAL U, CAPITAL V, Z AND H
 

@@ -1,7 +1,6 @@
 [submodule "ocean/dl_esm_inf"]
 	path = shared/dl_esm_inf
-	url = https://github.com/stfc/dl_esm_inf
-    branch = opencl_support
+	url = https://github.com/stfc/dl_esm_inf.git
 [submodule "shared/dl_timer"]
 	path = shared/dl_timer
 	url = https://bitbucket.org/apeg/dl_timer

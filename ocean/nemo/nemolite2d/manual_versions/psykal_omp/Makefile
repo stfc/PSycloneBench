@@ -16,7 +16,7 @@ TIMER_INC = ${TIMER_DIR}/src
 TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
-INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
+INF_LIB = ${INF_DIR}/src/lib_fd.a
 
 COMMON_DIR = ../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
@@ -34,7 +34,7 @@ MODULES = time_step_mod.o ${KERNELS}
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
-COMMON_MODULES = $(MODULES) ${INF_LIB}
+COMMON_MODULES = $(MODULES)
 
 .PHONY: all nemolite2d timer_lib inf_lib
 
@@ -63,7 +63,7 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 # Generic rules
 
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS}
+	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS}
 
 %.o: %.f90
 	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
