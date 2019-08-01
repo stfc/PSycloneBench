@@ -26,3 +26,4 @@ export F90FLAGS
 export OMPFLAGS
 export LDFLAGS
 export AR
+export CC
