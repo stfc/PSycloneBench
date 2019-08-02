@@ -117,9 +117,9 @@ program gocean2d
   call timer_stop(itimer0)
 
   ! Compute and output some checksums for error checking
-  call model_write_log("('ua checksum = ',E16.8)", &
+  call model_write_log("('ua checksum = ', E16.8)", &
                        field_checksum(ua_fld))
-  call model_write_log("('va checksum = ',E16.8)", &
+  call model_write_log("('va checksum = ', E16.8)", &
                        field_checksum(va_fld))
 
   !! finalise the model run
