@@ -123,7 +123,7 @@ contains
     integer,                      intent(in) :: ncycle
     type(r2d_field), intent(in), target :: pfld, ufld, vfld
     ! Locals
-    real(kind=wp), dimension(:,:), pointer :: p, u, v
+    real(kind=go_wp), dimension(:,:), pointer :: p, u, v
     INTEGER :: m, n
 
     u => ufld%data(ufld%internal%xstart:ufld%internal%xstop, &

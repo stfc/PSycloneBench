@@ -44,6 +44,7 @@ summary:
 * psykal_serial - serial versions with various optimisations applied
                   to the PSy layer.
 * psykal_omp - PSy layer parallelised using OpenMP.
+* psykal_dm - PSy layer parallelised using distributed memory (MPI).
 * psykal_ocl - PSy layer parallelised using OpenCL.
 * single_file_acc - Original, single-file version parallelised using
                     OpenACC.

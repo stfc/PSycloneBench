@@ -13,7 +13,7 @@ TIMER_INC = ${TIMER_DIR}/src
 TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
-INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
+INF_LIB = ${INF_DIR}/src/lib_fd.a
 
 # The modules that are common to both targets
 MODULES = physical_params_mod.o \

@@ -18,7 +18,7 @@ contains
     use physical_params_mod, only: g, omega, d2r
     use boundary_conditions_mod
     implicit none
-    real(wp),        intent(in)    :: istp
+    real(go_wp),        intent(in)    :: istp
     type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
     type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
     type(r2d_field), intent(in)    :: hu, hv, ht
@@ -27,21 +27,21 @@ contains
     integer :: M, N
     integer :: cont_timer, mom_timer, bc_timer, next_timer
     ! Locals for momentum
-    REAL(wp) :: u_e, u_w, v_n, v_s
-    real(wp) :: v_nc, v_sc
-    real(wp) :: depe, depw, deps, depn
-    real(wp) :: hpg, adv, cor, vis
-    real(wp) :: dudx_e, dudx_w, dudy_s, dudy_n
-    real(wp) :: uu_e, uu_n, uu_s, uu_w
-    real(wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
-    real(wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
-    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    REAL(go_wp) :: u_e, u_w, v_n, v_s
+    real(go_wp) :: v_nc, v_sc
+    real(go_wp) :: depe, depw, deps, depn
+    real(go_wp) :: hpg, adv, cor, vis
+    real(go_wp) :: dudx_e, dudx_w, dudy_s, dudy_n
+    real(go_wp) :: uu_e, uu_n, uu_s, uu_w
+    real(go_wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
+    real(go_wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
+    real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     ! end locals for momentum
     ! Locals for BCs
-    real(wp) :: amp_tide, omega_tide, rtime
+    real(go_wp) :: amp_tide, omega_tide, rtime
 
-    M  = ssha%grid%simulation_domain%xstop
-    N  = ssha%grid%simulation_domain%ystop
+    M  = ssha%grid%subdomain%global%nx
+    N  = ssha%grid%subdomain%global%ny
 
     ! In the general case we have to reason about whether or not the
     ! domain has PBCs and what sort of offset convention the kernels

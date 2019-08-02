@@ -1,6 +1,7 @@
 # Top-level Makefile for PSycloneBench benchmarks.
-# Only supports those benchmarks that target the CPU (i.e. excluding
-# OpenACC, OpenCL and Maxeler.)
+# By default only builds those benchmarks that target the CPU (i.e. excluding
+# OpenACC, OpenCL and Maxeler.) Separate targets for the OpenACC versions
+# are provided.
 #
 # Picks-up the compiler and compiler flags from environment
 # variables. See e.g. compiler_setup/gnu.sh
@@ -32,6 +33,10 @@ nemolite_cpu:
 nemolite_gen:
 	${MAKE} -C ./ocean/nemo/nemolite2d/psykal
 
+nemolite_acc:
+	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/single_file_acc
+	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_acc
+
 clean:
 	${MAKE} -C ./ocean/nemo/nemolite2d/psykal clean
 	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_serial clean
@@ -45,6 +50,8 @@ allclean:
 	${MAKE} -C ./ocean/nemo/nemolite2d/psykal allclean
 	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_serial allclean
 	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_omp allclean
+	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/single_file_acc allclean
+	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_acc allclean
 	${MAKE} -C ./ocean/nemo/nemolite2d/original allclean
 	${MAKE} -C ./ocean/shallow/SEQ allclean
 	${MAKE} -C ./ocean/shallow/SEQ/original allclean

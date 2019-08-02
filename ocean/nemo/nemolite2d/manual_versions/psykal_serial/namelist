@@ -8,9 +8,9 @@
    dy          =    1000.0             !  grid size in y direction (m)
    dep_const   =     100.0             !  constant depth (m)
    nit000      =       1               !  first time step
-   nitend      =    3000               !43200               !  end time step
-   irecord     =    6000               ! 180               !  intervals to save results
+   nitend      =    3000               !  end time step
+   irecord     =    6000               !  intervals to save results
    rdt         =      20.0             !  size of time step (second) 
-   cbfr        =       0.00015          !  bottom friction coefficeint
+   cbfr        =       0.00015         !  bottom friction coefficeint
    visc        =       0.1             !  horizontal kinematic viscosity coefficient 
 /

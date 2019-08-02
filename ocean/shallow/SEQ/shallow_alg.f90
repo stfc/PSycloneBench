@@ -38,7 +38,8 @@ program shallow
 
   use shallow_io_mod
   use dl_timer
-  use gocean_mod, only: model_write_log
+  use gocean_mod, only: model_write_log, gocean_initialise, &
+                        gocean_finalise
   use model_mod
   use grid_mod
   use field_mod
@@ -77,40 +78,41 @@ program shallow
   !> Integer tags for timers
   INTEGER :: idxt0, idxt1
 
+  call gocean_initialise()
   ! Create the model grid
   !> \todo The call to grid_type here should *not* specify the grid
   !! offset choice as that is an implementation detail. PSyclone
   !! should re-write this call to pass the offset information after it
   !! has examined the kernels to see what they are expecting.
-  model_grid = grid_type(ARAKAWA_C,                           &
-                         (/BC_PERIODIC,BC_PERIODIC,BC_NONE/), &
-                         OFFSET_SW)
+  model_grid = grid_type(GO_ARAKAWA_C,                           &
+                         (/GO_BC_PERIODIC,GO_BC_PERIODIC,GO_BC_NONE/), &
+                         GO_OFFSET_SW)
 
   !  ** Initialisations of model parameters (dt etc) ** 
   CALL model_init(model_grid)
  
   ! Create fields on this grid
-  p_fld    = r2d_field(model_grid, T_POINTS)
-  pold_fld = r2d_field(model_grid, T_POINTS)
-  pnew_fld = r2d_field(model_grid, T_POINTS)
+  p_fld    = r2d_field(model_grid, GO_T_POINTS)
+  pold_fld = r2d_field(model_grid, GO_T_POINTS)
+  pnew_fld = r2d_field(model_grid, GO_T_POINTS)
 
-  u_fld    = r2d_field(model_grid, U_POINTS)
-  uold_fld = r2d_field(model_grid, U_POINTS)
-  unew_fld = r2d_field(model_grid, U_POINTS)
+  u_fld    = r2d_field(model_grid, GO_U_POINTS)
+  uold_fld = r2d_field(model_grid, GO_U_POINTS)
+  unew_fld = r2d_field(model_grid, GO_U_POINTS)
 
-  v_fld    = r2d_field(model_grid, V_POINTS)
-  vold_fld = r2d_field(model_grid, V_POINTS)
-  vnew_fld = r2d_field(model_grid, V_POINTS)
+  v_fld    = r2d_field(model_grid, GO_V_POINTS)
+  vold_fld = r2d_field(model_grid, GO_V_POINTS)
+  vnew_fld = r2d_field(model_grid, GO_V_POINTS)
 
-  cu_fld = r2d_field(model_grid, U_POINTS)
+  cu_fld = r2d_field(model_grid, GO_U_POINTS)
 
-  cv_fld = r2d_field(model_grid, V_POINTS)
+  cv_fld = r2d_field(model_grid, GO_V_POINTS)
 
-  z_fld = r2d_field(model_grid, F_POINTS)
+  z_fld = r2d_field(model_grid, GO_F_POINTS)
 
-  h_fld = r2d_field(model_grid, T_POINTS)
+  h_fld = r2d_field(model_grid, GO_T_POINTS)
 
-  psi_fld = r2d_field(model_grid, F_POINTS)
+  psi_fld = r2d_field(model_grid, GO_F_POINTS)
 
   ! NOTE BELOW THAT TWO DELTA T (TDT) IS SET TO DT ON THE FIRST
   ! CYCLE AFTER WHICH IT IS RESET TO DT+DT.
@@ -246,5 +248,6 @@ program shallow
                        itmax, field_checksum(vnew_fld))
 
   call model_finalise()
+  call gocean_finalise()
 
 end program shallow

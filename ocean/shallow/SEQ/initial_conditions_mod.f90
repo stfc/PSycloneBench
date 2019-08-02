@@ -6,9 +6,9 @@ module initial_conditions_mod
 
   !> Amplitude of initial oscillations in stream function
   !! Used by invoke_init_stream_fn_kernel()
-  REAL(wp), PARAMETER :: A = 1.0D6
+  REAL(go_wp), PARAMETER :: A = 1.0D6
   !> 2PI/{m,n}
-  REAL(wp), SAVE  :: di, dj
+  REAL(go_wp), SAVE  :: di, dj
 
   PUBLIC init_initial_condition_params
   PUBLIC invoke_init_stream_fn_kernel
@@ -81,14 +81,14 @@ CONTAINS
   SUBROUTINE init_pressure(pfld)
     IMPLICIT none
     type(r2d_field), target, intent(inout) :: pfld
-    REAL(KIND=wp), DIMENSION(:,:), pointer :: p
+    REAL(KIND=go_wp), DIMENSION(:,:), pointer :: p
     ! Locals
     INTEGER :: i, j, idim1, idim2
     !> Extent in x of model domain
-    REAL(wp) :: el
+    REAL(go_wp) :: el
     !> Computed amplitude of initial oscillations in
     !! pressure field.
-    REAL(wp) :: pcf
+    REAL(go_wp) :: pcf
 
     p => pfld%data
 
@@ -123,9 +123,9 @@ CONTAINS
     ! The stream function used in the initialisation
     type(r2d_field), intent(in),    target :: psifld
     ! Locals
-    real(kind=wp), pointer, dimension(:,:) :: u, psi
+    real(kind=go_wp), pointer, dimension(:,:) :: u, psi
     integer  :: j
-    real(wp) :: dy
+    real(go_wp) :: dy
 
     u => ufld%data
     psi => psifld%data
@@ -148,9 +148,9 @@ CONTAINS
     ! The stream function used in the initialisation
     type(r2d_field), intent(in),    target :: psifld
     ! Locals
-    real(kind=wp), pointer, dimension(:,:) :: v, psi
+    real(kind=go_wp), pointer, dimension(:,:) :: v, psi
     integer  :: I
-    real(wp) :: dx
+    real(go_wp) :: dx
 
     v => vfld%data
     psi => psifld%data

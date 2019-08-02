@@ -30,21 +30,21 @@ contains
     integer :: it, ji, jj, jiu, jiv
     integer :: M, N, idxt
     ! Locals for momentum
-    REAL(wp) :: u_e, u_w, v_n, v_s
-    real(wp) :: v_nc, v_sc
-    real(wp) :: depe, depw, deps, depn
-    real(wp) :: hpg, adv, cor, vis
-    real(wp) :: dudx_e, dudx_w, dudy_s, dudy_n
-    real(wp) :: uu_e, uu_n, uu_s, uu_w
-    real(wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
-    real(wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
-    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    REAL(go_wp) :: u_e, u_w, v_n, v_s
+    real(go_wp) :: v_nc, v_sc
+    real(go_wp) :: depe, depw, deps, depn
+    real(go_wp) :: hpg, adv, cor, vis
+    real(go_wp) :: dudx_e, dudx_w, dudy_s, dudy_n
+    real(go_wp) :: uu_e, uu_n, uu_s, uu_w
+    real(go_wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
+    real(go_wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
+    real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     ! end locals for momentum
     ! Locals for BCs
-    real(wp) :: amp_tide, omega_tide, rtime
+    real(go_wp) :: amp_tide, omega_tide, rtime
 
-    M  = ssha%grid%simulation_domain%xstop
-    N  = ssha%grid%simulation_domain%ystop
+    M  = ssha%grid%subdomain%global%nx
+    N  = ssha%grid%subdomain%global%ny
 
 !$OMP PARALLEL default(none), shared(istp, sshn_u, sshn_v, sshn_t, &
 !$OMP          un, vn, ua, va, ssha, ssha_u, ssha_v, hu, hv, ht,   &
@@ -149,34 +149,34 @@ contains
     u_w  = 0.5 * (un%data(ji,jj) + un%data(ji-1,jj)) * un%grid%dy_t(ji,jj)     !add length scale
     depw = ht%data(ji,jj) + sshn_t%data(ji,jj)
 
-    v_sc = 0.5_wp * (vn%data(ji,jj-1) + vn%data(ji+1,jj-1))
-    v_s  = 0.5_wp * v_sc * (un%grid%dx_v(ji,jj-1) + un%grid%dx_v(ji+1,jj-1))
-    deps = 0.5_wp * (hv%data(ji,jj-1) + sshn_v%data(ji,jj-1) + hv%data(ji+1,jj-1) + &
+    v_sc = 0.5_go_wp * (vn%data(ji,jj-1) + vn%data(ji+1,jj-1))
+    v_s  = 0.5_go_wp * v_sc * (un%grid%dx_v(ji,jj-1) + un%grid%dx_v(ji+1,jj-1))
+    deps = 0.5_go_wp * (hv%data(ji,jj-1) + sshn_v%data(ji,jj-1) + hv%data(ji+1,jj-1) + &
                      sshn_v%data(ji+1,jj-1))
 
-    v_nc = 0.5_wp * (vn%data(ji,jj) + vn%data(ji+1,jj))
-    v_n  = 0.5_wp * v_nc * (un%grid%dx_v(ji,jj) + un%grid%dx_v(ji+1,jj))
-    depn = 0.5_wp * (hv%data(ji,jj) + sshn_v%data(ji,jj) + hv%data(ji+1,jj) + &
+    v_nc = 0.5_go_wp * (vn%data(ji,jj) + vn%data(ji+1,jj))
+    v_n  = 0.5_go_wp * v_nc * (un%grid%dx_v(ji,jj) + un%grid%dx_v(ji+1,jj))
+    depn = 0.5_go_wp * (hv%data(ji,jj) + sshn_v%data(ji,jj) + hv%data(ji+1,jj) + &
                      sshn_v%data(ji+1,jj))
 
     ! -advection (currently first order upwind)
-    uu_w = (0.5_wp - SIGN(0.5_wp, u_w)) * un%data(ji,jj)              + & 
-         & (0.5_wp + SIGN(0.5_wp, u_w)) * un%data(ji-1,jj) 
-    uu_e = (0.5_wp + SIGN(0.5_wp, u_e)) * un%data(ji,jj)              + & 
-         & (0.5_wp - SIGN(0.5_wp, u_e)) * un%data(ji+1,jj) 
+    uu_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * un%data(ji,jj)              + & 
+         & (0.5_go_wp + SIGN(0.5_go_wp, u_w)) * un%data(ji-1,jj) 
+    uu_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * un%data(ji,jj)              + & 
+         & (0.5_go_wp - SIGN(0.5_go_wp, u_e)) * un%data(ji+1,jj) 
 
     IF(un%grid%tmask(ji,jj-1) <=0 .OR. un%grid%tmask(ji+1,jj-1) <= 0) THEN   
-       uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un%data(ji,jj)   
+       uu_s = (0.5_go_wp - SIGN(0.5_go_wp, v_s)) * un%data(ji,jj)   
     ELSE
-       uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un%data(ji,jj)              + & 
-            & (0.5_wp + SIGN(0.5_wp, v_s)) * un%data(ji,jj-1) 
+       uu_s = (0.5_go_wp - SIGN(0.5_go_wp, v_s)) * un%data(ji,jj)              + & 
+            & (0.5_go_wp + SIGN(0.5_go_wp, v_s)) * un%data(ji,jj-1) 
     END If
 
     IF(un%grid%tmask(ji,jj+1) <=0 .OR. un%grid%tmask(ji+1,jj+1) <= 0) THEN   
-       uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un%data(ji,jj)
+       uu_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * un%data(ji,jj)
     ELSE
-       uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un%data(ji,jj)              + & 
-            & (0.5_wp - SIGN(0.5_wp, v_n)) * un%data(ji,jj+1)
+       uu_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * un%data(ji,jj)              + & 
+            & (0.5_go_wp - SIGN(0.5_go_wp, v_n)) * un%data(ji,jj+1)
     END IF
 
     adv = uu_w * u_w * depw - uu_e * u_e * depe + &
@@ -191,28 +191,28 @@ contains
     dudx_w = (un%data(ji,  jj) - un%data(ji-1,jj)) / un%grid%dx_t(ji,  jj) * &
              (ht%data(ji,  jj) + sshn_t%data(ji,  jj))
     IF(un%grid%tmask(ji,jj-1) <=0 .OR. un%grid%tmask(ji+1,jj-1) <= 0) THEN   
-       dudy_s = 0.0_wp !slip boundary
+       dudy_s = 0.0_go_wp !slip boundary
     ELSE
        dudy_s = (un%data(ji,jj) - un%data(ji,jj-1)) / (un%grid%dy_u(ji,jj) + un%grid%dy_u(ji,jj-1)) * &
             & (hu%data(ji,jj) + sshn_u%data(ji,jj) + hu%data(ji,jj-1) + sshn_u%data(ji,jj-1))
     END IF
 
     IF(un%grid%tmask(ji,jj+1) <= 0 .OR. un%grid%tmask(ji+1,jj+1) <= 0) THEN   
-       dudy_n = 0.0_wp ! slip boundary
+       dudy_n = 0.0_go_wp ! slip boundary
     ELSE
        dudy_n = (un%data(ji,jj+1) - un%data(ji,jj)) / (un%grid%dy_u(ji,jj) + un%grid%dy_u(ji,jj+1)) * &
             & (hu%data(ji,jj) + sshn_u%data(ji,jj) + hu%data(ji,jj+1) + sshn_u%data(ji,jj+1))
     END If
 
     vis = (dudx_e - dudx_w ) * un%grid%dy_u(ji,jj)  + &
-         & (dudy_n - dudy_s ) * un%grid%dx_u(ji,jj) * 0.5_wp  
+         & (dudy_n - dudy_s ) * un%grid%dx_u(ji,jj) * 0.5_go_wp  
     vis = visc * vis   !visc will be an array visc(1:jpijglou) 
     !for variable viscosity, such as turbulent viscosity
     !End  kernel u vis 
 
     ! -Coriolis' force (can be implemented implicitly)
     !kernel cor 
-    cor = 0.5_wp * (2._wp * omega * SIN(un%grid%gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * &
+    cor = 0.5_go_wp * (2._go_wp * omega * SIN(un%grid%gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * &
          & un%grid%area_u(ji,jj) * (hu%data(ji,jj) + sshn_u%data(ji,jj))
     !end kernel cor 
 
@@ -225,7 +225,7 @@ contains
     !kernel ua calculation 
     ua%data(ji,jj) = (un%data(ji,jj) * (hu%data(ji,jj) + sshn_u%data(ji,jj)) + rdt * &
                  (adv + vis + cor + hpg) / un%grid%area_u(ji,jj)) / &
-                (hu%data(ji,jj) + ssha_u%data(ji,jj)) / (1.0_wp + cbfr * rdt) 
+                (hu%data(ji,jj) + ssha_u%data(ji,jj)) / (1.0_go_wp + cbfr * rdt) 
 
       end do
     end do
@@ -265,34 +265,34 @@ contains
     v_s  = 0.5 * (vn%data(ji,jj) + vn%data(ji,jj-1)) * vn%grid%dx_t(ji,jj)    !add length scale
     deps = ht%data(ji,jj) + sshn_t%data(ji,jj)
 
-    u_wc = 0.5_wp * (un%data(ji-1,jj) + un%data(ji-1,jj+1))
-    u_w  = 0.5_wp * u_wc * (vn%grid%dy_u(ji-1,jj) + vn%grid%dy_u(ji-1,jj+1))
-    depw = 0.50_wp * (hu%data(ji-1,jj) + sshn_u%data(ji-1,jj) + &
+    u_wc = 0.5_go_wp * (un%data(ji-1,jj) + un%data(ji-1,jj+1))
+    u_w  = 0.5_go_wp * u_wc * (vn%grid%dy_u(ji-1,jj) + vn%grid%dy_u(ji-1,jj+1))
+    depw = 0.50_go_wp * (hu%data(ji-1,jj) + sshn_u%data(ji-1,jj) + &
                       hu%data(ji-1,jj+1) + sshn_u%data(ji-1,jj+1))
 
-    u_ec = 0.5_wp * (un%data(ji,jj) + un%data(ji,jj+1))
-    u_e  = 0.5_wp * u_ec * (vn%grid%dy_u(ji,jj) + vn%grid%dy_u(ji,jj+1))
-    depe = 0.50_wp * (hu%data(ji,jj) + sshn_u%data(ji,jj) + &
+    u_ec = 0.5_go_wp * (un%data(ji,jj) + un%data(ji,jj+1))
+    u_e  = 0.5_go_wp * u_ec * (vn%grid%dy_u(ji,jj) + vn%grid%dy_u(ji,jj+1))
+    depe = 0.50_go_wp * (hu%data(ji,jj) + sshn_u%data(ji,jj) + &
                       hu%data(ji,jj+1) + sshn_u%data(ji,jj+1))
 
     ! -advection (currently first order upwind)
-    vv_s = (0.5_wp - SIGN(0.5_wp, v_s)) * vn%data(ji,jj)     + & 
-         & (0.5_wp + SIGN(0.5_wp, v_s)) * vn%data(ji,jj-1) 
-    vv_n = (0.5_wp + SIGN(0.5_wp, v_n)) * vn%data(ji,jj)     + & 
-         & (0.5_wp - SIGN(0.5_wp, v_n)) * vn%data(ji,jj+1) 
+    vv_s = (0.5_go_wp - SIGN(0.5_go_wp, v_s)) * vn%data(ji,jj)     + & 
+         & (0.5_go_wp + SIGN(0.5_go_wp, v_s)) * vn%data(ji,jj-1) 
+    vv_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * vn%data(ji,jj)     + & 
+         & (0.5_go_wp - SIGN(0.5_go_wp, v_n)) * vn%data(ji,jj+1) 
 
     IF(vn%grid%tmask(ji-1,jj) <= 0 .OR. vn%grid%tmask(ji-1,jj+1) <= 0) THEN   
-       vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn%data(ji,jj)  
+       vv_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * vn%data(ji,jj)  
     ELSE
-       vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn%data(ji,jj)    + & 
-            & (0.5_wp + SIGN(0.5_wp, u_w)) * vn%data(ji-1,jj) 
+       vv_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * vn%data(ji,jj)    + & 
+            & (0.5_go_wp + SIGN(0.5_go_wp, u_w)) * vn%data(ji-1,jj) 
     END If
 
     IF(vn%grid%tmask(ji+1,jj) <= 0 .OR. vn%grid%tmask(ji+1,jj+1) <= 0) THEN
-       vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn%data(ji,jj)
+       vv_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * vn%data(ji,jj)
     ELSE
-       vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn%data(ji,jj)  + & 
-              (0.5_wp - SIGN(0.5_wp, u_e)) * vn%data(ji+1,jj)
+       vv_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * vn%data(ji,jj)  + & 
+              (0.5_go_wp - SIGN(0.5_go_wp, u_e)) * vn%data(ji+1,jj)
     END IF
 
     adv = vv_w * u_w * depw - vv_e * u_e * depe + &
@@ -310,7 +310,7 @@ contains
                           (ht%data(ji,  jj) + sshn_t%data(ji,  jj))
 
     IF(vn%grid%tmask(ji-1,jj) <= 0 .OR. vn%grid%tmask(ji-1,jj+1) <= 0) THEN
-       dvdx_w = 0.0_wp !slip boundary
+       dvdx_w = 0.0_go_wp !slip boundary
     ELSE
        dvdx_w = (vn%data(ji,jj) - vn%data(ji-1,jj)) / &
                 (vn%grid%dx_v(ji,jj) + vn%grid%dx_v(ji-1,jj)) * &
@@ -318,14 +318,14 @@ contains
     END IF
 
     IF(vn%grid%tmask(ji+1,jj) <= 0 .OR. vn%grid%tmask(ji+1,jj+1) <= 0) THEN
-       dvdx_e = 0.0_wp ! slip boundary
+       dvdx_e = 0.0_go_wp ! slip boundary
     ELSE
        dvdx_e = (vn%data(ji+1,jj) - vn%data(ji,jj)) / (vn%grid%dx_v(ji,jj) + vn%grid%dx_v(ji+1,jj)) * &
                   (hv%data(ji,jj) + sshn_v%data(ji,jj) + hv%data(ji+1,jj) + sshn_v%data(ji+1,jj))
     END If
 
     vis = (dvdy_n - dvdy_s ) * vn%grid%dx_v(ji,jj)  + &
-          (dvdx_e - dvdx_w ) * vn%grid%dy_v(ji,jj) * 0.5_wp  
+          (dvdx_e - dvdx_w ) * vn%grid%dy_v(ji,jj) * 0.5_go_wp  
 
     vis = visc * vis   !visc will be a array visc(1:jpijglou) 
     !for variable viscosity, such as turbulent viscosity
@@ -333,7 +333,7 @@ contains
 
     ! -Coriolis' force (can be implemented implicitly)
     !kernel v cor 
-    cor = -0.5_wp*(2._wp * omega * SIN(vn%grid%gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * &
+    cor = -0.5_go_wp*(2._go_wp * omega * SIN(vn%grid%gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * &
                vn%grid%area_v(ji,jj) * (hv%data(ji,jj) + sshn_v%data(ji,jj))
     !end kernel v cor 
 
@@ -347,7 +347,7 @@ contains
     !kernel ua calculation 
     va%data(ji,jj) = (vn%data(ji,jj) * (hv%data(ji,jj) + sshn_v%data(ji,jj)) + &
                  rdt * (adv + vis + cor + hpg) / vn%grid%area_v(ji,jj) ) / &
-                 ((hv%data(ji,jj) + ssha_v%data(ji,jj))) / (1.0_wp + cbfr * rdt) 
+                 ((hv%data(ji,jj) + ssha_v%data(ji,jj))) / (1.0_go_wp + cbfr * rdt) 
 
       end do
     end do
@@ -373,9 +373,9 @@ contains
 !          call bc_ssh_code(ji, jj, &
 !                           istp, ssha%data, sshn_t%grid%tmask)
 
-          amp_tide   = 0.2_wp
-          omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
-          rtime = real(istp, wp) * rdt
+          amp_tide   = 0.2_go_wp
+          omega_tide = 2.0_go_wp * 3.14159_go_wp / (12.42_go_wp * 3600._go_wp)
+          rtime = real(istp, go_wp) * rdt
 
           if(sshn_t%grid%tmask(ji,jj) <= 0) cycle
 
@@ -408,7 +408,7 @@ contains
 !> \todo It's more compiler-friendly to separately compare these two
 !! integer masks with zero but that's a kernel-level optimisation.
           if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) == 0)then
-             ua%data(ji,jj) = 0._wp
+             ua%data(ji,jj) = 0._go_wp
           end if
 
        end do
@@ -428,7 +428,7 @@ contains
 !          call bc_solid_v_code(ji,jj, &
 !                               va%data, ua%grid%tmask)
     if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) == 0)then
-       va%data(ji,jj) = 0._wp
+       va%data(ji,jj) = 0._go_wp
     end if
 
       end do
@@ -538,7 +538,7 @@ contains
          IF(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) > 0) THEN
             rtmp1 = sshn_t%grid%area_t(ji,jj) * sshn_t%data(ji,jj) + &
                  sshn_t%grid%area_t(ji+1,jj) * sshn_t%data(ji+1,jj)
-            sshn_u%data(ji,jj) = 0.5_wp * rtmp1 / sshn_t%grid%area_u(ji,jj) 
+            sshn_u%data(ji,jj) = 0.5_go_wp * rtmp1 / sshn_t%grid%area_u(ji,jj) 
          ELSE IF(sshn_t%grid%tmask(ji,jj) <= 0) THEN
             sshn_u%data(ji,jj) = sshn_t%data(ji+1,jj)
          ELSE IF(sshn_t%grid%tmask(ji+1,jj) <= 0) THEN
@@ -566,7 +566,7 @@ contains
          if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) > 0) then
             rtmp1 = sshn_t%grid%area_t(ji,jj)*sshn_t%data(ji,jj) + &
                  sshn_t%grid%area_t(ji,jj+1) * sshn_t%data(ji,jj+1)
-            sshn_v%data(ji,jj) = 0.5_wp * rtmp1 / sshn_t%grid%area_v(ji,jj) 
+            sshn_v%data(ji,jj) = 0.5_go_wp * rtmp1 / sshn_t%grid%area_v(ji,jj) 
          else if(sshn_t%grid%tmask(ji,jj) <= 0) then
             sshn_v%data(ji,jj) = sshn_t%data(ji,jj+1)
          else if(sshn_t%grid%tmask(ji,jj+1) <= 0) then
@@ -607,21 +607,21 @@ contains
     integer :: it, ji, jj, jiu, jiv
     integer :: M, N, idxt
     ! Locals for momentum
-    REAL(wp) :: u_e, u_w, v_n, v_s
-    real(wp) :: v_nc, v_sc
-    real(wp) :: depe, depw, deps, depn
-    real(wp) :: hpg, adv, cor, vis
-    real(wp) :: dudx_e, dudx_w, dudy_s, dudy_n
-    real(wp) :: uu_e, uu_n, uu_s, uu_w
-    real(wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
-    real(wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
-    real(wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    REAL(go_wp) :: u_e, u_w, v_n, v_s
+    real(go_wp) :: v_nc, v_sc
+    real(go_wp) :: depe, depw, deps, depn
+    real(go_wp) :: hpg, adv, cor, vis
+    real(go_wp) :: dudx_e, dudx_w, dudy_s, dudy_n
+    real(go_wp) :: uu_e, uu_n, uu_s, uu_w
+    real(go_wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w
+    real(go_wp) :: dvdx_e, dvdx_w, dvdy_n, dvdy_s
+    real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     ! end locals for momentum
     ! Locals for BCs
-    real(wp) :: amp_tide, omega_tide, rtime
+    real(go_wp) :: amp_tide, omega_tide, rtime
 
-    M  = ssha%grid%simulation_domain%xstop
-    N  = ssha%grid%simulation_domain%ystop
+    M  = ssha%grid%subdomain%global%nx
+    N  = ssha%grid%subdomain%global%ny
 
 !$OMP PARALLEL default(none), shared(istp, sshn_u, sshn_v, sshn_t, &
 !$OMP          un, vn, ua, va, ssha, ssha_u, ssha_v, hu, hv, ht,   &
@@ -722,34 +722,34 @@ contains
     u_w  = 0.5 * (un%data(ji,jj) + un%data(ji-1,jj)) * un%grid%dy_t(ji,jj)     !add length scale
     depw = ht%data(ji,jj) + sshn_t%data(ji,jj)
 
-    v_sc = 0.5_wp * (vn%data(ji,jj-1) + vn%data(ji+1,jj-1))
-    v_s  = 0.5_wp * v_sc * (un%grid%dx_v(ji,jj-1) + un%grid%dx_v(ji+1,jj-1))
-    deps = 0.5_wp * (hv%data(ji,jj-1) + sshn_v%data(ji,jj-1) + hv%data(ji+1,jj-1) + &
+    v_sc = 0.5_go_wp * (vn%data(ji,jj-1) + vn%data(ji+1,jj-1))
+    v_s  = 0.5_go_wp * v_sc * (un%grid%dx_v(ji,jj-1) + un%grid%dx_v(ji+1,jj-1))
+    deps = 0.5_go_wp * (hv%data(ji,jj-1) + sshn_v%data(ji,jj-1) + hv%data(ji+1,jj-1) + &
                      sshn_v%data(ji+1,jj-1))
 
-    v_nc = 0.5_wp * (vn%data(ji,jj) + vn%data(ji+1,jj))
-    v_n  = 0.5_wp * v_nc * (un%grid%dx_v(ji,jj) + un%grid%dx_v(ji+1,jj))
-    depn = 0.5_wp * (hv%data(ji,jj) + sshn_v%data(ji,jj) + hv%data(ji+1,jj) + &
+    v_nc = 0.5_go_wp * (vn%data(ji,jj) + vn%data(ji+1,jj))
+    v_n  = 0.5_go_wp * v_nc * (un%grid%dx_v(ji,jj) + un%grid%dx_v(ji+1,jj))
+    depn = 0.5_go_wp * (hv%data(ji,jj) + sshn_v%data(ji,jj) + hv%data(ji+1,jj) + &
                      sshn_v%data(ji+1,jj))
 
     ! -advection (currently first order upwind)
-    uu_w = (0.5_wp - SIGN(0.5_wp, u_w)) * un%data(ji,jj)              + & 
-         & (0.5_wp + SIGN(0.5_wp, u_w)) * un%data(ji-1,jj) 
-    uu_e = (0.5_wp + SIGN(0.5_wp, u_e)) * un%data(ji,jj)              + & 
-         & (0.5_wp - SIGN(0.5_wp, u_e)) * un%data(ji+1,jj) 
+    uu_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * un%data(ji,jj)              + & 
+         & (0.5_go_wp + SIGN(0.5_go_wp, u_w)) * un%data(ji-1,jj) 
+    uu_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * un%data(ji,jj)              + & 
+         & (0.5_go_wp - SIGN(0.5_go_wp, u_e)) * un%data(ji+1,jj) 
 
     IF(un%grid%tmask(ji,jj-1) <=0 .OR. un%grid%tmask(ji+1,jj-1) <= 0) THEN   
-       uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un%data(ji,jj)   
+       uu_s = (0.5_go_wp - SIGN(0.5_go_wp, v_s)) * un%data(ji,jj)   
     ELSE
-       uu_s = (0.5_wp - SIGN(0.5_wp, v_s)) * un%data(ji,jj)              + & 
-            & (0.5_wp + SIGN(0.5_wp, v_s)) * un%data(ji,jj-1) 
+       uu_s = (0.5_go_wp - SIGN(0.5_go_wp, v_s)) * un%data(ji,jj)              + & 
+            & (0.5_go_wp + SIGN(0.5_go_wp, v_s)) * un%data(ji,jj-1) 
     END If
 
     IF(un%grid%tmask(ji,jj+1) <=0 .OR. un%grid%tmask(ji+1,jj+1) <= 0) THEN   
-       uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un%data(ji,jj)
+       uu_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * un%data(ji,jj)
     ELSE
-       uu_n = (0.5_wp + SIGN(0.5_wp, v_n)) * un%data(ji,jj)              + & 
-            & (0.5_wp - SIGN(0.5_wp, v_n)) * un%data(ji,jj+1)
+       uu_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * un%data(ji,jj)              + & 
+            & (0.5_go_wp - SIGN(0.5_go_wp, v_n)) * un%data(ji,jj+1)
     END IF
 
     adv = uu_w * u_w * depw - uu_e * u_e * depe + &
@@ -764,28 +764,28 @@ contains
     dudx_w = (un%data(ji,  jj) - un%data(ji-1,jj)) / un%grid%dx_t(ji,  jj) * &
              (ht%data(ji,  jj) + sshn_t%data(ji,  jj))
     IF(un%grid%tmask(ji,jj-1) <=0 .OR. un%grid%tmask(ji+1,jj-1) <= 0) THEN   
-       dudy_s = 0.0_wp !slip boundary
+       dudy_s = 0.0_go_wp !slip boundary
     ELSE
        dudy_s = (un%data(ji,jj) - un%data(ji,jj-1)) / (un%grid%dy_u(ji,jj) + un%grid%dy_u(ji,jj-1)) * &
             & (hu%data(ji,jj) + sshn_u%data(ji,jj) + hu%data(ji,jj-1) + sshn_u%data(ji,jj-1))
     END IF
 
     IF(un%grid%tmask(ji,jj+1) <= 0 .OR. un%grid%tmask(ji+1,jj+1) <= 0) THEN   
-       dudy_n = 0.0_wp ! slip boundary
+       dudy_n = 0.0_go_wp ! slip boundary
     ELSE
        dudy_n = (un%data(ji,jj+1) - un%data(ji,jj)) / (un%grid%dy_u(ji,jj) + un%grid%dy_u(ji,jj+1)) * &
             & (hu%data(ji,jj) + sshn_u%data(ji,jj) + hu%data(ji,jj+1) + sshn_u%data(ji,jj+1))
     END If
 
     vis = (dudx_e - dudx_w ) * un%grid%dy_u(ji,jj)  + &
-         & (dudy_n - dudy_s ) * un%grid%dx_u(ji,jj) * 0.5_wp  
+         & (dudy_n - dudy_s ) * un%grid%dx_u(ji,jj) * 0.5_go_wp  
     vis = visc * vis   !visc will be an array visc(1:jpijglou) 
     !for variable viscosity, such as turbulent viscosity
     !End  kernel u vis 
 
     ! -Coriolis' force (can be implemented implicitly)
     !kernel cor 
-    cor = 0.5_wp * (2._wp * omega * SIN(un%grid%gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * &
+    cor = 0.5_go_wp * (2._go_wp * omega * SIN(un%grid%gphiu(ji,jj) * d2r) * (v_sc + v_nc)) * &
          & un%grid%area_u(ji,jj) * (hu%data(ji,jj) + sshn_u%data(ji,jj))
     !end kernel cor 
 
@@ -798,7 +798,7 @@ contains
     !kernel ua calculation 
     ua%data(ji,jj) = (un%data(ji,jj) * (hu%data(ji,jj) + sshn_u%data(ji,jj)) + rdt * &
                  (adv + vis + cor + hpg) / un%grid%area_u(ji,jj)) / &
-                (hu%data(ji,jj) + ssha_u%data(ji,jj)) / (1.0_wp + cbfr * rdt) 
+                (hu%data(ji,jj) + ssha_u%data(ji,jj)) / (1.0_go_wp + cbfr * rdt) 
 
         end do
       end do
@@ -839,34 +839,34 @@ contains
     v_s  = 0.5 * (vn%data(ji,jj) + vn%data(ji,jj-1)) * vn%grid%dx_t(ji,jj)    !add length scale
     deps = ht%data(ji,jj) + sshn_t%data(ji,jj)
 
-    u_wc = 0.5_wp * (un%data(ji-1,jj) + un%data(ji-1,jj+1))
-    u_w  = 0.5_wp * u_wc * (vn%grid%dy_u(ji-1,jj) + vn%grid%dy_u(ji-1,jj+1))
-    depw = 0.50_wp * (hu%data(ji-1,jj) + sshn_u%data(ji-1,jj) + &
+    u_wc = 0.5_go_wp * (un%data(ji-1,jj) + un%data(ji-1,jj+1))
+    u_w  = 0.5_go_wp * u_wc * (vn%grid%dy_u(ji-1,jj) + vn%grid%dy_u(ji-1,jj+1))
+    depw = 0.50_go_wp * (hu%data(ji-1,jj) + sshn_u%data(ji-1,jj) + &
                       hu%data(ji-1,jj+1) + sshn_u%data(ji-1,jj+1))
 
-    u_ec = 0.5_wp * (un%data(ji,jj) + un%data(ji,jj+1))
-    u_e  = 0.5_wp * u_ec * (vn%grid%dy_u(ji,jj) + vn%grid%dy_u(ji,jj+1))
-    depe = 0.50_wp * (hu%data(ji,jj) + sshn_u%data(ji,jj) + &
+    u_ec = 0.5_go_wp * (un%data(ji,jj) + un%data(ji,jj+1))
+    u_e  = 0.5_go_wp * u_ec * (vn%grid%dy_u(ji,jj) + vn%grid%dy_u(ji,jj+1))
+    depe = 0.50_go_wp * (hu%data(ji,jj) + sshn_u%data(ji,jj) + &
                       hu%data(ji,jj+1) + sshn_u%data(ji,jj+1))
 
     ! -advection (currently first order upwind)
-    vv_s = (0.5_wp - SIGN(0.5_wp, v_s)) * vn%data(ji,jj)     + & 
-         & (0.5_wp + SIGN(0.5_wp, v_s)) * vn%data(ji,jj-1) 
-    vv_n = (0.5_wp + SIGN(0.5_wp, v_n)) * vn%data(ji,jj)     + & 
-         & (0.5_wp - SIGN(0.5_wp, v_n)) * vn%data(ji,jj+1) 
+    vv_s = (0.5_go_wp - SIGN(0.5_go_wp, v_s)) * vn%data(ji,jj)     + & 
+         & (0.5_go_wp + SIGN(0.5_go_wp, v_s)) * vn%data(ji,jj-1) 
+    vv_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * vn%data(ji,jj)     + & 
+         & (0.5_go_wp - SIGN(0.5_go_wp, v_n)) * vn%data(ji,jj+1) 
 
     IF(vn%grid%tmask(ji-1,jj) <= 0 .OR. vn%grid%tmask(ji-1,jj+1) <= 0) THEN   
-       vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn%data(ji,jj)  
+       vv_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * vn%data(ji,jj)  
     ELSE
-       vv_w = (0.5_wp - SIGN(0.5_wp, u_w)) * vn%data(ji,jj)    + & 
-            & (0.5_wp + SIGN(0.5_wp, u_w)) * vn%data(ji-1,jj) 
+       vv_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * vn%data(ji,jj)    + & 
+            & (0.5_go_wp + SIGN(0.5_go_wp, u_w)) * vn%data(ji-1,jj) 
     END If
 
     IF(vn%grid%tmask(ji+1,jj) <= 0 .OR. vn%grid%tmask(ji+1,jj+1) <= 0) THEN
-       vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn%data(ji,jj)
+       vv_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * vn%data(ji,jj)
     ELSE
-       vv_e = (0.5_wp + SIGN(0.5_wp, u_e)) * vn%data(ji,jj)  + & 
-              (0.5_wp - SIGN(0.5_wp, u_e)) * vn%data(ji+1,jj)
+       vv_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * vn%data(ji,jj)  + & 
+              (0.5_go_wp - SIGN(0.5_go_wp, u_e)) * vn%data(ji+1,jj)
     END IF
 
     adv = vv_w * u_w * depw - vv_e * u_e * depe + &
@@ -884,7 +884,7 @@ contains
                           (ht%data(ji,  jj) + sshn_t%data(ji,  jj))
 
     IF(vn%grid%tmask(ji-1,jj) <= 0 .OR. vn%grid%tmask(ji-1,jj+1) <= 0) THEN
-       dvdx_w = 0.0_wp !slip boundary
+       dvdx_w = 0.0_go_wp !slip boundary
     ELSE
        dvdx_w = (vn%data(ji,jj) - vn%data(ji-1,jj)) / &
                 (vn%grid%dx_v(ji,jj) + vn%grid%dx_v(ji-1,jj)) * &
@@ -892,14 +892,14 @@ contains
     END IF
 
     IF(vn%grid%tmask(ji+1,jj) <= 0 .OR. vn%grid%tmask(ji+1,jj+1) <= 0) THEN
-       dvdx_e = 0.0_wp ! slip boundary
+       dvdx_e = 0.0_go_wp ! slip boundary
     ELSE
        dvdx_e = (vn%data(ji+1,jj) - vn%data(ji,jj)) / (vn%grid%dx_v(ji,jj) + vn%grid%dx_v(ji+1,jj)) * &
                   (hv%data(ji,jj) + sshn_v%data(ji,jj) + hv%data(ji+1,jj) + sshn_v%data(ji+1,jj))
     END If
 
     vis = (dvdy_n - dvdy_s ) * vn%grid%dx_v(ji,jj)  + &
-          (dvdx_e - dvdx_w ) * vn%grid%dy_v(ji,jj) * 0.5_wp  
+          (dvdx_e - dvdx_w ) * vn%grid%dy_v(ji,jj) * 0.5_go_wp  
 
     vis = visc * vis   !visc will be a array visc(1:jpijglou) 
     !for variable viscosity, such as turbulent viscosity
@@ -907,7 +907,7 @@ contains
 
     ! -Coriolis' force (can be implemented implicitly)
     !kernel v cor 
-    cor = -0.5_wp*(2._wp * omega * SIN(vn%grid%gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * &
+    cor = -0.5_go_wp*(2._go_wp * omega * SIN(vn%grid%gphiv(ji,jj) * d2r) * (u_ec + u_wc)) * &
                vn%grid%area_v(ji,jj) * (hv%data(ji,jj) + sshn_v%data(ji,jj))
     !end kernel v cor 
 
@@ -921,7 +921,7 @@ contains
     !kernel ua calculation 
     va%data(ji,jj) = (vn%data(ji,jj) * (hv%data(ji,jj) + sshn_v%data(ji,jj)) + &
                  rdt * (adv + vis + cor + hpg) / vn%grid%area_v(ji,jj) ) / &
-                 ((hv%data(ji,jj) + ssha_v%data(ji,jj))) / (1.0_wp + cbfr * rdt) 
+                 ((hv%data(ji,jj) + ssha_v%data(ji,jj))) / (1.0_go_wp + cbfr * rdt) 
 
       end do
     end do
@@ -946,9 +946,9 @@ contains
 !          call bc_ssh_code(ji, jj, &
 !                           istp, ssha%data, sshn_t%grid%tmask)
 
-             amp_tide   = 0.2_wp
-             omega_tide = 2.0_wp * 3.14159_wp / (12.42_wp * 3600._wp)
-             rtime = real(istp, wp) * rdt
+             amp_tide   = 0.2_go_wp
+             omega_tide = 2.0_go_wp * 3.14159_go_wp / (12.42_go_wp * 3600._go_wp)
+             rtime = real(istp, go_wp) * rdt
 
              if(sshn_t%grid%tmask(ji,jj) <= 0) cycle
 
@@ -983,7 +983,7 @@ contains
 !> \todo It's more compiler-friendly to separately compare these two
 !! integer masks with zero but that's a kernel-level optimisation.
              if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) == 0)then
-                ua%data(ji,jj) = 0._wp
+                ua%data(ji,jj) = 0._go_wp
              end if
 
           end do
@@ -1006,7 +1006,7 @@ contains
 !          call bc_solid_v_code(ji,jj, &
 !                               va%data, ua%grid%tmask)
              if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) == 0)then
-                va%data(ji,jj) = 0._wp
+                va%data(ji,jj) = 0._go_wp
              end if
 
           end do
@@ -1134,7 +1134,7 @@ contains
          IF(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) > 0) THEN
             rtmp1 = sshn_t%grid%area_t(ji,jj) * sshn_t%data(ji,jj) + &
                  sshn_t%grid%area_t(ji+1,jj) * sshn_t%data(ji+1,jj)
-            sshn_u%data(ji,jj) = 0.5_wp * rtmp1 / sshn_t%grid%area_u(ji,jj) 
+            sshn_u%data(ji,jj) = 0.5_go_wp * rtmp1 / sshn_t%grid%area_u(ji,jj) 
          ELSE IF(sshn_t%grid%tmask(ji,jj) <= 0) THEN
             sshn_u%data(ji,jj) = sshn_t%data(ji+1,jj)
          ELSE IF(sshn_t%grid%tmask(ji+1,jj) <= 0) THEN
@@ -1164,7 +1164,7 @@ contains
          if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) > 0) then
             rtmp1 = sshn_t%grid%area_t(ji,jj)*sshn_t%data(ji,jj) + &
                  sshn_t%grid%area_t(ji,jj+1) * sshn_t%data(ji,jj+1)
-            sshn_v%data(ji,jj) = 0.5_wp * rtmp1 / sshn_t%grid%area_v(ji,jj) 
+            sshn_v%data(ji,jj) = 0.5_go_wp * rtmp1 / sshn_t%grid%area_v(ji,jj) 
          else if(sshn_t%grid%tmask(ji,jj) <= 0) then
             sshn_v%data(ji,jj) = sshn_t%data(ji,jj+1)
          else if(sshn_t%grid%tmask(ji,jj+1) <= 0) then
