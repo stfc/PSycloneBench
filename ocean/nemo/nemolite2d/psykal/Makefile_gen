@@ -19,11 +19,20 @@ KERNELS = boundary_conditions_mod.o \
           continuity_mod.o \
           momentum_mod.o \
           time_update_mod.o \
-          infrastructure_mod.o
+		  infrastructure_mod.o
+
+
+.PHONY: nemolite2d nemolite2docl
+
+all: nemolite2d
 
 # Build NemoLite2D
-nemolite2d.exe: ${COMMON_LIB} ${KERNELS} psy.o alg.o
-	$(F90) $(F90FLAGS) -o $@  ${KERNELS} psy.o alg.o ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS}
+nemolite2d: ${COMMON_LIB} ${KERNELS} psy.o alg.o
+	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} -lOpenCL
+
+# Build NemoLite2D for OpenCL on Intel Multicore-CPU
+nemolite2docl: ${COMMON_LIB} ${KERNELS} allkernels.spir64 psy.o alg.o
+	$(F90) $(F90FLAGS) -o $@.exe ${KERNELS} psy.o alg.o ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} -lOpenCL
 
 # Generic rules
 %.o: %.f90
@@ -33,6 +42,9 @@ nemolite2d.exe: ${COMMON_LIB} ${KERNELS} psy.o alg.o
 	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
 
 %.o: %.mod
+
+%.spir64: %.cl
+	ioc64 -cmd=build -input=$< -spir64=$@
 
 # If we need a .f90 file that doesn't exist then it must be a kernel.
 # Create a link to the required file...

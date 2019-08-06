@@ -95,7 +95,11 @@ nemolite2d_ocl: timer_lib ocl_inf_lib nemolite2d_alg.f90 ocl_transform.py
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
-	make -C $@
+	# Currently we need all kernels and the global parameters in a single OpenCL file
+	cat kernel_parameters.h > $@/allkernels
+	cat $@/*.cl >> $@/allkernels
+	mv $@/allkernels $@/allkernels.cl 
+	make -C $@ nemolite2docl
 
 
 # Build the infrastructure libraries
@@ -103,13 +107,16 @@ timer_lib:
 	${MAKE} -C ${TIMER_DIR} sm_lib
 
 serial_inf_lib:
+	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${INF_DIR} fd_lib
 
 mpi_inf_lib:
+	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${INF_DIR} dm_fd_lib
 
 ocl_inf_lib:
-	${MAKE} -C ${INF_DIR} fd_lib_cl
+	${MAKE} -C ${INF_DIR} distclean
+	${MAKE} -C ${INF_DIR} cl_fd_lib
 
 $(COMMON_LIB):
 	${MAKE} -C ${COMMON_DIR}
