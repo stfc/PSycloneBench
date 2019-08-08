@@ -11,5 +11,4 @@ def trans(psy):
     # schedule.view()
     cltrans.apply(schedule)
 
-    psy.invokes.get('invoke_0').schedule = schedule
     return psy

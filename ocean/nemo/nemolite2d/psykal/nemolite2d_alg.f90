@@ -83,10 +83,17 @@ program gocean2d
   call model_write_log("((A))", '=== Start Time-stepping ===')
   CALL timer_start(itimer0, label='Time-stepping', num_repeats=nrepeat)
 
+  call model_write_log("('ua checksum = ',E16.8)", &
+                       field_checksum(ua_fld))
+  call model_write_log("('va checksum = ',E16.8)", &
+                       field_checksum(va_fld))
+  call model_write_log("('ssh_u checksum = ',E16.8)", &
+                       field_checksum(sshn_u_fld))
+  call model_write_log("('ssh_v checksum = ',E16.8)", &
+                       field_checksum(sshn_v_fld))
+
   !! time stepping 
   do istp = nit000, nitend, 1
-
-     !call model_write_log("('istp == ',I6)",istp)
 
      call step(istp,                               &
                ua_fld, va_fld, un_fld, vn_fld,     &
@@ -108,6 +115,11 @@ program gocean2d
                        field_checksum(ua_fld))
   call model_write_log("('va checksum = ',E16.8)", &
                        field_checksum(va_fld))
+
+  call model_write_log("('ssh_u checksum = ',E16.8)", &
+                       field_checksum(sshn_u_fld))
+  call model_write_log("('ssh_v checksum = ',E16.8)", &
+                       field_checksum(sshn_v_fld))
 
   !! finalise the model run
   call model_finalise()
@@ -135,7 +147,7 @@ subroutine step(istp,           &
   use boundary_conditions_mod, only: bc_ssh, bc_solid_u, bc_solid_v, &
                                      bc_flather_u, bc_flather_v
   use time_update_mod,    only: next_sshu, next_sshv
-  !use infrastructure_mod, only: copy
+  use infrastructure_mod, only: copy
   implicit none
   !> The current time step
   integer,         intent(inout) :: istp
@@ -155,10 +167,9 @@ subroutine step(istp,           &
               bc_solid_v(va),                                &
               bc_flather_u(ua, hu, sshn_u),                  &
               bc_flather_v(va, hv, sshn_v),                  &
-              ! TODO implement copy as a built-in
-              !copy(un, ua),                                  &
-              !copy(vn, va),                                  &
-              !copy(sshn_t, ssha_t),                          &
+              copy(un, ua),                                  &
+              copy(vn, va),                                  &
+              copy(sshn_t, ssha_t),                          &
               next_sshu(sshn_u, sshn_t),                     &
               next_sshv(sshn_v, sshn_t)                      &
              )

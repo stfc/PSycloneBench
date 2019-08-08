@@ -1,4 +1,6 @@
 
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+
 // Physical Parameters
 __constant static const double PI = 3.1415926535897932;
 __constant static const double g = 9.80665 ;

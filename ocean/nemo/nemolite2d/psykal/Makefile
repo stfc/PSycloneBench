@@ -89,7 +89,7 @@ nemolite2d_acc: timer_lib serial_inf_lib nemolite2d_alg.f90 acc_transform.py
 	make -C $@
 
 # OpenCL PSyclone code-generation of NemoLite2D
-nemolite2d_ocl: timer_lib ocl_inf_lib nemolite2d_alg.f90 ocl_transform.py
+nemolite2d_ocl: common_lib timer_lib ocl_inf_lib nemolite2d_alg.f90 ocl_transform.py
 	@echo "Generating NemoLite2D with OpenCL"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -nodm -s ./ocl_transform.py -okern $@ -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
@@ -99,7 +99,7 @@ nemolite2d_ocl: timer_lib ocl_inf_lib nemolite2d_alg.f90 ocl_transform.py
 	cat kernel_parameters.h > $@/allkernels
 	cat $@/*.cl >> $@/allkernels
 	mv $@/allkernels $@/allkernels.cl 
-	make -C $@ nemolite2docl
+	make -C $@ nemolite2dxilinx
 
 
 # Build the infrastructure libraries
@@ -118,7 +118,7 @@ ocl_inf_lib:
 	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${INF_DIR} cl_fd_lib
 
-$(COMMON_LIB):
+common_lib:
 	${MAKE} -C ${COMMON_DIR}
 
 

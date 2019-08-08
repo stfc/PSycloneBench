@@ -22,21 +22,28 @@ KERNELS = boundary_conditions_mod.o \
 		  infrastructure_mod.o
 
 
-.PHONY: nemolite2d nemolite2docl
+PLATFORM = xilinx_u200_xdma_201830_2
+EXECUTION_TARGET = sw_emu # Options: sw_emu | hw_emu | hw
 
-all: nemolite2d
+.PHONY: nemolite2d nemolite2dxilinx
+
+#all: nemolite2d
+
 
 # Build NemoLite2D
 nemolite2d: ${COMMON_LIB} ${KERNELS} psy.o alg.o
-	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} -lOpenCL
+	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS}
+
 
 # Build NemoLite2D for OpenCL on Intel Multicore-CPU
-nemolite2docl: ${COMMON_LIB} ${KERNELS} allkernels.spir64 psy.o alg.o
+nemolite2dxilinx: ${COMMON_LIB} ${KERNELS} allkernels.xclbin psy.o alg.o
 	$(F90) $(F90FLAGS) -o $@.exe ${KERNELS} psy.o alg.o ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} -lOpenCL
+
 
 # Generic rules
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -I${FORTCL_INC} -c $<
+	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} \
+		-I${FORTCL_INC} -c $<
 
 %.o: %.F90
 	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
@@ -46,6 +53,15 @@ nemolite2docl: ${COMMON_LIB} ${KERNELS} allkernels.spir64 psy.o alg.o
 %.spir64: %.cl
 	ioc64 -cmd=build -input=$< -spir64=$@
 
+# Xilinx OpenCL kernel compilation
+%.xclbin: %.cl
+	# Compile to a .xo file
+	xocc --compile --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
+		$< -o $<.xo
+	# Link to crete a Xilinx FPGA bianry container (.xclbin)
+	xocc --link --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
+		${PROFILING_FLAGS} $<.xo -o $@
+
 # If we need a .f90 file that doesn't exist then it must be a kernel.
 # Create a link to the required file...
 %.f90:
@@ -53,3 +69,10 @@ nemolite2docl: ${COMMON_LIB} ${KERNELS} allkernels.spir64 psy.o alg.o
 
 clean:
 	rm -f *.o *.mod *_opt_report.txt
+
+
+# Execution helpers
+run_sw_emu:
+	PSYCLONE_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=sw_emu ./nemolite2dxilinx.exe
+
+
