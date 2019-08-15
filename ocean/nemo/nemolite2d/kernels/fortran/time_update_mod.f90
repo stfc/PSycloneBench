@@ -96,7 +96,6 @@ contains
     real(go_wp), dimension(:,:), intent(in)    :: sshn
     ! Locals
     real(go_wp) :: rtmp1
-
     if(tmask(ji,jj) + tmask(ji+1,jj) <= 0)  return   !jump over non-computational domain
 
     IF(tmask(ji,jj) * tmask(ji+1,jj) > 0) THEN
@@ -107,7 +106,6 @@ contains
     ELSE IF(tmask(ji+1,jj) <= 0) THEN
       sshn_u(ji,jj) = sshn(ji,jj)
     END IF
-
   end subroutine next_sshu_code
     
   !================================================

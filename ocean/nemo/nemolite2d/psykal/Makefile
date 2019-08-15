@@ -41,16 +41,16 @@ KERNEL_DIR = ../kernels/fortran
 PSYCLONE = psyclone -api gocean1.0 -d ${KERNEL_DIR} -l
 
 # Serial PSyclone code-generation of NemoLite2D
-nemolite2d_serial: timer_lib serial_inf_lib nemolite2d_alg.f90
+nemolite2d_serial: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90
 	@echo "Generating NemoLite2D Serial"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -nodm -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
-	make -C $@
+	make -C $@ nemolite2d
 
 # OpenMP PSyclone code-generation of NemoLite2D
-nemolite2d_omp: timer_lib serial_inf_lib nemolite2d_alg.f90 omp_transform.py
+nemolite2d_omp: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 omp_transform.py
 	@echo "Generating NemoLite2D with OpenMP using omp_transform.py"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -nodm -s ./omp_transform.py -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
@@ -60,7 +60,7 @@ nemolite2d_omp: timer_lib serial_inf_lib nemolite2d_alg.f90 omp_transform.py
 
 
 # MPI PSyclone code-generation of NemoLite2D
-nemolite2d_mpi: timer_lib mpi_inf_lib nemolite2d_alg.f90
+nemolite2d_mpi: common_lib timer_lib mpi_inf_lib nemolite2d_alg.f90
 	@echo "Generating NemoLite2D with MPI"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -dm -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
@@ -69,7 +69,7 @@ nemolite2d_mpi: timer_lib mpi_inf_lib nemolite2d_alg.f90
 	make -C $@
 
 # Hybrid PSyclone code-generation of NemoLite2D
-nemolite2d_hybrid: timer_lib mpi_inf_lib nemolite2d_alg.f90 omp_transform.py
+nemolite2d_hybrid: common_lib timer_lib mpi_inf_lib nemolite2d_alg.f90 omp_transform.py
 	@echo "Generating NemoLite2D with hybrid MPI+OpenMP using omp_transform.py"
 	rm -rf $@; mkdir -p $@
 	${PSYCLONE} -dm -s ./omp_transform.py -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
@@ -80,7 +80,7 @@ nemolite2d_hybrid: timer_lib mpi_inf_lib nemolite2d_alg.f90 omp_transform.py
 
 
 # OpenACC PSyclone code-generation of NemoLite2D
-nemolite2d_acc: timer_lib serial_inf_lib nemolite2d_alg.f90 acc_transform.py
+nemolite2d_acc: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 acc_transform.py
 	@echo "Generating NemoLite2D with OpenACC"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -nodm -s ./acc_transform.py -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
@@ -91,7 +91,8 @@ nemolite2d_acc: timer_lib serial_inf_lib nemolite2d_alg.f90 acc_transform.py
 # OpenCL PSyclone code-generation of NemoLite2D
 nemolite2d_ocl: common_lib timer_lib ocl_inf_lib nemolite2d_alg.f90 ocl_transform.py
 	@echo "Generating NemoLite2D with OpenCL"; rm -rf $@; mkdir -p $@
-	${PSYCLONE} -nodm -s ./ocl_transform.py -okern $@ -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
+	${PSYCLONE} -nodm -s ./ocl_transform.py --kernel-renaming single \
+	   	-okern $@ -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
