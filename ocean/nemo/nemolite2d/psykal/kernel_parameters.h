@@ -9,6 +9,6 @@ __constant static const double d2r = PI/180.0 ;
 
 // Model parameters (NEEDS TO MATCH WITH NAMELIST)
 __constant static const double rdt = 20.0 ;
-__constant static const double visc = 0.00015 ;
-__constant static const double cbfr = 0.1 ;
+__constant static const double cbfr = 0.00015 ;
+__constant static const double visc = 0.1 ;
 
