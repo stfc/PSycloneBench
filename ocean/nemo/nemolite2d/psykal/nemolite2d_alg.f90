@@ -162,9 +162,7 @@ subroutine step(istp,           &
               bc_solid_u(ua),                                &
               bc_solid_v(va),                                &
               bc_flather_u(ua, hu, sshn_u),                  &
-              bc_flather_v(va, hv, sshn_v)                  &
-            )
-  call invoke(                                               &
+              bc_flather_v(va, hv, sshn_v),                  &
               copy(un, ua),                                  &
               copy(vn, va),                                  &
               copy(sshn_t, ssha_t),                         &
