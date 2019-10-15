@@ -1,3 +1,7 @@
+# Makefile to compile and link the PSyclone generated code.
+# To make permanant changes in this Makefile, modify the 'Makefile_gen'
+# file in the psykal root directory.
+
 # Location of the infrastructure libraries
 SHARED_DIR = ../../../../../shared
 TIMER_DIR = ${SHARED_DIR}/dl_timer
@@ -25,19 +29,26 @@ KERNELS = boundary_conditions_mod.o \
 PLATFORM = xilinx_u200_xdma_201830_2
 EXECUTION_TARGET = sw_emu # Options: sw_emu | hw_emu | hw
 
-.PHONY: nemolite2d nemolite2dxilinx
+.PHONY: nemolite2d nemolite2docl nemolite2dxilinx
 
-#all: nemolite2d
-
+all: nemolite2d
 
 # Build NemoLite2D
 nemolite2d: ${KERNELS} psy.o alg.o
-	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS}
+	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
+		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS}
 
 
-# Build NemoLite2D for OpenCL on Intel Multicore-CPU
+# Build NemoLite2D for OpenCL (with JIT'ed kernels)
+nemolite2docl: ${KERNELS} psy.o alg.o
+	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
+		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} -lOpenCL
+
+
+# Build NemoLite2D for OpenCL with Xilinx SDK pre-compiled kernels
 nemolite2dxilinx: ${KERNELS} allkernels.xclbin psy.o alg.o
-	$(F90) $(F90FLAGS) -o $@.exe ${KERNELS} psy.o alg.o ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} -lOpenCL
+	$(F90) $(F90FLAGS) -o $@.exe ${KERNELS} psy.o alg.o ${COMMON_LIB} \
+		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} -lOpenCL
 
 
 # Generic rules
@@ -49,9 +60,6 @@ nemolite2dxilinx: ${KERNELS} allkernels.xclbin psy.o alg.o
 	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
 
 %.o: %.mod
-
-%.spir64: %.cl
-	ioc64 -cmd=build -input=$< -spir64=$@
 
 # Xilinx OpenCL kernel compilation
 %.xclbin: %.cl
@@ -72,7 +80,8 @@ clean:
 
 
 # Execution helpers
-run_sw_emu:
+run_xilinx_sw_emu:
 	PSYCLONE_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=sw_emu ./nemolite2dxilinx.exe
 
-
+run_xilinx_hw_emu:
+	PSYCLONE_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=hw_emu ./nemolite2dxilinx.exe
