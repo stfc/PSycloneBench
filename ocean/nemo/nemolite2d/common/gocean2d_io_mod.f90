@@ -115,7 +115,7 @@ contains
        vnptr => vn%get_data()
        
        ! Output model results. Each MPI rank writes to its own file.
-       !write(fname, '(I5.5,"_",I5.5)') istp, get_rank()
+       ! write(fname, '(I5.5,"_",I5.5)') istp, get_rank()
        write(fname, '(I5.5)') istp
        open(21, file='go2d_'//fname//'.dat', STATUS='UNKNOWN', &
             action='write')

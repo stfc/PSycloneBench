@@ -62,7 +62,7 @@ nemolite2d_serial: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	@echo "Serial version prepared."
-	@echo "Run 'make <version>' inside the $@ folder."
+	@echo "Run 'make nemolite2d' inside the $@ folder."
 
 # OpenMP PSyclone code-generation of NemoLite2D
 nemolite2d_omp: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 omp_transform.py
@@ -72,7 +72,7 @@ nemolite2d_omp: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 omp_trans
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	@echo "OpenMP version prepared."
-	@echo "Run 'make <version>' inside the $@ folder."
+	@echo "Run 'make nemolite2d' inside the $@ folder."
 
 
 # MPI PSyclone code-generation of NemoLite2D
@@ -83,7 +83,7 @@ nemolite2d_mpi: common_lib timer_lib mpi_inf_lib nemolite2d_alg.f90
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	@echo "MPI version prepared."
-	@echo "Run 'make <version>' inside the $@ folder."
+	@echo "Run 'make nemolite2d' inside the $@ folder."
 
 # Hybrid PSyclone code-generation of NemoLite2D
 nemolite2d_hybrid: common_lib timer_lib mpi_inf_lib nemolite2d_alg.f90 omp_transform.py
@@ -94,7 +94,7 @@ nemolite2d_hybrid: common_lib timer_lib mpi_inf_lib nemolite2d_alg.f90 omp_trans
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	@echo "Hybrid: MPI+OpenMP version prepared."
-	@echo "Run 'make <version>' inside the $@ folder."
+	@echo "Run 'make nemolite2d' inside the $@ folder."
 
 
 # OpenACC PSyclone code-generation of NemoLite2D
@@ -105,7 +105,7 @@ nemolite2d_acc: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 acc_trans
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	@echo "OpenACC version prepared."
-	@echo "Run 'make <version>' inside the $@ folder."
+	@echo "Run 'make <target>' inside the $@ folder."
 
 # OpenCL PSyclone code-generation of NemoLite2D
 nemolite2d_ocl: common_lib timer_lib ocl_inf_lib nemolite2d_alg.f90 ocl_transform.py
@@ -120,7 +120,7 @@ nemolite2d_ocl: common_lib timer_lib ocl_inf_lib nemolite2d_alg.f90 ocl_transfor
 	cat $@/*.cl >> $@/allkernels
 	mv $@/allkernels $@/allkernels.cl 
 	@echo "OpenCL version prepared."
-	@echo "Run 'make <version>' inside the $@ folder"
+	@echo "Run 'make <target>' inside the $@ folder"
 
 
 # Build the infrastructure libraries
