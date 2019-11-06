@@ -95,7 +95,7 @@ contains
   subroutine model_write(grid, istp, ht, sshn, un, vn)
     use kind_params_mod
     use grid_mod
-    ! use parallel_utils_mod, only: get_rank
+    use parallel_utils_mod, only: get_rank
     implicit none
     type(grid_type), intent(in) :: grid
     integer, intent(in) :: istp
@@ -115,8 +115,8 @@ contains
        vnptr => vn%get_data()
        
        ! Output model results. Each MPI rank writes to its own file.
-       ! write(fname, '(I5.5,"_",I5.5)') istp, get_rank()
-       write(fname, '(I5.5)') istp
+       write(fname, '(I5.5,"_",I5.5)') istp, get_rank()
+
        open(21, file='go2d_'//fname//'.dat', STATUS='UNKNOWN', &
             action='write')
 
