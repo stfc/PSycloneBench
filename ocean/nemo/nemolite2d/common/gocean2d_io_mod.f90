@@ -95,7 +95,7 @@ contains
   subroutine model_write(grid, istp, ht, sshn, un, vn)
     use kind_params_mod
     use grid_mod
-    use parallel_utils_mod, only: get_rank
+    use parallel_mod, only: get_rank
     implicit none
     type(grid_type), intent(in) :: grid
     integer, intent(in) :: istp
@@ -103,7 +103,7 @@ contains
     ! Locals
     integer :: ji, jj
     real(go_wp) :: rtmp1, rtmp2
-    character(len=5) :: fname
+    character(len=11) :: fname
     real(go_wp), dimension(:,:), pointer :: htptr, sshnptr, unptr, vnptr
 
     if( l_out .and. (mod(istp, mprint) .eq. 0) ) then
