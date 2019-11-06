@@ -107,8 +107,11 @@ time_step_mod.o: inf_lib ${KERNELS}
 
 %.o: %.f90
 	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+
 %.o: %.F90
 	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+
+%.o: %.mod
 
 # If we need a .f90 file that doesn't exist then it must be a kernel.
 # Create a link to the required file...

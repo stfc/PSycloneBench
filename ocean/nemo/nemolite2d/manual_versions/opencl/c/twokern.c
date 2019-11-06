@@ -20,74 +20,14 @@
 /** Maximum number of OpenCL devices we will query */
 #define MAX_DEVICES 4
 
-/** Compute a checksum for a double precision array of unknown no. of rows
-    but with each row containing width entries */
-double checksum(double *array, int width,
-		int nx, int ny, int xstart, int ystart){
-  int i, j, jidx;
-  double sum = 0.0;
-  for(j=ystart; j<ny; j++){
-    jidx = j*width;
-    for(i=xstart; i<nx; i++){
-      sum += array[i+jidx];
-    }
-  }
-  return sum;
-}
-
-/** Write the supplied integer field data to the specified file. Data
-    formatted for use with gnuplot's splot command. */
-void write_ifield(const char *filename, int nx, int ny,
-		 int xstart, int ystart, int *field){
-  int ji, jj, idx;
-  FILE *fp = fopen(filename, "w");
-  if(!fp){
-    fprintf(stderr, "write_ifield: failed to open file %s\n", filename);
-    return;
-  }
-
-  idx = 0;
-  for(jj=ystart; jj<ny; jj++){
-    for(ji=xstart; ji<nx; ji++){
-      fprintf(fp, "%d %d\n", ji, field[idx++]);
-    }
-    fprintf(fp, "\n");
-  }
-
-  fclose(fp);
-}
-
-/** Write the supplied double-precision field data to the specified
-    file. Data formatted for use with gnuplot's splot command. */
-void write_field(const char *filename, int nx, int ny,
-		 int xstart, int ystart, double *field){
-  int ji, jj, idx;
-  FILE *fp = fopen(filename, "w");
-  if(!fp){
-    fprintf(stderr, "write_field: failed to open file %s\n", filename);
-    return;
-  }
-
-  idx = 0;
-  for(jj=ystart; jj<ny; jj++){
-    for(ji=xstart; ji<nx; ji++){
-      fprintf(fp, "%d %e\n", ji, field[idx++]);
-    }
-    fprintf(fp, "\n");
-  }
-
-  fclose(fp);
-}
-
 /** Top-level driver program. Queries the hardware to find OpenCL devices,
     creates OpenCL kernels and runs them. Also runs the same kernels on
     the CPU and compares the results. */
 int main(){
   /** The version of OpenCL supported by the selected device */
   int cl_version;
-  cl_device_id device_ids[MAX_DEVICES];
-  cl_device_id *device;
-  int idev;
+  char version_str[STD_STRING_LEN];
+  cl_device_id device;
   cl_context context = NULL;
   cl_command_queue command_queue = NULL;
   cl_command_queue_properties queue_properties = 0;
@@ -96,7 +36,6 @@ int main(){
   /* Buffers on the device */
   cl_mem ssha_device = NULL;
   cl_mem ssha_u_device = NULL;
-  cl_mem ssha_v_device = NULL;
   cl_mem sshn_device = NULL;
   cl_mem sshn_u_device = NULL;
   cl_mem sshn_v_device = NULL;
@@ -106,7 +45,6 @@ int main(){
   cl_mem un_device = NULL;
   cl_mem vn_device = NULL;
   cl_mem ua_device = NULL;
-  cl_mem va_device = NULL;
   cl_mem e1u_device = NULL;
   cl_mem e1v_device = NULL;
   cl_mem e1t_device = NULL;
@@ -114,10 +52,8 @@ int main(){
   cl_mem e2v_device = NULL;
   cl_mem e2t_device = NULL;
   cl_mem e12u_device = NULL;
-  cl_mem e12v_device = NULL;
   cl_mem e12t_device = NULL;
   cl_mem gphiu_device = NULL;
-  cl_mem gphiv_device = NULL;
   cl_mem tmask_device = NULL;
 
   cl_program program = NULL;
@@ -125,18 +61,6 @@ int main(){
   /* Our OpenCL kernel objects */
   cl_kernel cont_kernel = NULL;
   cl_kernel momu_kernel = NULL;
-  cl_kernel momv_kernel = NULL;
-  cl_kernel bc_ssh_kernel = NULL;
-  cl_kernel bc_solid_u_kernel  = NULL;
-  cl_kernel bc_solid_v_kernel  = NULL;
-  cl_kernel bc_flather_u_kernel  = NULL;
-  cl_kernel bc_flather_v_kernel  = NULL;
-  cl_kernel next_sshu_kernel  = NULL;
-  cl_kernel next_sshv_kernel  = NULL;
-
-  cl_platform_id platform_ids[MAX_DEVICES];
-  cl_uint ret_num_devices;
-  cl_uint ret_num_platforms;
   cl_int ret;
 
   /** Default problem size. May be overridden by setting
@@ -155,7 +79,7 @@ int main(){
   int ji, jj, idx;
   int buff_size;
   /** Sea-surface height */
-  cl_double *ssha, *ssha_u, *ssha_v, *sshn, *sshn_u, *sshn_v;
+  cl_double *ssha, *ssha_u, *sshn, *sshn_u, *sshn_v;
   cl_double *hu, *hv, *ht, *un, *vn, *ua, *va;
   cl_double *gphiu, *gphiv;
   cl_double *e1u, *e1v, *e1t, *e2u, *e2v, *e2t, *e12t, *e12u, *e12v;
@@ -211,6 +135,7 @@ int main(){
   }
   /* Check to see whether we should get our kernels from a single image file */
   if( (env_string = getenv("NEMOLITE2D_SINGLE_IMAGE")) ){
+    /* the %ms below instructs sscanf to allocate memory as required */
     if(sscanf(env_string, "%ms", &image_file) != 1){
       fprintf(stderr,
 	      "Error parsing NEMOLITE2D_SINGLE_IMAGE environment "
@@ -227,75 +152,8 @@ int main(){
   /* OpenCL initialisation */
 
   TimerStart("OCL Init");
-  
-  /* Get Platform and Device Info */
-  ret = clGetPlatformIDs(MAX_DEVICES, platform_ids, &ret_num_platforms);
-  check_status("clGetPlatformIDs", ret);
-  fprintf(stdout, "Have %d platforms.\n", ret_num_platforms);
-  char result_str[128], version_str[128];
-  cl_device_fp_config fp_config;
-  cl_device_type device_type;
-  size_t result_len;
-  for(idev=0;idev<ret_num_platforms;idev++){
-    ret = clGetPlatformInfo(platform_ids[idev],
-			    CL_PLATFORM_NAME,
-			    (size_t)128, (void *)result_str, &result_len);
-    fprintf(stdout, "Platform %d (id=%ld) is: %s\n",
-	    idev, (long)(platform_ids[idev]), result_str);
-  }
-
-  ret = clGetDeviceIDs(platform_ids[0], CL_DEVICE_TYPE_DEFAULT, MAX_DEVICES,
-		       device_ids, &ret_num_devices);
-  check_status("clGetDeviceIDs", ret);
-  fprintf(stdout, "Have %d devices\n", ret_num_devices);
-  for (idev=0; idev<ret_num_devices; idev++){
-    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_NAME,
-			  (size_t)128, result_str, &result_len);
-    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_TYPE,
-			  (size_t)(sizeof(cl_device_type)), &device_type,
-				   &result_len);
-    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_VERSION,
-			  (size_t)128, &version_str, &result_len);
-#ifdef CL_DEVICE_DOUBLE_FP_CONFIG
-    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_DOUBLE_FP_CONFIG,
-    			  (size_t)(sizeof(cl_device_fp_config)),
-    			  &fp_config, &result_len);
-#else
-    /* The Intel/Altera OpenCL SDK is only version 1.0 and that doesn't
-     have the CL_DEVICE_DOUBLE_FP_CONFIG property */
-    fp_config = 0;
-#endif
-    size_t wg_size;
-    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_WORK_GROUP_SIZE,
-			  (size_t)(sizeof(size_t)),
-			  &wg_size, &result_len);
-    cl_uint ndims;
-    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,
-			  sizeof(cl_uint), &ndims, &result_len);
-    size_t *max_sizes;
-    max_sizes = (size_t*)malloc(ndims*sizeof(size_t));
-    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_WORK_ITEM_SIZES,
-			  ndims*sizeof(size_t), max_sizes, &result_len);
-    cl_uint max_units;
-    ret = clGetDeviceInfo(device_ids[idev], CL_DEVICE_MAX_COMPUTE_UNITS,
-			  sizeof(cl_uint), &max_units, &result_len);
-
-    fprintf(stdout, "Device %d is: %s, type=%d, version=%s\n",
-	    idev, result_str, (int)(device_type), version_str);
-    if((int)fp_config == 0){
-      fprintf(stdout, "             double precision NOT supported\n");
-    }
-    else{
-      fprintf(stdout, "             double precision supported\n");
-    }
-    fprintf(stdout, "             max work group size = %ld\n", (long)wg_size);
-    fprintf(stdout, "             max size of each work item dimension: %ld %ld\n", max_sizes[0], max_sizes[1]);
-    fprintf(stdout, "             max compute units = %ld\n", (long)max_units);
-    free(max_sizes);
-  }
-  /* Choose device 0 */
-  idev = 0;
-  device = &(device_ids[idev]);
+    
+  init_device(&device, version_str, &context);
 
   /* Check what version of OpenCL is supported */
   if(strstr(version_str, "OpenCL 1.0")){
@@ -312,22 +170,12 @@ int main(){
     exit(1);
   }
   
-  /* Create OpenCL context for just 1 device */
-  cl_context_properties cl_props[3];
-  /* The list of properties for this context is zero terminated */
-  cl_props[0] = CL_CONTEXT_PLATFORM;
-  cl_props[1] = (cl_context_properties)(platform_ids[0]);
-  cl_props[2] = 0;
-  context = clCreateContext(cl_props, 1, device, NULL, NULL, &ret);
-  check_status("clCreateContext", ret);
-  
   /* Create Command Queue with properties set to NULL */
   if(cl_version < 200){
     /* The Intel/Altera OpenCL SDK is only version 1.0 */
     /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
        to call the ...WithProperties version of this routine */
-    command_queue = clCreateCommandQueue(context,
-					 *device,
+    command_queue = clCreateCommandQueue(context, device,
 					 queue_properties, &ret);
     check_status("clCreateCommandQueue", ret);
   }
@@ -340,26 +188,23 @@ int main(){
     exit(1);
   }
     
+  // Create our Program object (contains all of the individual kernels)
+  if(image_file){
+    /* We expect all kernels to have been compiled into a single
+       image */
+    program = get_program(context, &device, version_str, image_file);
+  }
+  else{
+    fprintf(stderr, "Please set NEMOLITE2D_SINGLE_IMAGE to point to the "
+	    ".aocx file containing the compiled kernels\n");
+    exit(1);
+  }
   /* Create OpenCL Kernels and associated event objects (latter used
    to obtain detailed timing information). */
+  cont_kernel = clCreateKernel(program, "continuity_code", &ret);
+  momu_kernel = clCreateKernel(program, "momentum_u_code", &ret);
   cl_event cont_evt;
-  if(image_file){
-    cont_kernel = get_kernel(&context, device, version_str,
-			     image_file, "continuity_code");
-  }
-  else{
-    cont_kernel = get_kernel(&context, device, version_str,
-			     "./continuity_kern.c", "continuity_code");
-  }
   cl_event momu_evt;
-  if(image_file){
-    momu_kernel = get_kernel(&context, device, version_str,
-			     image_file, "momentum_u_code");
-  }
-  else{
-    momu_kernel = get_kernel(&context, device, version_str,
-			     "./momentum_kern.c", "momentum_u_code");
-  }
 
   /* Create Device Memory Buffers */
   int num_buffers = 0;
@@ -509,7 +354,6 @@ int main(){
   
   ssha = (cl_double*)malloc(buff_size);
   ssha_u = (cl_double*)malloc(buff_size);
-  ssha_v = (cl_double*)malloc(buff_size);
   sshn = (cl_double*)malloc(buff_size);
   sshn_u = (cl_double*)malloc(buff_size);
   sshn_v = (cl_double*)malloc(buff_size);
@@ -710,7 +554,7 @@ int main(){
     local_size[1] = 1;
     if (local_size[0] > nx) local_size[0] = nx;
     ret = clEnqueueNDRangeKernel(command_queue, momu_kernel, 2, 0,
-				 global_size, local_size, 0, NULL, &momu_evt);
+				 global_size, NULL, 0, NULL, &momu_evt);
     check_status("clEnqueueNDRangeKernel(Mom-u)", ret);
 
   }
@@ -797,12 +641,8 @@ int main(){
   if(profiling_enabled){
     fprintf(stdout, "Time spent in Continuity kern = %e us\n",
   	    duration_ns(cont_evt)*0.001);
-#ifndef SINGLE_KERNEL
     fprintf(stdout, "Time spent in Momentum-u kern = %e us\n",
             duration_ns(momu_evt)*0.001);
-    fprintf(stdout, "Time spent in Momentum-v kern = %e us\n",
-            duration_ns(momv_evt)*0.001);
-#endif
   }
 
   /* Generate report on host timings */

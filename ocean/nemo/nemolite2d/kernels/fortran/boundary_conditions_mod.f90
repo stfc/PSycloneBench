@@ -75,7 +75,7 @@ module boundary_conditions_mod
   type, extends(kernel_type) :: bc_solid_v
      type(go_arg), dimension(2) :: meta_args =  &
           (/ go_arg(GO_READWRITE, GO_CV, GO_POINTWISE),  &
-             go_arg(GO_READ,      GO_GRID_MASK_T)     &
+             go_arg(GO_READ,      GO_GRID_MASK_T)        &
            /)
 
      !> This is a boundary-conditions kernel and therefore
@@ -162,7 +162,7 @@ contains
     type(r2d_field),    intent(inout) :: ssha
     ! Locals
     integer  :: ji, jj
-
+    
     DO jj = ssha%internal%ystart, ssha%internal%ystop
        DO ji = ssha%internal%xstart, ssha%internal%xstop
           call bc_ssh_code(ji, jj, &
@@ -186,7 +186,7 @@ contains
 
     amp_tide   = 0.2_go_wp
     omega_tide = 2.0_go_wp * 3.14159_go_wp / (12.42_go_wp * 3600._go_wp)
-    rtime = real(istep, go_wp) * rdt
+    rtime = real(istep) * rdt
 
     if(tmask(ji,jj) <= 0) return
     IF     (tmask(ji,jj-1) < 0) THEN
@@ -297,6 +297,7 @@ contains
 
   !> Kernel to apply Flather condition to U
   subroutine bc_flather_u_code(ji, jj, ua, hu, sshn_u, tmask)
+    use physical_params_mod, only: g
     implicit none
     integer,                  intent(in)    :: ji, jj
     integer,  dimension(:,:), intent(in)    :: tmask
@@ -351,6 +352,7 @@ contains
   !> Kernel to apply Flather boundary condition to v component
   !! of velocity
   subroutine bc_flather_v_code(ji, jj, va, hv, sshn_v, tmask)
+    use physical_params_mod, only: g
     implicit none
     integer,                  intent(in) :: ji, jj
     integer,  dimension(:,:), intent(in) :: tmask

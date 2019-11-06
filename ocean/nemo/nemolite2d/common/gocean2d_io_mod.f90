@@ -104,11 +104,19 @@ contains
     integer :: ji, jj
     real(go_wp) :: rtmp1, rtmp2
     character(len=11) :: fname
+    real(go_wp), dimension(:,:), pointer :: htptr, sshnptr, unptr, vnptr
 
     if( l_out .and. (mod(istp, mprint) .eq. 0) ) then
 
+       ! Ensure we have up-to-date field values
+       htptr => ht%get_data()
+       sshnptr => sshn%get_data()
+       unptr => un%get_data()
+       vnptr => vn%get_data()
+       
        ! Output model results. Each MPI rank writes to its own file.
        write(fname, '(I5.5,"_",I5.5)') istp, get_rank()
+
        open(21, file='go2d_'//fname//'.dat', STATUS='UNKNOWN', &
             action='write')
 
@@ -118,14 +126,14 @@ contains
 
              ! Avoid underflow in the output of computed un and vn
              ! values at T points
-             rtmp1 = 0.5_go_wp * (un%data(ji-1,jj) + un%data(ji,jj))
-             rtmp2 = 0.5_go_wp * (vn%data(ji,jj-1) + vn%data(ji,jj))
+             rtmp1 = 0.5_go_wp * (unptr(ji-1,jj) + unptr(ji,jj))
+             rtmp2 = 0.5_go_wp * (vnptr(ji,jj-1) + vnptr(ji,jj))
 
              ! write "x-coord, y-coord, depth, ssh, u-velocity,
              ! v-velocity" to ASCII files
-              write(21,'(6e16.7e3)') grid%xt(ji,jj), grid%yt(ji,jj),   &
-                                     ht%data(ji,jj), sshn%data(ji,jj), &
-                                     rtmp1, rtmp2 
+              write(21,'(6e16.7)') grid%xt(ji,jj), grid%yt(ji,jj), &
+                                   htptr(ji,jj), sshnptr(ji,jj), &
+                                   rtmp1, rtmp2 
            end do
            ! Blank line to signal end of scan (in x) to gnuplot
            write(21,*)

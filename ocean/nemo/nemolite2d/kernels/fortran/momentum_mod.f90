@@ -140,7 +140,7 @@ contains
                              hu, hv, ht, ssha_u, &
                              sshn, sshn_u, sshn_v, &
                              tmask, e1u, e1v, e1t, e2u, e2t, e12u, gphiu)
-    use physical_params_mod
+    use physical_params_mod, only: omega, d2r, g
     use model_mod, only: rdt, cbfr, visc
     implicit none
     integer, intent(in) :: ji, jj
@@ -149,7 +149,7 @@ contains
     real(go_wp), dimension(:,:), intent(in) :: hu, hv, ht
     real(go_wp), dimension(:,:), intent(in) :: ssha_u, sshn, sshn_u, sshn_v
     real(go_wp), dimension(:,:), intent(in) :: un, vn
-    real(go_wp), dimension(:,:), intent(out) :: ua
+    real(go_wp), dimension(:,:), intent(inout) :: ua
     ! Locals
     REAL(go_wp) :: u_e, u_w, v_n, v_s
     real(go_wp) :: v_nc, v_sc
@@ -289,7 +289,7 @@ contains
                              sshn, sshn_u, sshn_v, &
                              tmask, e1v, e1t, e2u, e2v, e2t, e12v, gphiv)
 
-    use physical_params_mod
+    use physical_params_mod, only: omega, d2r, g
     use model_mod, only: rdt, cbfr, visc
     implicit none
     integer, intent(in) :: ji, jj
@@ -298,7 +298,7 @@ contains
     real(go_wp), dimension(:,:), intent(in) :: hu, hv, ht
     real(go_wp), dimension(:,:), intent(in) :: ssha_v, sshn, sshn_u, sshn_v
     real(go_wp), dimension(:,:), intent(in) :: un, vn
-    real(go_wp), dimension(:,:), intent(out) :: va
+    real(go_wp), dimension(:,:), intent(inout) :: va
     ! Locals
     real(go_wp) :: u_e, u_w, v_n, v_s
     real(go_wp) :: u_ec, u_wc, vv_e, vv_n, vv_s, vv_w

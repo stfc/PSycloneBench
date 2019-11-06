@@ -10,7 +10,7 @@
 # export LDFLAGS=-lm
 
 # Location of the dl_timer and infrastucture code
-SHARED_DIR = ../../../../../../shared
+SHARED_DIR = ../../../../../../../shared
 
 # The dl_timer library
 TIMER_DIR = ${SHARED_DIR}/dl_timer
@@ -21,30 +21,31 @@ INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/lib_fd.a
 # Shared NEMOLite2D routines
-COMMON_DIR = ../../../common
+COMMON_DIR = ../../../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
+# Location of the OpenCL kernels
+KERNEL_DIR = ../../../../kernels/opencl
 
-COMMON_MODULES = opencl_utils_mod.o kernel_args_mod.o nemolite2d.o
-# Location of the kernel sources
-KERNEL_DIR = ../../../kernels/opencl
+COMMON_MODULES = opencl_utils_mod.o kernel_args_mod.o \
+                 nemolite2d.o
 
 nemolite2d.exe: kernels ${COMMON_LIB} inf_lib timer_lib ${COMMON_MODULES}
-	${F90} ${OMPFLAGS} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${COMMON_LIB} \
-${INF_LIB} ${TIMER_LIB} $(LDFLAGS)
+	${F90} ${OMPFLAGS} -o $@ ${COMMON_MODULES} ${COMMON_LIB} \
+${INF_LIB} ${TIMER_LIB} ${OPENCL_LIBS} $(LDFLAGS)
 
 timer_lib:
-	${MAKE} -C ${TIMER_DIR} CC=${CC} sm_lib
+	${MAKE} -C ${TIMER_DIR} sm_lib
 
 inf_lib:
 	${MAKE} -C ${INF_DIR}
 
-# We only need to compile clfortran in order to get the module interfaces.
-# We *do not* link it into the final executable otherwise it collides
-# with the real OpenCL run-time routines and nothing works!
-opencl_utils_mod.o: clfortran.o
-
 kernels:
 	${MAKE} -C ${KERNEL_DIR} CC=g++
+
+# The clfortran module need only be compiled for its interface definitions.
+# It *must not* be linked in to the final executable as it collides with
+# the real OpenCL run-time and nothing works!
+opencl_utils_mod.o: clfortran.o
 
 ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR}
@@ -53,7 +54,7 @@ ${COMMON_LIB}:
 	${F90} ${F90FLAGS} -c -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} $<
 
 clean:
-	rm -f *.o *~ gnu_opt_report.txt
+	rm -f *.o *~
 
 allclean: clean
 	rm -f *.exe *.mod
