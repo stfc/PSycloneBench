@@ -3,6 +3,7 @@ CXXFLAGS =
 LDFLAGS = -lOpenCL -lsycl
 SOURCES = nemolite2d.cpp
 
+
 .PHONY: nemolite_cpu nemolite_gpu nemolite_fpga nemolite_fpga_emu run_emu clean 
 all: nemolite_cpu
 

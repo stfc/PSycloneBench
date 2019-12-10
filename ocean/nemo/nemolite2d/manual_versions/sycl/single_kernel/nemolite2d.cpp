@@ -2,13 +2,12 @@
 
 #include <array>
 #include <iostream>
+#include <chrono>
 #include <CL/sycl/intel/fpga_extensions.hpp>
 
-using namespace cl::sycl;
+#include "../kernels/kernels.hpp"
 
-constexpr access::mode sycl_read = access::mode::read;
-constexpr access::mode sycl_write = access::mode::write;
-constexpr access::mode sycl_read_write = access::mode::read_write;
+using namespace cl::sycl;
 
 using real = cl_double;
 
@@ -20,6 +19,7 @@ static const size_t ARRAY_SIZE = 127 * 127;
 void initialize_field(std::array<real, ARRAY_SIZE>& arr, const real value);
 void initialize_tmask(std::array<cl_int, ARRAY_SIZE>& tmask, int nx, int ny,
                      int xstart, int xstop, int ystart, int ystop);
+real checksum(std::array<real, ARRAY_SIZE>& array);
 
 void add_vectors_parallel(std::array<cl_int, ARRAY_SIZE>& sum_array,
         const std::array<cl_int, ARRAY_SIZE>& addend_array_1,
@@ -102,6 +102,12 @@ int main() {
         return -1;
     }
     
+    std::cout << "Checksum at the beginning:" << std::endl;
+    std::cout << " - un: "<< checksum(un) << std::endl;
+    std::cout << " - ht: "<< checksum(ht) << std::endl;
+    std::cout << std::endl;
+
+
     // Print selected device information    
     std::cout << "Device: "
             << device_queue->get_device().get_info<info::device::name>()
@@ -110,22 +116,49 @@ int main() {
     // The size of amount of memory that will be given to the buffer 
     range<1> num_items{ARRAY_SIZE};
 
-    // Create SYCL buffers: data shared between the host and the device
-    buffer<real, 1> hu_buf(hu.data(), num_items);
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    // Submit work to the device queue
-    device_queue->submit([&](handler& cgh) {
-        // Define the accessors
-        auto hu_accessor = hu_buf.template get_access<sycl_read_write>(cgh);
+    // Create scope for device data
+    {
+        // Create SYCL buffers: data shared between the host and the device
+        buffer<real, 1> hu_buf(hu.data(), num_items);
+        buffer<real, 1> hv_buf(hv.data(), num_items);
+        buffer<real, 1> ht_buf(ht.data(), num_items);
 
-        // Use parallel_for to execute each work_item in parallel
-        cgh.parallel_for<class Kernel1>(num_items, [=](id<1> wiID) {
-            hu_accessor[wiID] = hu_accessor[wiID] + hu_accessor[wiID];
+        device_queue->submit([&](handler& cgh) {
+        
+            auto hu_acc = hu_buf.get_access<sycl_read>(cgh);
+            auto hv_acc = hu_buf.get_access<sycl_read>(cgh);
+            auto ht_acc = hu_buf.get_access<sycl_read_write>(cgh);
+
+
+            Continuity<real> continuity(hu_acc, hv_acc, ht_acc);            
+
+           // cgh.parallel_for(num_items, continuity);
+           cgh.parallel_for<class Kernel1>(num_items, [=](id<1> wiID) {
+                ht_acc[wiID] = 5;
             });
-    });
+                    
+        });
+    }
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Computation finished successfully in ";
+    std::cout << std::chrono::duration_cast<std::chrono::seconds> (end - begin).count();
+    std::cout << " seconds" << std::endl;
+    std::cout << std::endl;
+    std::cout << "Checksum at the end:" << std::endl;
+    std::cout << " - un: "<< checksum(un) << std::endl;
+    std::cout << " - ht: "<< checksum(ht) << std::endl;
+    std::cout << std::endl;
 
-    std::cout << "Finished successfully" << std::endl;
     return 0;
+}
+
+
+real checksum(std::array<real, ARRAY_SIZE>& array){
+    real sum = 0;
+    for (size_t i = 0; i < ARRAY_SIZE; i++) sum += array[i];
+    return sum;
 }
 
 void initialize_field(std::array<real, ARRAY_SIZE>& arr, const real value){
