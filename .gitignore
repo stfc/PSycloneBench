@@ -5,3 +5,6 @@
 *.exe
 *.dat
 *~
+*.a
+__pycache__/
+gnu_opt_report.txt
