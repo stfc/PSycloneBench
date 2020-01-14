@@ -91,3 +91,9 @@ allclean: clean
 
 docs:
 	doxygen gocean2d.doxy.config
+
+summary:
+	@./nemolite2d.exe | awk 'BEGIN {ORS="\t"} \
+		{if ($$2 == "checksum") {print $$4} } \
+		{if ($$1 == "Time-stepping") {print $$4} } \
+		END {ORS="\n"; print ""}'
