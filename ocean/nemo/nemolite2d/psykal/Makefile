@@ -111,12 +111,12 @@ nemolite2d_acc: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 acc_trans
 nemolite2d_ocl: common_lib timer_lib ocl_inf_lib nemolite2d_alg.f90 ocl_transform.py
 	@echo "Generating NemoLite2D with OpenCL"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -nodm -s ./ocl_transform.py --kernel-renaming single \
+		-I ${COMMON_DIR} \
 	   	-okern $@ -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	# Currently we need all kernels and the global parameters in a single OpenCL file
-	cat kernel_parameters.h > $@/allkernels
 	cat $@/*.cl >> $@/allkernels
 	mv $@/allkernels $@/allkernels.cl 
 	@echo "OpenCL version prepared."
