@@ -86,7 +86,7 @@ contains
 !                             ssha%data, sshn_t%data,             &
 !                             sshn_u%data, sshn_v%data,           &
 !                             hu%data, hv%data, un%data, vn%data, &
-!                             rdt, sshn_t%grid%area_t)
+!                             sshn_t%grid%area_t)
          rtmp1 = (sshn_u%data(ji  ,jj ) + hu%data(ji  ,jj  ))*un%data(ji  ,jj)
          rtmp2 = (sshn_u%data(ji-1,jj ) + hu%data(ji-1,jj  ))*un%data(ji-1,jj)
          rtmp3 = (sshn_v%data(ji ,jj ) + hv%data(ji  ,jj  ))*vn%data(ji ,jj)

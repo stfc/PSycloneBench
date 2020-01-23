@@ -66,7 +66,7 @@ nemolite2dxilinx: ${KERNELS} allkernels.xclbin psy.o alg.o
 	# Compile to a .xo file
 	v++ --compile --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
 		$< -o $<.xo
-	# Link to crete a Xilinx FPGA bianry container (.xclbin)
+	# Link to create a Xilinx FPGA bianry container (.xclbin)
 	v++ --link --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
 		${PROFILING_FLAGS} $<.xo -o $@
 
