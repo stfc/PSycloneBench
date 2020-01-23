@@ -7,7 +7,7 @@ module continuity_mod
   implicit none
 
   type, extends(kernel_type) :: continuity
-     type(go_arg), dimension(10) :: meta_args =         &
+     type(go_arg), dimension(9) :: meta_args =         &
            (/ go_arg(GO_WRITE, GO_CT, GO_POINTWISE),            & ! ssha
               go_arg(GO_READ,  GO_CT, GO_POINTWISE),            & ! sshn
               go_arg(GO_READ,  GO_CU, GO_STENCIL(000,110,000)), & ! sshn_u
@@ -16,7 +16,6 @@ module continuity_mod
               go_arg(GO_READ,  GO_CV, GO_STENCIL(000,010,010)), & ! hv
               go_arg(GO_READ,  GO_CU, GO_STENCIL(000,110,000)), & ! un
               go_arg(GO_READ,  GO_CV, GO_STENCIL(000,010,010)), & ! vn
-              go_arg(GO_READ,  GO_R_SCALAR, GO_POINTWISE),      & ! Time-step
               go_arg(GO_READ,  GO_GRID_AREA_T)           &
            /)
      !> This kernel updates only internal points of the simulation
@@ -41,7 +40,6 @@ contains
   !===================================================
 
   subroutine invoke_continuity(ssha, sshn, sshn_u, sshn_v, hu, hv, un, vn)
-    use model_mod, only: rdt
     implicit none
     type(r2d_field),     intent(inout) :: ssha
     type(r2d_field),     intent(in) :: sshn, sshn_u, sshn_v
@@ -56,7 +54,7 @@ contains
                                ssha%data, sshn%data,        &
                                sshn_u%data, sshn_v%data,    &
                                hu%data, hv%data, un%data, vn%data, &
-                               rdt, ssha%grid%area_t)
+                               ssha%grid%area_t)
        end do
     end do
 
@@ -180,10 +178,10 @@ contains
 
   subroutine continuity_code(ji, jj,                     &
                              ssha, sshn, sshn_u, sshn_v, &
-                             hu, hv, un, vn, rdt, e12t)
+                             hu, hv, un, vn, e12t)
+    use model_mod, only: rdt
     implicit none
     integer,                  intent(in)  :: ji, jj
-    real(go_wp),                 intent(in)  :: rdt
     real(go_wp), dimension(:,:), intent(in)  :: e12t
     real(go_wp), dimension(:,:), intent(out) :: ssha
     real(go_wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, &

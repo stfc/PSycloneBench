@@ -136,7 +136,6 @@ subroutine step(istp,           &
   use kind_params_mod
   use grid_mod
   use field_mod
-  use model_mod, only: rdt ! The model time-step
   use gocean2d_io_mod, only: model_write
   use continuity_mod,  only: continuity
   use momentum_mod,    only: momentum_u, momentum_v
@@ -153,7 +152,7 @@ subroutine step(istp,           &
 
   call invoke(                                               &
               continuity(ssha_t, sshn_t, sshn_u, sshn_v,     &
-                         hu, hv, un, vn, rdt),               &
+                         hu, hv, un, vn),                    &
               momentum_u(ua, un, vn, hu, hv, ht,             &
                          ssha_u, sshn_t, sshn_u, sshn_v),    &
               momentum_v(va, un, vn, hu, hv, ht,             &

@@ -61,13 +61,13 @@ nemolite2dxilinx: ${KERNELS} allkernels.xclbin psy.o alg.o
 
 %.o: %.mod
 
-# Xilinx OpenCL kernel compilation
+# Xilinx Vitis OpenCL kernel compilation
 %.xclbin: %.cl
 	# Compile to a .xo file
-	xocc --compile --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
+	v++ --compile --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
 		$< -o $<.xo
-	# Link to crete a Xilinx FPGA bianry container (.xclbin)
-	xocc --link --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
+	# Link to create a Xilinx FPGA bianry container (.xclbin)
+	v++ --link --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
 		${PROFILING_FLAGS} $<.xo -o $@
 
 # If we need a .f90 file that doesn't exist then it must be a kernel.
