@@ -28,7 +28,7 @@
       !
       DO j=2,jstop
         DO i=2,istop
-          CALL continuity_code(i, j, ssha_t%data, sshn_t%data, sshn_u%data, sshn_v%data, hu%data, hv%data, un%data, vn%data, rdt, sshn_t%grid%area_t)
+          CALL continuity_code(i, j, ssha_t%data, sshn_t%data, sshn_u%data, sshn_v%data, hu%data, hv%data, un%data, vn%data, shn_t%grid%area_t)
         END DO 
       END DO 
       DO j=2,jstop
