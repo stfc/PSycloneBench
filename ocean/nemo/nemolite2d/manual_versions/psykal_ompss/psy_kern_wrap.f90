@@ -14,7 +14,7 @@ subroutine continuity_code_wrap(i, j, ssha_t, at_dim1, at_dim2, sshn_t, nt_dim1,
   real(wp), intent(in)    :: rdt
   real(wp), intent(in)    :: grid_area_t(gat_dim1, gat_dim2)
   !
-  CALL continuity_code(i, j, ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, rdt, grid_area_t)
+  CALL continuity_code(i, j, ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, grid_area_t)
   !
 end subroutine continuity_code_wrap
 
