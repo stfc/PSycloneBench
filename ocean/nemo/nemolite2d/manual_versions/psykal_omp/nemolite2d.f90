@@ -139,26 +139,6 @@ subroutine step(grid, istp, &
                         sshn, sshn_u, sshn_v, &
                         hu, hv, ht, ua, va, un, vn)
 
-!  call invoke(                                               &
-!              continuity(istp, ssha, sshn_t, sshn_u, sshn_v, &
-!                         hu, hv, un, vn),                    &
-!              momentum_u(ua, un, vn,                         &
-!                         ssha_u, sshn_t, sshn_u, sshn_v),    &
-!              momentum_v(va, un, vn, hu, hv, ht,             &
-!                         ssha_v, sshn_t, sshn_u, sshn_v),    &
-!              bc_ssh(istp, ssha),                            &
-!              bc_solid_u(ua),                                &
-!              bc_solid_v(va),                                &
-!              bc_flather_u(ua, hu, sshn_u),                  &
-!              bc_flather_v(va, hv, sshn_v),                  &
-!              copy_field(ua, un),                            &
-!              copy_field(va, vn),                            &
-!              copy_field(ssha, sshn_t),                      &
-!              next_sshu(sshn_u, sshn_t),                     &
-!              next_sshv(sshn_v, sshn_t)                      &
-!             )
-
-
 !  call model_write(grid, istp, ht, sshn, un, vn)
 
 end subroutine step

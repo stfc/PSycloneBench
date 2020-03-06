@@ -2,7 +2,7 @@
 F90=ifort
 CC=icc
 
-CFLAGS="-O3 -axCORE-AVX2 -opt-report"
+CFLAGS="-O3 -xHost -qopt-report"
 
 F90FLAGS=
 # -fp-model strict
@@ -36,7 +36,7 @@ F90FLAGS+=" -no-inline-min-size -no-inline-max-per-compile -no-inline-factor"
 F90FLAGS+=" -qopt-report=5 -qopt-report-phase=loop,vec"
 
 # Flags to switch-on OpenMP support in compiler
-OMPFLAGS="-openmp"
+OMPFLAGS="-qopenmp"
 
 LDFLAGS= 
 #LDFLAGS+= -fast
