@@ -9,46 +9,27 @@
 # export CFLAGS="-g -O0 -Wall"
 # export LDFLAGS=-lm
 
-# Location of the dl_timer and infrastucture code
-SHARED_DIR = ../../../../../../../shared
+LDFLAGS += -lOpenCL
+LDFLAGS += ${OMPFLAGS}
 
-# The dl_timer library
-TIMER_DIR = ${SHARED_DIR}/dl_timer
-TIMER_INC = ${TIMER_DIR}/src
-TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
-# The dl_esm_lib infrastructure library
-INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
-INF_INC = ${INF_DIR}/src
-INF_LIB = ${INF_DIR}/src/dl_esm_inf_fd.a
+.PHONY: all nemolite2d.exe
+.DEFAULT_GOAL := nemolite2d.exe
+include ../common.mk
+
+
+
 # FortCL (provides OpenCL functionality in Fortran)
-FCL_DIR = ${SHARED_DIR}/FortCL
+FCL_DIR = ${SHARED_DIR}/dl_esm_inf/external/FortCL/
 FCL_INC = ${FCL_DIR}/src
+FCL_LIB = ${FCL_INC}/libFortCL.a
 
-# Shared NEMOLite2D routines
-COMMON_DIR = ../../../../common
-COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
+COMMON_MODULES = time_step_mod.o nemolite2d.o
 
-# Location of the kernel sources
-KERNEL_DIR = ../../../kernels/opencl
+all: nemolite2d.exe
 
-COMMON_MODULES = kernel_args_mod.o psykalite_mod.o \
-                 nemolite2d.o
-
-# This implementation is not complete because it was quicker to extend
-# PSyclone to generate the necessary OpenCL boiler-plate that it was to
-# write it by hand!
-all:
-	echo "Not building because I haven't finished all the boiler-plate"
-
-nemolite2d.exe: kernels ${COMMON_LIB} inf_lib timer_lib fcl_lib ${COMMON_MODULES}
+nemolite2d.exe: ${COMMON_LIB} inf_lib timer_lib fcl_lib ${COMMON_MODULES}
 	${F90} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${COMMON_LIB} \
-${INF_LIB} ${TIMER_LIB} $(LDFLAGS)
-
-timer_lib:
-	${MAKE} -C ${TIMER_DIR} CC=${CC} sm_lib
-
-inf_lib:
-	${MAKE} -C ${INF_DIR}
+        ${FCL_LIB} ${INF_LIB} ${TIMER_LIB} $(LDFLAGS)
 
 fcl_lib:
 	${MAKE} -C ${FCL_DIR}
@@ -58,14 +39,6 @@ fcl_lib:
 # with the real OpenCL run-time routines and nothing works!
 opencl_utils_mod.o: clfortran.o
 
-kernels:
-	${MAKE} -C ${KERNEL_DIR} CC=g++
-
-${COMMON_LIB}:
-	${MAKE} -C ${COMMON_DIR}
-
-%.o: %.f90
-	${F90} ${F90FLAGS} -c -I${COMMON_DIR} -I${FCL_INC} -I${INF_INC} -I${TIMER_INC} $<
 
 clean:
 	rm -f *.o *~ gnu_opt_report.txt

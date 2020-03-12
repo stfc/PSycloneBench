@@ -25,7 +25,7 @@ KERNELS = boundary_conditions_mod.o \
 	$(F90) -o $@ $(MODULE_LIST) ${TIMER_LIB} $(LDFLAGS)
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -I${FCL_INC} -c $<
 
 %.o: %.F90
 	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
