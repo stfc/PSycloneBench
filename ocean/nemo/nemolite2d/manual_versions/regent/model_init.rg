@@ -5,8 +5,24 @@ require("read_namelist")
 local stdlib = terralib.includec("stdlib.h")
 local stdio = terralib.includec("stdio.h")
 
-fspace tmask_fields{
-  tmask : int1d
+fspace grid_fields{
+  tmask : int1d,
+  dx_t : float,
+  dy_t : float,
+  dx_u : float,
+  dy_u : float,
+  dx_v : float,
+  dy_v : float,
+  area_t : float,
+  area_u : float, 
+  area_v : float,
+  gphi_u : float,
+  gphi_v : float,
+  xt : float,
+  yt : float
+-- gphi_f  : float  
+--  dx_f : float -- Don't use f field in this code
+--  dy_f : float
 }
 
 local SOLID_BOUNDARY = 0
@@ -22,7 +38,7 @@ local TIDAL_MASK = -1
 --   |                    |
 -- (1, 1) --- --- -- -- (M, 1)
 
-task dump_tmask( tmask: region(ispace(int2d), tmask_fields)) where reads(tmask.tmask) do
+task dump_tmask( tmask: region(ispace(int2d), grid_fields)) where reads(tmask.tmask) do
 
   var f = stdio.fopen("tmask_0.dat", 'w')
   var xlo = tmask.bounds.lo.x
@@ -39,8 +55,50 @@ task dump_tmask( tmask: region(ispace(int2d), tmask_fields)) where reads(tmask.t
 
 end
 
+task init_grid_coordinates( tmask_region : region(ispace(int2d), grid_fields) ) where writes(tmask_full.{xt, yt}), reads(tmask_full.{dx_t, dy_t}) do
 
-task init_centre( tmask_centre : region(ispace(int2d), tmask_fields)) where writes( tmask_centre.tmask) do
+  for point in tmask_region do
+     var xloc = (point.x-1) * tmask_full[point].dx_t
+     var yloc = (point.y-1) * tmask_full[point].dy_t
+     tmask_region[point].xt = xloc
+     tmask_region[point].yt = yloc
+  end
+
+end
+
+task init_grid_coordinates_launcher( tmask_full : region(ispace(int2d), grid_fields)) where writes(tmask_full.{xt, yt}), reads(tmask_full.{dx_t, dy_t}) do
+
+  
+  var full_partition = partition(equal, tmask_full, ispace(int2d, {4,4}))
+  for point in ispace(int2d, {4,4}) do
+    init_grid_coordinates(full_partition[point])
+  end
+end
+
+
+task init_grid_areas( tmask_region : region(ispace(int2d), grid_fields) )  where writes(tmask_full.{area_t, area_u, area_v}),
+   reads(tmask_full.{dx_t, dy_t, dx_u, dy_u, dx_v, dy_v}) do
+
+  __demand(__vectorize)
+  for point in tmask_region do
+    tmask_region[point].area_t = tmask_full[point].dx_t * tmask_full[point].dy_t
+    tmask_region[point].area_u = tmask_full[point].dx_u * tmask_full[point].dy_u
+    tmask_region[point].area_v = tmask_full[point].dx_v * tmask_full[point].dy_v
+  end 
+
+
+end
+
+task init_grid_areas_launcher( tmask_full : region(ispace(int2d), grid_fields)) where writes(tmask_full.{area_t, area_u, area_v}),
+   reads(tmask_full.{dx_t, dy_t, dx_u, dy_u, dx_v, dy_v}) do
+
+  var full_partition = partition(equal, tmask_full, ispace(int2d, {4,4}))
+  for point in ispace(int2d, {4,4}) do
+    init_grid_areas(full_partition[point])
+  end
+end
+
+task init_centre( tmask_centre : region(ispace(int2d), grid_fields)) where writes( tmask_centre.tmask) do
 
 --  __demand(__vectorize)
   for point in tmask_centre do
@@ -48,7 +106,7 @@ task init_centre( tmask_centre : region(ispace(int2d), tmask_fields)) where writ
   end
 end
 
-task init_centre_launcher( tmask_centre: region(ispace(int2d), tmask_fields)) where writes(tmask_centre.tmask) do
+task init_centre_launcher( tmask_centre: region(ispace(int2d), grid_fields)) where writes(tmask_centre.tmask) do
 
   var full_partition = partition(equal, tmask_centre, ispace(int2d, {4,4}))
   for point in ispace(int2d, {4,4}) do
@@ -57,7 +115,8 @@ task init_centre_launcher( tmask_centre: region(ispace(int2d), tmask_fields)) wh
 
 end
 
-task init_west( tmask_west : region(ispace(int2d), tmask_fields)) where writes(tmask_west.tmask) do
+
+task init_west( tmask_west : region(ispace(int2d), grid_fields)) where writes(tmask_west.tmask) do
 
   for point in tmask_west do
     tmask_west[point].tmask = SOLID_BOUNDARY
@@ -65,20 +124,20 @@ task init_west( tmask_west : region(ispace(int2d), tmask_fields)) where writes(t
 
 end
 
-task init_east( tmask_east : region(ispace(int2d), tmask_fields)) where writes(tmask_east.tmask) do
+task init_east( tmask_east : region(ispace(int2d), grid_fields)) where writes(tmask_east.tmask) do
 
   for point in tmask_east do
     tmask_east[point].tmask = SOLID_BOUNDARY
   end
 end
 
-task init_north( tmask_north : region(ispace(int2d), tmask_fields)) where writes(tmask_north.tmask) do
+task init_north( tmask_north : region(ispace(int2d), grid_fields)) where writes(tmask_north.tmask) do
 
   for point in tmask_north do
     tmask_north[point].tmask = SOLID_BOUNDARY
   end
 end
-task init_south( tmask_south : region(ispace(int2d), tmask_fields)) where writes(tmask_south.tmask) do
+task init_south( tmask_south : region(ispace(int2d), grid_fields)) where writes(tmask_south.tmask) do
 
   for point in tmask_south do
     tmask_south[point].tmask = TIDAL_MASK
@@ -86,7 +145,7 @@ task init_south( tmask_south : region(ispace(int2d), tmask_fields)) where writes
 end
 
 
-task print_tmask( tmask_centre : region(ispace(int2d), tmask_fields) ) where reads( tmask_centre.tmask) do
+task print_tmask( tmask_centre : region(ispace(int2d), grid_fields) ) where reads( tmask_centre.tmask) do
   var xlo = tmask_centre.bounds.lo.x
   var xhi = tmask_centre.bounds.hi.x
   var ylo = tmask_centre.bounds.lo.y
@@ -133,10 +192,14 @@ task main()
   var ydim : int32 = setup_data[0].jpjglo
 
   var grid_space = ispace(int2d, {x = xdim+2, y = ydim+2}, {x = 1, y = 1})
-  var tmasks = region(grid_space, tmask_fields)
+  var tmasks = region(grid_space, grid_fields)
   var full_partition = partition(equal, tmasks, ispace(int2d, {1,1}))
 
   fill(tmasks.tmask, -2)
+  fill(tmasks.{dx_t, dx_u, dx_v}, setup_data.dx)
+  fill(tmasks.{dy_t, dy_t, dy_v}, setup_data.dy)
+  fill(tmasks.{gphi_u, gphi_v}, 50.0)
+  fill(tmasks.{xt, yt}, 0.0)
 
 --  var partitioned_region = partition(equal, tmasks, ispace(int2d, {4,4}))
   var centre_region = image(tmasks, full_partition, calculate_internal_size)
@@ -155,6 +218,7 @@ task main()
     init_east(east_region[int2d({0,0})])
     init_north(north_region[int2d({0,0})])
     init_south(south_region[int2d({0,0})])
+    init_grid_areas_launcher(tmasks)
 --  end
 --    print_tmask(tmasks)
     dump_tmask(tmasks)
