@@ -3,6 +3,7 @@ import "regent"
 require("initialise_grid_points")
 require("model_init")
 
+local c = regentlib.c
 
 ------
 ------ This requires the full field, 1 to N+1 and 1 to M+1
@@ -51,7 +52,7 @@ task update_u_height_launcher( sea_surface_now : region(ispace(int2d), uvt_field
 --
 --   var tmask_field_partition = partition(grid_region.tmask, ispace(int1d, {2, -1}))
   for point in sea_surface_now do
-    if( grid_region[point].tmask + grid_region[point+{1,0}].tmask > 0) then
+    if( grid_region[point].tmask + grid_region[point+{1,0}].tmask > int1d(0)) then
       --         IF(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) > 0) THENi
 --            rtmp1 = sshn_t%grid%area_t(ji,jj) * sshn_t%data(ji,jj) + &
 --                 sshn_t%grid%area_t(ji+1,jj) * sshn_t%data(ji+1,jj)
@@ -62,13 +63,13 @@ task update_u_height_launcher( sea_surface_now : region(ispace(int2d), uvt_field
 --            sshn_u%data(ji,jj) = sshn_t%data(ji,jj)
 --         END IF
 
-        if(grid_region[point].tmask * grid_region[point + {1,0}].tmask > 0) then
-           var rtmp1 : float = grid_region[point].area_t * sea_surface_now[point].t
-                          + grid_region[point+{1,0}].area_t * sea_surface_now[point+{1,0}.t
+        if(grid_region[point].tmask * grid_region[point + {1,0}].tmask > int1d(0)) then
+           var rtmp1 : double = grid_region[point].area_t * sea_surface_now[point].t
+                          + grid_region[point+{1,0}].area_t * sea_surface_now[point+{1,0}].t
            sea_surface_now[point].u = 0.5 * rtmp1 / grid_region[point].area_u
-        elseif( grid_region[point].tmask <= 0 ) then
+        elseif( grid_region[point].tmask <= int1d(0) ) then
            sea_surface_now[point].u = sea_surface_now[point + {1,0}].t
-        elseif( grid_region[point + {1,0}].tmask <= 0) then
+        elseif( grid_region[point + {1,0}].tmask <= int1d(0)) then
            sea_surface_now[point].u = sea_surface_now[point].t
         end
 
@@ -104,7 +105,7 @@ task update_v_height_launcher( sea_surface_now : region(ispace(int2d), uvt_field
 
 
   for point in sea_surface_now do
-    if( grid_region[point].tmask + grid_region[point+{0,1}].tmask > 0) then
+    if( grid_region[point].tmask + grid_region[point+{0,1}].tmask > int1d(0)) then
 --         if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) > 0) then
 --            rtmp1 = sshn_t%grid%area_t(ji,jj)*sshn_t%data(ji,jj) + &
 --                 sshn_t%grid%area_t(ji,jj+1) * sshn_t%data(ji,jj+1)
@@ -114,16 +115,18 @@ task update_v_height_launcher( sea_surface_now : region(ispace(int2d), uvt_field
 --         else if(sshn_t%grid%tmask(ji,jj+1) <= 0) then
 --            sshn_v%data(ji,jj) = sshn_t%data(ji,jj)
 --         end if
-         if(grid_region[point].tmask * grid_region[point + {0,1}].tmask > 0) then
-           var rtmp1 : float = grid_region[point].area_t * sea_surface_now[point].t
-                          + grid_region[point+{0,1}].area_t * sea_surface_now[point+{0,1}.t
+         if(grid_region[point].tmask * grid_region[point + {0,1}].tmask > int1d(0)) then
+           var rtmp1 : double = grid_region[point].area_t * sea_surface_now[point].t
+                          + grid_region[point+{0,1}].area_t * sea_surface_now[point+{0,1}].t
            sea_surface_now[point].v = 0.5 * rtmp1 / grid_region[point].area_v
-        elseif( grid_region[point].tmask <= 0 ) then
+        elseif( grid_region[point].tmask <= int1d(0) ) then
            sea_surface_now[point].v = sea_surface_now[point + {0,1}].t
-        elseif( grid_region[point + {0,1}].tmask <= 0) then
+        elseif( grid_region[point + {0,1}].tmask <= int1d(0)) then
            sea_surface_now[point].v = sea_surface_now[point].t
         end 
-
+--      if(point == int2d({2,2})) then
+--        c.printf(" surface_now= %18.9e,  surface_neigh = %18.9e, area = %f\n",  sea_surface_now[point].t , sea_surface_now[point+{0,1}].t, grid_region[point].area_v)
+--      end
     end
 
   end

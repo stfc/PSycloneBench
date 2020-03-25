@@ -1,19 +1,19 @@
 import "regent"
 
 
-requires("model_init")
-requires("initialise_grid_points")
+require("model_init")
+require("initialise_grid_points")
 
 local c = regentlib.c
 
-sin = c.sinf
+sin = c.sin
 
 --This is the FOURTH loop
 --Writes to 2 to N 2 to M
 -- Reads from all
 task update_sea_surface_t(sea_surface_after : region(ispace(int2d),uvt_field),
                           grid_region : region(ispace(int2d), grid_fields),
-                          rdt : float, step : float )
+                          rdt : double, step : int32 )
      where writes(sea_surface_after.t), reads(grid_region.tmask) do
 
 
@@ -41,17 +41,17 @@ task update_sea_surface_t(sea_surface_after : region(ispace(int2d),uvt_field),
 --
 --       END DO
 --    END DO
-
-  var amp_tide : float = 0.2
-  var omega_tide : float = 0.2 * 3.14159 / (12.42 * 3600.0)
-  var rtime = step * rdt
-  var tide_value = amp_tide * sin(omega_tide * rtime)
-  for point in sea_surface_next do
-    if( grid_region[point + {0,-1}].tmask < 0
-      or grid_region[point + {0,1}].tmask < 0
-      or grid_region[point + {1,0}].tmask < 0
-      or grid_region[point + {-1,0}].tmask < 0) then
-      sea_surface_after[point] = tide_value
+  var fstep : double = double(step)
+  var amp_tide : double = 0.2
+  var omega_tide : double = 2.0 * 3.14159 / (12.42 * 3600.0)
+  var rtime : double = fstep * rdt
+  var tide_value : double = amp_tide * sin(omega_tide * rtime)
+  for point in sea_surface_after do
+    if( grid_region[point + {0,-1}].tmask < int1d(0)
+      or grid_region[point + {0,1}].tmask < int1d(0)
+      or grid_region[point + {1,0}].tmask < int1d(0)
+      or grid_region[point + {-1,0}].tmask < int1d(0)) then
+      sea_surface_after[point].t = tide_value
     end
   end
 

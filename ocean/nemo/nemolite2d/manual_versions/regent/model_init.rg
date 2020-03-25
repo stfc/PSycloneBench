@@ -7,22 +7,22 @@ local stdio = terralib.includec("stdio.h")
 
 fspace grid_fields{
   tmask : int1d,
-  dx_t : float,
-  dy_t : float,
-  dx_u : float,
-  dy_u : float,
-  dx_v : float,
-  dy_v : float,
-  area_t : float,
-  area_u : float, 
-  area_v : float,
-  gphi_u : float,
-  gphi_v : float,
-  xt : float,
-  yt : float
--- gphi_f  : float  
---  dx_f : float -- Don't use f field in this code
---  dy_f : float
+  dx_t : double,
+  dy_t : double,
+  dx_u : double,
+  dy_u : double,
+  dx_v : double,
+  dy_v : double,
+  area_t : double,
+  area_u : double, 
+  area_v : double,
+  gphi_u : double,
+  gphi_v : double,
+  xt : double,
+  yt : double
+-- gphi_f  : double  
+--  dx_f : double -- Don't use f field in this code
+--  dy_f : double
 }
 
 local SOLID_BOUNDARY = 0
@@ -55,11 +55,11 @@ task dump_tmask( tmask: region(ispace(int2d), grid_fields)) where reads(tmask.tm
 
 end
 
-task init_grid_coordinates( tmask_region : region(ispace(int2d), grid_fields) ) where writes(tmask_full.{xt, yt}), reads(tmask_full.{dx_t, dy_t}) do
+task init_grid_coordinates( tmask_region : region(ispace(int2d), grid_fields) ) where writes(tmask_region.{xt, yt}), reads(tmask_region.{dx_t, dy_t}) do
 
   for point in tmask_region do
-     var xloc = (point.x-1) * tmask_full[point].dx_t
-     var yloc = (point.y-1) * tmask_full[point].dy_t
+     var xloc = (point.x-1) * tmask_region[point].dx_t
+     var yloc = (point.y-1) * tmask_region[point].dy_t
      tmask_region[point].xt = xloc
      tmask_region[point].yt = yloc
   end
@@ -76,14 +76,14 @@ task init_grid_coordinates_launcher( tmask_full : region(ispace(int2d), grid_fie
 end
 
 
-task init_grid_areas( tmask_region : region(ispace(int2d), grid_fields) )  where writes(tmask_full.{area_t, area_u, area_v}),
-   reads(tmask_full.{dx_t, dy_t, dx_u, dy_u, dx_v, dy_v}) do
+task init_grid_areas( tmask_region : region(ispace(int2d), grid_fields) )  where writes(tmask_region.{area_t, area_u, area_v}),
+   reads(tmask_region.{dx_t, dy_t, dx_u, dy_u, dx_v, dy_v}) do
 
   __demand(__vectorize)
   for point in tmask_region do
-    tmask_region[point].area_t = tmask_full[point].dx_t * tmask_full[point].dy_t
-    tmask_region[point].area_u = tmask_full[point].dx_u * tmask_full[point].dy_u
-    tmask_region[point].area_v = tmask_full[point].dx_v * tmask_full[point].dy_v
+    tmask_region[point].area_t = tmask_region[point].dx_t * tmask_region[point].dy_t
+    tmask_region[point].area_u = tmask_region[point].dx_u * tmask_region[point].dy_u
+    tmask_region[point].area_v = tmask_region[point].dx_v * tmask_region[point].dy_v
   end 
 
 
@@ -176,53 +176,32 @@ task calculate_north_boundary( private_bounds: rect2d) : rect2d
   return rect2d( { {private_bounds.lo.x+1, private_bounds.hi.y}, {private_bounds.hi.x-1, private_bounds.hi.y} })
 end
 
-task main()
+task model_init( grid : region(ispace(int2d), grid_fields)) where
+    writes(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_v, gphi_u, gphi_v, xt, yt, area_t, area_u, area_v}), reads(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_u, dy_v, gphi_u, gphi_v, xt, yt, area_t ,area_u, area_v}) do
 
-  var setup_data_is = ispace(int1d, 1)
-  var setup_data = region(setup_data_is, setup_type)
-  fill(setup_data.{jpiglo, jpjglo, nit000, nitend, record, jphgr_msh}, 0)
-  fill(setup_data.{dx, dy, dep_const, rdt, cbfr, visc}, 0)
-  init(setup_data)
-
-
-
---  var xdim : int32 = 5--setup_data[0].jpiglo
---  var ydim : int32 = 5--setup_data[0].jpjglo
-  var xdim : int32 = setup_data[0].jpiglo
-  var ydim : int32 = setup_data[0].jpjglo
-
-  var grid_space = ispace(int2d, {x = xdim+2, y = ydim+2}, {x = 1, y = 1})
-  var tmasks = region(grid_space, grid_fields)
-  var full_partition = partition(equal, tmasks, ispace(int2d, {1,1}))
-
-  fill(tmasks.tmask, -2)
-  fill(tmasks.{dx_t, dx_u, dx_v}, setup_data.dx)
-  fill(tmasks.{dy_t, dy_t, dy_v}, setup_data.dy)
-  fill(tmasks.{gphi_u, gphi_v}, 50.0)
-  fill(tmasks.{xt, yt}, 0.0)
-
---  var partitioned_region = partition(equal, tmasks, ispace(int2d, {4,4}))
-  var centre_region = image(tmasks, full_partition, calculate_internal_size)
-  var west_region = image(tmasks, full_partition, calculate_west_boundary) 
-  var east_region = image(tmasks, full_partition, calculate_east_boundary)
-  var north_region = image(tmasks, full_partition, calculate_north_boundary)
-  var south_region = image(tmasks, full_partition, calculate_south_boundary)
---  var centre_region_partitioned = partition(equal, tmasks, ispace(int2d,{4,4}))
---  var test = centre_region & centre_region_partitioned
---  for val in test.colors do
---  stdio.printf("%i %i\n", val.x, val.y)
---  end
---  for point in centre_region do
+    var full_partition = partition(equal, grid, ispace(int2d, {1,1}))
+  
+    var centre_region = image(grid, full_partition, calculate_internal_size)
+    var west_region = image(grid, full_partition, calculate_west_boundary)
+    var east_region = image(grid, full_partition, calculate_east_boundary)
+    var north_region = image(grid, full_partition, calculate_north_boundary)
+    var south_region = image(grid, full_partition, calculate_south_boundary)
     init_centre_launcher(centre_region[int2d({0,0})])
     init_west(west_region[int2d({0,0})])
     init_east(east_region[int2d({0,0})])
     init_north(north_region[int2d({0,0})])
     init_south(south_region[int2d({0,0})])
-    init_grid_areas_launcher(tmasks)
---  end
---    print_tmask(tmasks)
-    dump_tmask(tmasks)
- 
-end 
+    init_grid_coordinates(grid)
+--    for point in ispace(int2d,{1,1}) do
+--      init_grid_areas(full_partition[point])
+--    end
+--    init_grid_areas_launcher(full_partition[int2d({0,0})])
+  __demand(__vectorize)
+  for point in grid do
+    grid[point].area_t = grid[point].dx_t * grid[point].dy_t
+    grid[point].area_u = grid[point].dx_u * grid[point].dy_u
+    grid[point].area_v = grid[point].dx_v * grid[point].dy_v
+  end
 
-regentlib.start(main)
+
+end

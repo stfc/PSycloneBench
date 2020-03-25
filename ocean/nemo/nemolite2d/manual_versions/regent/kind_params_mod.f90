@@ -6,7 +6,7 @@ module kind_params_mod
   public
 
   !> Douple precision kind parameter
-  integer, parameter :: GO_WP = c_float !SELECTED_REAL_KIND(12,307)
+  integer, parameter :: GO_WP = c_double !SELECTED_REAL_KIND(12,307)
 
   ! Kind type for double precision
   integer, parameter :: GO_DP = c_double
