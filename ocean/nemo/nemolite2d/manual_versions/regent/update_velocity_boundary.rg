@@ -2,7 +2,7 @@ import "regent"
 
 require("initialise_grid_points")
 require("model_init")
-
+local c = regentlib.c
 
 --This is the FIFTH loop
 --Loops over 1 to N+1, 1 to M
@@ -26,11 +26,10 @@ task update_uvel_boundary( velocity_after : region(ispace(int2d), uv_field),
 
 
   for point in velocity_after do
-    if( grid_region[point].tmask * grid_region[point + {1,0}].tmask == 0) then
+    if( grid_region[point].tmask * grid_region[point + {1,0}].tmask == int1d(0)) then
       velocity_after[point].u = 0.0
     end
   end
-
 
 end
 
@@ -55,7 +54,7 @@ task update_vvel_boundary( velocity_after : region(ispace(int2d), uv_field),
 --    end do
 
   for point in velocity_after do
-    if( grid_region[point].tmask * grid_region[point + {1,0}].tmask == 0) then
+    if( grid_region[point].tmask * grid_region[point + {1,0}].tmask == int1d(0)) then
       velocity_after[point].v = 0.0
     end
 
