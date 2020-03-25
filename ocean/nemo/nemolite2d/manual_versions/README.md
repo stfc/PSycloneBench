@@ -41,17 +41,6 @@ form. These are:
     NEMOLite2D. This is a C data-parallel implementation of the non-PSyKAl
     form.
 
-    - `single_file_sycl`: SYCL version of the single-file form of NEMOLite2D.
-    This is a C++ data-parallel implementation of the non-PSyKAl form.
-
-    - `single_file_opencl_tasks_fortran`: OpenCL version of the single-file
-    form of NEMOLite2D. This is a Fortran (using clFortran) task-parallel
-    implementation of the non-PSyKAl form.
-
-    - `single_file_sycl_tasks`: SYCL version of the single-file form of
-    NEMOLite2D. This is a C++ task-parallel implementation of the non-PSyKAl
-    form.
-
 ## Makefile ##
 A top-level Makefile is provided to recurse down to the multiple
 implementations, compile them and execute them using a common set of
