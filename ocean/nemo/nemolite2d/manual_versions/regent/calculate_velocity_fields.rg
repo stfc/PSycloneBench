@@ -297,7 +297,7 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
 
 --    v_s  = 0.5 * (vn%data(ji,jj) + vn%data(ji,jj-1)) * vn%grid%dx_t(ji,jj) 
 --    deps = ht%data(ji,jj) + sshn_t%data(ji,jj)
-      var v_s = 0.5 * ( velocity_now[point].v + velocity_now[point + {0,1}].v)
+      var v_s = 0.5 * ( velocity_now[point].v + velocity_now[point + {0,-1}].v)
                * grid_region[point].dx_t
       var deps = sea_bed_to_mean_sea_level[point].t + sea_surface_now[point].t
 
@@ -396,6 +396,15 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
 --
       var adv = vv_w * u_w * depw - vv_e * u_e * depe 
               + vv_s * v_s * deps - vv_n * v_n * depn
+
+      if(point == int2d({2,2})) then
+        c.printf("-----------ADVECTION----------\n")
+        c.printf("vv_w = %19.15e, u_w = %19.15e, depw = %19.15f\n", vv_w, u_w, depw)
+        c.printf("vv_e = %19.15e, u_e = %19.15e, depe = %19.15f\n", vv_e, u_e, depe)
+        c.printf("vv_s = %19.15e, u_s = %19.15e, deps = %19.15f\n", vv_s, v_s, deps)
+        c.printf("vv_n = %19.15e, u_n = %19.15e, depn = %19.15f\n", vv_n, v_n, depn)
+        c.printf("--------END ADVECTION---------\n")
+      end
 --    !end kernel v adv
 
 
@@ -522,7 +531,8 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
 --        c.printf("Surface_now = %17.8f\n", sea_surface_now[point].v)
 --        c.printf("sea_bed_level = %17.8f\n",  sea_bed_to_mean_sea_level[point].v)
 --        c.printf("sum = %17.8f\n", sea_bed_to_mean_sea_level[point].v + sea_surface_now[point].v)
-        c.printf("cbfr = %19.15f\n", cbfr)
+        c.printf("adv = %19.15f\n vis = %19.15f\n cor = %19.15f\n hpg = %19.15f\n", 
+                 adv, vis, cor, hpg)
         regentlib.assert(velocity_after[point].v == velocity_after[point].v, string)
       end
     end
