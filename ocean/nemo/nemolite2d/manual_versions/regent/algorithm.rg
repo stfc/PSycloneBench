@@ -21,7 +21,6 @@ local d2r = pi / 180.0
 
 
 task calculate_1_to_N_1_to_M(private_bounds : rect2d) : rect2d
-
   return rect2d({{1,1}, {private_bounds.hi.x-1, private_bounds.hi.y-1}})
 
 end
@@ -63,10 +62,9 @@ task main()
   fill(setup_data.{jpiglo, jpjglo, nit000, nitend, record, jphgr_msh}, 0)
   fill(setup_data.{dx, dy, dep_const, rdt, cbfr, visc}, 0)
   read_namelist(setup_data)
-  c.printf("visc = %f\n", setup_data[0].visc)
 
-   var grid_space = ispace(int2d, {x = setup_data[0].jpiglo + 2,
-                                   y = setup_data[0].jpjglo + 2},
+   var grid_space = ispace(int2d, {x = setup_data[0].jpiglo + 3,
+                                   y = setup_data[0].jpjglo + 3},
                                    {x = 1, y = 1} )
    var grid = region(grid_space, grid_fields)
 --Initialise values (some of these are not changed after)

@@ -6,7 +6,7 @@ require("model_init")
 
 local c = regentlib.c
 
-sqrt = c.sqrtf
+sqrt = c.sqrt
 
 
 --This is the SEVENTH loop
@@ -57,13 +57,11 @@ task bc_flather_v_loop(velocity_after : region(ispace(int2d), uv_field),
                                            + sqrt(g / sea_bed_to_mean_sea_level[point].v)
                                            * (sea_surface_now[point].v
                                               - sea_surface_now[point + {0,1}].v)
-                   regentlib.assert(sea_bed_to_mean_sea_level[point].v ~= 0.0, "Divide by 0")
                 elseif(grid_region[point + {0,1}].tmask < int1d(0) )then
                   velocity_after[point].v = velocity_after[point + {0,-1}].v
                                           + sqrt(g / sea_bed_to_mean_sea_level[point].v)
                                           * (sea_surface_now[point].v
                                             - sea_surface_now[point + {0,-1}].v)
-                   regentlib.assert(sea_bed_to_mean_sea_level[point].v ~= 0.0, "Divide by 0")
                 end
 
              end
@@ -125,13 +123,11 @@ task bc_flather_u_loop(velocity_after : region(ispace(int2d), uv_field),
                                             + sqrt(g / sea_bed_to_mean_sea_level[point].u)
                                             * (sea_surface_now[point].u
                                                - sea_surface_now[point + {1,0}].u)
-                   regentlib.assert(sea_bed_to_mean_sea_level[point].u ~= 0, "Divide by 0")
                 elseif( grid_region[point + {1,0}].tmask < int1d(0)) then
                     velocity_after[point].u = velocity_after[point + {-1,0}].u
                                             + sqrt(g / sea_bed_to_mean_sea_level[point].u)
                                             * (sea_surface_now[point].u
                                                - sea_surface_now[point + {-1,0}].u)
-                   regentlib.assert(sea_bed_to_mean_sea_level[point].u ~= 0.0, "Divide by 0")
                 end
             end
          end

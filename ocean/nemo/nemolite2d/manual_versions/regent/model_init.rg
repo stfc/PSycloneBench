@@ -2,6 +2,7 @@ import "regent"
 
 require("read_namelist")
 
+local c = regentlib.c
 local stdlib = terralib.includec("stdlib.h")
 local stdio = terralib.includec("stdio.h")
 
@@ -46,8 +47,8 @@ task dump_tmask( tmask: region(ispace(int2d), grid_fields)) where reads(tmask.tm
   var ylo = tmask.bounds.lo.y
   var yhi = tmask.bounds.hi.y
 
-  for x=xlo,xhi+1 do
-    for y=ylo,yhi+1 do
+  for x=xlo,xhi do
+    for y=ylo,yhi do
       stdio.fprintf(f,"%i %i %i\n", x, y, tmask[int2d({x,y})].tmask)
     end
   end
@@ -160,20 +161,20 @@ task print_tmask( tmask_centre : region(ispace(int2d), grid_fields) ) where read
 end
 
 task calculate_internal_size( private_bounds: rect2d) : rect2d
-  return rect2d({ private_bounds.lo + {1,1}, private_bounds.hi - {1,1} })
+  return rect2d({ private_bounds.lo + {1,1}, private_bounds.hi - {2,2} })
 end
  
 task calculate_west_boundary( private_bounds: rect2d) : rect2d
-  return rect2d( { {private_bounds.lo.x, private_bounds.lo.y+1}, {private_bounds.lo.x, private_bounds.hi.y}})
+  return rect2d( { {private_bounds.lo.x, private_bounds.lo.y+1}, {private_bounds.lo.x, private_bounds.hi.y-1}})
 end
 task calculate_east_boundary( private_bounds: rect2d) : rect2d
-  return rect2d( { {private_bounds.hi.x, private_bounds.lo.y+1}, {private_bounds.hi.x, private_bounds.hi.y}})
+  return rect2d( { {private_bounds.hi.x-1, private_bounds.lo.y+1}, {private_bounds.hi.x, private_bounds.hi.y-1}})
 end
 task calculate_south_boundary( private_bounds: rect2d) : rect2d
   return rect2d( { {private_bounds.lo.x, private_bounds.lo.y}, {private_bounds.hi.x, private_bounds.lo.y} })
 end
 task calculate_north_boundary( private_bounds: rect2d) : rect2d
-  return rect2d( { {private_bounds.lo.x+1, private_bounds.hi.y}, {private_bounds.hi.x-1, private_bounds.hi.y} })
+  return rect2d( { {private_bounds.lo.x, private_bounds.hi.y-1}, {private_bounds.hi.x, private_bounds.hi.y} })
 end
 
 task model_init( grid : region(ispace(int2d), grid_fields)) where
@@ -187,10 +188,15 @@ task model_init( grid : region(ispace(int2d), grid_fields)) where
     var north_region = image(grid, full_partition, calculate_north_boundary)
     var south_region = image(grid, full_partition, calculate_south_boundary)
     init_centre_launcher(centre_region[int2d({0,0})])
-    init_west(west_region[int2d({0,0})])
+
+    init_west(west_region[int2d({0,0})]) 
+
     init_east(east_region[int2d({0,0})])
+
     init_north(north_region[int2d({0,0})])
+
     init_south(south_region[int2d({0,0})])
+
     init_grid_coordinates(grid)
 --    for point in ispace(int2d,{1,1}) do
 --      init_grid_areas(full_partition[point])
@@ -202,6 +208,6 @@ task model_init( grid : region(ispace(int2d), grid_fields)) where
     grid[point].area_u = grid[point].dx_u * grid[point].dy_u
     grid[point].area_v = grid[point].dx_v * grid[point].dy_v
   end
-
+  dump_tmask(grid)
 
 end

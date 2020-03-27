@@ -30,7 +30,7 @@ task update_velocity_ufield(velocity_after: region(ispace(int2d), uv_field),
  
    for point in velocity_after do
 
-     if ( grid_region[point].tmask == int1d(1) and grid_region[point + {1,0}].tmask == int1d(1) ) then
+     if ( (grid_region[point].tmask + grid_region[point+{1,0}].tmask > int1d(0)) and (grid_region[point].tmask == int1d(1) and grid_region[point + {1,0}].tmask == int1d(1)) ) then
 -- ! advection
 --        u_e  = 0.5 * (un%data(ji,jj) + un%data(ji+1,jj)) * un%grid%dy_t(ji+1,jj)   !add length scale.
 --        depe = ht%data(ji+1,jj) + sshn_t%data(ji+1,jj)
@@ -108,11 +108,11 @@ task update_velocity_ufield(velocity_after: region(ispace(int2d), uv_field),
 --        END If
       if (grid_region[point + {0,-1}].tmask <= int1d(0) 
           or grid_region[point + {1,-1}].tmask <= int1d(0) ) then
-          uu_s = (0.5 - sign_v_s) * velocity_now[point].u
+          uu_s = (0.5 - 0.5 *sign_v_s) * velocity_now[point].u
 
       else
-         uu_s = (0.5 - sign_v_s) * velocity_now[point].u
-              + (0.5 + sign_v_s) * velocity_now[point + {0,-1}].u
+         uu_s = (0.5 - 0.5 *sign_v_s) * velocity_now[point].u
+              + (0.5 + 0.5 *sign_v_s) * velocity_now[point + {0,-1}].u
  
       end
 
@@ -150,7 +150,6 @@ task update_velocity_ufield(velocity_after: region(ispace(int2d), uv_field),
 --    !kernel  u vis
 --    dudx_e = (un%data(ji+1,jj) - un%data(ji,  jj)) / un%grid%dx_t(ji+1,jj) * &
 --             (ht%data(ji+1,jj) + sshn_t%data(ji+1,jj))
-      regentlib.assert(grid_region[point + {1,0}].dx_t ~= 0.0, "Divide by 0")
       var dudx_e = (velocity_now[point+{1,0}].u - velocity_now[point].u) 
                  / grid_region[point + {1,0}].dx_t 
                  * (sea_bed_to_mean_sea_level[point + {1,0}].t 
@@ -158,7 +157,6 @@ task update_velocity_ufield(velocity_after: region(ispace(int2d), uv_field),
   
 --    dudx_w = (un%data(ji,  jj) - un%data(ji-1,jj)) / un%grid%dx_t(ji,  jj) * &
 --             (ht%data(ji,  jj) + sshn_t%data(ji,  jj))
-      regentlib.assert(grid_region[point].dx_t ~= 0.0, "Divide by 0")
       var dudx_w = (velocity_now[point].u - velocity_now[point + {-1,0}].u)
                  / grid_region[point].dx_t
                  * (sea_bed_to_mean_sea_level[point].t
@@ -174,7 +172,6 @@ task update_velocity_ufield(velocity_after: region(ispace(int2d), uv_field),
 --    END IF
       if( grid_region[point + {0,-1}].tmask > int1d(0) 
           and grid_region[point + {1,-1}].tmask > int1d(0)) then 
-          regentlib.assert(grid_region[point].dy_u + grid_region[point + {0,-1}].dy_u ~= 0.0, "Divide by 0")
           dudy_s = (velocity_now[point].u - velocity_now[point + {0,-1}].u)
                  / (grid_region[point].dy_u + grid_region[point + {0,-1}].dy_u)
                  * (sea_bed_to_mean_sea_level[point].u 
@@ -193,7 +190,6 @@ task update_velocity_ufield(velocity_after: region(ispace(int2d), uv_field),
 --    END If
 
      if( grid_region[point + {0,1}].tmask > int1d(0) and grid_region[point + {1,1}].tmask > int1d(0)) then
-          regentlib.assert(grid_region[point].dy_u + grid_region[point + {0,1}].dy_u ~= 0.0, "Divide by 0")
        dudy_n = (velocity_now[point + {0,1}].u - velocity_now[point].u)
                / (grid_region[point].dy_u + grid_region[point + {0,1}].dy_u)
                * ( sea_bed_to_mean_sea_level[point].u
@@ -233,19 +229,12 @@ task update_velocity_ufield(velocity_after: region(ispace(int2d), uv_field),
 --                 (adv + vis + cor + hpg) / un%grid%area_u(ji,jj)) / &
 --                (hu%data(ji,jj) + ssha_u%data(ji,jj)) / (1.0_go_wp + cbfr * rdt)
 
-      regentlib.assert( grid_region[point].area_u ~= 0.0, "Divide by 0")
-      regentlib.assert(  ( sea_bed_to_mean_sea_level[point].u
-                                 + sea_surface_after[point].u ) ~= 0.0, "Divide by 0")
-      regentlib.assert( (1.0 + cbfr * rdt) ~= 0.0, "Divide by 0")
-      velocity_after[point].u = ( velocity_now[point].u 
-                              * (sea_bed_to_mean_sea_level[point].u
-                                 + sea_surface_now[point].u))
-                              + rdt * (adv + vis + cor + hpg)
-                              / grid_region[point].area_u
+      velocity_after[point].u = (velocity_now[point].u * 
+                        (sea_bed_to_mean_sea_level[point].u + sea_surface_now[point].u) + 
+                        rdt * (adv + vis + cor + hpg ) / grid_region[point].area_u) 
                               / ( sea_bed_to_mean_sea_level[point].u
                                  + sea_surface_after[point].u )
-                              / (1.0 + cbfr * rdt)
-
+                              / (1.0 + cbfr * rdt)     
      end --If tmask
    end
 
@@ -285,7 +274,7 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
 
   for point in velocity_after do
 
-    if( grid_region[point].tmask == int1d(1) and grid_region[point + {0,1}].tmask == int1d(1)) then
+    if( (grid_region[point].tmask + grid_region[point+{1,0}].tmask > int1d(0)) and (grid_region[point].tmask == int1d(1) and grid_region[point + {0,1}].tmask == int1d(1))) then
 
 --    ! kernel v adv
 --    v_n  = 0.5 * (vn%data(ji,jj) + vn%data(ji,jj+1)) * vn%grid%dx_t(ji,jj+1)
@@ -364,10 +353,10 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
       end
       if( grid_region[point + {-1,0}].tmask <= int1d(0) 
        or grid_region[point + {-1,1}].tmask <= int1d(0)) then
-        vv_w = (0.5 - 0.5*sign_u_w) * velocity_now[point].u
+        vv_w = (0.5 - 0.5*sign_u_w) * velocity_now[point].v
       else
-        vv_w = (0.5 - 0.5*sign_u_w) * velocity_now[point].u 
-             + (0.5 + 0.5*sign_u_w) * velocity_now[point + {-1,0}].u 
+        vv_w = (0.5 - 0.5*sign_u_w) * velocity_now[point].v 
+             + (0.5 + 0.5*sign_u_w) * velocity_now[point + {-1,0}].v 
       end
 
       var vv_e : double = 0.0
@@ -396,15 +385,6 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
 --
       var adv = vv_w * u_w * depw - vv_e * u_e * depe 
               + vv_s * v_s * deps - vv_n * v_n * depn
-
-      if(point == int2d({2,2})) then
-        c.printf("-----------ADVECTION----------\n")
-        c.printf("vv_w = %19.15e, u_w = %19.15e, depw = %19.15f\n", vv_w, u_w, depw)
-        c.printf("vv_e = %19.15e, u_e = %19.15e, depe = %19.15f\n", vv_e, u_e, depe)
-        c.printf("vv_s = %19.15e, u_s = %19.15e, deps = %19.15f\n", vv_s, v_s, deps)
-        c.printf("vv_n = %19.15e, u_n = %19.15e, depn = %19.15f\n", vv_n, v_n, depn)
-        c.printf("--------END ADVECTION---------\n")
-      end
 --    !end kernel v adv
 
 
@@ -415,14 +395,12 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
 --    !kernel v dis
 --    dvdy_n = (vn%data(ji,jj+1) - vn%data(ji,  jj)) / vn%grid%dy_t(ji,jj+1) * &
 --                          (ht%data(ji,jj+1) + sshn_t%data(ji,jj+1))
-      regentlib.assert( grid_region[point + {0,1}].dy_t ~= 0.0, "Divide by 0")
       var dvdy_n = (velocity_now[point + {0,1}].v - velocity_now[point].v)
                  / grid_region[point + {0,1}].dy_t
-                 * (sea_bed_to_mean_sea_level[point].t + sea_surface_now[point].t)
+                 * (sea_bed_to_mean_sea_level[point+{0,1}].t + sea_surface_now[point+{0,1}].t)
 
 --    dvdy_s = (vn%data(ji,  jj) - vn%data(ji,jj-1)) / vn%grid%dy_t(ji,  jj) * &
 --                          (ht%data(ji,  jj) + sshn_t%data(ji,  jj))
-      regentlib.assert( grid_region[point].dy_t ~= 0.0, "Divide by 0")
       var dvdy_s = (velocity_now[point].v - velocity_now[point + {0,-1}].v)
                   / grid_region[point].dy_t
                   * (sea_bed_to_mean_sea_level[point].t + sea_surface_now[point].t)
@@ -439,7 +417,6 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
 --    END IF
       if(grid_region[point + {-1,0}].tmask > int1d(0) 
          and grid_region[point + {-1,1}].tmask > int1d(0)) then
-         regentlib.assert((grid_region[point].dx_v + grid_region[point + {-1,0}].dx_v) ~= 0.0, "Divide by 0")
          dvdx_w = (velocity_now[point].v - velocity_now[point + {-1,0}].v)
                  / (grid_region[point].dx_v + grid_region[point + {-1,0}].dx_v)
                  * ( sea_bed_to_mean_sea_level[point].v 
@@ -457,7 +434,6 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
 --    END If
       if(grid_region[point + {1,0}].tmask > int1d(0) 
          and grid_region[point + {1,1}].tmask > int1d(0)) then
-         regentlib.assert((grid_region[point].dx_v + grid_region[point + {1,0}].dx_v) ~= 0.0, "Divide by 0")
          dvdx_e = (velocity_now[point + {1,0}].v - velocity_now[point].v)
                 / (grid_region[point].dx_v + grid_region[point + {1,0}].dx_v)
                 * (sea_bed_to_mean_sea_level[point].v
@@ -486,7 +462,7 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
 --    !kernel v hpg
 --    hpg = -g * (hv%data(ji,jj) + sshn_v%data(ji,jj)) * vn%grid%dx_v(ji,jj) * &
 --           (sshn_t%data(ji,jj+1) - sshn_t%data(ji,jj))
-      var hpg = -g * (sea_bed_to_mean_sea_level[point].v + sea_surface_now[point].v)
+      var hpg : double = -g * (sea_bed_to_mean_sea_level[point].v + sea_surface_now[point].v)
               * grid_region[point].dx_v
               * (sea_surface_now[point + {0,1}].t - sea_surface_now[point].t)
 --    !kernel v hpg
@@ -496,24 +472,6 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
 --    va%data(ji,jj) = (vn%data(ji,jj) * (hv%data(ji,jj) + sshn_v%data(ji,jj)) + &
 --                 rdt * (adv + vis + cor + hpg) / vn%grid%area_v(ji,jj) ) / &
 --                 ((hv%data(ji,jj) + ssha_v%data(ji,jj))) / (1.0_go_wp + cbfr * rdt)
-      regentlib.assert(grid_region[point].area_v ~= 0.0, "Divide by 0")
-      regentlib.assert((sea_bed_to_mean_sea_level[point].v
-                                + sea_surface_after[point].v) ~= 0.0, "Divide by 0")
-      regentlib.assert((1.0 + cbfr * rdt) ~= 0.0, "Divide by 0")
-      regentlib.assert( adv == adv, "adv is NaN")
-      regentlib.assert( vis == vis, "vis is NaN")
-      regentlib.assert( cor == cor, "cor is NaN")
-      regentlib.assert( hpg == hpg, "hpg is NaN")
-      regentlib.assert( cbfr == cbfr, "cbfr is NaN")
-      regentlib.assert( rdt == rdt, "rdt is NaN")
-      regentlib.assert( velocity_now[point].v == velocity_now[point].v, "vel now is NaN")
-      regentlib.assert( sea_bed_to_mean_sea_level[point].v == sea_bed_to_mean_sea_level[point].v, "Sea  bed is NaN")
-      regentlib.assert( sea_surface_now[point].v == sea_surface_now[point].v, "sea surface is NaN")
-      regentlib.assert(rdt == rdt, "rdt is NaN")
-      regentlib.assert( grid_region[point].area_v == grid_region[point].area_v, "area_v is NaN")
-      regentlib.assert(  sea_surface_after[point].v ==  sea_surface_after[point].v, "sea_sruface_after is NaN")
-      
-      regentlib.assert(velocity_after[point].v == velocity_after[point].v, "NaN before calculation")
       velocity_after[point].v = (velocity_now[point].v
                                 * (sea_bed_to_mean_sea_level[point].v 
                                   + sea_surface_now[point].v)
@@ -522,19 +480,6 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
                               / (sea_bed_to_mean_sea_level[point].v 
                                 + sea_surface_after[point].v)
                               / (1.0 + cbfr * rdt)
-      if(point == int2d({2,2})) then
-        var string : int8[5000]
-        c.sprintf(&string[0], "NaN in calculation for point %i %i\n, v=%f\n bed=%f\n surface=%f\n rdt=%f\n adv=%f\n vis=%f\n cor=%f\n hpg=%f\n areav=%f\n bed=%f\n suraf=%f\n cbfr=%f\n rdt=%f\n, velo=%f\n bed+surf=%16.7f\n rdt=%16.7f\n comps=%16.7f\n area_v=%16.7f\n bed_after=%16.7f\n sums=%16.7f\n %f\n", point.x, point.y, velocity_now[point].v, sea_bed_to_mean_sea_level[point].v, sea_surface_now[point].v, rdt, adv, vis, cor, hpg, grid_region[point].area_v, sea_bed_to_mean_sea_level[point].v, sea_surface_after[point].v, cbfr, rdt, velocity_now[point].v, (sea_bed_to_mean_sea_level[point].v
-                                  + sea_surface_now[point].v),  rdt, (adv + vis + cor + hpg),  grid_region[point].area_v, (sea_bed_to_mean_sea_level[point].v
-                                + sea_surface_after[point].v), (1.0 + cbfr * rdt))
---        c.printf("%s", string)
---        c.printf("Surface_now = %17.8f\n", sea_surface_now[point].v)
---        c.printf("sea_bed_level = %17.8f\n",  sea_bed_to_mean_sea_level[point].v)
---        c.printf("sum = %17.8f\n", sea_bed_to_mean_sea_level[point].v + sea_surface_now[point].v)
-        c.printf("adv = %19.15f\n vis = %19.15f\n cor = %19.15f\n hpg = %19.15f\n", 
-                 adv, vis, cor, hpg)
-        regentlib.assert(velocity_after[point].v == velocity_after[point].v, string)
-      end
     end
   end
 
