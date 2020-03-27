@@ -8,9 +8,8 @@ local c = regentlib.c
 
 task model_write(step: int, sea_surface_now : region(ispace(int2d), uvt_field), sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
                  velocity_now : region(ispace(int2d), uv_field), grid: region(ispace(int2d), grid_fields), l_write : int) 
-     where reads(sea_surface_now.t, grid.{xt, yt}, sea_bed_to_mean_sea_level.t, velocity_now.{u,v},
-sea_surface_now.v--TODO ASSERT REMOVE
-) do
+     where reads(sea_surface_now.t, grid.{xt, yt}, sea_bed_to_mean_sea_level.t, velocity_now.{u,v}) do
+
 
 --  var step : int32 = 4
   var filename : int8[50]
@@ -25,19 +24,10 @@ sea_surface_now.v--TODO ASSERT REMOVE
   var ylo = sea_surface_now.bounds.lo.y
   var yhi = sea_surface_now.bounds.hi.y
 
-  c.printf("Step %i: velocity is %19.16e\n", step, velocity_now[int2d({2,2})].v)
-  c.printf("Step %i: sea_surface_now is %19.16e\n", step, sea_surface_now[int2d({2,2})].v)
-  for y=2, yhi do
-    for x=2, xhi do
+  for y=2, yhi-1 do
+    for x=2, xhi-1 do
       var point : int2d = int2d({x,y})
-      var strpointu : int8[500] --TODO REMOVE
-      var strpointv : int8[500] --TODO REMOVE
-      c.sprintf(&strpointu[0], "u is NaN, %i %i", point.x, point.y) --TODO REMOVE
-      c.sprintf(&strpointv[0], "Step %i: v is NaN, [%i %i] [%f] [%f]", step, point.x, point.y, velocity_now[point].v,  velocity_now[point+{0,-1}].v) --TODO REMOVE
-      
-      regentlib.assert(velocity_now[point + {-1,0}].u + velocity_now[point].u == velocity_now[point + {-1,0}].u + velocity_now[point].u, strpointu)
       var rtmp1 = 0.5 * (velocity_now[point + {-1,0}].u + velocity_now[point].u) 
-      regentlib.assert(velocity_now[point + {0,-1}].v + velocity_now[point].v == velocity_now[point + {0,-1}].v + velocity_now[point].v, strpointv)
       var rtmp2 = 0.5 * (velocity_now[point + {0,-1}].v + velocity_now[point].v)
         if(l_write == 0) then
       c.fprintf(f, "%16.6e %16.6e %16.6e %16.6e %16.6e %16.6e\n", grid[point].xt, grid[point].yt, sea_bed_to_mean_sea_level[point].t, sea_surface_now[point].t, rtmp1, rtmp2)

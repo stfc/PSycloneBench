@@ -17,9 +17,7 @@ task calculate_sea_surface_t(sea_surface_after : region(ispace(int2d), uvt_field
                           rdt : double)
      where writes( sea_surface_after.t ), reads( sea_surface_now.{u,v,t},
                    sea_bed_to_mean_sea_level.{u,v}, velocity_now.{u,v},
-                   grid_region.area_t--,
---  sea_surface_after.t--TODO REMOVE ASSERTIONS
-  ) do
+                   grid_region.area_t) do
 
 
   for point in sea_surface_after do
@@ -39,12 +37,6 @@ task calculate_sea_surface_t(sea_surface_after : region(ispace(int2d), uvt_field
 
     sea_surface_after[point].t = sea_surface_now[point].t + (rtmp2 - rtmp1 + rtmp4 - rtmp3) 
                              * rdt / grid_region[point].area_t
-    --if(point == int2d({2,2})) then
-    --  c.printf("rtmp2 = %19.15e\nrtmp1 = %19.15e\nrtmp4 = %19.15e\nrtmp3 = %19.15e\n",
-    --          rtmp2, rtmp1, rtmp4, rtmp3)
-    --  c.printf("calculated_surface = %19.15e\n", sea_surface_after[point].t)
-    --end
-    regentlib.assert(grid_region[point].area_t ~= 0.0, "Divide by 0")
 
   end
 end

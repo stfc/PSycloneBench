@@ -124,9 +124,6 @@ task update_v_height_launcher( sea_surface_now : region(ispace(int2d), uvt_field
         elseif( grid_region[point + {0,1}].tmask <= int1d(0)) then
            sea_surface_now[point].v = sea_surface_now[point].t
         end 
---      if(point == int2d({2,2})) then
---        c.printf(" surface_now= %18.9e,  surface_neigh = %18.9e, area = %f\n",  sea_surface_now[point].t , sea_surface_now[point+{0,1}].t, grid_region[point].area_v)
---      end
     end
 
   end

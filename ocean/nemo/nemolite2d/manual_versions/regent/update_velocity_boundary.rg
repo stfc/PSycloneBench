@@ -54,10 +54,9 @@ task update_vvel_boundary( velocity_after : region(ispace(int2d), uv_field),
 --    end do
 
   for point in velocity_after do
-    if( grid_region[point].tmask * grid_region[point + {1,0}].tmask == int1d(0)) then
+    if( grid_region[point].tmask * grid_region[point + {0,1}].tmask == int1d(0)) then
       velocity_after[point].v = 0.0
     end
-
   end
 
 
