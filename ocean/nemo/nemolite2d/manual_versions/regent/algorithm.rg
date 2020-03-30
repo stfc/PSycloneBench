@@ -160,6 +160,7 @@ task main()
 
   
   var point : int2d = int2d({0,0})
+  var start_time = c.legion_get_current_time_in_micros()
   --Main timestepping loop to do!
   for i = setup_data[0].nit000, setup_data[0].nitend+1 do
   
@@ -220,12 +221,15 @@ task main()
     update_v_height_launcher(_2N12M_sea_surface_now[point],
                              full_grid[point])
 --    c.legion_runtime_issue_execution_fence(__runtime(), __context()) 
---    if( i % setup_data[0].record == 0) then
+    if( i % setup_data[0].record == 0) then
         model_write( i, sea_surface_now, sea_bed_to_mean_sea_level, velocity_now, grid, i % setup_data[0].record)
-  --  end
+    end
 
   end
- 
+  c.legion_runtime_issue_execution_fence(__runtime(), __context()) 
+  var finish_time = c.legion_get_current_time_in_micros()
+  var time_taken = finish_time - start_time
+  c.printf("Runtime is %f seconds\n", double(time_taken) / 100000.0)
 end
 
 
