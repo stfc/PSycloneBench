@@ -71,6 +71,7 @@ task main()
    fill(grid.tmask, -2)
    fill(grid.{dx_t, dx_u, dx_v}, setup_data[0].dx)
    fill(grid.{dy_t, dy_u, dy_v}, setup_data[0].dy)
+   fill(grid.{area_t, area_u, area_v}, 0)
    fill(grid.{gphi_u, gphi_v}, 50.0)
    fill(grid.{xt, yt}, 0.0)
 
@@ -160,8 +161,10 @@ task main()
 
   
   var point : int2d = int2d({0,0})
+  __fence(__execution, __block)
   var start_time = c.legion_get_current_time_in_micros()
   --Main timestepping loop to do!
+
   for i = setup_data[0].nit000, setup_data[0].nitend+1 do
   
      calculate_sea_surface_t(_2N2M_sea_surface_after[point],
@@ -226,10 +229,10 @@ task main()
     end
 
   end
-  c.legion_runtime_issue_execution_fence(__runtime(), __context()) 
+  __fence(__execution, __block)
   var finish_time = c.legion_get_current_time_in_micros()
   var time_taken = finish_time - start_time
-  c.printf("Runtime is %f seconds\n", double(time_taken) / 100000.0)
+  c.printf("Runtime is %f seconds\n", double(time_taken) / 1000000.0)
 end
 
 
