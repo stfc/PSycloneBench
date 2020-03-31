@@ -5,7 +5,8 @@ terralib.includepath = ".;"..terralib.includepath
 local stdlib = terralib.includec("stdlib.h")
 local stdio = terralib.includec("stdio.h")
 local gocean2d_io_mod = terralib.includec("gocean2d_io_mod.h")
-terralib.linklibrary("libgfortran.so.4")
+--terralib.linklibrary("libgfortran.so.4")
+terralib.linklibrary("libgfortran.so")
 terralib.linklibrary("./gocean2d_io_mod.so")
 
 fspace setup_type{

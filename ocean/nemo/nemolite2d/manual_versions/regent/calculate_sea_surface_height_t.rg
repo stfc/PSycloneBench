@@ -15,7 +15,10 @@ task calculate_sea_surface_t(sea_surface_after : region(ispace(int2d), uvt_field
                           velocity_now : region(ispace(int2d), uv_field),
                           grid_region : region(ispace(int2d), grid_fields),
                           rdt : double)
-     where writes( sea_surface_after.t ), reads( sea_surface_now.{u,v,t},
+     where sea_surface_after * sea_surface_now,
+           sea_surface_after * sea_bed_to_mean_sea_level,
+           sea_surface_now * sea_bed_to_mean_sea_level,
+     writes( sea_surface_after.t ), reads( sea_surface_now.{u,v,t},
                    sea_bed_to_mean_sea_level.{u,v}, velocity_now.{u,v},
                    grid_region.area_t) do
 

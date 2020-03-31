@@ -7,9 +7,18 @@ local c = regentlib.c
 
 sin = c.sin
 
+local tilesize = 64
+
+task calculate_halo_size( private_bounds: rect2d) : rect2d
+  return rect2d({ private_bounds.lo - {1,1}, private_bounds.hi + {1,1} })
+end
+
+
+
 --This is the SECOND loop.
 --Writes to 2 to N, 2 to M-1
--- Reads from 2 to N+1, 2 to M
+-- Reads from 1 to N+1, 1 to M
+__demand(__leaf)
 task update_velocity_ufield(velocity_after: region(ispace(int2d), uv_field),
                             grid_region : region(ispace(int2d), grid_fields),
                             velocity_now : region(ispace(int2d), uv_field),
@@ -22,7 +31,11 @@ task update_velocity_ufield(velocity_after: region(ispace(int2d), uv_field),
                             rdt : double,
                             cbfr : double,
                             d2r : double )
-     where writes(velocity_after.u), reads(grid_region.{tmask, dx_t, dy_t, dx_v,
+     where velocity_after * velocity_now,
+           sea_bed_to_mean_sea_level * sea_surface_now,
+           sea_bed_to_mean_sea_level * sea_surface_after,
+           sea_surface_now * sea_surface_after,
+           writes(velocity_after.u), reads(grid_region.{tmask, dx_t, dy_t, dx_v,
                                                         dy_u, dx_u, gphi_u, area_u},
                                            velocity_now.{u,v},
                        sea_bed_to_mean_sea_level.{u,t,v}, sea_surface_now.{u,v,t},
@@ -241,6 +254,56 @@ task update_velocity_ufield(velocity_after: region(ispace(int2d), uv_field),
 end
 
 
+task update_velocity_ufield_launcher( velocity_after: region(ispace(int2d), uv_field),
+                            grid_region : region(ispace(int2d), grid_fields),
+                            velocity_now : region(ispace(int2d), uv_field),
+                            sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
+                            sea_surface_now : region(ispace(int2d), uvt_field),
+                            sea_surface_after : region(ispace(int2d),uvt_field),
+                            visc : double,
+                            omega : double,
+                            g : double,
+                            rdt : double,
+                            cbfr : double,
+                            d2r : double )
+     where velocity_after * velocity_now,
+           sea_bed_to_mean_sea_level * sea_surface_now,
+           sea_bed_to_mean_sea_level * sea_surface_after,
+           sea_surface_now * sea_surface_after,
+           writes(velocity_after.u),
+           reads(grid_region.{tmask, dx_t, dy_t, dx_v,
+                                                        dy_u, dx_u, gphi_u, area_u},
+                                           velocity_now.{u,v},
+                       sea_bed_to_mean_sea_level.{u,t,v}, sea_surface_now.{u,v,t},
+                       sea_surface_after.u) do
+
+    var x_dim = velocity_after.bounds.hi.x - velocity_after.bounds.lo.x
+    var y_dim = velocity_after.bounds.hi.y - velocity_after.bounds.lo.y
+    var x_tiles : int32 = x_dim / tilesize
+    var y_tiles : int32 = y_dim / tilesize
+
+    var partition_space = ispace(int2d, {x=x_tiles, y=y_tiles})
+    var partitioned_vel_after = partition(equal, velocity_after, partition_space)
+
+--    var halo_grids = image(grid_region, partitioned_vel_after, calculate_halo_size)
+--    var halo_vel_now = image(velocity_now, partitioned_vel_after, calculate_halo_size)
+--    var halo_mean_level = image(sea_bed_to_mean_sea_level, partitioned_vel_after, calculate_halo_size)
+--    var halo_mean_sn = image(sea_surface_now, partitioned_vel_after, calculate_halo_size)
+--    var halo_mean_sa = image(sea_surface_after, partitioned_vel_after, calculate_halo_size)
+
+    __demand(__index_launch)
+    for point in partition_space do
+      update_velocity_ufield( partitioned_vel_after[point],
+                              grid_region, velocity_now, sea_bed_to_mean_sea_level, sea_surface_now, sea_surface_after,
+                              --halo_grids[point],
+                              --halo_vel_now[point], 
+                              --halo_mean_level[point],
+                              --halo_mean_sn[point],
+                              --halo_mean_sa[point],
+                              visc, omega, g, rdt, cbfr, d2r)
+    end
+
+end
 
 
 
@@ -264,12 +327,15 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
                             rdt : double,
                             cbfr : double,
                             d2r : double )
-     where writes(velocity_after.v), reads(grid_region.{tmask, dx_t, dy_u, dy_t,
+     where velocity_after * velocity_now,
+	   sea_bed_to_mean_sea_level * sea_surface_now,
+	   sea_bed_to_mean_sea_level * sea_surface_after,
+	   sea_surface_now * sea_surface_after,
+           writes(velocity_after.v), reads(grid_region.{tmask, dx_t, dy_u, dy_t,
                                                         dy_v, dx_v, gphi_v, area_v},
                                            velocity_now.{u,v},
                        sea_bed_to_mean_sea_level.{u,v,t}, sea_surface_now.{u,v,t},
-                       sea_surface_after.v,
-                       velocity_after.v--TODO REMOVE ASSERT
+                       sea_surface_after.v
 ) do
 
   for point in velocity_after do
@@ -482,5 +548,57 @@ task update_velocity_vfield(velocity_after: region(ispace(int2d), uv_field),
                               / (1.0 + cbfr * rdt)
     end
   end
+
+end
+
+
+task update_velocity_vfield_launcher( velocity_after: region(ispace(int2d), uv_field),
+                            grid_region : region(ispace(int2d), grid_fields),
+                            velocity_now : region(ispace(int2d), uv_field),
+                            sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
+                            sea_surface_now : region(ispace(int2d), uvt_field),
+                            sea_surface_after : region(ispace(int2d),uvt_field),
+                            visc : double,
+                            omega : double,
+                            g : double,
+                            rdt : double,
+                            cbfr : double,
+                            d2r : double )
+     where velocity_after * velocity_now,
+           sea_bed_to_mean_sea_level * sea_surface_now,
+           sea_bed_to_mean_sea_level * sea_surface_after,
+           sea_surface_now * sea_surface_after,
+           writes(velocity_after.v), reads(grid_region.{tmask, dx_t, dy_u, dy_t,
+                                                        dy_v, dx_v, gphi_v, area_v},
+                                           velocity_now.{u,v},
+                       sea_bed_to_mean_sea_level.{u,v,t}, sea_surface_now.{u,v,t},
+                       sea_surface_after.v
+) do
+
+    var x_dim = velocity_after.bounds.hi.x - velocity_after.bounds.lo.x
+    var y_dim = velocity_after.bounds.hi.y - velocity_after.bounds.lo.y
+    var x_tiles : int32 = x_dim / tilesize
+    var y_tiles : int32 = y_dim / tilesize
+
+    var partition_space = ispace(int2d, {x=x_tiles, y=y_tiles})
+    var partitioned_vel_after = partition(equal, velocity_after, partition_space)
+
+--    var halo_grids = image(grid_region, partitioned_vel_after, calculate_halo_size)
+--    var halo_vel_now = image(velocity_now, partitioned_vel_after, calculate_halo_size)
+--    var halo_mean_level = image(sea_bed_to_mean_sea_level, partitioned_vel_after, calculate_halo_size)
+--    var halo_mean_sn = image(sea_surface_now, partitioned_vel_after, calculate_halo_size)
+--    var halo_mean_sa = image(sea_surface_after, partitioned_vel_after, calculate_halo_size)
+
+    __demand(__index_launch)
+    for point in partition_space do
+      update_velocity_vfield( partitioned_vel_after[point],
+                              grid_region, velocity_now, sea_bed_to_mean_sea_level, sea_surface_now, sea_surface_after,
+                              --halo_grids[point],
+                              --halo_vel_now[point],
+                              --halo_mean_level[point],
+                              --halo_mean_sn[point],
+                              --halo_mean_sa[point],
+                              visc, omega, g, rdt, cbfr, d2r)
+    end
 
 end

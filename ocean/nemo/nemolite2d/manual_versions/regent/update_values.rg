@@ -10,7 +10,10 @@ local c = regentlib.c
 ------ This is the NINTH loop
 ------
 task update_velocity_and_t_height( velocity_now : region(ispace(int2d), uv_field), velocity_after : region(ispace(int2d), uv_field), sea_surface_after : region(ispace(int2d), uvt_field),
-                                   sea_surface_now :  region(ispace(int2d), uvt_field)) where writes(velocity_now.{u,v}, sea_surface_now.t),
+                                   sea_surface_now :  region(ispace(int2d), uvt_field)) where 
+                                   velocity_now * velocity_after,
+                                   sea_surface_after * sea_surface_now,
+                                   writes(velocity_now.{u,v}, sea_surface_now.t),
                                    reads(velocity_after.{u,v}, sea_surface_after.t) do
 
 --     do jj = 1, N+1, 1
@@ -22,6 +25,7 @@ task update_velocity_and_t_height( velocity_now : region(ispace(int2d), uv_field
 --    end do
 
   --TODO Create launcher function.
+  __demand(__vectorize)
   for point in velocity_now do
     velocity_now[point].u = velocity_after[point].u
     velocity_now[point].v = velocity_after[point].v

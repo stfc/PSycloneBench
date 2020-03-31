@@ -98,6 +98,8 @@ task main()
   fill(velocity_after.{u, v}, 0.0)
   setup_velocity_after( velocity_after )
 
+--  c.printf("%i\n", __raw(velocity_now).tree_id)
+--  c.printf("%i\n", __raw(velocity_after).tree_id)
   model_write( 0, sea_surface_now, sea_bed_to_mean_sea_level, velocity_now, grid, 0)
 
 
@@ -173,7 +175,7 @@ task main()
                           _1N1M_velocity_now[point],
                           _1N1M_grid[point],
                           setup_data[0].rdt)
-     update_velocity_ufield(_2N2M1_velocity_after[point],
+     update_velocity_ufield_launcher(_2N2M1_velocity_after[point],
                            full_grid[point],
                            full_velocity_now[point],
                            full_sea_bed_to_mean_sea_level[point],
@@ -185,7 +187,7 @@ task main()
                            setup_data[0].rdt,
                            setup_data[0].cbfr,
                            d2r)
-    update_velocity_vfield(_2N12M_velocity_after[point],
+    update_velocity_vfield_launcher(_2N12M_velocity_after[point],
                            full_grid[point],
                            full_velocity_now[point],
                            full_sea_bed_to_mean_sea_level[point],
@@ -237,3 +239,4 @@ end
 
 
 regentlib.start(main)
+--regentlib.profile(main)
