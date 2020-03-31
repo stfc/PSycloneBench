@@ -18,7 +18,8 @@ task bc_flather_v_loop(velocity_after : region(ispace(int2d), uv_field),
                        sea_surface_now : region(ispace(int2d), uvt_field), 
                        grid_region : region(ispace(int2d), grid_fields),
                        g : double)
-     where writes(velocity_after.v), 
+     where sea_bed_to_mean_sea_level * sea_surface_now,
+     writes(velocity_after.v), 
      reads(sea_bed_to_mean_sea_level.v, grid_region.tmask, sea_surface_now.v,
            velocity_after.v) do
 --     DO jj = 1, N, 1
@@ -80,7 +81,8 @@ task bc_flather_u_loop(velocity_after : region(ispace(int2d), uv_field),
                        sea_surface_now : region(ispace(int2d), uvt_field),
                        grid_region : region(ispace(int2d), grid_fields),
                        g : double)
-     where writes(velocity_after.u),
+     where sea_bed_to_mean_sea_level * sea_surface_now, 
+     writes(velocity_after.u),
      reads(sea_bed_to_mean_sea_level.u, grid_region.tmask, sea_surface_now.u,
            velocity_after.u) do
 
