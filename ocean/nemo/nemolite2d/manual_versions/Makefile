@@ -2,11 +2,10 @@
 # compiles, executes and prints a summary with a copy of an equivalent
 # namelist, or cleans, each directory.
 
-
-# All compilers should compile this IMPLEMENTATIONS
+# All compilers should be able to compile these IMPLEMENTATIONS
 IMPLEMENTATIONS = psykal_serial psykal_omp
 # Uncomment IMPLEMENTATIONS below if your environment has MPI compilers
-# IMPLEMENTATIONS += psykal_dm
+IMPLEMENTATIONS += psykal_dm
 # Uncomment IMPLEMENTATIONS below if your environment has OpenCL compilers
 # IMPLEMENTATIONS += psykal_ocl
 # Uncomment IMPLEMENTATIONS below if your environment has OMPSS compilers
@@ -14,15 +13,15 @@ IMPLEMENTATIONS = psykal_serial psykal_omp
 
 all: compile
 
-# Compile all enabled implementations
+# Compile all enabled implementations (some targets need to start with an allclean)
 compile:
 	$(foreach var,$(IMPLEMENTATIONS), \
-		cd $(var) && $(MAKE) nemolite2d; cd ..;)
+		cd $(var) && $(MAKE) allclean && $(MAKE) nemolite2d; cd ..;)
 
 # Execute all enabled implementations with their best full node performance and
 # report their ua and uv final checksums and the time-stepping time.
-run:
-	@echo "Implementation\t\t ua checksum\t uv checksum\t time-stepping"
+summary_table:
+	@echo "Implementation\t\tCompiler\tArch\tua checksum\tuv checksum\ttime-stepping"
 	@$(foreach var,$(IMPLEMENTATIONS), \
 		cp namelist $(var)/. && \
 		cd $(var) && \
@@ -33,4 +32,6 @@ run:
 
 # Clean folders of all enabled implementations
 clean:
-	$(foreach var,$(IMPLEMENTATIONS),cd $(var) && $(MAKE) clean && cd ..;)
+	$(foreach var,$(IMPLEMENTATIONS),cd $(var) && $(MAKE) allclean && cd ..;)
+	# If we don't clean the depenencies, it won't work after switching
+	# compilers.

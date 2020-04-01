@@ -17,12 +17,6 @@ LDFLAGS += ${OMPFLAGS}
 include ../common.mk
 
 
-
-# FortCL (provides OpenCL functionality in Fortran)
-FCL_DIR = ${SHARED_DIR}/dl_esm_inf/external/FortCL/
-FCL_INC = ${FCL_DIR}/src
-FCL_LIB = ${FCL_INC}/libFortCL.a
-
 COMMON_MODULES = time_step_mod.o nemolite2d.o
 
 all: nemolite2d.exe

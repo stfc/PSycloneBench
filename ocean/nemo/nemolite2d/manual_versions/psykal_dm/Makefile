@@ -95,6 +95,14 @@ allclean: clean
 	make -C ${COMMON_DIR} allclean
 	rm -f *.exe fparser.log
 	rm -rf *_wpl_dir/
+	rm -rf *.dat *.txt
 
 docs:
 	doxygen gocean2d.doxy.config
+
+summary:
+	@echo -n "${CC}\t\tcpu\t"
+	@mpirun -n 4 ./nemolite2d.exe | awk 'BEGIN {ORS="\t"; found=0} \
+		{if ($$2 == "checksum" && found == 0) {print $$4; found=1} } \
+		{if ($$1 == "Time-stepping") {print $$5} } \
+		END {ORS="\n"; print ""}'
