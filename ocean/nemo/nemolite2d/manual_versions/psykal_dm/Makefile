@@ -102,7 +102,8 @@ docs:
 
 summary:
 	@echo -n "${CC}\t\tcpu\t"
-	@mpirun -n 4 ./nemolite2d.exe | awk 'BEGIN {ORS="\t"; found=0} \
-		{if ($$2 == "checksum" && found == 0) {print $$4; found=1} } \
+	@mpirun -n 4 ./nemolite2d.exe | awk 'BEGIN {ORS="\t"; found_ua=0; found_va=0} \
+		{if ($$1 == "ua" && found_ua == 0) {print $$4; found_ua=1} } \
+		{if ($$1 == "va" && found_va == 0) {print $$4; found_va=1} } \
 		{if ($$1 == "Time-stepping") {print $$5} } \
 		END {ORS="\n"; print ""}'
