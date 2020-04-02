@@ -114,51 +114,51 @@ task main()
   var full_velocity_after = partition(equal, velocity_after, full_ispace)
 
   --Create the 1 to N, 1 to M partitions
-   var _1N1M_grid = image(grid, full_grid, calculate_1_to_N_1_to_M)
-   var _1N1M_sea_surface_now = image(sea_surface_now, full_sea_surface_now, calculate_1_to_N_1_to_M)
-   var _1N1M_sea_surface_after = image(sea_surface_after, full_sea_surface_after, calculate_1_to_N_1_to_M)
-   var _1N1M_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_1_to_N_1_to_M)
-   var _1N1M_velocity_now = image(velocity_now, full_velocity_now, calculate_1_to_N_1_to_M)
+--   var _1N1M_grid = image(grid, full_grid, calculate_1_to_N_1_to_M)
+--   var _1N1M_sea_surface_now = image(sea_surface_now, full_sea_surface_now, calculate_1_to_N_1_to_M)
+--   var _1N1M_sea_surface_after = image(sea_surface_after, full_sea_surface_after, calculate_1_to_N_1_to_M)
+--   var _1N1M_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_1_to_N_1_to_M)
+--   var _1N1M_velocity_now = image(velocity_now, full_velocity_now, calculate_1_to_N_1_to_M)
    var _1N1M_velocity_after = image(velocity_after, full_velocity_after, calculate_1_to_N_1_to_M)
 
   --Create the 2 to N 2 to M partitions
-   var _2N2M_grid = image(grid, full_grid, calculate_2_to_N_2_to_M)
-   var _2N2M_sea_surface_now = image(sea_surface_now, full_sea_surface_now, calculate_2_to_N_2_to_M)
+--   var _2N2M_grid = image(grid, full_grid, calculate_2_to_N_2_to_M)
+--   var _2N2M_sea_surface_now = image(sea_surface_now, full_sea_surface_now, calculate_2_to_N_2_to_M)
    var _2N2M_sea_surface_after = image(sea_surface_after, full_sea_surface_after, calculate_2_to_N_2_to_M)
-   var _2N2M_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_2_to_N_2_to_M)
-   var _2N2M_velocity_now = image(velocity_now, full_velocity_now, calculate_2_to_N_2_to_M)
-   var _2N2M_velocity_after = image(velocity_after, full_velocity_after, calculate_2_to_N_2_to_M)
+--   var _2N2M_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_2_to_N_2_to_M)
+--   var _2N2M_velocity_now = image(velocity_now, full_velocity_now, calculate_2_to_N_2_to_M)
+--   var _2N2M_velocity_after = image(velocity_after, full_velocity_after, calculate_2_to_N_2_to_M)
 
   --Create the 2 to N 2 to M-1 partitions
-   var _2N2M1_grid = image(grid, full_grid, calculate_2_to_N_2_to_M)
+--   var _2N2M1_grid = image(grid, full_grid, calculate_2_to_N_2_to_M)
    var _2N2M1_sea_surface_now = image(sea_surface_now, full_sea_surface_now, calculate_2_to_N_2_to_M1)
-   var _2N2M1_sea_surface_after = image(sea_surface_after, full_sea_surface_after, calculate_2_to_N_2_to_M1)
-   var _2N2M1_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_2_to_N_2_to_M1)
-   var _2N2M1_velocity_now = image(velocity_now, full_velocity_now, calculate_2_to_N_2_to_M1)
+--   var _2N2M1_sea_surface_after = image(sea_surface_after, full_sea_surface_after, calculate_2_to_N_2_to_M1)
+--   var _2N2M1_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_2_to_N_2_to_M1)
+--   var _2N2M1_velocity_now = image(velocity_now, full_velocity_now, calculate_2_to_N_2_to_M1)
    var _2N2M1_velocity_after = image(velocity_after, full_velocity_after, calculate_2_to_N_2_to_M1)
 
   --Create the 2 to N-1 2 to M partitions
-   var _2N12M_grid = image(grid, full_grid, calculate_2_to_N1_2_to_M)
+--   var _2N12M_grid = image(grid, full_grid, calculate_2_to_N1_2_to_M)
    var _2N12M_sea_surface_now = image(sea_surface_now, full_sea_surface_now, calculate_2_to_N1_2_to_M)
-   var _2N12M_sea_surface_after = image(sea_surface_after, full_sea_surface_after, calculate_2_to_N1_2_to_M)
-   var _2N12M_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_2_to_N1_2_to_M)
-   var _2N12M_velocity_now = image(velocity_now, full_velocity_now, calculate_2_to_N1_2_to_M)
+--   var _2N12M_sea_surface_after = image(sea_surface_after, full_sea_surface_after, calculate_2_to_N1_2_to_M)
+--   var _2N12M_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_2_to_N1_2_to_M)
+--   var _2N12M_velocity_now = image(velocity_now, full_velocity_now, calculate_2_to_N1_2_to_M)
    var _2N12M_velocity_after = image(velocity_after, full_velocity_after, calculate_2_to_N1_2_to_M)
 
   --Create the 1 to N+1 1 to M partition
-   var _FN1M_grid = image(grid, full_grid, calculate_1_to_full_1_to_M)
-   var _FN1M_sea_surface_now = image(sea_surface_now, full_sea_surface_now, calculate_1_to_full_1_to_M)
-   var _FN1M_sea_surface_after = image(sea_surface_after, full_sea_surface_after, calculate_1_to_full_1_to_M)
-   var _FN1M_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_1_to_full_1_to_M)
-   var _FN1M_velocity_now = image(velocity_now, full_velocity_now, calculate_1_to_full_1_to_M)
+--   var _FN1M_grid = image(grid, full_grid, calculate_1_to_full_1_to_M)
+--   var _FN1M_sea_surface_now = image(sea_surface_now, full_sea_surface_now, calculate_1_to_full_1_to_M)
+--   var _FN1M_sea_surface_after = image(sea_surface_after, full_sea_surface_after, calculate_1_to_full_1_to_M)
+--   var _FN1M_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_1_to_full_1_to_M)
+--   var _FN1M_velocity_now = image(velocity_now, full_velocity_now, calculate_1_to_full_1_to_M)
    var _FN1M_velocity_after = image(velocity_after, full_velocity_after, calculate_1_to_full_1_to_M)
 
   --Create the 1 to N 1 to M+1 partition
-   var _1NFM_grid = image(grid, full_grid, calculate_1_to_N_1_to_full)
-   var _1NFM_sea_surface_now = image(sea_surface_now, full_sea_surface_now, calculate_1_to_N_1_to_full)
-   var _1NFM_sea_surface_after = image(sea_surface_after, full_sea_surface_after, calculate_1_to_N_1_to_full)
-   var _1NFM_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_1_to_N_1_to_full)
-   var _1NFM_velocity_now = image(velocity_now, full_velocity_now, calculate_1_to_N_1_to_full)
+--   var _1NFM_grid = image(grid, full_grid, calculate_1_to_N_1_to_full)
+--   var _1NFM_sea_surface_now = image(sea_surface_now, full_sea_surface_now, calculate_1_to_N_1_to_full)
+--   var _1NFM_sea_surface_after = image(sea_surface_after, full_sea_surface_after, calculate_1_to_N_1_to_full)
+--   var _1NFM_sea_bed_to_mean_sea_level = image(sea_bed_to_mean_sea_level, full_sea_bed_to_mean_sea_level, calculate_1_to_N_1_to_full)
+--   var _1NFM_velocity_now = image(velocity_now, full_velocity_now, calculate_1_to_N_1_to_full)
    var _1NFM_velocity_after = image(velocity_after, full_velocity_after, calculate_1_to_N_1_to_full)
 
   
@@ -170,10 +170,14 @@ task main()
   for i = setup_data[0].nit000, setup_data[0].nitend+1 do
   
      calculate_sea_surface_t(_2N2M_sea_surface_after[point],
-                          _1N1M_sea_surface_now[point],
-                          _1N1M_sea_bed_to_mean_sea_level[point],
-                          _1N1M_velocity_now[point],
-                          _1N1M_grid[point],
+  --                        _1N1M_sea_surface_now[point],
+                            full_sea_surface_now[point],
+  --                        _1N1M_sea_bed_to_mean_sea_level[point],
+                            full_sea_bed_to_mean_sea_level[point],
+  --                        _1N1M_velocity_now[point],
+                            full_velocity_now[point],
+  --                        _1N1M_grid[point],
+                          full_grid[point],
                           setup_data[0].rdt)
      update_velocity_ufield_launcher(_2N2M1_velocity_after[point],
                            full_grid[point],

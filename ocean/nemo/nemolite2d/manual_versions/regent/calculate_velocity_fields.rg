@@ -302,7 +302,7 @@ task update_velocity_ufield_launcher( velocity_after: region(ispace(int2d), uv_f
                               --halo_mean_sa[point],
                               visc, omega, g, rdt, cbfr, d2r)
     end
-
+    __delete(partitioned_vel_after)
 end
 
 
@@ -600,5 +600,6 @@ task update_velocity_vfield_launcher( velocity_after: region(ispace(int2d), uv_f
                               --halo_mean_sa[point],
                               visc, omega, g, rdt, cbfr, d2r)
     end
+    __delete(partitioned_vel_after)
 
 end
