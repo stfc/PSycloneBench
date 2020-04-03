@@ -71,6 +71,7 @@ task init_grid_coordinates_launcher( tmask_full : region(ispace(int2d), grid_fie
 
   
   var full_partition = partition(equal, tmask_full, ispace(int2d, {4,4}))
+  __demand(__index_launch)
   for point in ispace(int2d, {4,4}) do
     init_grid_coordinates(full_partition[point])
   end

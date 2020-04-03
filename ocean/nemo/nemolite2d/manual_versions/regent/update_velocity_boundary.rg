@@ -7,9 +7,9 @@ local c = regentlib.c
 --This is the FIFTH loop
 --Loops over 1 to N+1, 1 to M
 -- Reads all
-task update_uvel_boundary( velocity_after : region(ispace(int2d), uv_field),
+task update_uvel_boundary( velocity : region(ispace(int2d), uv_time_field),
                            grid_region : region(ispace(int2d), grid_fields) )
-     where writes(velocity_after.u), reads(grid_region.tmask) do
+     where writes(velocity.u_after), reads(grid_region.tmask) do
 --    do jj = 1, N+1, 1
 --       do ji = 1, M, 1
 --!          call bc_solid_u_code(ji, jj, &
@@ -25,9 +25,9 @@ task update_uvel_boundary( velocity_after : region(ispace(int2d), uv_field),
 --    end do
 
 
-  for point in velocity_after do
+  for point in velocity do
     if( grid_region[point].tmask * grid_region[point + {1,0}].tmask == int1d(0)) then
-      velocity_after[point].u = 0.0
+      velocity[point].u_after = 0.0
     end
   end
 
@@ -35,9 +35,9 @@ end
 
 --This is the SIXTH loop
 --Loops over 1 to N, 1 to M+1
-task update_vvel_boundary( velocity_after : region(ispace(int2d), uv_field),
+task update_vvel_boundary( velocity : region(ispace(int2d), uv_time_field),
                            grid_region : region(ispace(int2d), grid_fields) )
-     where writes(velocity_after.v), reads(grid_region.tmask) do
+     where writes(velocity.v_after), reads(grid_region.tmask) do
 
 --    do jj = 1, N, 1
 --       do ji = 1, M+1, 1
@@ -53,9 +53,9 @@ task update_vvel_boundary( velocity_after : region(ispace(int2d), uv_field),
 --       end do
 --    end do
 
-  for point in velocity_after do
+  for point in velocity do
     if( grid_region[point].tmask * grid_region[point + {0,1}].tmask == int1d(0)) then
-      velocity_after[point].v = 0.0
+      velocity[point].v_after = 0.0
     end
   end
 

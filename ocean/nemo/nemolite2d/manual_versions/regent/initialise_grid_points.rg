@@ -8,13 +8,10 @@ fspace uvt_field{
   t : double
 }
 
-fspace uvt_area_field{
-  u : double,
-  u_area: double,
-  v : double,
-  v_area : double,
-  t : double,
-  t_area : double
+fspace uvt_time_field{
+  u_now : double, u_after : double,
+  v_now : double, v_after : double,
+  t_now : double, t_after : double,
 }
 
 fspace uv_field{
@@ -22,12 +19,11 @@ fspace uv_field{
   v : double,
 }
 
-fspace uv_area_field{
-  u : double,
-  u_area : double,
-  v : double,
-  v_area : double,
+fspace uv_time_field{
+  u_now : double, u_after : double,
+  v_now : double, v_after : double
 }
+
 
 -- Import max/min for Terra
 max = regentlib.fmax
@@ -39,6 +35,29 @@ task calculate_internal_size( private_bounds: rect2d) : rect2d
 end
 
 
+task init_surface_now( sea_surface : region(ispace(int2d), uvt_time_field), grid_region : region(ispace(int2d), grid_fields) ) where
+     writes(sea_surface.{u_now, v_now}),
+     reads(grid_region.{area_u, area_t, area_v}, sea_surface.t_now)
+do
+
+  for point in sea_surface do
+    var rtmp = grid_region[point + {1,0}].area_t * sea_surface[point+{1,0}].t_now + grid_region[point].area_t * sea_surface[point].t_now
+    sea_surface[point].u_now = 0.5 * rtmp / grid_region[point].area_u 
+
+    rtmp = grid_region[point + {0,1}].area_t * sea_surface[point+{0,1}].t_now + grid_region[point].area_t * sea_surface[point].t_now
+    sea_surface[point].v_now = 0.5 * rtmp / grid_region[point].area_v 
+  end
+
+end
+
+task setup_sea_surface( sea_surface: region(ispace(int2d), uvt_time_field), grid : region(ispace(int2d), grid_fields)) where reads(grid.{area_v, area_t, area_u}, sea_surface.t_now), writes(sea_surface.{u_now,v_now}) do 
+  
+  var full_partition = partition(equal, sea_surface, ispace(int2d,{1,1}))
+  --Only set sea_surface values in the non-boundaries
+  var centre_region = image(sea_surface, full_partition, calculate_internal_size)
+  init_surface_now(centre_region[int2d({0,0})], grid)
+
+end
 
 
 task init_surface_now_u( sea_surface_now : region(ispace(int2d), uvt_field), grid_region : region(ispace(int2d), grid_fields) ) where writes (sea_surface_now.u),
