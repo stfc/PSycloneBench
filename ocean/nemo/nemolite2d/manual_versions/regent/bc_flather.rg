@@ -13,15 +13,15 @@ sqrt = c.sqrt
 --Writes over N to M+1
 --Reads from TODO
 --Original code claims this is not parallelisable
-task bc_flather_v_loop(velocity_after : region(ispace(int2d), uv_field),
+task bc_flather_v_loop(velocity : region(ispace(int2d), uv_time_field),
                        sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
-                       sea_surface_now : region(ispace(int2d), uvt_field), 
+                       sea_surface : region(ispace(int2d), uvt_time_field), 
                        grid_region : region(ispace(int2d), grid_fields),
                        g : double)
-     where sea_bed_to_mean_sea_level * sea_surface_now,
-     writes(velocity_after.v), 
-     reads(sea_bed_to_mean_sea_level.v, grid_region.tmask, sea_surface_now.v,
-           velocity_after.v) do
+     where -- sea_bed_to_mean_sea_level * sea_surface,
+     writes(velocity.v_after), 
+     reads(sea_bed_to_mean_sea_level.v, grid_region.tmask, sea_surface.v_now,
+           velocity.v_after) do
 --     DO jj = 1, N, 1
 --       DO ji = 1, M+1, 1
 --!          call bc_flather_v_code(ji,jj, &
@@ -43,10 +43,10 @@ task bc_flather_v_loop(velocity_after : region(ispace(int2d), uv_field),
 --    END DO
 
 
-     var xmin = velocity_after.bounds.lo.x
-     var xmax = velocity_after.bounds.hi.x
-     var ymin = velocity_after.bounds.lo.y
-     var ymax = velocity_after.bounds.hi.y
+     var xmin = velocity.bounds.lo.x
+     var xmax = velocity.bounds.hi.x
+     var ymin = velocity.bounds.lo.y
+     var ymax = velocity.bounds.hi.y
 
      for jj = xmin, xmax+1 do
          for ji = ymin, ymax+1 do
@@ -54,15 +54,15 @@ task bc_flather_v_loop(velocity_after : region(ispace(int2d), uv_field),
              if(grid_region[point].tmask + grid_region[point + {0,1}].tmask > int1d(-1)) then
 
                 if(grid_region[point].tmask < int1d(0)) then
-                  velocity_after[point].v = velocity_after[point + {0,1}].v
+                  velocity[point].v_after = velocity[point + {0,1}].v_after
                                            + sqrt(g / sea_bed_to_mean_sea_level[point].v)
-                                           * (sea_surface_now[point].v
-                                              - sea_surface_now[point + {0,1}].v)
+                                           * (sea_surface[point].v_now
+                                              - sea_surface[point + {0,1}].v_now)
                 elseif(grid_region[point + {0,1}].tmask < int1d(0) )then
-                  velocity_after[point].v = velocity_after[point + {0,-1}].v
+                  velocity[point].v_after = velocity[point + {0,-1}].v_after
                                           + sqrt(g / sea_bed_to_mean_sea_level[point].v)
-                                          * (sea_surface_now[point].v
-                                            - sea_surface_now[point + {0,-1}].v)
+                                          * (sea_surface[point].v_now
+                                            - sea_surface[point + {0,-1}].v_now)
                 end
 
              end
@@ -76,15 +76,15 @@ end
 --This is the EIGTH loop
 --Writes over N+1 to M
 --Reads from TODO
-task bc_flather_u_loop(velocity_after : region(ispace(int2d), uv_field),
+task bc_flather_u_loop(velocity : region(ispace(int2d), uv_time_field),
                        sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
-                       sea_surface_now : region(ispace(int2d), uvt_field),
+                       sea_surface : region(ispace(int2d), uvt_time_field),
                        grid_region : region(ispace(int2d), grid_fields),
                        g : double)
-     where sea_bed_to_mean_sea_level * sea_surface_now, 
-     writes(velocity_after.u),
-     reads(sea_bed_to_mean_sea_level.u, grid_region.tmask, sea_surface_now.u,
-           velocity_after.u) do
+     where -- sea_bed_to_mean_sea_level * sea_surface, 
+     writes(velocity.u_after),
+     reads(sea_bed_to_mean_sea_level.u, grid_region.tmask, sea_surface.u_now,
+           velocity.u_after) do
 
 
 --DO jj = 1, N+1, 1
@@ -110,10 +110,10 @@ task bc_flather_u_loop(velocity_after : region(ispace(int2d), uv_field),
 --    END DO
 
 
-     var xmin = velocity_after.bounds.lo.x
-     var xmax = velocity_after.bounds.hi.x
-     var ymin = velocity_after.bounds.lo.y
-     var ymax = velocity_after.bounds.hi.y
+     var xmin = velocity.bounds.lo.x
+     var xmax = velocity.bounds.hi.x
+     var ymin = velocity.bounds.lo.y
+     var ymax = velocity.bounds.hi.y
 
     for jj = xmin, xmax+1 do
         for ji = ymin, ymax+1 do
@@ -121,15 +121,15 @@ task bc_flather_u_loop(velocity_after : region(ispace(int2d), uv_field),
             if( grid_region[point].tmask + grid_region[point + {1,0}].tmask > int1d(-1)) then
             
                 if(grid_region[point].tmask < int1d(0)) then
-                    velocity_after[point].u = velocity_after[point + {1,0}].u
+                    velocity[point].u_after = velocity[point + {1,0}].u_after
                                             + sqrt(g / sea_bed_to_mean_sea_level[point].u)
-                                            * (sea_surface_now[point].u
-                                               - sea_surface_now[point + {1,0}].u)
+                                            * (sea_surface[point].u_now
+                                               - sea_surface[point + {1,0}].u_now)
                 elseif( grid_region[point + {1,0}].tmask < int1d(0)) then
-                    velocity_after[point].u = velocity_after[point + {-1,0}].u
+                    velocity[point].u_after = velocity[point + {-1,0}].u_after
                                             + sqrt(g / sea_bed_to_mean_sea_level[point].u)
-                                            * (sea_surface_now[point].u
-                                               - sea_surface_now[point + {-1,0}].u)
+                                            * (sea_surface[point].u_now
+                                               - sea_surface[point + {-1,0}].u_now)
                 end
             end
          end
