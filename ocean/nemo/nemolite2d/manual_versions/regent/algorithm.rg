@@ -123,23 +123,37 @@ task main()
   --Create the 1 to N 1 to M+1 partition
    var _1NFM_velocity = image(velocity, full_velocity, calculate_1_to_N_1_to_full)
 
+  var tilesize : int = 128
+  --Partition the velocity field as required for the update_velocity launcher
+  var local_x = setup_data[0].jpiglo / tilesize
+  if(local_x < 1) then
+    local_x = 1
+  end
+  var local_y = setup_data[0].jpjglo / tilesize
+  if(local_y < 1) then
+    local_y = 1
+  end
+  var partition_space = ispace(int2d, {x = local_x, y = local_y})
+  --var partitioned_2N2M1_velocity = partition(equal, _2N2M1_velocity, partition_space)
   
   var point : int2d = int2d({0,0})
   __fence(__execution, __block)
   var start_time = c.legion_get_current_time_in_micros()
   --Main timestepping loop to do!
 
+--  __demand(__trace)
   for i = setup_data[0].nit000, setup_data[0].nitend+1 do
   
-     calculate_sea_surface_t(full_sea_surface[point],
+     calculate_sea_surface_t(_2N2M_sea_surface[point],
                             full_sea_bed_to_mean_sea_level[point],
                             full_velocity[point],
                             full_grid[point],
                             setup_data[0].rdt,
                             setup_data[0].jpiglo,
                             setup_data[0].jpjglo )
-     update_velocity_ufield(full_velocity[point],
+     update_velocity_ufield(_2N2M1_velocity[point],
                            full_grid[point],
+                           full_velocity[point],
                            full_sea_bed_to_mean_sea_level[point],
                            full_sea_surface[point],
                            setup_data[0].visc,
@@ -147,11 +161,10 @@ task main()
                            g,
                            setup_data[0].rdt,
                            setup_data[0].cbfr,
-                           d2r,
-                           setup_data[0].jpiglo,
-                           setup_data[0].jpjglo)
-    update_velocity_vfield(full_velocity[point],
+                           d2r)
+    update_velocity_vfield(_2N12M_velocity[point],
                            full_grid[point],
+                           full_velocity[point],
                            full_sea_bed_to_mean_sea_level[point],
                            full_sea_surface[point],
                            setup_data[0].visc,
@@ -159,16 +172,14 @@ task main()
                            g,
                            setup_data[0].rdt,
                            setup_data[0].cbfr,
-                           d2r,
-                           setup_data[0].jpiglo,
-                           setup_data[0].jpjglo)
+                           d2r)
     update_sea_surface_t(_2N2M_sea_surface[point],
                          full_grid[point],
                          setup_data[0].rdt,
                          i)
     update_uvel_boundary(_FN1M_velocity[point],
                          full_grid[point])
-    update_vvel_boundary(_FN1M_velocity[point],
+    update_vvel_boundary(_1NFM_velocity[point],
                          full_grid[point])
     bc_flather_v_loop(_1NFM_velocity[point],
                       full_sea_bed_to_mean_sea_level[point],
@@ -187,9 +198,9 @@ task main()
     update_v_height_launcher(_2N12M_sea_surface[point],
                              full_grid[point])
 --    c.legion_runtime_issue_execution_fence(__runtime(), __context()) 
-    if( i % setup_data[0].record == 0) then
+--    if( i % setup_data[0].record == 0) then
         model_write( i, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, i % setup_data[0].record)
-    end
+--    end
 
   end
   __fence(__execution, __block)

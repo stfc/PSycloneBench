@@ -7,8 +7,6 @@ local c = regentlib.c
 
 sin = c.sin
 
-local tilesize = 84
-
 task calculate_halo_size( private_bounds: rect2d) : rect2d
   return rect2d({ private_bounds.lo - {1,1}, private_bounds.hi + {1,1} })
 end
@@ -21,6 +19,7 @@ end
 __demand(__leaf)
 task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
                             grid_region : region(ispace(int2d), grid_fields),
+                            velocity_full : region(ispace(int2d), uv_time_field),
                             sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
                             sea_surface : region(ispace(int2d), uvt_time_field),
                             visc : double,
@@ -28,30 +27,28 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
                             g : double,
                             rdt : double,
                             cbfr : double,
-                            d2r : double,
-                            jpiglo : int,
-                            jpjglo : int )
-     where -- sea_bed_to_mean_sea_level * sea_surface,
+                            d2r : double)
+     where -- velocity <= velocity_full,
            writes(velocity.u_after), reads(grid_region.{tmask, dx_t, dy_t, dx_v,
                                                         dy_u, dx_u, gphi_u, area_u},
-                                           velocity.{u_now,v_now},
+                                           velocity_full.{u_now,v_now},
                        sea_bed_to_mean_sea_level.{u,t,v}, sea_surface.{u_now,v_now,t_now},
                        sea_surface.u_after) do
-   var domain : rect2d = rect2d({{2,2}, { jpiglo-1, jpjglo }}) 
-   for point in domain do
+   
+    for point in velocity do
 
      if ( (grid_region[point].tmask + grid_region[point+{1,0}].tmask > int1d(0)) and (grid_region[point].tmask == int1d(1) and grid_region[point + {1,0}].tmask == int1d(1)) ) then
 -- ! advection
 --        u_e  = 0.5 * (un%data(ji,jj) + un%data(ji+1,jj)) * un%grid%dy_t(ji+1,jj)   !add length scale.
 --        depe = ht%data(ji+1,jj) + sshn_t%data(ji+1,jj)
-        var u_e = 0.5 * (velocity[point].u_now + velocity[point + {1,0}].u_now) 
+        var u_e = 0.5 * (velocity_full[point].u_now + velocity_full[point + {1,0}].u_now) 
                 * grid_region[point].dy_t
         var depe = sea_bed_to_mean_sea_level[point + {1,0}].t 
                   + sea_surface[point + {1,0}].t_now 
 
 --        u_w  = 0.5 * (un%data(ji,jj) + un%data(ji-1,jj)) * un%grid%dy_t(ji,jj)     !add length scale
 --        depw = ht%data(ji,jj) + sshn_t%data(ji,jj)
-        var u_w = 0.5 * (velocity[point].u_now + velocity[point + {-1,0}].u_now)
+        var u_w = 0.5 * (velocity_full[point].u_now + velocity_full[point + {-1,0}].u_now)
                 * grid_region[point].dy_t
         var depw = sea_bed_to_mean_sea_level[point].t
                   + sea_surface[point].t_now
@@ -60,7 +57,7 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --        v_s  = 0.5_go_wp * v_sc * (un%grid%dx_v(ji,jj-1) + un%grid%dx_v(ji+1,jj-1))
 --        deps = 0.5_go_wp * (hv%data(ji,jj-1) + sshn_v%data(ji,jj-1) + hv%data(ji+1,jj-1) + &
 --               sshn_v%data(ji+1,jj-1))         
-        var v_sc = 0.5 * (velocity[point + {0,-1}].v_now + velocity[point + {1,-1}].v_now ) 
+        var v_sc = 0.5 * (velocity_full[point + {0,-1}].v_now + velocity_full[point + {1,-1}].v_now ) 
         var v_s = 0.5 * v_sc 
                  * ( grid_region[point + {0,-1}].dx_v + grid_region[point + {1, -1}].dx_v )
         var deps = 0.5 * (sea_bed_to_mean_sea_level[point + {0,-1}].v 
@@ -72,7 +69,7 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --        v_n  = 0.5_go_wp * v_nc * (un%grid%dx_v(ji,jj) + un%grid%dx_v(ji+1,jj))
 --        depn = 0.5_go_wp * (hv%data(ji,jj) + sshn_v%data(ji,jj) + hv%data(ji+1,jj) + &
 --                     sshn_v%data(ji+1,jj))
-        var v_nc = 0.5 * (velocity[point].v_now + velocity[point + {1,0}].v_now)
+        var v_nc = 0.5 * (velocity_full[point].v_now + velocity_full[point + {1,0}].v_now)
         var v_n = 0.5 * v_nc * (grid_region[point].dx_v + grid_region[point + {1,0}].dx_v)
         var depn = 0.5 * (sea_bed_to_mean_sea_level[point].v 
                           + sea_surface[point].v_now
@@ -88,8 +85,8 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
       else
         sign_u_w = -1.0
       end
-      var uu_w = (0.5 - 0.5 * sign_u_w) * velocity[point].u_now 
-               + (0.5 + 0.5 * sign_u_w) * velocity[point + {-1,0}].u_now
+      var uu_w = (0.5 - 0.5 * sign_u_w) * velocity_full[point].u_now 
+               + (0.5 + 0.5 * sign_u_w) * velocity_full[point + {-1,0}].u_now
 
 --        uu_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * un%data(ji,jj)              + &
 --             & (0.5_go_wp - SIGN(0.5_go_wp, u_e)) * un%data(ji+1,jj)
@@ -99,8 +96,8 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
       else
         sign_u_e = -1.0
       end
-      var uu_e = (0.5 + 0.5 * sign_u_e) * velocity[point].u_now
-               + (0.5 - 0.5 * sign_u_e) * velocity[point + {1,0}].u_now
+      var uu_e = (0.5 + 0.5 * sign_u_e) * velocity_full[point].u_now
+               + (0.5 - 0.5 * sign_u_e) * velocity_full[point + {1,0}].u_now
 
 
       var uu_s : double = 0.0
@@ -118,11 +115,11 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --        END If
       if (grid_region[point + {0,-1}].tmask <= int1d(0) 
           or grid_region[point + {1,-1}].tmask <= int1d(0) ) then
-          uu_s = (0.5 - 0.5 *sign_v_s) * velocity[point].u_now
+          uu_s = (0.5 - 0.5 *sign_v_s) * velocity_full[point].u_now
 
       else
-         uu_s = (0.5 - 0.5 *sign_v_s) * velocity[point].u_now
-              + (0.5 + 0.5 *sign_v_s) * velocity[point + {0,-1}].u_now
+         uu_s = (0.5 - 0.5 *sign_v_s) * velocity_full[point].u_now
+              + (0.5 + 0.5 *sign_v_s) * velocity_full[point + {0,-1}].u_now
  
       end
 
@@ -143,10 +140,10 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --
       if( grid_region[point + {0,1}].tmask <= int1d(0) 
           or grid_region[point + {1,1}].tmask <= int1d(0)) then
-          uu_n = (0.5 + 0.5 * sign_v_n) * velocity[point].u_now 
+          uu_n = (0.5 + 0.5 * sign_v_n) * velocity_full[point].u_now 
       else
-          uu_n = (0.5 + 0.5 * sign_v_n) * velocity[point].u_now 
-               + (0.5 - 0.5 * sign_v_n) * velocity[point + {0,1}].u_now
+          uu_n = (0.5 + 0.5 * sign_v_n) * velocity_full[point].u_now 
+               + (0.5 - 0.5 * sign_v_n) * velocity_full[point + {0,1}].u_now
       end
 
 
@@ -160,14 +157,14 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --    !kernel  u vis
 --    dudx_e = (un%data(ji+1,jj) - un%data(ji,  jj)) / un%grid%dx_t(ji+1,jj) * &
 --             (ht%data(ji+1,jj) + sshn_t%data(ji+1,jj))
-      var dudx_e = (velocity[point+{1,0}].u_now - velocity[point].u_now) 
+      var dudx_e = (velocity_full[point+{1,0}].u_now - velocity_full[point].u_now) 
                  / grid_region[point + {1,0}].dx_t 
                  * (sea_bed_to_mean_sea_level[point + {1,0}].t 
                  + sea_surface[point + {1,0}].t_now)
   
 --    dudx_w = (un%data(ji,  jj) - un%data(ji-1,jj)) / un%grid%dx_t(ji,  jj) * &
 --             (ht%data(ji,  jj) + sshn_t%data(ji,  jj))
-      var dudx_w = (velocity[point].u_now - velocity[point + {-1,0}].u_now)
+      var dudx_w = (velocity_full[point].u_now - velocity_full[point + {-1,0}].u_now)
                  / grid_region[point].dx_t
                  * (sea_bed_to_mean_sea_level[point].t
                  + sea_surface[point].t_now)
@@ -182,7 +179,7 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --    END IF
       if( grid_region[point + {0,-1}].tmask > int1d(0) 
           and grid_region[point + {1,-1}].tmask > int1d(0)) then 
-          dudy_s = (velocity[point].u_now - velocity[point + {0,-1}].u_now)
+          dudy_s = (velocity_full[point].u_now - velocity_full[point + {0,-1}].u_now)
                  / (grid_region[point].dy_u + grid_region[point + {0,-1}].dy_u)
                  * (sea_bed_to_mean_sea_level[point].u 
                     + sea_surface[point].u_now
@@ -200,7 +197,7 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --    END If
 
      if( grid_region[point + {0,1}].tmask > int1d(0) and grid_region[point + {1,1}].tmask > int1d(0)) then
-       dudy_n = (velocity[point + {0,1}].u_now - velocity[point].u_now)
+       dudy_n = (velocity_full[point + {0,1}].u_now - velocity_full[point].u_now)
                / (grid_region[point].dy_u + grid_region[point + {0,1}].dy_u)
                * ( sea_bed_to_mean_sea_level[point].u
                    + sea_surface[point].u_now
@@ -239,7 +236,7 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --                 (adv + vis + cor + hpg) / un%grid%area_u(ji,jj)) / &
 --                (hu%data(ji,jj) + ssha_u%data(ji,jj)) / (1.0_go_wp + cbfr * rdt)
 
-      velocity[point].u_after = (velocity[point].u_now * 
+      velocity[point].u_after = (velocity_full[point].u_now * 
                         (sea_bed_to_mean_sea_level[point].u + sea_surface[point].u_now) + 
                         rdt * (adv + vis + cor + hpg ) / grid_region[point].area_u) 
                               / ( sea_bed_to_mean_sea_level[point].u
@@ -269,10 +266,10 @@ task update_velocity_ufield_launcher( velocity: region(ispace(int2d), uv_time_fi
                        sea_bed_to_mean_sea_level.{u,t,v}, sea_surface.{u_now,v_now,t_now},
                        sea_surface.u_after) do
 
-    var x_dim = velocity.bounds.hi.x - velocity.bounds.lo.x
-    var y_dim = velocity.bounds.hi.y - velocity.bounds.lo.y
-    var x_tiles : int32 = x_dim / tilesize
-    var y_tiles : int32 = y_dim / tilesize
+--    var x_dim = velocity.bounds.hi.x - velocity.bounds.lo.x
+--    var y_dim = velocity.bounds.hi.y - velocity.bounds.lo.y
+--    var x_tiles : int32 = x_dim / tilesize
+--    var y_tiles : int32 = y_dim / tilesize
 
 --    var partition_space = ispace(int2d, {x=x_tiles, y=y_tiles})
 --    var partitioned_vel_after = partition(equal, velocity_after, partition_space)
@@ -309,6 +306,7 @@ end
 -- Reads from TODO
 task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
                             grid_region : region(ispace(int2d), grid_fields),
+                            velocity_full : region(ispace(int2d), uv_time_field),
                             sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
                             sea_surface : region(ispace(int2d), uvt_time_field),
                             visc : double,
@@ -316,33 +314,30 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
                             g : double,
                             rdt : double,
                             cbfr : double,
-                            d2r : double, 
-                            jpiglo : int,
-                            jpjglo : int )
-     where -- sea_bed_to_mean_sea_level * sea_surface,
+                            d2r : double)
+     where --velocity <= velocity_full,
            writes(velocity.v_after), reads(grid_region.{tmask, dx_t, dy_u, dy_t,
                                                         dy_v, dx_v, gphi_v, area_v},
-                                           velocity.{u_now,v_now},
+                                           velocity_full.{u_now,v_now},
                        sea_bed_to_mean_sea_level.{u,v,t}, sea_surface.{u_now,v_now,t_now},
                        sea_surface.v_after
 ) do
 
-  var domain : rect2d = rect2d({{2,2}, { jpiglo, jpjglo-1 }}) 
-  for point in domain do
+  for point in velocity do
 
     if( (grid_region[point].tmask + grid_region[point+{1,0}].tmask > int1d(0)) and (grid_region[point].tmask == int1d(1) and grid_region[point + {0,1}].tmask == int1d(1))) then
 
 --    ! kernel v adv
 --    v_n  = 0.5 * (vn%data(ji,jj) + vn%data(ji,jj+1)) * vn%grid%dx_t(ji,jj+1)
 --    depn = ht%data(ji,jj+1) + sshn_t%data(ji,jj+1)
-      var v_n = 0.5 * ( velocity[point].v_now + velocity[point + {0,1}].v_now) 
+      var v_n = 0.5 * ( velocity_full[point].v_now + velocity_full[point + {0,1}].v_now) 
               * grid_region[point + {0,1}].dx_t
       var depn = sea_bed_to_mean_sea_level[point + {0,1}].t 
                 + sea_surface[point + {0,1}].t_now
 
 --    v_s  = 0.5 * (vn%data(ji,jj) + vn%data(ji,jj-1)) * vn%grid%dx_t(ji,jj) 
 --    deps = ht%data(ji,jj) + sshn_t%data(ji,jj)
-      var v_s = 0.5 * ( velocity[point].v_now + velocity[point + {0,-1}].v_now)
+      var v_s = 0.5 * ( velocity_full[point].v_now + velocity_full[point + {0,-1}].v_now)
                * grid_region[point].dx_t
       var deps = sea_bed_to_mean_sea_level[point].t + sea_surface[point].t_now
 
@@ -352,7 +347,7 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 --    depw = 0.50_go_wp * (hu%data(ji-1,jj) + sshn_u%data(ji-1,jj) + &
 --                      hu%data(ji-1,jj+1) + sshn_u%data(ji-1,jj+1))
 
-     var u_wc = 0.5 * (velocity[point + {-1,0}].u_now + velocity[point + {-1,1}].u_now)
+     var u_wc = 0.5 * (velocity_full[point + {-1,0}].u_now + velocity_full[point + {-1,1}].u_now)
      var u_w = 0.5 * u_wc * (grid_region[point + {-1,0}].dy_u 
                             + grid_region[point + {-1,1}].dy_u)
      var depw = 0.5 * (sea_bed_to_mean_sea_level[point + {-1,0}].u 
@@ -364,7 +359,7 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 --    u_e  = 0.5_go_wp * u_ec * (vn%grid%dy_u(ji,jj) + vn%grid%dy_u(ji,jj+1))
 --    depe = 0.50_go_wp * (hu%data(ji,jj) + sshn_u%data(ji,jj) + &
 --                      hu%data(ji,jj+1) + sshn_u%data(ji,jj+1))
-      var u_ec = 0.5 * (velocity[point].u_now + velocity[point + {0,1}].u_now)
+      var u_ec = 0.5 * (velocity_full[point].u_now + velocity_full[point + {0,1}].u_now)
       var u_e = 0.5 * u_ec * (grid_region[point].dy_u + grid_region[point + {0,1}].dy_u)
       var depe = 0.5 * (sea_bed_to_mean_sea_level[point].u
                         + sea_surface[point].u_now
@@ -380,8 +375,8 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
       else
         sign_v_s = -1.0
       end
-      var vv_s = (0.5 - 0.5*sign_v_s) * velocity[point].v_now
-               + (0.5 + 0.5*sign_v_s) * velocity[point + {0,-1}].v_now
+      var vv_s = (0.5 - 0.5*sign_v_s) * velocity_full[point].v_now
+               + (0.5 + 0.5*sign_v_s) * velocity_full[point + {0,-1}].v_now
 
 --    vv_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * vn%data(ji,jj)     + &
 --         & (0.5_go_wp - SIGN(0.5_go_wp, v_n)) * vn%data(ji,jj+1)
@@ -391,8 +386,8 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
       else
         sign_v_n = -1.0
       end
-      var vv_n = (0.5 + 0.5*sign_v_n) * velocity[point].v_now 
-               + (0.5 - 0.5*sign_v_n) * velocity[point + {0,1}].v_now
+      var vv_n = (0.5 + 0.5*sign_v_n) * velocity_full[point].v_now 
+               + (0.5 - 0.5*sign_v_n) * velocity_full[point + {0,1}].v_now
 
 --    IF(vn%grid%tmask(ji-1,jj) <= 0 .OR. vn%grid%tmask(ji-1,jj+1) <= 0) THEN
 --       vv_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * vn%data(ji,jj)
@@ -409,10 +404,10 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
       end
       if( grid_region[point + {-1,0}].tmask <= int1d(0) 
        or grid_region[point + {-1,1}].tmask <= int1d(0)) then
-        vv_w = (0.5 - 0.5*sign_u_w) * velocity[point].v_now
+        vv_w = (0.5 - 0.5*sign_u_w) * velocity_full[point].v_now
       else
-        vv_w = (0.5 - 0.5*sign_u_w) * velocity[point].v_now
-             + (0.5 + 0.5*sign_u_w) * velocity[point + {-1,0}].v_now 
+        vv_w = (0.5 - 0.5*sign_u_w) * velocity_full[point].v_now
+             + (0.5 + 0.5*sign_u_w) * velocity_full[point + {-1,0}].v_now 
       end
 
       var vv_e : double = 0.0
@@ -430,10 +425,10 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 --    END IF
       if( grid_region[point + {1,0}].tmask <= int1d(0)
        or grid_region[point + {1,1}].tmask <= int1d(0) ) then
-         vv_e = (0.5 + 0.5 * sign_u_e) * velocity[point].v_now
+         vv_e = (0.5 + 0.5 * sign_u_e) * velocity_full[point].v_now
       else
-         vv_e = (0.5 + 0.5 * sign_u_e) * velocity[point].v_now
-              + (0.5 - 0.5 * sign_u_e) * velocity[point + {1,0}].v_now
+         vv_e = (0.5 + 0.5 * sign_u_e) * velocity_full[point].v_now
+              + (0.5 - 0.5 * sign_u_e) * velocity_full[point + {1,0}].v_now
       end
 
 --    adv = vv_w * u_w * depw - vv_e * u_e * depe + &
@@ -451,13 +446,13 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 --    !kernel v dis
 --    dvdy_n = (vn%data(ji,jj+1) - vn%data(ji,  jj)) / vn%grid%dy_t(ji,jj+1) * &
 --                          (ht%data(ji,jj+1) + sshn_t%data(ji,jj+1))
-      var dvdy_n = (velocity[point + {0,1}].v_now - velocity[point].v_now)
+      var dvdy_n = (velocity_full[point + {0,1}].v_now - velocity_full[point].v_now)
                  / grid_region[point + {0,1}].dy_t
                  * (sea_bed_to_mean_sea_level[point+{0,1}].t + sea_surface[point+{0,1}].t_now)
 
 --    dvdy_s = (vn%data(ji,  jj) - vn%data(ji,jj-1)) / vn%grid%dy_t(ji,  jj) * &
 --                          (ht%data(ji,  jj) + sshn_t%data(ji,  jj))
-      var dvdy_s = (velocity[point].v_now - velocity[point + {0,-1}].v_now)
+      var dvdy_s = (velocity_full[point].v_now - velocity_full[point + {0,-1}].v_now)
                   / grid_region[point].dy_t
                   * (sea_bed_to_mean_sea_level[point].t + sea_surface[point].t_now)
 
@@ -473,7 +468,7 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 --    END IF
       if(grid_region[point + {-1,0}].tmask > int1d(0) 
          and grid_region[point + {-1,1}].tmask > int1d(0)) then
-         dvdx_w = (velocity[point].v_now - velocity[point + {-1,0}].v_now)
+         dvdx_w = (velocity_full[point].v_now - velocity_full[point + {-1,0}].v_now)
                  / (grid_region[point].dx_v + grid_region[point + {-1,0}].dx_v)
                  * ( sea_bed_to_mean_sea_level[point].v 
                    + sea_surface[point].v_now
@@ -490,7 +485,7 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 --    END If
       if(grid_region[point + {1,0}].tmask > int1d(0) 
          and grid_region[point + {1,1}].tmask > int1d(0)) then
-         dvdx_e = (velocity[point + {1,0}].v_now - velocity[point].v_now)
+         dvdx_e = (velocity_full[point + {1,0}].v_now - velocity_full[point].v_now)
                 / (grid_region[point].dx_v + grid_region[point + {1,0}].dx_v)
                 * (sea_bed_to_mean_sea_level[point].v
                   + sea_surface[point].v_now
@@ -528,7 +523,7 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 --    va%data(ji,jj) = (vn%data(ji,jj) * (hv%data(ji,jj) + sshn_v%data(ji,jj)) + &
 --                 rdt * (adv + vis + cor + hpg) / vn%grid%area_v(ji,jj) ) / &
 --                 ((hv%data(ji,jj) + ssha_v%data(ji,jj))) / (1.0_go_wp + cbfr * rdt)
-      velocity[point].v_after = (velocity[point].v_now
+      velocity[point].v_after = (velocity_full[point].v_now
                                 * (sea_bed_to_mean_sea_level[point].v 
                                   + sea_surface[point].v_now)
                                 + rdt * (adv + vis + cor + hpg) 
@@ -565,13 +560,13 @@ task update_velocity_vfield_launcher( velocity_after: region(ispace(int2d), uv_f
                        sea_surface_after.v
 ) do
 
-    var x_dim = velocity_after.bounds.hi.x - velocity_after.bounds.lo.x
-    var y_dim = velocity_after.bounds.hi.y - velocity_after.bounds.lo.y
-    var x_tiles : int32 = x_dim / tilesize
-    var y_tiles : int32 = y_dim / tilesize
-
-    var partition_space = ispace(int2d, {x=x_tiles, y=y_tiles})
-    var partitioned_vel_after = partition(equal, velocity_after, partition_space)
+--    var x_dim = velocity_after.bounds.hi.x - velocity_after.bounds.lo.x
+--    var y_dim = velocity_after.bounds.hi.y - velocity_after.bounds.lo.y
+--    var x_tiles : int32 = x_dim / tilesize
+--    var y_tiles : int32 = y_dim / tilesize
+--
+--    var partition_space = ispace(int2d, {x=x_tiles, y=y_tiles})
+--    var partitioned_vel_after = partition(equal, velocity_after, partition_space)
 
 --    var halo_grids = image(grid_region, partitioned_vel_after, calculate_halo_size)
 --    var halo_vel_now = image(velocity_now, partitioned_vel_after, calculate_halo_size)
@@ -590,6 +585,6 @@ task update_velocity_vfield_launcher( velocity_after: region(ispace(int2d), uv_f
 --                              --halo_mean_sa[point],
 --                              visc, omega, g, rdt, cbfr, d2r)
 --    end
-    __delete(partitioned_vel_after)
+--    __delete(partitioned_vel_after)
 
 end
