@@ -10,21 +10,16 @@ task model_write(step: int, sea_surface : region(ispace(int2d), uvt_time_field),
                  velocity : region(ispace(int2d), uv_time_field), grid: region(ispace(int2d), grid_fields), l_write : int) 
      where reads(sea_surface.t_now, grid.{xt, yt}, sea_bed_to_mean_sea_level.t, velocity.{u_now,v_now}) do
 
-
---  var step : int32 = 4
-  var filename : int8[50]
-  var f : &c.FILE 
-  if (l_write == 0) then
-    c.sprintf(&filename[0], "go2d_%05i_%05i.dat", step, 0)
---    stdio.printf("%s\n",filename)
-    f = c.fopen(filename, 'w')
-  end
-  var xlo = sea_surface.bounds.lo.x
-  var xhi = sea_surface.bounds.hi.x
-  var ylo = sea_surface.bounds.lo.y
-  var yhi = sea_surface.bounds.hi.y
-
   if(l_write == 0) then
+    var filename : int8[50]
+    var f : &c.FILE 
+    c.sprintf(&filename[0], "go2d_%05i_%05i.dat", step, 0)
+    f = c.fopen(filename, 'w')
+    var xlo = sea_surface.bounds.lo.x
+    var xhi = sea_surface.bounds.hi.x
+    var ylo = sea_surface.bounds.lo.y
+    var yhi = sea_surface.bounds.hi.y
+  
     for y=2, yhi-1 do
       for x=2, xhi-1 do
         var point : int2d = int2d({x,y})
@@ -34,12 +29,9 @@ task model_write(step: int, sea_surface : region(ispace(int2d), uvt_time_field),
       end
         c.fprintf(f, "\n")
     end
-  end
-
-  if(l_write == 0) then
+  
     c.fclose(f)
-   end
-
+  end
 end
 
 --task main()

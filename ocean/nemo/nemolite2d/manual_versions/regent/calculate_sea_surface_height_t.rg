@@ -19,9 +19,8 @@ task calculate_sea_surface_t(sea_surface : region(ispace(int2d), uvt_time_field)
                    sea_bed_to_mean_sea_level.{u,v}, velocity.{u_now,v_now},
                    grid_region.area_t) do
 
-   var domain : rect2d = rect2d({{2,2}, {jpiglo, jpjglo}})
 
-  for point in domain do
+  for point in sea_surface do
     var rtmp1 = (sea_surface[point].u_now + sea_bed_to_mean_sea_level[point].u) 
               * velocity[point].u_now
 

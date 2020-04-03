@@ -22,10 +22,13 @@ task update_velocity_and_t_height( velocity : region(ispace(int2d), uv_time_fiel
 --    end do
 
   --TODO Create launcher function.
-  __demand(__vectorize)
+--  __demand(__vectorize)
   for point in velocity do
     velocity[point].u_now = velocity[point].u_after
     velocity[point].v_now = velocity[point].v_after
+    if(point == int2d({3,259})) then
+      c.printf("Value = %19.15e\n", sea_surface[point].t_after)
+    end
     sea_surface[point].t_now = sea_surface[point].t_after
   end
 end
