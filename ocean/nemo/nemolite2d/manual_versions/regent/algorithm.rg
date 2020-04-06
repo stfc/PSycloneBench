@@ -55,6 +55,11 @@ task calculate_1_to_N_1_to_full( private_bounds : rect2d) : rect2d
 
 end
 
+task calculate_halo_size( private_bounds: rect2d) : rect2d
+  return rect2d({ private_bounds.lo - {1,1}, private_bounds.hi + {1,1} })
+end
+
+
 task main() 
 
   var single_point = ispace(int1d, 1)
@@ -123,25 +128,32 @@ task main()
   --Create the 1 to N 1 to M+1 partition
    var _1NFM_velocity = image(velocity, full_velocity, calculate_1_to_N_1_to_full)
 
-  var tilesize : int = 128
+  var tilesize : int = 256 --128
   --Partition the velocity field as required for the update_velocity launcher
-  var local_x = setup_data[0].jpiglo / tilesize
+  var local_x : int = setup_data[0].jpiglo / tilesize
   if(local_x < 1) then
     local_x = 1
   end
-  var local_y = setup_data[0].jpjglo / tilesize
+  var local_y : int = setup_data[0].jpjglo / tilesize
   if(local_y < 1) then
     local_y = 1
   end
   var partition_space = ispace(int2d, {x = local_x, y = local_y})
-  --var partitioned_2N2M1_velocity = partition(equal, _2N2M1_velocity, partition_space)
-  
+  var partitioned_2N2M1_velocity = partition(equal, _2N2M1_velocity[int2d({0,0})], partition_space)
+  var _2N2M1_velocity_halos = image(velocity, partitioned_2N2M1_velocity, calculate_halo_size)
+  var partitioned_2N12M_velocity = partition(equal, _2N12M_velocity[int2d({0,0})], partition_space)
+  var _2N12M_velocity_halos = image(velocity, partitioned_2N12M_velocity, calculate_halo_size)
+
+
+  var visc : double = setup_data[0].visc 
+  var rdt  : double = setup_data[0].rdt
+  var cbfr : double = setup_data[0].cbfr
   var point : int2d = int2d({0,0})
   __fence(__execution, __block)
   var start_time = c.legion_get_current_time_in_micros()
   --Main timestepping loop to do!
 
---  __demand(__trace)
+  __demand(__trace)
   for i = setup_data[0].nit000, setup_data[0].nitend+1 do
   
      calculate_sea_surface_t(_2N2M_sea_surface[point],
@@ -151,28 +163,57 @@ task main()
                             setup_data[0].rdt,
                             setup_data[0].jpiglo,
                             setup_data[0].jpjglo )
-     update_velocity_ufield(_2N2M1_velocity[point],
-                           full_grid[point],
-                           full_velocity[point],
-                           full_sea_bed_to_mean_sea_level[point],
-                           full_sea_surface[point],
-                           setup_data[0].visc,
-                           omega,
-                           g,
-                           setup_data[0].rdt,
-                           setup_data[0].cbfr,
-                           d2r)
-    update_velocity_vfield(_2N12M_velocity[point],
-                           full_grid[point],
-                           full_velocity[point],
-                           full_sea_bed_to_mean_sea_level[point],
-                           full_sea_surface[point],
-                           setup_data[0].visc,
-                           omega,
-                           g,
-                           setup_data[0].rdt,
-                           setup_data[0].cbfr,
-                           d2r)
+     __demand(__trace, __index_launch)
+     for part in partition_space do
+       update_velocity_ufield(partitioned_2N2M1_velocity[part],
+                              full_grid[point],
+                              _2N2M1_velocity_halos[part],
+                              full_sea_bed_to_mean_sea_level[point],
+                              full_sea_surface[point],
+                              visc,
+                              omega,
+                              g,
+                              rdt,
+                              cbfr,
+                              d2r)
+     end
+     __demand(__trace, __index_launch)
+     for part in partition_space do 
+       update_velocity_vfield(partitioned_2N12M_velocity[part],
+                              full_grid[point],
+                              _2N12M_velocity_halos[part],
+                              full_sea_bed_to_mean_sea_level[point],
+                              full_sea_surface[point],
+                              visc,
+                              omega,
+                              g,
+                              rdt,
+                              cbfr,
+                              d2r)
+                              
+     end
+--     update_velocity_ufield(_2N2M1_velocity[point],
+--                           full_grid[point],
+--                           full_velocity[point],
+--                           full_sea_bed_to_mean_sea_level[point],
+--                           full_sea_surface[point],
+--                           visc,
+--                           omega,
+--                           g,
+--                           rdt,
+--                           cbfr,
+--                           d2r)
+--    update_velocity_vfield(_2N12M_velocity[point],
+--                           full_grid[point],
+--                           full_velocity[point],
+--                           full_sea_bed_to_mean_sea_level[point],
+--                           full_sea_surface[point],
+--                           setup_data[0].visc,
+--                           omega,
+--                           g,
+--                           setup_data[0].rdt,
+--                           setup_data[0].cbfr,
+--                           d2r)
     update_sea_surface_t(_2N2M_sea_surface[point],
                          full_grid[point],
                          setup_data[0].rdt,

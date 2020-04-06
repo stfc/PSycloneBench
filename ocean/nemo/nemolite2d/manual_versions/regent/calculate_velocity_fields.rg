@@ -248,51 +248,34 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 end
 
 
-task update_velocity_ufield_launcher( velocity: region(ispace(int2d), uv_time_field),
-                            grid_region : region(ispace(int2d), grid_fields),
-                            sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
-                            sea_surface : region(ispace(int2d), uvt_time_field),
-                            visc : double,
-                            omega : double,
-                            g : double,
-                            rdt : double,
-                            cbfr : double,
-                            d2r : double )
-     where sea_bed_to_mean_sea_level * sea_surface,
-           writes(velocity.u_after),
-           reads(grid_region.{tmask, dx_t, dy_t, dx_v,
-                                                        dy_u, dx_u, gphi_u, area_u},
-                                           velocity.{u_now,v_now},
-                       sea_bed_to_mean_sea_level.{u,t,v}, sea_surface.{u_now,v_now,t_now},
-                       sea_surface.u_after) do
-
---    var x_dim = velocity.bounds.hi.x - velocity.bounds.lo.x
---    var y_dim = velocity.bounds.hi.y - velocity.bounds.lo.y
---    var x_tiles : int32 = x_dim / tilesize
---    var y_tiles : int32 = y_dim / tilesize
-
---    var partition_space = ispace(int2d, {x=x_tiles, y=y_tiles})
---    var partitioned_vel_after = partition(equal, velocity_after, partition_space)
-
---    var halo_grids = image(grid_region, partitioned_vel_after, calculate_halo_size)
---    var halo_vel_now = image(velocity_now, partitioned_vel_after, calculate_halo_size)
---    var halo_mean_level = image(sea_bed_to_mean_sea_level, partitioned_vel_after, calculate_halo_size)
---    var halo_mean_sn = image(sea_surface_now, partitioned_vel_after, calculate_halo_size)
---    var halo_mean_sa = image(sea_surface_after, partitioned_vel_after, calculate_halo_size)
-
---    __demand(__index_launch, __trace)
---    for point in partition_space do
---      update_velocity_ufield( partitioned_vel_after[point],
---                              grid_region, velocity_now, sea_bed_to_mean_sea_level, sea_surface_now, sea_surface_after,
---                              --halo_grids[point],
---                              --halo_vel_now[point], 
---                              --halo_mean_level[point],
---                              --halo_mean_sn[point],
---                              --halo_mean_sa[point],
---                              visc, omega, g, rdt, cbfr, d2r)
---    end
---    __delete(partitioned_vel_after)
-end
+--task update_velocity_ufield_launcher( velocities : region(ispace(int2d, uvt_time_field)),
+--                            grid_region : region(ispace(int2d), grid_fields),
+--                            velocity_halos : region(ispace(int2d, uvt_time_field)),
+--                            sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
+--                            sea_surface : region(ispace(int2d), uvt_time_field),
+--                            visc : double,
+--                            omega : double,
+--                            g : double,
+--                            rdt : double,
+--                            cbfr : double,
+--                            d2r : double )
+--     where sea_bed_to_mean_sea_level * sea_surface,
+----           writes(velocities.u_after),
+--           reads(grid_region.{tmask, dx_t, dy_t, dx_v,
+--                                                        dy_u, dx_u, gphi_u, area_u},
+----                                           velocity_halos.{u_now,v_now},
+--                       sea_bed_to_mean_sea_level.{u,t,v}, sea_surface.{u_now,v_now,t_now},
+--                       sea_surface.u_after) do
+----      __demand(__trace, __index_launch)
+----      for point in velocities.colors do
+----        update_velocity_ufield(velocities[point],
+----                               grid_region,
+----                               velocity_halos[point],
+----                               sea_bed_to_mean_sea_level,
+----                               sea_surface,
+----                               visc, omega, g, rdt, cbfr, d2r)
+----      end
+--end
 
 
 
@@ -537,29 +520,29 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 end
 
 
-task update_velocity_vfield_launcher( velocity_after: region(ispace(int2d), uv_field),
-                            grid_region : region(ispace(int2d), grid_fields),
-                            velocity_now : region(ispace(int2d), uv_field),
-                            sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
-                            sea_surface_now : region(ispace(int2d), uvt_field),
-                            sea_surface_after : region(ispace(int2d),uvt_field),
-                            visc : double,
-                            omega : double,
-                            g : double,
-                            rdt : double,
-                            cbfr : double,
-                            d2r : double )
-     where velocity_after * velocity_now,
-           sea_bed_to_mean_sea_level * sea_surface_now,
-           sea_bed_to_mean_sea_level * sea_surface_after,
-           sea_surface_now * sea_surface_after,
-           writes(velocity_after.v), reads(grid_region.{tmask, dx_t, dy_u, dy_t,
-                                                        dy_v, dx_v, gphi_v, area_v},
-                                           velocity_now.{u,v},
-                       sea_bed_to_mean_sea_level.{u,v,t}, sea_surface_now.{u,v,t},
-                       sea_surface_after.v
-) do
-
+--task update_velocity_vfield_launcher( velocity_after: region(ispace(int2d), uv_field),
+--                            grid_region : region(ispace(int2d), grid_fields),
+--                            velocity_now : region(ispace(int2d), uv_field),
+--                            sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
+--                            sea_surface_now : region(ispace(int2d), uvt_field),
+--                            sea_surface_after : region(ispace(int2d),uvt_field),
+--                            visc : double,
+--                            omega : double,
+--                            g : double,
+--                            rdt : double,
+--                            cbfr : double,
+--                            d2r : double )
+--     where velocity_after * velocity_now,
+--           sea_bed_to_mean_sea_level * sea_surface_now,
+--           sea_bed_to_mean_sea_level * sea_surface_after,
+--           sea_surface_now * sea_surface_after,
+--           writes(velocity_after.v), reads(grid_region.{tmask, dx_t, dy_u, dy_t,
+--                                                        dy_v, dx_v, gphi_v, area_v},
+--                                           velocity_now.{u,v},
+--                       sea_bed_to_mean_sea_level.{u,v,t}, sea_surface_now.{u,v,t},
+--                       sea_surface_after.v
+--) do
+--
 --    var x_dim = velocity_after.bounds.hi.x - velocity_after.bounds.lo.x
 --    var y_dim = velocity_after.bounds.hi.y - velocity_after.bounds.lo.y
 --    var x_tiles : int32 = x_dim / tilesize
@@ -587,4 +570,4 @@ task update_velocity_vfield_launcher( velocity_after: region(ispace(int2d), uv_f
 --    end
 --    __delete(partitioned_vel_after)
 
-end
+--end
