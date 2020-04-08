@@ -9,6 +9,7 @@ local c = regentlib.c
 ------ This requires the full field, 1 to N+1 and 1 to M+1
 ------ This is the NINTH loop
 ------
+__demand(__leaf)
 task update_velocity_and_t_height( velocity : region(ispace(int2d), uv_time_field), sea_surface : region(ispace(int2d), uvt_time_field)) where 
                                    writes(velocity.{u_now,v_now}, sea_surface.t_now),
                                    reads(velocity.{u_after,v_after}, sea_surface.t_after) do
@@ -22,7 +23,7 @@ task update_velocity_and_t_height( velocity : region(ispace(int2d), uv_time_fiel
 --    end do
 
   --TODO Create launcher function.
-  __demand(__vectorize)
+  __demand(__openmp, __vectorize)
   for point in velocity do
     velocity[point].u_now = velocity[point].u_after
     velocity[point].v_now = velocity[point].v_after
@@ -39,6 +40,7 @@ end
 -------- This writes to a sub field, 2 to N, 2 to M-1
 -------- This reads from the full field
 --This is the TENTH loop
+__demand(__leaf)
 task update_u_height_launcher( sea_surface : region(ispace(int2d), uvt_time_field), grid_region : region(ispace(int2d), grid_fields) )
                      where writes(sea_surface.u_now), reads(grid_region.area_u, grid_region.area_t, grid_region.tmask, sea_surface.t_now) do
  --    do jj = 2, N, 1
@@ -52,6 +54,7 @@ task update_u_height_launcher( sea_surface : region(ispace(int2d), uvt_time_fiel
 --   var u_height_region = image(sea_surface_now, full_partition, get_u_height_launcher_bounds)
 --
 --   var tmask_field_partition = partition(grid_region.tmask, ispace(int1d, {2, -1}))
+__demand(__openmp)
   for point in sea_surface do
     if( grid_region[point].tmask + grid_region[point+{1,0}].tmask > int1d(0)) then
       --         IF(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) > 0) THENi
@@ -87,6 +90,7 @@ end
 -------- This writes to a sub field, 2 to N-1, 2 to M
 -------- This reads from the full field
 --This is the ELEVENTH loop
+__demand(__leaf)
 task update_v_height_launcher( sea_surface : region(ispace(int2d), uvt_time_field), grid_region : region(ispace(int2d), grid_fields) )
                      where writes(sea_surface.v_now), reads(grid_region.area_v, grid_region.area_t, grid_region.tmask, sea_surface.t_now) do
 
@@ -104,7 +108,7 @@ task update_v_height_launcher( sea_surface : region(ispace(int2d), uvt_time_fiel
 --            sshn_t%grid%tmask(ji,jj+1) <= 0)  cycle !jump over non-computational domaini
             --TODO Hopefully this condition is handled through an "image" partition
 
-
+__demand(__openmp)
   for point in sea_surface do
     if( grid_region[point].tmask + grid_region[point+{0,1}].tmask > int1d(0)) then
 --         if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) > 0) then

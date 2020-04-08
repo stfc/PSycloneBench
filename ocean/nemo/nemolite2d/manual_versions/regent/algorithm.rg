@@ -19,6 +19,10 @@ local g = 9.80665
 local omega = 7.292116e-05
 local d2r = pi / 180.0
 
+task get_time() : double
+
+  return c.legion_get_current_time_in_micros()
+end
 
 task calculate_1_to_N_1_to_M(private_bounds : rect2d) : rect2d
   return rect2d({{1,1}, {private_bounds.hi.x-1, private_bounds.hi.y-1}})
@@ -97,7 +101,6 @@ task main()
 
 
 --  c.printf("%i\n", __raw(velocity).tree_id)
-  model_write( 0, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, 0)
 
 
   --Create the partitions we need for the various computations
@@ -128,7 +131,7 @@ task main()
   --Create the 1 to N 1 to M+1 partition
    var _1NFM_velocity = image(velocity, full_velocity, calculate_1_to_N_1_to_full)
 
-  var tilesize : int = 256 --128
+  var tilesize : int = 256 -- 128
   --Partition the velocity field as required for the update_velocity launcher
   var local_x : int = setup_data[0].jpiglo / tilesize
   if(local_x < 1) then
@@ -145,12 +148,14 @@ task main()
   var _2N12M_velocity_halos = image(velocity, partitioned_2N12M_velocity, calculate_halo_size)
 
 
+  model_write( 0, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, 0)
   var visc : double = setup_data[0].visc 
   var rdt  : double = setup_data[0].rdt
   var cbfr : double = setup_data[0].cbfr
   var point : int2d = int2d({0,0})
   __fence(__execution, __block)
-  var start_time = c.legion_get_current_time_in_micros()
+  var start_time = get_time()
+  __fence(__execution, __block) 
   --Main timestepping loop to do!
 
   __demand(__trace)
@@ -245,7 +250,8 @@ task main()
 
   end
   __fence(__execution, __block)
-  var finish_time = c.legion_get_current_time_in_micros()
+  var finish_time = get_time()
+  __fence(__execution, __block)
   var time_taken = finish_time - start_time
   c.printf("Runtime is %f seconds\n", double(time_taken) / 1000000.0)
 end
