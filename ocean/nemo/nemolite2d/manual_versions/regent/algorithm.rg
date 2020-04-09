@@ -147,6 +147,19 @@ task main()
   var partitioned_2N12M_velocity = partition(equal, _2N12M_velocity[int2d({0,0})], partition_space)
   var _2N12M_velocity_halos = image(velocity, partitioned_2N12M_velocity, calculate_halo_size)
 
+  tilesize = 512
+  local_x = setup_data[0].jpiglo / tilesize
+  if(local_x < 1) then
+    local_x = 1
+  end
+  local_y = setup_data[0].jpjglo / tilesize
+  if(local_y < 1) then
+    local_y = 1
+  end
+  var partition_space2 = ispace(int2d, {x = local_x, y = local_y})
+  var partitioned_2N2M_sea_surface = partition(equal, _2N2M_sea_surface[int2d({0,0})], partition_space2)
+  var _2N2M_sea_surface_halos = image(sea_surface, partitioned_2N2M_sea_surface, calculate_halo_size)
+  
 
   model_write( 0, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, 0)
   var visc : double = setup_data[0].visc 
@@ -161,13 +174,22 @@ task main()
   __demand(__trace)
   for i = setup_data[0].nit000, setup_data[0].nitend+1 do
   
-     calculate_sea_surface_t(_2N2M_sea_surface[point],
-                            full_sea_bed_to_mean_sea_level[point],
-                            full_velocity[point],
-                            full_grid[point],
-                            setup_data[0].rdt,
-                            setup_data[0].jpiglo,
-                            setup_data[0].jpjglo )
+--     calculate_sea_surface_t(_2N2M_sea_surface[point],
+--                            full_sea_surface[point],
+--                            full_sea_bed_to_mean_sea_level[point],
+--                            full_velocity[point],
+--                            full_grid[point],
+--                            rdt)
+     __demand(__trace, __index_launch)
+    for part in partition_space2 do
+      calculate_sea_surface_t(partitioned_2N2M_sea_surface[part],
+                             _2N2M_sea_surface_halos[part],
+                              full_sea_bed_to_mean_sea_level[point],
+                              full_velocity[point],
+                              full_grid[point],
+                              rdt)
+                             
+    end
      __demand(__trace, __index_launch)
      for part in partition_space do
        update_velocity_ufield(partitioned_2N2M1_velocity[part],
