@@ -28,23 +28,22 @@ tar:
 	gzip dino.saur
 
 # dependencies
-proflib_io_mod.o: constants_mod.o
-argument_mod.o: fs_continuity_mod.o
+dino_mod.o: constants_mod.o
 matrix_vector_kernel_mod.o: constants_mod.o argument_mod.o kernel_mod.o
-kdriver.o: utils.o constants_mod.o proflib_io_mod.o matrix_vector_kernel_mod.o
+kdriver.o: utils.o constants_mod.o dino_mod.o matrix_vector_kernel_mod.o
 
-kdriver.avx512: utils.o constants_mod.o fs_continuity_mod.o argument_mod.o proflib_io_mod.o kernel_mod.o matrix_vector_kernel_mod.o 
+kdriver.avx512: utils.o constants_mod.o argument_mod.o dino_mod.o kernel_mod.o matrix_vector_kernel_mod.o 
 	for v in $(VERSIONS); do \
 		$(FC) $(FFLAGS) -xMIC-AVX512 -DVERSION=$$v -o $@.$$v kdriver.F90 $^ $(LDFLAGS); \
 	done
 
-kdriver.avx2: utils.o constants_mod.o fs_continuity_mod.o argument_mod.o proflib_io_mod.o kernel_mod.o matrix_vector_kernel_mod.o 
+kdriver.avx2: utils.o constants_mod.o argument_mod.o dino_mod.o kernel_mod.o matrix_vector_kernel_mod.o 
 	for v in $(VERSIONS); do \
 		$(FC) $(FFLAGS) -xAVX2 -DVERSION=$$v -o $@.$$v kdriver.F90 $^ $(LDFLAGS); \
 	done
 
 
-kdriver.novec: utils.o constants_mod.o fs_continuity_mod.o argument_mod.o proflib_io_mod.o kernel_mod.o matrix_vector_kernel_mod.novec.o 
+kdriver.novec: utils.o constants_mod.o argument_mod.o dino_mod.o kernel_mod.o matrix_vector_kernel_mod.novec.o 
 	for v in $(VERSIONS); do \
 		$(FC) $(FFLAGS) -no-vec -no-simd -DVERSION=$$v -o $@.$$v kdriver.F90 $^ $(LDFLAGS) ; \
 	done

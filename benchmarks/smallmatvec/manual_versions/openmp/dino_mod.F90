@@ -1,4 +1,21 @@
-module proflib_io_mod
+!-----------------------------------------------------------------------------
+! Copyright (c) 2017,  Met Office, on behalf of HMSO and Queen's Printer
+! For further details please refer to the file LICENCE.MetOffcie which you
+! should have received as part of this distribution.
+!-----------------------------------------------------------------------------
+!> @brief IO library for the PSKE to inject into PSy layer for kernel extraction,
+!! DO NOT use in general.
+!>
+!> @details Creates a Dynamo input-output object (dino). Can read-write scalars 
+!! and arrays. Procedures are overloaded so code generation in PSy layer is 
+!! simpler.
+!! THIS IS SERIAL ONLY - Multiple MPI ranks will write to the same file.
+!> @note dino_type uses a fixed file handle for simplicity. This could cause 
+!! problems if more than one dino_type is instanciated at once, hence the 
+!! close subroutine in  addition to the destructor.
+!> 
+
+module dino_mod
   use constants_mod, only : r_def, i_def, str_max_filename
   implicit none
   private
@@ -229,5 +246,5 @@ contains
     end if
   end subroutine io_close
   
-end module proflib_io_mod
+end module dino_mod
 

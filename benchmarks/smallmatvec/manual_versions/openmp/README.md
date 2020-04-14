@@ -5,7 +5,7 @@ This implementation uses OpenMP and test the vectorization and threading
 capabilities of multiple versions of the kernel and multiple parallel
 traversing strategies.
 
-It was initially created by Chris Maynard using the psyke and dino tools to
+It was initially created by Chris Maynard using the PSyKE and Dino tools to
 extract the needed infrastructure and data from LFRic. Then extended by
 Sergi Siso to make it configurable to multiple OpenMP implementations and
 benchmark the KNL architecture for the IPCC at Hartree Centre project.

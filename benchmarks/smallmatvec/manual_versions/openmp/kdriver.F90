@@ -11,7 +11,7 @@
 
 program kdriver
   use constants_mod, only : i_def, r_def, str_max_filename
-  use proflib_io_mod, only : dino_type
+  use dino_mod, only : dino_type
   use matrix_vector_kernel_mod
   use utils
   use omp_lib
