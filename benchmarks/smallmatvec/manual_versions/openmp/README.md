@@ -17,3 +17,8 @@ implementations.
 - `matrix_vector_kernel_mod.F90` multiple implementation of the mv kernel.
 - `reports/` Documents the mv kernel performance as well as full LFRic
 scalability analysis made in the IPCC project.
+
+# Limitations
+
+Currently compiler and compiler flags are hardcoded into the Makefile, the
+PSycloneBench compiler environment variables are ignored.
