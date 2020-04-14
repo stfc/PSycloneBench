@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------------
 ! Copyright (c) 2017,  Met Office, on behalf of HMSO and Queen's Printer
-! For further details please refer to the file LICENCE.MetOffcie which you
+! For further details please refer to the file LICENCE.original which you
 ! should have received as part of this distribution.
 !-----------------------------------------------------------------------------
 !> @brief IO library for the PSKE to inject into PSy layer for kernel extraction,
@@ -21,8 +21,11 @@ module dino_mod
   private
   type, public :: dino_type
      private
+     !> Integer Fortran file unit nimber
      integer :: file_handle
+     !> Logical Whether the file is open
      logical :: file_is_open = .false.
+     integer, allocatable :: gnu_dummy
    contains
      generic   :: output_scalar => output_integer, output_real
      generic   :: input_scalar => input_integer, input_real
@@ -43,6 +46,7 @@ module dino_mod
      procedure :: output_3d_real_array
      procedure :: input_3d_real_array
      procedure :: input_1d_integer_array
+     final     :: dino_destructor
 
   end type dino_type
 
@@ -51,6 +55,9 @@ module dino_mod
   end interface
 contains
 
+  !> Construct a <code>dino_type</code> object
+  !> opens a file, and sets the field_is_open to true
+  !> @return self the dino object
   type(dino_type)  function output_constructor() result(self)
     implicit none
     ! open a file
@@ -62,13 +69,19 @@ contains
     write(fname,'(A)') "dinodump.dat"
     open(unit=self%file_handle,file=fname, status="unknown",iostat=ierr,iomsg=iomsg)
     if(ierr/=0) then
-       write(*,'(A," ",A)') "output_constructor:cannot open file ",trim(fname), &
-            iomsg
-       stop
+       write(*,'(A," ",A)') "proflib_io:dino constructor:cannot open file ",    &
+            trim(fname), iomsg
+       stop 1 
     end if
     self%file_is_open = .true.
+    allocate(self%gnu_dummy)
   end function output_constructor
 
+  !> subroutine to write out a 3d real array
+  !> @param array real 3d array
+  !> @param dim1 integer size of dimension 1
+  !> @param dim2 integer size of dimension 2
+  !> @param dim3 integer size of dimension 3
   subroutine output_3d_real_array(self, array, dim1, dim2, dim3)
     implicit none
     class(dino_type),                            intent(in) :: self
@@ -76,14 +89,26 @@ contains
     integer(kind=i_def),                         intent(in) :: dim2
     integer(kind=i_def),                         intent(in) :: dim3
     real(kind=r_def), dimension(dim1,dim2,dim3), intent(in) :: array
+    integer(kind=i_def) :: i,j,k
     if(.not.self%file_is_open) then
        write(*,'(A)') "output_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
-    write(self%file_handle,*) array
+    do k = 1, dim3
+       do j = 1, dim2
+          do i = 1, dim1
+             write(self%file_handle,'(E23.16)') array(i,j,k)
+          end do
+       end do
+    end do
 
   end subroutine output_3d_real_array
 
+  !> subroutine to read in a 3d real array
+  !> @param array real 3d array
+  !> @param dim1 integer size of dimension 1
+  !> @param dim2 integer size of dimension 2
+  !> @param dim3 integer size of dimension 3
   subroutine input_3d_real_array(self, array, dim1, dim2, dim3)
     implicit none
     class(dino_type),                            intent(in)  :: self
@@ -94,12 +119,21 @@ contains
     integer :: i,j,k
     if(.not.self%file_is_open) then
        write(*,'(A)') "output_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
-    read(self%file_handle,*) array
+    do k = 1, dim3
+       do j = 1, dim2
+          do i = 1, dim1
+             read(self%file_handle,'(E23.16)') array(i,j,k)
+          end do
+       end do
+    end do
 
   end subroutine input_3d_real_array
 
+  !> subroutine to write out a 1d integer array
+  !> @param array integer 1d array
+  !> @param dim integer size of the array
   subroutine output_1d_integer_array(self, array, dim)
     implicit none
     class(dino_type),                 intent(in) :: self
@@ -107,12 +141,15 @@ contains
     integer(kind=i_def), dimension(dim), intent(in) :: array
     if(.not.self%file_is_open) then
        write(*,'(A)') "output_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
     write(self%file_handle,*) array
     
   end subroutine output_1d_integer_array
 
+  !> subroutine to read in a 1d integer array
+  !> @param array integer 1d array
+  !> @param dim integer size of the array
   subroutine input_1d_integer_array(self, array, dim)
     implicit none
     class(dino_type),                    intent(in)  :: self
@@ -120,38 +157,54 @@ contains
     integer(kind=i_def), dimension(dim), intent(out) :: array
     if(.not.self%file_is_open) then
        write(*,'(A)') "input_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
     read(self%file_handle,*) array
     
   end subroutine input_1d_integer_array
 
+  !> subroutine to write out a 1d real array
+  !> @param array real 1d array
+  !> @param dim integer size of the array
   subroutine output_1d_real_array(self, array, dim)
     implicit none
     class(dino_type),                 intent(in) :: self
     integer(kind=i_def),              intent(in) :: dim
     real(kind=r_def), dimension(dim), intent(in) :: array
+    integer(kind=i_def) :: i
     if(.not.self%file_is_open) then
        write(*,'(A)') "output_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
-    write(self%file_handle,*) array
+    do i = 1, dim
+       write(self%file_handle,'(E23.16)') array(i)
+    end do
 
   end subroutine output_1d_real_array
 
+  !> subroutine to read in a 1d real array
+  !> @param array real 1d array
+  !> @param dim integer size of the array
   subroutine input_1d_real_array(self, array, dim)
     implicit none
     class(dino_type),                  intent(in)  :: self
     integer(kind=i_def),              intent(in)  :: dim
     real(kind=r_def), dimension(dim), intent(out) :: array
+    integer(kind=i_def) :: i
     if(.not.self%file_is_open) then
        write(*,'(A)') "output_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
-    read(self%file_handle,*) array
+    do i = 1, dim
+       read(self%file_handle,'(E23.16)') array(i)
+    end do
 
   end subroutine input_1d_real_array
 
+  !> subroutine to write out a 2d integer array
+  !> @param array integer 2d array
+  !> @param dim1 integer size of dimension 1
+  !> @param dim2 integer size of dimension 2
   subroutine output_2d_integer_array(self, array, dim1, dim2)
     implicit none
     class(dino_type),                           intent(in) :: self
@@ -160,12 +213,17 @@ contains
     integer(kind=i_def), dimension(dim1,dim2), intent(in) :: array
     if(.not.self%file_is_open) then
        write(*,'(A)') "output_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
+    
     write(self%file_handle,*) array
 
   end subroutine output_2d_integer_array
 
+  !> subroutine to read in a 2d integer array
+  !> @param array integer 2d array
+  !> @param dim1 integer size of dimension 1
+  !> @param dim2 integer size of dimension 2
   subroutine input_2d_integer_array(self, array, dim1, dim2)
     implicit none
     class(dino_type),                           intent(in)  :: self
@@ -174,42 +232,45 @@ contains
     integer(kind=i_def), dimension(dim1,dim2), intent(out) :: array
     if(.not.self%file_is_open) then
        write(*,'(A)') "output_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
     read(self%file_handle,*) array
 
   end subroutine input_2d_integer_array
   
+  !> subroutine to write out an integer 
+  !> @param integer scalar 
   subroutine output_integer(self,scalar)
     implicit none
     class(dino_type),  intent(inout) :: self
     integer(kind=i_def),            intent(in)    :: scalar
-!    character(str_max_filename), intent(in)    :: label
 
     ! check the file is open
     if(.not.self%file_is_open) then
        write(*,'(A)') "output_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
     write(self%file_handle,*) scalar
     
   end subroutine output_integer
-
+  !> subroutine to write out a real
+  !> @param real scalar 
   subroutine output_real(self,scalar)
     implicit none
     class(dino_type), intent(inout) :: self
     real(kind=r_def),               intent(in)    :: scalar
-!    character(str_max_filename), intent(in)    :: label
 
     ! check the file is open
     if(.not.self%file_is_open) then
        write(*,'(A)') "output_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
-    write(self%file_handle,*) scalar
+    write(self%file_handle,'(E23.16)') scalar
     
   end subroutine output_real
 
+  !> subroutine to read in an integer 
+  !> @param integer scalar 
   subroutine input_integer(self,scalar)
     implicit none
     class(dino_type),  intent(inout) :: self
@@ -218,11 +279,13 @@ contains
     ! check the file is open
     if(.not.self%file_is_open) then
        write(*,'(A)') "output_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
     read(self%file_handle,*) scalar
   end subroutine input_integer
 
+  !> subroutine to read in an real 
+  !> @param real scalar 
   subroutine input_real(self,scalar)
     implicit none
     class(dino_type),  intent(inout) :: self
@@ -231,20 +294,35 @@ contains
     ! check the file is open
     if(.not.self%file_is_open) then
        write(*,'(A)') "output_integer:Shriek, file not open"
-       stop
+       stop 1
     end if
-    read(self%file_handle,*) scalar
+    read(self%file_handle,'(E23.16)') scalar
   end subroutine input_real
-
+  
+  !> subroutine to close the open file
   subroutine io_close(self)
     implicit none
     class(dino_type), intent(inout) :: self
-
+    
     if(self%file_is_open) then
        close(self%file_handle)
        self%file_is_open=.false.
     end if
   end subroutine io_close
+
+  !> Finalizer, which closes the file if still open
+  subroutine dino_destructor(self)
+    implicit none
+    type(dino_type), intent(inout) :: self
+    if(self%file_is_open) then
+       close(self%file_handle)
+       self%file_is_open=.false.
+    end if
+    if( allocated(self%gnu_dummy) ) then
+       deallocate(self%gnu_dummy)
+    end if
+    
+  end subroutine dino_destructor
   
 end module dino_mod
 
