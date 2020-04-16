@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------------
 ! Copyright (c) 2017,  Met Office, on behalf of HMSO and Queen's Printer
-! For further details please refer to the file LICENCE.original which you
+! For further details please refer to the file LICENCE.MetOffice which you
 ! should have received as part of this distribution.
 !-----------------------------------------------------------------------------
 !> @brief IO library for the PSKE to inject into PSy layer for kernel extraction,
@@ -46,7 +46,6 @@ module dino_mod
      procedure :: output_3d_real_array
      procedure :: input_3d_real_array
      procedure :: input_1d_integer_array
-     final     :: dino_destructor
 
   end type dino_type
 
@@ -94,13 +93,7 @@ contains
        write(*,'(A)') "output_integer:Shriek, file not open"
        stop 1
     end if
-    do k = 1, dim3
-       do j = 1, dim2
-          do i = 1, dim1
-             write(self%file_handle,'(E23.16)') array(i,j,k)
-          end do
-       end do
-    end do
+    write(self%file_handle,*) array
 
   end subroutine output_3d_real_array
 
@@ -121,13 +114,7 @@ contains
        write(*,'(A)') "output_integer:Shriek, file not open"
        stop 1
     end if
-    do k = 1, dim3
-       do j = 1, dim2
-          do i = 1, dim1
-             read(self%file_handle,'(E23.16)') array(i,j,k)
-          end do
-       end do
-    end do
+    read(self%file_handle,*) array
 
   end subroutine input_3d_real_array
 
@@ -176,9 +163,7 @@ contains
        write(*,'(A)') "output_integer:Shriek, file not open"
        stop 1
     end if
-    do i = 1, dim
-       write(self%file_handle,'(E23.16)') array(i)
-    end do
+    write(self%file_handle,*) array
 
   end subroutine output_1d_real_array
 
@@ -195,9 +180,7 @@ contains
        write(*,'(A)') "output_integer:Shriek, file not open"
        stop 1
     end if
-    do i = 1, dim
-       read(self%file_handle,'(E23.16)') array(i)
-    end do
+    read(self%file_handle,*) array
 
   end subroutine input_1d_real_array
 
@@ -310,19 +293,5 @@ contains
     end if
   end subroutine io_close
 
-  !> Finalizer, which closes the file if still open
-  subroutine dino_destructor(self)
-    implicit none
-    type(dino_type), intent(inout) :: self
-    if(self%file_is_open) then
-       close(self%file_handle)
-       self%file_is_open=.false.
-    end if
-    if( allocated(self%gnu_dummy) ) then
-       deallocate(self%gnu_dummy)
-    end if
-    
-  end subroutine dino_destructor
-  
 end module dino_mod
 
