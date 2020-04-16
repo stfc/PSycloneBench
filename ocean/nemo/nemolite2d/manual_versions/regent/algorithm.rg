@@ -159,6 +159,12 @@ task main()
   var partition_space2 = ispace(int2d, {x = local_x, y = local_y})
   var partitioned_2N2M_sea_surface = partition(equal, _2N2M_sea_surface[int2d({0,0})], partition_space2)
   var _2N2M_sea_surface_halos = image(sea_surface, partitioned_2N2M_sea_surface, calculate_halo_size)
+  var partitioned_full_velocity = partition(equal, full_velocity[int2d({0,0})], partition_space2)
+  var partitioned_full_sea_surface = partition(equal, full_sea_surface[int2d({0,0})], partition_space2)
+  var partitioned_2N2M1_sea_surface = partition(equal, _2N2M1_sea_surface[int2d({0,0})], partition_space2)
+  var _2N2M1_sea_surface_halos = image(sea_surface, partitioned_2N2M1_sea_surface, calculate_halo_size)
+  var partitioned_2N12M_sea_surface = partition(equal, _2N12M_sea_surface[int2d({0,0})], partition_space2)
+  var _2N12M_sea_surface_halos = image(sea_surface, partitioned_2N12M_sea_surface, calculate_halo_size)
   
 
   model_write( 0, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, 0)
@@ -219,28 +225,6 @@ task main()
                               d2r)
                               
      end
---     update_velocity_ufield(_2N2M1_velocity[point],
---                           full_grid[point],
---                           full_velocity[point],
---                           full_sea_bed_to_mean_sea_level[point],
---                           full_sea_surface[point],
---                           visc,
---                           omega,
---                           g,
---                           rdt,
---                           cbfr,
---                           d2r)
---    update_velocity_vfield(_2N12M_velocity[point],
---                           full_grid[point],
---                           full_velocity[point],
---                           full_sea_bed_to_mean_sea_level[point],
---                           full_sea_surface[point],
---                           setup_data[0].visc,
---                           omega,
---                           g,
---                           setup_data[0].rdt,
---                           setup_data[0].cbfr,
---                           d2r)
     update_sea_surface_t(_2N2M_sea_surface[point],
                          full_grid[point],
                          setup_data[0].rdt,
@@ -259,12 +243,23 @@ task main()
                       full_sea_surface[point],
                       full_grid[point],
                       g)
-    update_velocity_and_t_height(full_velocity[point],
-                                 full_sea_surface[point])
-    update_u_height_launcher(_2N2M1_sea_surface[point],
-                             full_grid[point])
-    update_v_height_launcher(_2N12M_sea_surface[point],
-                             full_grid[point])
+    __demand(__trace, __index_launch)
+    for part in partition_space2 do
+    update_velocity_and_t_height(partitioned_full_velocity[part],
+                                 partitioned_full_sea_surface[part])
+    end
+    __demand(__trace, __index_launch)
+    for part in partition_space2 do
+    update_u_height_launcher(partitioned_2N2M1_sea_surface[part],
+                             full_grid[point],
+                             _2N2M1_sea_surface_halos[part])
+    end
+    __demand(__trace, __index_launch)
+    for part in partition_space2 do
+    update_v_height_launcher(partitioned_2N12M_sea_surface[part],
+                             full_grid[point],
+                             _2N12M_sea_surface_halos[part])
+    end
 --    c.legion_runtime_issue_execution_fence(__runtime(), __context()) 
 --    if( i % setup_data[0].record == 0) then
         model_write( i, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, i % setup_data[0].record)
@@ -281,4 +276,3 @@ end
 
 
 regentlib.start(main)
---regentlib.profile(main)
