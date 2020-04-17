@@ -131,7 +131,7 @@ task main()
   --Create the 1 to N 1 to M+1 partition
    var _1NFM_velocity = image(velocity, full_velocity, calculate_1_to_N_1_to_full)
 
-  var tilesize : int = 256 -- 128
+  var tilesize : int = 84 -- 256 -- 128
   --Partition the velocity field as required for the update_velocity launcher
   var local_x : int = setup_data[0].jpiglo / tilesize
   if(local_x < 1) then
@@ -147,7 +147,7 @@ task main()
   var partitioned_2N12M_velocity = partition(equal, _2N12M_velocity[int2d({0,0})], partition_space)
   var _2N12M_velocity_halos = image(velocity, partitioned_2N12M_velocity, calculate_halo_size)
 
-  tilesize = 512
+  tilesize = 128 --512
   local_x = setup_data[0].jpiglo / tilesize
   if(local_x < 1) then
     local_x = 1
@@ -165,7 +165,12 @@ task main()
   var _2N2M1_sea_surface_halos = image(sea_surface, partitioned_2N2M1_sea_surface, calculate_halo_size)
   var partitioned_2N12M_sea_surface = partition(equal, _2N12M_sea_surface[int2d({0,0})], partition_space2)
   var _2N12M_sea_surface_halos = image(sea_surface, partitioned_2N12M_sea_surface, calculate_halo_size)
-  
+
+  var partition_space3 = ispace(int2d, {x = 1, y = local_y})
+  var partitioned_1NFM_velocity = partition(equal, _1NFM_velocity[int2d({0,0})], partition_space3)
+
+  var partition_space4 = ispace(int2d, {x = local_x, y = 1})
+  var partitioned_FN1M_velocity = partition(equal, _FN1M_velocity[int2d({0,0})], partition_space4)
 
   model_write( 0, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, 0)
   var visc : double = setup_data[0].visc 
@@ -233,16 +238,20 @@ task main()
                          full_grid[point])
     update_vvel_boundary(_1NFM_velocity[point],
                          full_grid[point])
-    bc_flather_v_loop(_1NFM_velocity[point],
+    for part in partition_space3 do
+    bc_flather_v_loop(partitioned_1NFM_velocity[part],
                       full_sea_bed_to_mean_sea_level[point],
                       full_sea_surface[point],
                       full_grid[point],
                       g)
-    bc_flather_u_loop(_FN1M_velocity[point],
+    end
+    for part in partition_space4 do
+    bc_flather_u_loop(partitioned_FN1M_velocity[part],
                       full_sea_bed_to_mean_sea_level[point],
                       full_sea_surface[point],
                       full_grid[point],
                       g)
+    end
     __demand(__trace, __index_launch)
     for part in partition_space2 do
     update_velocity_and_t_height(partitioned_full_velocity[part],
