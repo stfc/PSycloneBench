@@ -237,7 +237,7 @@ task main()
                          rdt,
                          i)
     end
-    update_sea_surface_t(_2N2M_sea_surface[point], full_grid[point], rdt, i)
+--    update_sea_surface_t(_2N2M_sea_surface[point], full_grid[point], rdt, i)
     for part in partition_space3 do
     update_vvel_boundary(partitioned_1NFM_velocity[part],
                          full_grid[point])
