@@ -173,9 +173,9 @@ task main()
   var partitioned_FN1M_velocity = partition(equal, _FN1M_velocity[int2d({0,0})], partition_space4)
 
   model_write( 0, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, 0)
-  var visc : double = setup_data[0].visc 
-  var rdt  : double = setup_data[0].rdt
-  var cbfr : double = setup_data[0].cbfr
+  var visc = setup_data[0].visc 
+  var rdt  = setup_data[0].rdt
+  var cbfr = setup_data[0].cbfr
   var point : int2d = int2d({0,0})
   __fence(__execution, __block)
   var start_time = get_time()
@@ -230,14 +230,25 @@ task main()
                               d2r)
                               
      end
-    update_sea_surface_t(_2N2M_sea_surface[point],
+    __demand(__trace, __index_launch)
+    for part in partition_space2 do
+    update_sea_surface_t(partitioned_2N2M_sea_surface[part],
                          full_grid[point],
-                         setup_data[0].rdt,
+                         rdt,
                          i)
-    update_uvel_boundary(_FN1M_velocity[point],
+    end
+    update_sea_surface_t(_2N2M_sea_surface[point], full_grid[point], rdt, i)
+    for part in partition_space3 do
+    update_vvel_boundary(partitioned_1NFM_velocity[part],
                          full_grid[point])
-    update_vvel_boundary(_1NFM_velocity[point],
+    end
+--    update_vvel_boundary(_1NFM_velocity[point], full_grid[point])
+    for part in partition_space4 do
+    update_uvel_boundary(partitioned_FN1M_velocity[part],
                          full_grid[point])
+    end
+--    update_uvel_boundary(_1NFM_velocity[point], full_grid[point])
+  __fence(__execution, __block)
     for part in partition_space3 do
     bc_flather_v_loop(partitioned_1NFM_velocity[part],
                       full_sea_bed_to_mean_sea_level[point],
