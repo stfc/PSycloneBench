@@ -30,8 +30,6 @@ summary_table:
 		cd ..; \
 	)
 
-# Clean folders of all enabled implementations
+# Clean folders (and dependencies) of all enabled implementations
 clean:
 	$(foreach var,$(IMPLEMENTATIONS),cd $(var) && $(MAKE) allclean && cd ..;)
-	# If we don't clean the depenencies, it won't work after switching
-	# compilers.

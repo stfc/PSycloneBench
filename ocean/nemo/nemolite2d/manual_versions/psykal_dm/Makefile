@@ -1,11 +1,10 @@
 # Makefile for manual MPI version of PSyKAl'd NEMOLite2D.
 #
 # This Makefile picks up the compiler to use any flags from
-# environment variables. e.g. to use gfortran:
-# 
-# export F90=mpif90
-# export F90FLAGS="-O3"
-# export AR=ar
+# environment variable F90
+ifeq (,$(findstring mpi,$(F90)))
+	F90 := mpif90 -fc=${F90}
+endif
 
 # Location of the dl_timer and infrastucture code
 SHARED_DIR = ../../../../../shared
@@ -39,16 +38,16 @@ MODULES = ${KERNELS} time_step_mod.o
 COMMON_MODULES = $(MODULES) ${COMMON_LIB} ${INF_LIB}
 
 timer_lib:
-	${MAKE} -C ${TIMER_DIR} F90=${F90} MPIF90=${F90} dm_lib
+	${MAKE} -C ${TIMER_DIR} MPIF90="${F90}" dm_lib
 
 inf_lib:
-	${MAKE} -C ${INF_DIR} F90=${F90} dm_fd_lib
+	${MAKE} -C ${INF_DIR} F90="${F90}" dm_fd_lib
 
 timer_lib_serial:
-	${MAKE} -C ${TIMER_DIR} F90=${F90} MPIF90=${F90} sm_lib
+	${MAKE} -C ${TIMER_DIR} F90="${F90}" MPIF90="${F90}" sm_lib
 
 inf_lib_serial:
-	${MAKE} -C ${INF_DIR} F90=${F90} fd_lib
+	${MAKE} -C ${INF_DIR} F90="${F90}" fd_lib
 
 ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR} MPI=${MPI}
