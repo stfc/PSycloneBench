@@ -230,6 +230,7 @@ task main()
                               d2r)
                               
      end
+--    __fence(__execution, __block)
     __demand(__trace, __index_launch)
     for part in partition_space2 do
     update_sea_surface_t(partitioned_2N2M_sea_surface[part],
@@ -248,7 +249,7 @@ task main()
                          full_grid[point])
     end
 --    update_uvel_boundary(_1NFM_velocity[point], full_grid[point])
-  __fence(__execution, __block)
+--  __fence(__execution, __block)
     for part in partition_space3 do
     bc_flather_v_loop(partitioned_1NFM_velocity[part],
                       full_sea_bed_to_mean_sea_level[point],
@@ -256,6 +257,11 @@ task main()
                       full_grid[point],
                       g)
     end
+--    bc_flather_v_loop(_1NFM_velocity[point], 
+--                      full_sea_bed_to_mean_sea_level[point],
+--                      full_sea_surface[point],
+--                      full_grid[point],
+--                      g)
     for part in partition_space4 do
     bc_flather_u_loop(partitioned_FN1M_velocity[part],
                       full_sea_bed_to_mean_sea_level[point],
@@ -263,6 +269,11 @@ task main()
                       full_grid[point],
                       g)
     end
+--   bc_flather_u_loop(_FN1M_velocity[point],
+--                      full_sea_bed_to_mean_sea_level[point],
+--                      full_sea_surface[point],
+--                      full_grid[point],
+--                      g)
     __demand(__trace, __index_launch)
     for part in partition_space2 do
     update_velocity_and_t_height(partitioned_full_velocity[part],
