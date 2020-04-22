@@ -115,8 +115,8 @@ matrix-vector multiplication operation done in the LFRic application.
 
 Currently it only contains one manual implementation:
 
-    - `openmp`: Configurable implementation using OpenMP that test
-    the vectorization and threading capabilities of multiple versions
-    of the kernel and multiple parallel traversing strategies.
+ * openmp - Configurable implementation using OpenMP that test the
+            vectorization and threading capabilities of multiple versions
+            of the kernel and multiple parallel traversing strategies.
 
 Note that this benchmark does not use the `compiler_setup` settings yet.

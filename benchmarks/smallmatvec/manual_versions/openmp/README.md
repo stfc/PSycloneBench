@@ -1,11 +1,11 @@
 # Configurable OpenMP manual implementation
 
 
-This implementation uses OpenMP and test the vectorization and threading
+This implementation uses OpenMP and tests the vectorization and threading
 capabilities of multiple versions of the kernel and multiple parallel
 traversing strategies.
 
-Th most relevant files are:
+The most relevant files are:
 
 - `kdriver.F90` multiple thread-level parallelism and iteration order
 implementations.
@@ -20,13 +20,14 @@ PSycloneBench compiler environment variables are ignored.
 
 # Attributions 
 
-It was initially created by Chris Maynard using the PSyKE and Dino tools to
-extract the needed infrastructure and data from LFRic. Then extended by
-Sergi Siso to make it configurable to multiple OpenMP implementations and
-benchmark the KNL architecture for the IPCC at Hartree Centre project.
+It was initially created by Chris Maynard (UK Met Office) using the PSyKE
+and Dino tools to extract the needed infrastructure and data from LFRic.
+Then extended by Sergi Siso (STFC Hartree Centre) to make it configurable
+to multiple OpenMP implementations and benchmark the KNL architecture for
+the IPCC at Hartree Centre project.
 
 Some files from the LFRic infrastructure are needed to run the benchmark,
 these are `argument_mod.F90`, `constants_mod.F90`, `dino_mod.F90` and
 `kernel_mod.F90`. These files have been copied from
 https://github.com/christophermaynard/LFRic-microbenchmarks/common
-and are distributed with the attached licence file LICENNCE.MetOffice.
+and are distributed with the attached licence file LICENCE.MetOffice.

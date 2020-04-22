@@ -5,9 +5,9 @@ multiplication operation done in the LFRic application.
 
 ## Manual Versions
 
-Manual implementations of the kernel are found in teh `manual_versions`
+Manual implementations of the kernel are found in the `manual_versions`
 directory. At the moment the following versions are available:
 
-    - `openmp`: Configurable implementation using OpenMP that test
+    - `openmp`: Configurable implementation using OpenMP that tests
     the vectorization and threading capabilities of multiple versions
     of the kernel and multiple parallel traversing strategies.

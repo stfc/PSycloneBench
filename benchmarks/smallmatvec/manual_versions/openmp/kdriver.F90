@@ -36,7 +36,6 @@ program kdriver
 
   integer(kind=i_def) :: Nreps, nsize, el, i1, i2, i
   character(len=32) :: arg, arg2, initialization, method, traverse, colouringkind 
-  character(len=32) :: dotoutput
   logical :: new_data_layout
 
   real(kind=r_def), dimension(144) :: SFC12, SFC12i
@@ -87,8 +86,6 @@ program kdriver
                 traverse = "colouring-rows"
             endselect
         endif
-    case('-dg','--dotgraph')
-        dotoutput = "write"
     case('-h','--help')
         write(*,*) "LFRic Matrix-Vector Multiplication isolated Kernel"
     end select
@@ -326,45 +323,6 @@ program kdriver
   write(*,*) "ndf2=", ndf_any_space_2_x, ", undf2=", undf_any_space_2_x
 
 
-  if (dotoutput.eq."write")then
-      open(1234, file="2dgrid.dot", action="write")
-      write(1234,*) "graph graphme{"
-      do cell = 1, ncp_colour(1)
-        write(1234,"(A,I3.3,A,I3.3,A,I1.1,A)") "N", cmap(1,cell), " [label=""", cmap(1,cell), """,color=blue];"
-      enddo
-      do cell = 1, ncp_colour(2)
-        write(1234,"(A,I3.3,A,I3.3,A,I1.1,A)") "N", cmap(2,cell), " [label=""", cmap(2,cell), """,color=green];"
-      enddo
-      do cell = 1, ncp_colour(3)
-        write(1234,"(A,I3.3,A,I3.3,A,I1.1,A)") "N", cmap(3,cell), " [label=""", cmap(3,cell), """,color=red];"
-      enddo
-      do cell = 1, ncp_colour(4)
-        write(1234,"(A,I3.3,A,I3.3,A,I1.1,A)") "N", cmap(4,cell), " [label=""", cmap(4,cell), """,color=yellow];"
-      enddo
-      !do cell = 1, ncp_colour(5)
-      !  write(1234,"(A,I3.3,A,I3.3,A,I1.1,A)") "N", cmap(5,cell), " [label=""", cmap(5,cell), """,color=purple];"
-      !enddo
-      !do cell = 1, ncp_colour(6)
-      !  write(1234,"(A,I3.3,A,I3.3,A,I1.1,A)") "N", cmap(6,cell), " [label=""", cmap(6,cell), """,color=brown];"
-      !enddo
-      do colour = 1, ncolour
-        do cell = 1, ncp_colour(colour)
-            map1=>map_any_space_1_theta_adv_term(:,cmap(colour,cell))
-            map2=>map_any_space_2_x(:,cmap(colour,cell))
-            do lp = 1, ndf_any_space_1_theta_adv_term
-                write(1234,"(A,I3.3,A,I4.4,A)") "N", cmap(colour,cell), " -- L", map1(lp)/nlayers, ";"
-            enddo
-            !do lp = 1, ndf_any_space_2_x
-            !    write(1234,"(A,I3.3,A,I4.4,A)") "N", cmap(colour,cell), " -- R", map2(lp)/nlayers, ";"
-            !enddo
-
-        enddo
-      enddo
-      
-      write(1234,*) "}"
-      close(1234)
-  endif
-
   if ((STR(VERSION) .eq. "nlayersf2") .or. &
      (STR(VERSION) .eq. "nlayersf") .or. &
      (STR(VERSION) .eq. "nlayersf_atomics") .or. &
@@ -579,7 +537,6 @@ program kdriver
           end do
           !$omp end parallel do
         end do
-        !call exit(0)
       end do
 
    else if (traverse.eq."omp-locking") then
@@ -624,7 +581,6 @@ program kdriver
   end = omp_get_wtime()
   write(*,*) "T=",nthreads, "Loop time=",end - start, " s"
 
-
   if (new_data_layout) then
       start =  omp_get_wtime()
       do cell = 0, ncell-1
@@ -639,9 +595,6 @@ program kdriver
       end = omp_get_wtime()
       write(*,*) "Convert back datastructure time=", end - start, " s"
   endif
-
-
-
 
   if (.not.(initialization.eq."generate")) then
       write(*,*) "dino_dump:Checking the answer ..."

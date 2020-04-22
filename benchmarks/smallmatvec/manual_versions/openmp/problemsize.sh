@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 
+# This scripts executes serially (with 1 thread) the selected implementation
+# with increasing problem sizes. The first loop changes the horizontal
+# dimension and writes the results at 'problemsize.txt` the second loop
+# increases the vertical dimension and writes the results at 'nlayers.txt'
+
+# Update the for statements to change the target implementation and problem
+# size ranges.
+
 output=problemsize.txt
 
 echo "Problem size plot" | tee $output
-
-#make && make kdriver.novec
 
 #for v in `make versions`; do
 for v in nlayersf ; do

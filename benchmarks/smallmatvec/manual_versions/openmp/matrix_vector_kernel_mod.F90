@@ -66,6 +66,7 @@ end function matrix_vector_kernel_constructor
 !! @param[in] x Input data
 !> @param[inout] lhs Output lhs (A*x)
 !! @param[in] matrix Local matrix assembly form of the operator A 
+! Original implementation as found in LFRic, it uses the matmul intrinsic
 subroutine matrix_vector_code_original(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -109,6 +110,10 @@ subroutine matrix_vector_code_original(cell,        &
  
 end subroutine matrix_vector_code_original
 
+! This implementation fuses the gather-computation-scatter loops. The matrix
+! multiplication operation is not done in a single step but interleaving the
+! row-column operations of all matmuls that use the same matrix. This is done
+! to minimize memory operations.
 subroutine matrix_vector_code_fuseinterleaved(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -142,6 +147,8 @@ subroutine matrix_vector_code_fuseinterleaved(cell,        &
 
 end subroutine matrix_vector_code_fuseinterleaved
 
+! This implementations takes the fuseinterleaved and moves the k loop (layers)
+! to the inner location. It also adds a SIMD pragma for this loop.
 subroutine matrix_vector_code_kinner(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -176,6 +183,9 @@ subroutine matrix_vector_code_kinner(cell,        &
 
 end subroutine matrix_vector_code_kinner
 
+! This implementation uses the same loop order from the kinner implementation
+! but expects a data-layout that matches the traversal order (with layers
+! data-points in the contiguous dimension).
 subroutine matrix_vector_code_nlayersf(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -211,6 +221,8 @@ subroutine matrix_vector_code_nlayersf(cell,        &
 
 end subroutine matrix_vector_code_nlayersf
 
+! Similar to nlayersf but the vectors are first fetched in a temporal array
+! in the same order as the matrix multiplication is going to access them.
 subroutine matrix_vector_code_nlayersf2(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -290,8 +302,9 @@ subroutine matrix_vector_code_nlayersf_atomics(cell,        &
 end subroutine matrix_vector_code_nlayersf_atomics
 
 
-
-
+! Similar to nlayersf but repeats the inner loop INNERREPS times in order to
+! simulate the performance of multiple fused matrix multiplications if those
+! could be fused up to the inner loop.
 subroutine matrix_vector_code_nlayersf_moreops(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -330,6 +343,9 @@ subroutine matrix_vector_code_nlayersf_moreops(cell,        &
 end subroutine matrix_vector_code_nlayersf_moreops
 
 
+! Similar to nlayersf but it tries to take advantage that ndf1==8 and there
+! is a contiguity btw map1(1:4) and map(4:8).
+! Only works when ndf1 is exactly 8
 subroutine matrix_vector_code_nlayersf_split(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -351,7 +367,6 @@ subroutine matrix_vector_code_nlayersf_split(cell,        &
   !Internal variables
   integer                           :: df, k, df2, m1_1, m1_2, m2
 
-  ! Only works because ndf1=8 and there is a contiguity btw map1(1:4) and map(4:8)
     do df = 1, ndf1/2
         m1_1 = map1(df)
         m1_2 = map1(df+4)
@@ -368,7 +383,9 @@ subroutine matrix_vector_code_nlayersf_split(cell,        &
 end subroutine matrix_vector_code_nlayersf_split
 
 
-
+! Like the original but manually blocking the outer loop with blocks of size
+! 8 (vlen variable) to match the vector length. The members of each block are
+! then iterated over in the inner loop and marked with the pragma SIMD.
 subroutine matrix_vector_code_vlen(cell,        &
                               nlayers,     &
                               lhs, x,      &
@@ -409,7 +426,6 @@ subroutine matrix_vector_code_vlen(cell,        &
             !$OMP SIMD
             do l = 1,vlen
                 lhs_e(l,j) = lhs_e(l,j) + matrix(j,i,ik+k+l) * x_e(l,i)
-                !lhs_e(l,j) = matrix(j,i,ik+k+l) * x_e(l,i)
             end do
         end do
     end do
@@ -424,6 +440,9 @@ subroutine matrix_vector_code_vlen(cell,        &
 
 end subroutine matrix_vector_code_vlen
 
+! Like the original implementation but replacing the matmul intrinsic with
+! the specific number of row-column multiplication and addition operations
+! needed.
 subroutine matrix_vector_code_specialized_save(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -478,6 +497,9 @@ subroutine matrix_vector_code_specialized_save(cell,        &
 end subroutine matrix_vector_code_specialized_save
 
 
+! Like the original implementation but replacing the matmul intrinsic with
+! the specific number of row-column multiplication and addition operations
+! needed. Also fuses the gather-compute-scatter loops.
 subroutine matrix_vector_code_specialized(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -517,6 +539,8 @@ subroutine matrix_vector_code_specialized(cell,        &
 
 end subroutine matrix_vector_code_specialized
 
+! Implementation using BLAS dgemv, to use uncomment library call and build
+! with the appropriate compiler flags in the Makefile.
 subroutine matrix_vector_code_dgemv(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -561,6 +585,8 @@ subroutine matrix_vector_code_dgemv(cell,        &
  
 end subroutine matrix_vector_code_dgemv
 
+! Implementation using BLAS dgemm, to use uncomment library call and build
+! with the appropriate compiler flags in the Makefile.
 subroutine matrix_vector_code_dgemm(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -613,6 +639,8 @@ subroutine matrix_vector_code_dgemm(cell,        &
  
 end subroutine matrix_vector_code_dgemm
 
+! Implementation using libxsmm, to use uncomment library call and build
+! with the appropriate compiler flags in the Makefile.
 subroutine matrix_vector_code_libxsmm(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -663,6 +691,5 @@ subroutine matrix_vector_code_libxsmm(cell,        &
  end do
  
 end subroutine matrix_vector_code_libxsmm
-
 
 end module matrix_vector_kernel_mod
