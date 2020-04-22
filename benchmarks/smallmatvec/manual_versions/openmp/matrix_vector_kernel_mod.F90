@@ -221,7 +221,8 @@ subroutine matrix_vector_code_nlayersf(cell,        &
 
 end subroutine matrix_vector_code_nlayersf
 
-! Similar to nlayersf but 
+! Similar to nlayersf but the vectors are first fetched in a temporal array
+! in the same order as the matrix multiplication is going to access them.
 subroutine matrix_vector_code_nlayersf2(cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -383,8 +384,8 @@ end subroutine matrix_vector_code_nlayersf_split
 
 
 ! Like the original but manually blocking the outer loop with blocks of size
-! 8 (vlen variable) to match the vector length. This this blocks are iterated
-! as an inner loop and marked with the pragma SIMD.
+! 8 (vlen variable) to match the vector length. The members of each block are
+! then iterated over in the inner loop and marked with the pragma SIMD.
 subroutine matrix_vector_code_vlen(cell,        &
                               nlayers,     &
                               lhs, x,      &
