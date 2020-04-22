@@ -15,46 +15,43 @@ all_gen: shallow_gen nemolite_gen
 
 # All manual targets for CPU versions of Shallow
 shallow_cpu:
-	${MAKE} -C ./ocean/shallow/SEQ/original
-	${MAKE} -C ./ocean/shallow/SEQ shallow_base
-	${MAKE} -C ./ocean/shallow/OMP
+	${MAKE} -C ./benchmarks/shallow/SEQ/original
+	${MAKE} -C ./benchmarks/shallow/SEQ shallow_base
+	${MAKE} -C ./benchmarks/shallow/OMP
 
 # Requires PSyclone be installed
 shallow_gen:
-	${MAKE} -C ./ocean/shallow/SEQ shallow_gen
+	${MAKE} -C ./benchmarks/shallow/SEQ shallow_gen
 
 # All manual targets for CPU versions of NEMOLite2D
 nemolite_cpu:
-	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_serial
-	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_omp
-	${MAKE} -C ./ocean/nemo/nemolite2d/original
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/psykal_serial
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/psykal_omp
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/original
 
 # Requires PSyclone be installed
 nemolite_gen:
-	${MAKE} -C ./ocean/nemo/nemolite2d/psykal
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal
 
 nemolite_acc:
-	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/single_file_acc
-	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_acc
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/single_file_acc
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/psykal_acc
 
 clean:
-	${MAKE} -C ./ocean/nemo/nemolite2d/psykal clean
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal clean
 	${MAKE} -C ./ocean/nemo/nemolite2d/common clean
-	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_serial clean
-	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_omp clean
-	${MAKE} -C ./ocean/nemo/nemolite2d/original clean
-	${MAKE} -C ./ocean/shallow/SEQ clean
-	${MAKE} -C ./ocean/shallow/SEQ/original clean
-	${MAKE} -C ./ocean/shallow/OMP clean
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions clean
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/original clean
+	${MAKE} -C ./benchmarks/shallow/SEQ clean
+	${MAKE} -C ./benchmarks/shallow/SEQ/original clean
+	${MAKE} -C ./benchmarks/shallow/OMP clean
+	${MAKE} -C ./benchmarks/smallmatvec/manual_versions/openmp clean
 
 allclean:
-	${MAKE} -C ./ocean/nemo/nemolite2d/psykal allclean
-	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_serial allclean
-	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_omp allclean
-	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/single_file_acc allclean
-	${MAKE} -C ./ocean/nemo/nemolite2d/manual_versions/psykal_acc allclean
-	${MAKE} -C ./ocean/nemo/nemolite2d/original allclean
-	${MAKE} -C ./ocean/shallow/SEQ allclean
-	${MAKE} -C ./ocean/shallow/SEQ/original allclean
-	${MAKE} -C ./ocean/shallow/OMP allclean
-
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal allclean
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/psykal_serial clean
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/original allclean
+	${MAKE} -C ./benchmarks/shallow/SEQ allclean
+	${MAKE} -C ./benchmarks/shallow/SEQ/original allclean
+	${MAKE} -C ./benchmarks/shallow/OMP allclean
+	${MAKE} -C ./benchmarks/smallmatvec/manual_versions/openmp clean
