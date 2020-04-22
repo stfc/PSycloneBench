@@ -23,13 +23,13 @@ populate them you can do:
     git submodule init
     git submodule update
 
-## Ocean benchmarks ##
+## Benchmarks ##
 
-Are contained in directories beneath the `ocean` directory.
+Are contained in directories beneath the `benchmarks` directory.
 
 ### NEMOLite2D ###
 
-`ocean/nemo/nemolite2d` contains various versions of the NEMOLite2D
+`benchmarks/nemo/nemolite2d` contains various versions of the NEMOLite2D
 benchmark which is based upon the free-surface component of the NEMO
 ocean model (www.nemo-ocean.eu). This was originally constructed
 by Hedong Liu of the National Oceanography Centre, Liverpool, UK.
@@ -64,7 +64,7 @@ versions may be generated.
 
 ### Shallow ###
 
-`ocean/shallow` contains various versions of the Shallow benchmark,
+`benchmarks/shallow` contains various versions of the Shallow benchmark,
 originally developed by Paul Swarztrauber of NCAR. In summary these are:
 
 * SEQ/original - original single-file serial version in Fortran.
@@ -107,3 +107,16 @@ various NEMOLite2D and Shallow benchmarks for CPU:
 Since the set-up for OpenACC and OpenCL is more involved, it does not
 attempt to compile the benchmarks using those languages. See the Makefiles
 in the individual benchmark folders for those cases.
+
+### LFRic Small Matrix Vector Multiplication ###
+
+`benchmarks/smallmatvec` contains multiple implementations of the
+matrix-vector multiplication operation done in the LFRic application. 
+
+Currently it only contains one manual implementation:
+
+ * openmp - Configurable implementation using OpenMP that test the
+            vectorization and threading capabilities of multiple versions
+            of the kernel and multiple parallel traversing strategies.
+
+Note that this benchmark does not use the `compiler_setup` settings yet.
