@@ -39,8 +39,8 @@ task init_surface_now( sea_surface : region(ispace(int2d), uvt_time_field), grid
      writes(sea_surface.{u_now, v_now}),
      reads(grid_region.{area_u, area_t, area_v}, sea_surface.t_now)
 do
-
-  for point in sea_surface do
+  var bounds = rect2d( {{sea_surface.bounds.lo.x, sea_surface.bounds.lo.y}, {sea_surface.bounds.hi.x-1, sea_surface.bounds.hi.y-1}})
+  for point in bounds do --sea_surface do
     var rtmp = grid_region[point + {1,0}].area_t * sea_surface[point+{1,0}].t_now + grid_region[point].area_t * sea_surface[point].t_now
     sea_surface[point].u_now = 0.5 * rtmp / grid_region[point].area_u 
 

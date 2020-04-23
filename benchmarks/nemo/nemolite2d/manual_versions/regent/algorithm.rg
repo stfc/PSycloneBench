@@ -24,6 +24,9 @@ task get_time() : double
   return c.legion_get_current_time_in_micros()
 end
 
+--INDEXING is ARRAY(X:M, Y:N)
+
+
 task calculate_1_to_N_1_to_M(private_bounds : rect2d) : rect2d
   return rect2d({{1,1}, {private_bounds.hi.x-1, private_bounds.hi.y-1}})
 
@@ -37,25 +40,25 @@ end
 
 task calculate_2_to_N_2_to_M1( private_bounds : rect2d) : rect2d
 
-  return rect2d({{2,2},  {private_bounds.hi.x-1, private_bounds.hi.y-2}})
+  return rect2d({{2,2},  {private_bounds.hi.x-2, private_bounds.hi.y-1}})
 
 end
 
 task calculate_2_to_N1_2_to_M( private_bounds : rect2d ) : rect2d
 
 
-    return rect2d({{2,2}, {private_bounds.hi.x-2, private_bounds.hi.y-1}})
+    return rect2d({{2,2}, {private_bounds.hi.x-1, private_bounds.hi.y-2}})
 end
 
 task calculate_1_to_full_1_to_M( private_bounds : rect2d) : rect2d
 
-    return rect2d({{1,1}, {private_bounds.hi.x, private_bounds.hi.y-1}})
+    return rect2d({{1,1}, {private_bounds.hi.x-1, private_bounds.hi.y}})
 
 end
 
 task calculate_1_to_N_1_to_full( private_bounds : rect2d) : rect2d
 
-    return rect2d({{1,1}, {private_bounds.hi.x-1, private_bounds.hi.y}})
+    return rect2d({{1,1}, {private_bounds.hi.x, private_bounds.hi.y-1}})
 
 end
 
@@ -63,6 +66,22 @@ task calculate_halo_size( private_bounds: rect2d) : rect2d
   return rect2d({ private_bounds.lo - {1,1}, private_bounds.hi + {1,1} })
 end
 
+task flather_v_bounds( private_bounds : rect2d) : rect2d
+  var suby = -1
+  if private_bounds.lo.y == 1 then
+    suby = 0
+  end
+  return rect2d({ private_bounds.lo - {0,suby}, private_bounds.hi + {0,1}})
+end
+
+task flather_u_bounds( private_bounds : rect2d) : rect2d
+  var subx = -1
+  if private_bounds.lo.x == 1 then
+    subx = 0
+  end
+  return rect2d({ private_bounds.lo - {subx,0}, private_bounds.hi + {1,0}})
+
+end
 
 task main() 
 
@@ -168,9 +187,12 @@ task main()
 
   var partition_space3 = ispace(int2d, {x = 1, y = local_y})
   var partitioned_1NFM_velocity = partition(equal, _1NFM_velocity[int2d({0,0})], partition_space3)
+  var flather_1NFM_velocity = image(velocity, partitioned_1NFM_velocity, flather_v_bounds)
+
 
   var partition_space4 = ispace(int2d, {x = local_x, y = 1})
   var partitioned_FN1M_velocity = partition(equal, _FN1M_velocity[int2d({0,0})], partition_space4)
+  var flather_FN1M_velocity = image(velocity, partitioned_FN1M_velocity, flather_u_bounds)
 
   model_write( 0, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, 0)
   var visc = setup_data[0].visc 
@@ -244,6 +266,7 @@ task main()
                          full_grid[point])
     end
 --    update_vvel_boundary(_1NFM_velocity[point], full_grid[point])
+--    c.printf("FN1M_vel: %i %i\n", _FN1M_velocity[point].bounds.lo.x, _FN1M_velocity[point].bounds.hi.x)
     for part in partition_space4 do
     update_uvel_boundary(partitioned_FN1M_velocity[part],
                          full_grid[point])
@@ -251,7 +274,7 @@ task main()
 --    update_uvel_boundary(_1NFM_velocity[point], full_grid[point])
 --  __fence(__execution, __block)
     for part in partition_space3 do
-    bc_flather_v_loop(partitioned_1NFM_velocity[part],
+    bc_flather_v_loop(flather_1NFM_velocity[part],
                       full_sea_bed_to_mean_sea_level[point],
                       full_sea_surface[point],
                       full_grid[point],
@@ -263,7 +286,7 @@ task main()
 --                      full_grid[point],
 --                      g)
     for part in partition_space4 do
-    bc_flather_u_loop(partitioned_FN1M_velocity[part],
+    bc_flather_u_loop(flather_FN1M_velocity[part],
                       full_sea_bed_to_mean_sea_level[point],
                       full_sea_surface[point],
                       full_grid[point],
