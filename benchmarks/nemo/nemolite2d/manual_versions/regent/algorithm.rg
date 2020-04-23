@@ -8,6 +8,7 @@ require("calculate_velocity_fields")
 require("initialise_grid_points")
 require("model_init")
 require("model_write")
+require("read_config")
 require("read_namelist")
 require("update_sea_surface_t")
 require("update_values")
@@ -84,7 +85,7 @@ task flather_u_bounds( private_bounds : rect2d) : rect2d
 end
 
 task main() 
-
+  var conf : config = read_config()
   var single_point = ispace(int1d, 1)
   var setup_data = region(single_point, setup_type)
   fill(setup_data.{jpiglo, jpjglo, nit000, nitend, record, jphgr_msh}, 0)
@@ -150,7 +151,9 @@ task main()
   --Create the 1 to N 1 to M+1 partition
    var _1NFM_velocity = image(velocity, full_velocity, calculate_1_to_N_1_to_full)
 
-  var tilesize : int = 84 -- 256 -- 128
+  var tilesize : int
+  tilesize = conf.t1
+  c.printf("Tilesize 1: %i\n", tilesize)
   --Partition the velocity field as required for the update_velocity launcher
   var local_x : int = setup_data[0].jpiglo / tilesize
   if(local_x < 1) then
@@ -166,7 +169,8 @@ task main()
   var partitioned_2N12M_velocity = partition(equal, _2N12M_velocity[int2d({0,0})], partition_space)
   var _2N12M_velocity_halos = image(velocity, partitioned_2N12M_velocity, calculate_halo_size)
 
-  tilesize = 128 --512
+  tilesize = conf.t2
+  c.printf("Tilesize 2: %i\n", tilesize)
   local_x = setup_data[0].jpiglo / tilesize
   if(local_x < 1) then
     local_x = 1
