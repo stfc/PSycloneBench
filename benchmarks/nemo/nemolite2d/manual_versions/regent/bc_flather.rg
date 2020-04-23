@@ -46,10 +46,9 @@ task bc_flather_v_loop(velocity : region(ispace(int2d), uv_time_field),
      var xmin = velocity.bounds.lo.x
      var xmax = velocity.bounds.hi.x
      var ymin = velocity.bounds.lo.y
-     var ymax = velocity.bounds.hi.y
-
-     for jj = xmin, xmax+1 do
-         for ji = ymin, ymax+1 do
+     var ymax = velocity.bounds.hi.y-1
+     for jj = ymin, ymax do
+         for ji = xmin, xmax do
              var point = int2d({ji,jj})
              if(grid_region[point].tmask + grid_region[point + {0,1}].tmask > int1d(-1)) then
 
@@ -111,12 +110,11 @@ task bc_flather_u_loop(velocity : region(ispace(int2d), uv_time_field),
 
 
      var xmin = velocity.bounds.lo.x
-     var xmax = velocity.bounds.hi.x
+     var xmax = velocity.bounds.hi.x-1
      var ymin = velocity.bounds.lo.y
      var ymax = velocity.bounds.hi.y
-
-    for jj = xmin, xmax+1 do
-        for ji = ymin, ymax+1 do
+    for jj = ymin, ymax do
+        for ji = xmin, xmax do
             var point = int2d({ji,jj})        
             if( grid_region[point].tmask + grid_region[point + {1,0}].tmask > int1d(-1)) then
             
