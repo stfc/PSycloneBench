@@ -1,6 +1,7 @@
 # Build settings for gfortran compiler
 F90=gfortran
 CC=gcc
+CXX=g++
 
 CFLAGS="-O3"
 F90FLAGS="-Wall -Wsurprising -Wuninitialized"

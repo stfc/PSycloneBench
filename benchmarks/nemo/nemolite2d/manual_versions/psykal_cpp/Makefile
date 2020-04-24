@@ -23,14 +23,7 @@ COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
 # The targets that this Makefile supports
 EXECS = nemolite2d
-
-KERNELS = boundary_conditions_mod.o \
-          continuity_mod.o \
-          momentum_mod.o \
-          time_update_mod.o \
-          infrastructure_mod.o
-
-MODULES = time_step_mod.o ${KERNELS}
+MODULES = time_step_mod.o
 
 # API lib is an archive that must come at the end of the list of objects
 # passed to the linker
@@ -50,31 +43,29 @@ ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR}
 
 # Normal targets
-nemolite2d: ${COMMON_LIB} timer_lib inf_lib
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" nemolite2d.exe
+nemolite2d: ${COMMON_LIB} timer_lib inf_lib time_step.o
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step.o" nemolite2d.exe
 
 nemolite2d.o: $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
 
-time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
-                 time_update_mod.o boundary_conditions_mod.o
+time_step_mod.o: ${COMMON_LIB} inf_lib
 
 # Generic rules
 
+# It needs the -stdc++ to link also the std lib functions called from C++ code
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS}
+	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS} -lstdc++
+
+time_step.o: time_step.cpp
+	$(CXX) $(CFLAGS) -DDEBUG -c $<
 
 %.o: %.f90
 	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
 
 %.o: %.F90
 	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
-
-# If we need a .f90 file that doesn't exist then it must be a kernel.
-# Create a link to the required file...
-%.f90:
-	ln -sf ../../kernels/fortran/$@ .
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean

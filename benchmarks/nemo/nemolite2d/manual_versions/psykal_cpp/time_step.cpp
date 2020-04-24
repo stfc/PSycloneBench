@@ -19,12 +19,16 @@ extern "C" void c_invoke_time_step(
         double * c_va,
         double * c_ssha_v,
         int istp,
-        int nsize){
+        int nx,
+        int ny){
 
 #ifdef DEBUG
     std::cout << "Hello from C++ in iteration: " << istp << std::endl;
+    std::cout << "Size of the arrays: " << nx << " " << ny << std::endl;
     auto start = std::chrono::system_clock::now();
 #endif
+
+    int nsize = nx; // Simplify to squares and ignore ny for now
 
     // Currently using std::vector with a raw c array to vector transformation
     // that requires an expensive allocation and copy operations.
@@ -127,7 +131,7 @@ extern "C" void c_invoke_time_step(
 
 }
 
-
+/*
 int main (int argc, char *argv[]) {
 
     int nsize = 1000;
@@ -153,4 +157,4 @@ int main (int argc, char *argv[]) {
     c_invoke_time_step(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, hn,
                        vn, ua, ht, ssha_u, va, ssha_v, istp, nsize);
 
-}
+}*/
