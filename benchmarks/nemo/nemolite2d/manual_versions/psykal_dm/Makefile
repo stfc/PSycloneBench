@@ -1,7 +1,9 @@
 # Makefile for manual MPI version of PSyKAl'd NEMOLite2D.
 #
 # This Makefile picks up the compiler to use any flags from
-# environment variable F90
+# environment variables.
+
+# Make sure that F90 has a MPI compiler selected.
 ifeq (,$(findstring mpi,$(F90)))
 	F90 := mpif90 -fc=${F90}
 endif
@@ -12,15 +14,9 @@ include ../common.mk
 
 all: nemolite2d
 
-# The modules that are common to both targets
-# API lib is an archive that must come at the end of the list of objects
-# passed to the linker
+# The modules that are common to both targets (API lib is an archive that
+# must come at the end of the list of objects passed to the linker)
 COMMON_MODULES = ${COMMON_LIB} ${KERNELS} time_step_mod.o ${INF_LIB}
-
-# Interdependencies between modules, alphabetical order
-time_step_mod.o: ${COMMON_LIB} inf_lib_parallel
-
-nemolite2d.o: $(COMMON_MODULES)
 
 # Normal targets
 nemolite2d: timer_lib_parallel inf_lib_parallel
@@ -28,6 +24,11 @@ nemolite2d: timer_lib_parallel inf_lib_parallel
 
 nemolite2d-serial: timer_lib_serial inf_lib_serial
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" MPI=no nemolite2d.exe
+
+# Interdependencies between modules, alphabetical order
+nemolite2d.o: $(COMMON_MODULES)
+
+time_step_mod.o: ${COMMON_LIB} inf_lib_parallel
 
 # Generic rules
 nemolite2d.exe: $(MODULE_LIST)

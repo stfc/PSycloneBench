@@ -53,7 +53,7 @@ timer_lib_parallel:
 inf_lib_parallel:
 	${MAKE} -C ${INF_DIR} F90="${F90}" dm_fd_lib
 
-${COMMON_LIB}: inf_lib timer_lib
-	${MAKE} -C ${COMMON_DIR}
+${COMMON_LIB}:
+	${MAKE} -C ${COMMON_DIR} MPI=${MPI}
 
 
