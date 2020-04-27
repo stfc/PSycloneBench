@@ -39,7 +39,7 @@ by Hedong Liu of the National Oceanography Centre, Liverpool, UK.
 The `manual_versions` directory contains various implementations of
 NEMOLite2D where the application has been split-up into Algorithm PSy
 and Kernel layers but the PSy layer has been written manually.
-Please see the [README.md](ocean/nemo/nemolite2d/manual_versions/README.md)
+See the [README.md](ocean/nemo/nemolite2d/manual_versions/README.md)
 file in the NemoLite2D manual`_versions directory for more information.
 
 (Note that the OpenACC versions are based upon work by Jeremy

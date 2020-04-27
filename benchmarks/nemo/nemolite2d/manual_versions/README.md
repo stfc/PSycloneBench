@@ -1,6 +1,6 @@
 # Manual versions of NEMOLite2D #
 
-The manual implemented version of NemoLite2D are divied in 2 subgroups:
+The manual implemented versions of NemoLite2D are divided in 2 subgroups:
 
 1. The "PSyKAl" implementations, which have each layer the applications
 already separated using the PSyKAl model but the ParallelSystem is

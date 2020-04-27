@@ -39,7 +39,7 @@ nemolite_acc:
 
 clean:
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal clean
-	${MAKE} -C ./ocean/nemo/nemolite2d/common clean
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/common clean
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions clean
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/original clean
 	${MAKE} -C ./benchmarks/shallow/SEQ clean

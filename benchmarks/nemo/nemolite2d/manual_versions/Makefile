@@ -8,8 +8,8 @@ IMPLEMENTATIONS = psykal_serial psykal_omp
 IMPLEMENTATIONS += psykal_dm
 # Uncomment IMPLEMENTATIONS below if your environment has OpenCL compilers
 # IMPLEMENTATIONS += psykal_ocl
-# Uncomment IMPLEMENTATIONS below if your environment has OMPSS compilers
-# IMPLEMENTATIONS += psykal_ompss
+# psykal_ompss and psykal_acc have not been adapted to this Makefile format
+# yet.
 
 all: compile
 
