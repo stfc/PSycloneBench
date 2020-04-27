@@ -39,7 +39,6 @@ KERNELS = boundary_conditions_mod.o \
 
 %.o: %.mod
 
-
 # If we need a .f90 file that doesn't exist then it must be a kernel.
 # Create a link to the required file.
 %.f90:
@@ -58,7 +57,8 @@ timer_lib_parallel:
 inf_lib_parallel:
 	${MAKE} -C ${INF_DIR} F90="${F90}" dm_fd_lib
 
+fcl_lib:
+	${MAKE} -C ${FCL_DIR}
+
 ${COMMON_LIB}:
 	${MAKE} -C ${COMMON_DIR} MPI=${MPI}
-
-

@@ -78,7 +78,7 @@ contains
             ssha_t%device_ptr = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), ssha_t%device_ptr, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha_t%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
+                C_NULL_PTR, C_LOC(write_event))
             ssha_t%data_on_device = .true.
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
@@ -90,7 +90,7 @@ contains
             sshn_t%device_ptr = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%device_ptr, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_t%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
+                C_NULL_PTR, C_LOC(write_event))
             sshn_t%data_on_device = .true.
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
@@ -102,7 +102,7 @@ contains
             sshn_u%device_ptr = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_u%device_ptr, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_u%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
+                C_NULL_PTR, C_LOC(write_event))
             sshn_u%data_on_device = .true.
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
@@ -114,7 +114,7 @@ contains
             sshn_v%device_ptr = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_v%device_ptr, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_v%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
+                C_NULL_PTR, C_LOC(write_event))
             sshn_v%data_on_device = .true.
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
@@ -126,7 +126,7 @@ contains
             hu%device_ptr = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), hu%device_ptr, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(hu%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
+                C_LOC(write_event))
             hu%data_on_device = .true.
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
@@ -138,7 +138,7 @@ contains
             hv%device_ptr = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), hv%device_ptr, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(hv%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
+                C_LOC(write_event))
             hv%data_on_device = .true.
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
@@ -150,7 +150,7 @@ contains
             un%device_ptr = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), un%device_ptr, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(un%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
+                C_LOC(write_event))
             un%data_on_device = .true.
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
@@ -162,19 +162,8 @@ contains
             vn%device_ptr = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), vn%device_ptr, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(vn%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
+                C_LOC(write_event))
             vn%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (sshn_t%grid%area_t_device == 0) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
-                            c_sizeof(sshn_t%grid%area_t(1,1))
-            ! Create buffer on device
-            sshn_t%grid%area_t_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), &
-                sshn_t%grid%area_t_device, CL_TRUE, 0_8, size_in_bytes, &
-                &C_LOC(sshn_t%grid%area_t), 0, C_NULL_PTR, C_LOC(write_event))
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
         END IF
@@ -185,7 +174,7 @@ contains
             ua%device_ptr = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), ua%device_ptr, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(ua%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
+                C_LOC(write_event))
             ua%data_on_device = .true.
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
@@ -197,7 +186,7 @@ contains
             ht%device_ptr = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), ht%device_ptr, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(ht%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
+                C_LOC(write_event))
             ht%data_on_device = .true.
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
@@ -209,13 +198,48 @@ contains
             ssha_u%device_ptr = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), ssha_u%device_ptr, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha_u%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
+                C_NULL_PTR, C_LOC(write_event))
             ssha_u%data_on_device = .true.
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (.NOT. va%data_on_device) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
+                            c_sizeof(va%data(1,1))
+            ! Create buffer on device
+            va%device_ptr = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), va%device_ptr, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(va%data), 0, C_NULL_PTR, &
+                C_LOC(write_event))
+            va%data_on_device = .true.
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (.NOT. ssha_v%data_on_device) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
+                            c_sizeof(ssha_v%data(1,1))
+            ! Create buffer on device
+            ssha_v%device_ptr = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), ssha_v%device_ptr, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha_v%data), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ssha_v%data_on_device = .true.
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
         END IF
 
         ! Ensure scalar data is on the device
+        IF (sshn_t%grid%area_t_device == 0) THEN
+            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
+                            c_sizeof(sshn_t%grid%area_t(1,1))
+            ! Create buffer on device
+            sshn_t%grid%area_t_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), &
+                sshn_t%grid%area_t_device, CL_TRUE, 0_8, size_in_bytes, &
+                C_LOC(sshn_t%grid%area_t), 0, C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
         IF (un%grid%tmask_device == 0) THEN
             size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
                             c_sizeof(un%grid%tmask(1,1))
@@ -223,7 +247,205 @@ contains
             un%grid%tmask_device = create_rw_buffer(size_in_bytes)
             ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%tmask_device, &
                 CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%tmask), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (un%grid%dx_u_device == 0) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
+                            c_sizeof(un%grid%dx_u(1,1))
+            ! Create buffer on device
+            un%grid%dx_u_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dx_u_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dx_u), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (un%grid%dx_v_device == 0) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
+                            c_sizeof(un%grid%dx_v(1,1))
+            ! Create buffer on device
+            un%grid%dx_v_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dx_v_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dx_v), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (un%grid%dx_t_device == 0) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
+                            c_sizeof(un%grid%dx_t(1,1))
+            ! Create buffer on device
+            un%grid%dx_t_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dx_t_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dx_t), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (un%grid%dy_u_device == 0) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
+                            c_sizeof(un%grid%dy_u(1,1))
+            ! Create buffer on device
+            un%grid%dy_u_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dy_u_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dy_u), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (un%grid%dy_t_device == 0) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
+                            c_sizeof(un%grid%dy_t(1,1))
+            ! Create buffer on device
+            un%grid%dy_t_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dy_t_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dy_t), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (un%grid%area_u_device == 0) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
+                            c_sizeof(un%grid%area_u(1,1))
+            ! Create buffer on device
+            un%grid%area_u_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%area_u_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%area_u), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (un%grid%gphiu_device == 0) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%gphiu(1,1))
+            ! Create buffer on device
+            un%grid%gphiu_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%gphiu_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%gphiu), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (un%grid%dy_v_device == 0) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
+                            c_sizeof(un%grid%dy_v(1,1))
+            ! Create buffer on device
+            un%grid%dy_v_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dy_v_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dy_v), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (un%grid%area_v_device == 0) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
+                            c_sizeof(un%grid%area_v(1,1))
+            ! Create buffer on device
+            un%grid%area_v_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%area_v_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%area_v), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (un%grid%gphiv_device == 0) THEN
+            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
+                            c_sizeof(un%grid%gphiv(1,1))
+            ! Create buffer on device
+            un%grid%gphiv_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%gphiv_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%gphiv), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (ssha_t%grid%tmask_device == 0) THEN
+            size_in_bytes = int(ssha_t%grid%nx*ssha_t%grid%ny, 8) * &
+                            c_sizeof(ssha_t%grid%tmask(1,1))
+            ! Create buffer on device
+            ssha_t%grid%tmask_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), ssha_t%grid%tmask_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha_t%grid%tmask), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (ua%grid%tmask_device == 0) THEN
+            size_in_bytes = int(ua%grid%nx*ua%grid%ny, 8) * &
+                            c_sizeof(ua%grid%tmask(1,1))
+            ! Create buffer on device
+            ua%grid%tmask_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), ua%grid%tmask_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(ua%grid%tmask), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (va%grid%tmask_device == 0) THEN
+            size_in_bytes = int(va%grid%nx*va%grid%ny, 8) * &
+                            c_sizeof(va%grid%tmask(1,1))
+            ! Create buffer on device
+            va%grid%tmask_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), va%grid%tmask_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(va%grid%tmask), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (hu%grid%tmask_device == 0) THEN
+            size_in_bytes = int(hu%grid%nx*hu%grid%ny, 8) * &
+                            c_sizeof(hu%grid%tmask(1,1))
+            ! Create buffer on device
+            hu%grid%tmask_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), hu%grid%tmask_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(hu%grid%tmask), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (hv%grid%tmask_device == 0) THEN
+            size_in_bytes = int(hv%grid%nx*hv%grid%ny, 8) * &
+                            c_sizeof(hv%grid%tmask(1,1))
+            ! Create buffer on device
+            hv%grid%tmask_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), hv%grid%tmask_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(hv%grid%tmask), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (sshn_t%grid%tmask_device == 0) THEN
+            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
+                            c_sizeof(sshn_t%grid%tmask(1,1))
+            ! Create buffer on device
+            sshn_t%grid%tmask_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%grid%tmask_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_t%grid%tmask), &
+                0, C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (sshn_t%grid%area_u_device == 0) THEN
+            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
+                            c_sizeof(sshn_t%grid%area_u(1,1))
+            ! Create buffer on device
+            sshn_t%grid%area_u_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%grid%area_u_device, &
+                CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_t%grid%area_u), 0, &
+                C_NULL_PTR, C_LOC(write_event))
+            ! Block until data copies have finished
+            ierr = clFinish(cmd_queues(1))
+        END IF
+        IF (sshn_t%grid%area_v_device == 0) THEN
+            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
+                            c_sizeof(sshn_t%grid%area_v(1,1))
+            ! Create buffer on device
+            sshn_t%grid%area_v_device = create_rw_buffer(size_in_bytes)
+            ierr = clEnqueueWriteBuffer( &
+                cmd_queues(1), sshn_t%grid%area_v_device, CL_TRUE, 0_8, &
+                size_in_bytes, C_LOC(sshn_t%grid%area_v), 0, C_NULL_PTR, &
+                C_LOC(write_event))
             ! Block until data copies have finished
             ierr = clFinish(cmd_queues(1))
         END IF
@@ -236,614 +458,111 @@ contains
         ! Launch the kernel
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_continuity_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            &C_NULL_PTR, C_NULL_PTR)
-        
-        ! Ensure field data is on device
-        IF (un%grid%dx_u_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%dx_u(1,1))
-            ! Create buffer on device
-            un%grid%dx_u_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dx_u_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dx_u), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%dx_v_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%dx_v(1,1))
-            ! Create buffer on device
-            un%grid%dx_v_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dx_v_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dx_v), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%dx_t_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%dx_t(1,1))
-            ! Create buffer on device
-            un%grid%dx_t_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dx_t_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dx_t), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%dy_u_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%dy_u(1,1))
-            ! Create buffer on device
-            un%grid%dy_u_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dy_u_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dy_u), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%dy_t_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%dy_t(1,1))
-            ! Create buffer on device
-            un%grid%dy_t_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dy_t_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dy_t), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%area_u_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%area_u(1,1))
-            ! Create buffer on device
-            un%grid%area_u_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%area_u_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%area_u), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%gphiu_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%gphiu(1,1))
-            ! Create buffer on device
-            un%grid%gphiu_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%gphiu_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%gphiu), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL momentum_u_code_set_args(kernel_momentum_u_code, ua%device_ptr, un%device_ptr, vn%device_ptr, hu%device_ptr, &
-            &hv%device_ptr, ht%device_ptr, ssha_u%device_ptr, sshn_t%device_ptr, sshn_u%device_ptr, sshn_v%device_ptr, un%grid%tmask_device, &
-            &un%grid%dx_u_device, un%grid%dx_v_device, un%grid%dx_t_device, un%grid%dy_u_device, un%grid%dy_t_device, un%grid%area_u_device, &
-            &un%grid%gphiu_device, omega, d2r, g, rdt, cbfr, visc)
+            C_NULL_PTR, C_NULL_PTR)
+
+        CALL momentum_u_code_set_args(&
+            kernel_momentum_u_code, ua%device_ptr, un%device_ptr, &
+            vn%device_ptr, hu%device_ptr, hv%device_ptr, ht%device_ptr, &
+            ssha_u%device_ptr, sshn_t%device_ptr, sshn_u%device_ptr, &
+            sshn_v%device_ptr, un%grid%tmask_device, un%grid%dx_u_device, &
+            un%grid%dx_v_device, un%grid%dx_t_device, un%grid%dy_u_device, &
+            un%grid%dy_t_device, un%grid%area_u_device, &
+            un%grid%gphiu_device, omega, d2r, g, rdt, cbfr, visc)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_momentum_u_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            &C_NULL_PTR, C_NULL_PTR)
-        !
-        ! Ensure field data is on device
-        IF (.NOT. va%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(va%data(1,1))
-            ! Create buffer on device
-            va%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), va%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(va%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            va%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. un%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%data(1,1))
-            ! Create buffer on device
-            un%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            un%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. vn%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(vn%data(1,1))
-            ! Create buffer on device
-            vn%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), vn%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(vn%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            vn%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. hu%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(hu%data(1,1))
-            ! Create buffer on device
-            hu%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), hu%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(hu%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            hu%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. hv%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(hv%data(1,1))
-            ! Create buffer on device
-            hv%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), hv%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(hv%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            hv%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. ht%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(ht%data(1,1))
-            ! Create buffer on device
-            ht%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), ht%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(ht%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            ht%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. ssha_v%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(ssha_v%data(1,1))
-            ! Create buffer on device
-            ssha_v%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), ssha_v%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha_v%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ssha_v%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. sshn_t%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(sshn_t%data(1,1))
-            ! Create buffer on device
-            sshn_t%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_t%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            sshn_t%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. sshn_u%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(sshn_u%data(1,1))
-            ! Create buffer on device
-            sshn_u%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_u%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_u%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            sshn_u%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. sshn_v%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(sshn_v%data(1,1))
-            ! Create buffer on device
-            sshn_v%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_v%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_v%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            sshn_v%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%tmask_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%tmask(1,1))
-            ! Create buffer on device
-            un%grid%tmask_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%tmask_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%tmask), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%dx_v_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%dx_v(1,1))
-            ! Create buffer on device
-            un%grid%dx_v_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dx_v_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dx_v), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%dx_t_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%dx_t(1,1))
-            ! Create buffer on device
-            un%grid%dx_t_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dx_t_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dx_t), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%dy_u_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%dy_u(1,1))
-            ! Create buffer on device
-            un%grid%dy_u_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dy_u_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dy_u), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%dy_v_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%dy_v(1,1))
-            ! Create buffer on device
-            un%grid%dy_v_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dy_v_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dy_v), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%dy_t_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%dy_t(1,1))
-            ! Create buffer on device
-            un%grid%dy_t_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%dy_t_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%dy_t), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%area_v_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%area_v(1,1))
-            ! Create buffer on device
-            un%grid%area_v_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%area_v_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%area_v), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (un%grid%gphiv_device == 0) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8)*c_sizeof(un%grid%gphiv(1,1))
-            ! Create buffer on device
-            un%grid%gphiv_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%grid%gphiv_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%grid%gphiv), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL momentum_v_code_set_args(kernel_momentum_v_code, va%device_ptr, un%device_ptr, vn%device_ptr, hu%device_ptr, &
-            &hv%device_ptr, ht%device_ptr, ssha_v%device_ptr, sshn_t%device_ptr, sshn_u%device_ptr, sshn_v%device_ptr, un%grid%tmask_device, &
-            &un%grid%dx_v_device, un%grid%dx_t_device, un%grid%dy_u_device, un%grid%dy_v_device, un%grid%dy_t_device, un%grid%area_v_device, &
-            &un%grid%gphiv_device, omega, d2r, g, rdt, cbfr, visc)
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_momentum_u_code, &
+            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+            C_NULL_PTR, C_NULL_PTR)
+
+        CALL momentum_v_code_set_args(&
+            kernel_momentum_v_code, va%device_ptr, &
+            un%device_ptr, vn%device_ptr, hu%device_ptr, hv%device_ptr, &
+            ht%device_ptr, ssha_v%device_ptr, sshn_t%device_ptr, &
+            sshn_u%device_ptr, sshn_v%device_ptr, un%grid%tmask_device, &
+            un%grid%dx_v_device, un%grid%dx_t_device, un%grid%dy_u_device, &
+            un%grid%dy_v_device, un%grid%dy_t_device, un%grid%area_v_device, &
+            un%grid%gphiv_device, omega, d2r, g, rdt, cbfr, visc)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_momentum_v_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            &C_NULL_PTR, C_NULL_PTR)
-        !
-        ! Ensure field data is on device
-        IF (.NOT. ssha_t%data_on_device) THEN
-            size_in_bytes = int(ssha_t%grid%nx*ssha_t%grid%ny, 8)*c_sizeof(ssha_t%data(1,1))
-            ! Create buffer on device
-            ssha_t%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), ssha_t%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha_t%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ssha_t%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (ssha_t%grid%tmask_device == 0) THEN
-            size_in_bytes = int(ssha_t%grid%nx*ssha_t%grid%ny, 8)*c_sizeof(ssha_t%grid%tmask(1,1))
-            ! Create buffer on device
-            ssha_t%grid%tmask_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), ssha_t%grid%tmask_device, CL_TRUE, 0_8, size_in_bytes, &
-                &C_LOC(ssha_t%grid%tmask), 0, C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL bc_ssh_code_set_args(kernel_bc_ssh_code, istp, ssha_t%device_ptr, ssha_t%grid%tmask_device, rdt)
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_momentum_v_code, &
+            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+            C_NULL_PTR, C_NULL_PTR)
+
+        CALL bc_ssh_code_set_args(&
+            kernel_bc_ssh_code, istp, ssha_t%device_ptr, &
+            ssha_t%grid%tmask_device, rdt)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_ssh_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            &C_NULL_PTR, C_NULL_PTR)
-        !
-        ! Ensure field data is on device
-        IF (.NOT. ua%data_on_device) THEN
-            size_in_bytes = int(ua%grid%nx*ua%grid%ny, 8)*c_sizeof(ua%data(1,1))
-            ! Create buffer on device
-            ua%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), ua%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(ua%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            ua%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (ua%grid%tmask_device == 0) THEN
-            size_in_bytes = int(ua%grid%nx*ua%grid%ny, 8)*c_sizeof(ua%grid%tmask(1,1))
-            ! Create buffer on device
-            ua%grid%tmask_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), ua%grid%tmask_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(ua%grid%tmask), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL bc_solid_u_code_set_args(kernel_bc_solid_u_code, ua%device_ptr, ua%grid%tmask_device)
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_ssh_code, &
+            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+            C_NULL_PTR, C_NULL_PTR)
+
+        CALL bc_solid_u_code_set_args( &
+            kernel_bc_solid_u_code, ua%device_ptr, ua%grid%tmask_device)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_solid_u_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            &C_NULL_PTR, C_NULL_PTR)
-        !
-        ! Ensure field data is on device
-        IF (.NOT. va%data_on_device) THEN
-            size_in_bytes = int(va%grid%nx*va%grid%ny, 8)*c_sizeof(va%data(1,1))
-            ! Create buffer on device
-            va%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), va%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(va%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            va%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (va%grid%tmask_device == 0) THEN
-            size_in_bytes = int(va%grid%nx*va%grid%ny, 8)*c_sizeof(va%grid%tmask(1,1))
-            ! Create buffer on device
-            va%grid%tmask_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), va%grid%tmask_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(va%grid%tmask), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL bc_solid_v_code_set_args(kernel_bc_solid_v_code, va%device_ptr, va%grid%tmask_device)
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_solid_u_code, 2, &
+            C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+            C_NULL_PTR, C_NULL_PTR)
+
+        CALL bc_solid_v_code_set_args( &
+            kernel_bc_solid_v_code, va%device_ptr, va%grid%tmask_device)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_solid_v_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            &C_NULL_PTR, C_NULL_PTR)
-        !
-        ! Ensure field data is on device
-        IF (.NOT. ua%data_on_device) THEN
-            size_in_bytes = int(hu%grid%nx*hu%grid%ny, 8)*c_sizeof(ua%data(1,1))
-            ! Create buffer on device
-            ua%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), ua%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(ua%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            ua%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. hu%data_on_device) THEN
-            size_in_bytes = int(hu%grid%nx*hu%grid%ny, 8)*c_sizeof(hu%data(1,1))
-            ! Create buffer on device
-            hu%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), hu%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(hu%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            hu%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. sshn_u%data_on_device) THEN
-            size_in_bytes = int(hu%grid%nx*hu%grid%ny, 8)*c_sizeof(sshn_u%data(1,1))
-            ! Create buffer on device
-            sshn_u%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_u%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_u%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            sshn_u%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (hu%grid%tmask_device == 0) THEN
-            size_in_bytes = int(hu%grid%nx*hu%grid%ny, 8)*c_sizeof(hu%grid%tmask(1,1))
-            ! Create buffer on device
-            hu%grid%tmask_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), hu%grid%tmask_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(hu%grid%tmask), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL bc_flather_u_code_set_args(kernel_bc_flather_u_code, ua%device_ptr, hu%device_ptr, sshn_u%device_ptr, &
-            &hu%grid%tmask_device, g)
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_solid_v_code, &
+            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+            C_NULL_PTR, C_NULL_PTR)
+
+        CALL bc_flather_u_code_set_args( &
+            kernel_bc_flather_u_code, ua%device_ptr, hu%device_ptr, &
+            sshn_u%device_ptr, hu%grid%tmask_device, g)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_flather_u_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), &
-            &0, C_NULL_PTR, C_NULL_PTR)
-        !
-        ! Ensure field data is on device
-        IF (.NOT. va%data_on_device) THEN
-            size_in_bytes = int(hv%grid%nx*hv%grid%ny, 8)*c_sizeof(va%data(1,1))
-            ! Create buffer on device
-            va%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), va%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(va%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            va%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. hv%data_on_device) THEN
-            size_in_bytes = int(hv%grid%nx*hv%grid%ny, 8)*c_sizeof(hv%data(1,1))
-            ! Create buffer on device
-            hv%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), hv%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(hv%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            hv%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. sshn_v%data_on_device) THEN
-            size_in_bytes = int(hv%grid%nx*hv%grid%ny, 8)*c_sizeof(sshn_v%data(1,1))
-            ! Create buffer on device
-            sshn_v%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_v%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_v%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            sshn_v%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (hv%grid%tmask_device == 0) THEN
-            size_in_bytes = int(hv%grid%nx*hv%grid%ny, 8)*c_sizeof(hv%grid%tmask(1,1))
-            ! Create buffer on device
-            hv%grid%tmask_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), hv%grid%tmask_device, CL_TRUE, 0_8, size_in_bytes, C_LOC(hv%grid%tmask), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL bc_flather_v_code_set_args(kernel_bc_flather_v_code, va%device_ptr, hv%device_ptr, sshn_v%device_ptr, &
-            &hv%grid%tmask_device, g)
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_flather_u_code, &
+            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), &
+            0, C_NULL_PTR, C_NULL_PTR)
+
+        CALL bc_flather_v_code_set_args( &
+            kernel_bc_flather_v_code, va%device_ptr, hv%device_ptr, &
+            sshn_v%device_ptr, hv%grid%tmask_device, g)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_flather_v_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), &
-            &0, C_NULL_PTR, C_NULL_PTR)
-        !
-        ! Ensure field data is on device
-        IF (.NOT. un%data_on_device) THEN
-            size_in_bytes = int(ua%grid%nx*ua%grid%ny, 8)*c_sizeof(un%data(1,1))
-            ! Create buffer on device
-            un%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), un%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(un%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            un%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. ua%data_on_device) THEN
-            size_in_bytes = int(ua%grid%nx*ua%grid%ny, 8)*c_sizeof(ua%data(1,1))
-            ! Create buffer on device
-            ua%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), ua%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(ua%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            ua%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL field_copy_code_set_args(kernel_field_copy_code, un%device_ptr, ua%device_ptr)
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_flather_v_code, &
+            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), &
+            0, C_NULL_PTR, C_NULL_PTR)
+
+        CALL field_copy_code_set_args( &
+            kernel_field_copy_code, un%device_ptr, ua%device_ptr)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            &C_NULL_PTR, C_NULL_PTR)
-        !
-        ! Ensure field data is on device
-        IF (.NOT. vn%data_on_device) THEN
-            size_in_bytes = int(va%grid%nx*va%grid%ny, 8)*c_sizeof(vn%data(1,1))
-            ! Create buffer on device
-            vn%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), vn%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(vn%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            vn%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. va%data_on_device) THEN
-            size_in_bytes = int(va%grid%nx*va%grid%ny, 8)*c_sizeof(va%data(1,1))
-            ! Create buffer on device
-            va%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), va%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(va%data), 0, C_NULL_PTR, &
-                &C_LOC(write_event))
-            va%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL field_copy_code_set_args(kernel_field_copy_code, vn%device_ptr, va%device_ptr)
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code, &
+            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+            C_NULL_PTR, C_NULL_PTR)
+
+        CALL field_copy_code_set_args( &
+            kernel_field_copy_code, vn%device_ptr, va%device_ptr)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            &C_NULL_PTR, C_NULL_PTR)
-        !
-        ! Ensure field data is on device
-        IF (.NOT. sshn_t%data_on_device) THEN
-            size_in_bytes = int(ssha_t%grid%nx*ssha_t%grid%ny, 8)*c_sizeof(sshn_t%data(1,1))
-            ! Create buffer on device
-            sshn_t%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_t%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            sshn_t%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. ssha_t%data_on_device) THEN
-            size_in_bytes = int(ssha_t%grid%nx*ssha_t%grid%ny, 8)*c_sizeof(ssha_t%data(1,1))
-            ! Create buffer on device
-            ssha_t%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), ssha_t%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(ssha_t%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            ssha_t%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL field_copy_code_set_args(kernel_field_copy_code, sshn_t%device_ptr, ssha_t%device_ptr)
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code, &
+            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+            C_NULL_PTR, C_NULL_PTR)
+
+        CALL field_copy_code_set_args( &
+            kernel_field_copy_code, sshn_t%device_ptr, ssha_t%device_ptr)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            &C_NULL_PTR, C_NULL_PTR)
-        !
-        ! Ensure field data is on device
-        IF (.NOT. sshn_u%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8)*c_sizeof(sshn_u%data(1,1))
-            ! Create buffer on device
-            sshn_u%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_u%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_u%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            sshn_u%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. sshn_t%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8)*c_sizeof(sshn_t%data(1,1))
-            ! Create buffer on device
-            sshn_t%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_t%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            sshn_t%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (sshn_t%grid%tmask_device == 0) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8)*c_sizeof(sshn_t%grid%tmask(1,1))
-            ! Create buffer on device
-            sshn_t%grid%tmask_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%grid%tmask_device, CL_TRUE, 0_8, size_in_bytes, &
-                &C_LOC(sshn_t%grid%tmask), 0, C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (sshn_t%grid%area_t_device == 0) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8)*c_sizeof(sshn_t%grid%area_t(1,1))
-            ! Create buffer on device
-            sshn_t%grid%area_t_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%grid%area_t_device, CL_TRUE, 0_8, size_in_bytes, &
-                &C_LOC(sshn_t%grid%area_t), 0, C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (sshn_t%grid%area_u_device == 0) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8)*c_sizeof(sshn_t%grid%area_u(1,1))
-            ! Create buffer on device
-            sshn_t%grid%area_u_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%grid%area_u_device, CL_TRUE, 0_8, size_in_bytes, &
-                &C_LOC(sshn_t%grid%area_u), 0, C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL next_sshu_code_set_args(kernel_next_sshu_code, sshn_u%device_ptr, sshn_t%device_ptr, sshn_t%grid%tmask_device, &
-            &sshn_t%grid%area_t_device, sshn_t%grid%area_u_device)
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code, &
+            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+            C_NULL_PTR, C_NULL_PTR)
+
+        CALL next_sshu_code_set_args( &
+            kernel_next_sshu_code, sshn_u%device_ptr, sshn_t%device_ptr, &
+            sshn_t%grid%tmask_device, sshn_t%grid%area_t_device, &
+            sshn_t%grid%area_u_device)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_next_sshu_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            &C_NULL_PTR, C_NULL_PTR)
-        !
-        ! Ensure field data is on device
-        IF (.NOT. sshn_v%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8)*c_sizeof(sshn_v%data(1,1))
-            ! Create buffer on device
-            sshn_v%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_v%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_v%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            sshn_v%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (.NOT. sshn_t%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8)*c_sizeof(sshn_t%data(1,1))
-            ! Create buffer on device
-            sshn_t%device_ptr = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%device_ptr, CL_TRUE, 0_8, size_in_bytes, C_LOC(sshn_t%data), 0, &
-                &C_NULL_PTR, C_LOC(write_event))
-            sshn_t%data_on_device = .true.
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (sshn_t%grid%tmask_device == 0) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8)*c_sizeof(sshn_t%grid%tmask(1,1))
-            ! Create buffer on device
-            sshn_t%grid%tmask_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%grid%tmask_device, CL_TRUE, 0_8, size_in_bytes, &
-                &C_LOC(sshn_t%grid%tmask), 0, C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (sshn_t%grid%area_t_device == 0) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8)*c_sizeof(sshn_t%grid%area_t(1,1))
-            ! Create buffer on device
-            sshn_t%grid%area_t_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%grid%area_t_device, CL_TRUE, 0_8, size_in_bytes, &
-                &C_LOC(sshn_t%grid%area_t), 0, C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        IF (sshn_t%grid%area_v_device == 0) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8)*c_sizeof(sshn_t%grid%area_v(1,1))
-            ! Create buffer on device
-            sshn_t%grid%area_v_device = create_rw_buffer(size_in_bytes)
-            ierr = clEnqueueWriteBuffer(cmd_queues(1), sshn_t%grid%area_v_device, CL_TRUE, 0_8, size_in_bytes, &
-                &C_LOC(sshn_t%grid%area_v), 0, C_NULL_PTR, C_LOC(write_event))
-            ! Block until data copies have finished
-            ierr = clFinish(cmd_queues(1))
-        END IF
-        CALL next_sshv_code_set_args(kernel_next_sshv_code, sshn_v%device_ptr, sshn_t%device_ptr, sshn_t%grid%tmask_device, &
-            &sshn_t%grid%area_t_device, sshn_t%grid%area_v_device)
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_next_sshu_code, &
+            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+            C_NULL_PTR, C_NULL_PTR)
+
+        CALL next_sshv_code_set_args( &
+            kernel_next_sshv_code, sshn_v%device_ptr, sshn_t%device_ptr, &
+            sshn_t%grid%tmask_device, sshn_t%grid%area_t_device, &
+            sshn_t%grid%area_v_device)
         ! Launch the kernel
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_next_sshv_code, 2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            &C_NULL_PTR, C_NULL_PTR)
-        !
+        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_next_sshv_code, &
+            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+            C_NULL_PTR, C_NULL_PTR)
+
         ! Block until all kernels have finished
         ierr = clFinish(cmd_queues(1))
     END SUBROUTINE invoke_time_step
