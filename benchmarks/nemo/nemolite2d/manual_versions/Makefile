@@ -21,7 +21,7 @@ compile:
 # Execute all enabled implementations with their best full node performance and
 # report their ua and uv final checksums and the time-stepping time.
 summary_table:
-	@echo "Implementation\t\tCompiler\tArch\tua checksum\tuv checksum\ttime-stepping"
+	@echo "Implementation\t\tCompiler\tArch\tua checksum\tuv checksum\ttime/step"
 	@$(foreach var,$(IMPLEMENTATIONS), \
 		cp namelist $(var)/. && \
 		cd $(var) && \
