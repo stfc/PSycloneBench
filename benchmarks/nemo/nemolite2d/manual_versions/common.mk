@@ -40,6 +40,11 @@ KERNELS = boundary_conditions_mod.o \
 %.o: %.mod
 
 
+# If we need a .f90 file that doesn't exist then it must be a kernel.
+# Create a link to the required file.
+%.f90:
+	ln -sf ../../kernels/fortran/$@ .
+
 # Common rules
 timer_lib:
 	${MAKE} -C ${TIMER_DIR} sm_lib

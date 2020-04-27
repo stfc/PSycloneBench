@@ -15,9 +15,11 @@ include ../common.mk
 LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
 COMMON_MODULES = ${COMMON_LIB} ${KERNELS} ${INF_LIB}
 
+# Interdependencies between modules, alphabetical order
+time_step_mod.o: ${COMMON_LIB} ${KERNELS} inf_lib
+
 
 # The targets that this Makefile supports
-
 all: nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv \
 nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
 
@@ -79,14 +81,6 @@ nemolite2d_8arrays: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel_8arr
 	${MAKE} MODULE_LIST="time_step_mod_alignall_preload_nopeel_8arrays.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_8arrays.exe
 
-# Interdependencies between modules, alphabetical order
-
-time_step_mod.o: inf_lib ${KERNELS}
-
-# If we need a .f90 file that doesn't exist then it must be a kernel.
-# Create a link to the required file...
-%.f90:
-	ln -sf ../../kernels/fortran/$@ .
 
 clean: 
 	rm -f *.o *.mod *.MOD *~

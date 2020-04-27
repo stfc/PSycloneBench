@@ -18,6 +18,12 @@ all: nemolite2d
 # must come at the end of the list of objects passed to the linker)
 COMMON_MODULES = ${COMMON_LIB} ${KERNELS} time_step_mod.o ${INF_LIB}
 
+# Interdependencies between modules, alphabetical order
+nemolite2d.o: $(COMMON_MODULES)
+
+time_step_mod.o: ${COMMON_LIB} inf_lib_parallel
+
+
 # Normal targets
 nemolite2d: timer_lib_parallel inf_lib_parallel
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" MPI=yes nemolite2d.exe
@@ -25,19 +31,9 @@ nemolite2d: timer_lib_parallel inf_lib_parallel
 nemolite2d-serial: timer_lib_serial inf_lib_serial
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES}" MPI=no nemolite2d.exe
 
-# Interdependencies between modules, alphabetical order
-nemolite2d.o: $(COMMON_MODULES)
-
-time_step_mod.o: ${COMMON_LIB} inf_lib_parallel
-
 # Generic rules
 nemolite2d.exe: $(MODULE_LIST)
 	$(F90) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS}
-
-# If we need a .f90 file that doesn't exist then it must be a kernel.
-# Create a link to the required file...
-%.f90:
-	ln -sf ../../kernels/fortran/$@ .
 
 clean: 
 	rm -f *.o *.mod *.MOD *~
