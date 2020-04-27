@@ -35,7 +35,7 @@ KERNELS = boundary_conditions_mod.o \
 	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -I${FCL_INC} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -I${FCL_INC} -c $<
 
 %.o: %.mod
 
@@ -46,6 +46,12 @@ timer_lib:
 
 inf_lib:
 	${MAKE} -C ${INF_DIR}
+
+timer_lib_parallel:
+	${MAKE} -C ${TIMER_DIR} MPIF90="${F90}" dm_lib
+
+inf_lib_parallel:
+	${MAKE} -C ${INF_DIR} F90="${F90}" dm_fd_lib
 
 ${COMMON_LIB}: inf_lib timer_lib
 	${MAKE} -C ${COMMON_DIR}
