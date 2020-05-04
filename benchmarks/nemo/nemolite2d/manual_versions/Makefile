@@ -1,6 +1,6 @@
 # This Makefile iterates through the IMPLEMENTATION directories and
-# compiles, executes and prints a summary with a copy of an equivalent
-# namelist, or cleans, each directory.
+# either cleans or compiles, executes and prints a summary with a copy
+# of an equivalent namelist in each one.
 
 # All compilers should be able to compile these IMPLEMENTATIONS
 IMPLEMENTATIONS = psykal_serial psykal_omp

@@ -10,7 +10,7 @@ TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/lib_fd.a
-# common
+# Common (parts of NemoLite2D that are common to all implementations)
 COMMON_DIR = ../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 # FortCL (provides OpenCL functionality in Fortran)
@@ -44,7 +44,9 @@ KERNELS = boundary_conditions_mod.o \
 %.f90:
 	ln -sf ../../kernels/fortran/$@ .
 
-# Common rules
+# Common rules for compiling external libraries
+.PHONY: timer_lib timer_lib timer_lib_parallel inf_lib_parallel fcl_lib ${COMMON_LIB}
+
 timer_lib:
 	${MAKE} -C ${TIMER_DIR} sm_lib
 
