@@ -1,12 +1,12 @@
 # Makefile for manual OpenCL version of PSyKAl'd NEMOLite2D.
 #
-# This Makefile picks up the compiler to use any flags from
+# This Makefile picks up the compiler and flags to use from
 # environment variables.
 
 LDFLAGS += ${OMPFLAGS}
 FFLAGS += ${OPENCL_INCLUDE}
 
-.PHONY: all nemolite2d.exe device_binary
+.PHONY: all device_binary
 .DEFAULT_GOAL := nemolite2d.exe
 include ../common.mk
 
@@ -18,11 +18,16 @@ nemolite2d.exe: ${COMMON_LIB} inf_lib timer_lib fcl_lib ${COMMON_MODULES}
 	${F90} -o $@ ${COMMON_MODULES} ${OPENCL_LIBS} ${COMMON_LIB} \
         ${FCL_LIB} ${INF_LIB} ${TIMER_LIB} -lOpenCL $(LDFLAGS)
 
+# If OpenCL JIT is not used, this PHONY target can be invoked to
+# offline-compile the kernels into a device binary object. This is
+# the common workflow for FPGA devices.
+# The generated device file can be used with:
+# > PSYCLONE_KERNELS_FILE=device_binary ./nemolite2d.exe
 device_binary: %.cl
 	${OCL_COMPILER} $< -o $<.xo
 	${OCL_LINKER} $<.xo -o $@
 
-run:
+run_jit:
 	PSYCLONE_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
 
 clean:

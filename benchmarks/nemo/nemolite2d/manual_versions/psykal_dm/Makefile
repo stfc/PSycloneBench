@@ -1,6 +1,6 @@
 # Makefile for manual MPI version of PSyKAl'd NEMOLite2D.
 #
-# This Makefile picks up the compiler to use any flags from
+# This Makefile picks up the compiler and flags from
 # environment variables.
 
 # Make sure that F90 has a MPI compiler selected.
@@ -14,7 +14,7 @@ include ../common.mk
 
 all: nemolite2d
 
-# The modules that are common to both targets (API lib is an archive that
+# The modules that are common to both targets (INF_LIB is an archive that
 # must come at the end of the list of objects passed to the linker)
 COMMON_MODULES = ${COMMON_LIB} ${KERNELS} time_step_mod.o ${INF_LIB}
 

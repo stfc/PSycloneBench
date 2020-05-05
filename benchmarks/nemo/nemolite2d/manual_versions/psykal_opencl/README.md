@@ -7,11 +7,11 @@ parallelised using OpenCL.
 ## Compiling ##
 
 The Makefile picks up the compiler and associated flags from environment
-variables. See e.g. ../../../compiler_setup/gnu.sh for sample
+variables. See e.g. ../../../../../compiler_setup/gnu.sh for sample
 settings for the Gnu compiler suite (with JIT OpenCL).
 If you are using Bash and the Gnu compiler then:
 
-    > . ../../../../../compiler_setup/gnu.sh
+    > source ../../../../../compiler_setup/gnu.sh
     > make
 
 should build the `nemolite2d.exe` binary.
@@ -22,11 +22,11 @@ Model parameters (size of domain [jpiglo,jpjglo], number of time-steps
 [nitend], whether or not and how often to do output [irecord]) may be
 configured by editing the `namelist` file.
 
-Additionally the OpenCL execution needs that the environment variable
+Additionally the OpenCL execution requires that the environment variable
 PSYCLONE_KERNELS_FILE is set up to reference the target device binary
 or the target source code. If the source code is given, the OpenCL
 runtime system will JIT compile the necessary device objects at runtime.
-The following command shows and example of a JIT compiled execution:
+The following command shows an example of a JIT compiled execution:
 
     > PSYCLONE_KERNELS_FILE=allkernels.cl ./nemolite2d.exe 
 

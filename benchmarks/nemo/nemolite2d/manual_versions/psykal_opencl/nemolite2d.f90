@@ -44,7 +44,6 @@ program gocean2d
   ! points immediately to the North and East of a T point all have the
   ! same i,j index).  This is the same offset scheme as used by NEMO.
   model_grid = grid_type(GO_ARAKAWA_C, &
-  !  BC_PERIODIC, BC_NON_PERIODIC ??
                          (/GO_BC_EXTERNAL,GO_BC_EXTERNAL,GO_BC_NONE/), &
                          GO_OFFSET_NE)
 
@@ -133,7 +132,8 @@ end program gocean2d
 
 !+++++++++++++++++++++++++++++++++++
 
-SUBROUTINE step(istp, ua, va, un, vn, sshn_t, sshn_u, sshn_v, ssha_t, ssha_u, ssha_v, hu, hv, ht)
+SUBROUTINE step(istp, ua, va, un, vn, sshn_t, sshn_u, sshn_v, ssha_t, &
+                ssha_u, ssha_v, hu, hv, ht)
   USE time_step_mod, ONLY: invoke_time_step
   USE kind_params_mod
   USE grid_mod
@@ -144,9 +144,9 @@ SUBROUTINE step(istp, ua, va, un, vn, sshn_t, sshn_u, sshn_v, ssha_t, ssha_u, ss
   TYPE(r2d_field), INTENT(INOUT) :: un, vn, sshn_t, sshn_u, sshn_v
   TYPE(r2d_field), INTENT(INOUT) :: ua, va, ssha_t, ssha_u, ssha_v
   TYPE(r2d_field), INTENT(INOUT) :: hu, hv, ht
-  CALL invoke_time_step(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v, istp)
 
-!  call model_write(grid, istp, ht, sshn, un, vn)
+  ! Call manually-constructed PSy-layer
+  CALL invoke_time_step(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, &
+                        ua, ht, ssha_u, va, ssha_v, istp)
 
 end subroutine step
-
