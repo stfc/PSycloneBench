@@ -3,9 +3,25 @@
 # This Makefile picks up the compiler and flags from
 # environment variables.
 
-# Make sure that F90 has a MPI compiler selected.
-ifeq (,$(findstring mpi,$(F90)))
-	F90 := mpif90 -fc=${F90}
+# If F90 already has a custom mpi compiler command, it will use it,
+# otherwise it will form a mpich or openmpi -family command using the
+# compiler defined in F90.
+ifndef F90
+$(error The F90 env variable must be defined)
+else
+ifeq ($(findstring mpi,$(F90)),)
+ifneq ($(shell mpifort --version > /dev/null 2> /dev/null; echo $$?),0)
+$(error This Makefile requires an MPI Fortran wrapper in the environment.)
+else
+ifeq ($(shell mpifort --showme > /dev/null 2>/dev/null; echo $$?),0)
+# OpenMPI-family MPI implementations
+F90 := OMPI_MPIF90=$(F90) mpifort
+else
+# mpich-family MPI implementations
+F90 := mpifort -fc=${F90}
+endif
+endif
+endif
 endif
 
 .PHONY: all nemolite2d nemolite2d-serial
