@@ -61,6 +61,8 @@ versions:
 clean:
 	rm -f *.o *.mod kdriver.avx512.* kdriver.novec.* *.optrpt *.s kdriver.avx2.*
 
+allclean: clean
+
 tar:
 	tar -cvf dino.saur Makefile *.F90
 	gzip dino.saur

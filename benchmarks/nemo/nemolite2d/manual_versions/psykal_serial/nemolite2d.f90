@@ -45,7 +45,6 @@ program gocean2d
   ! points immediately to the North and East of a T point all have the
   ! same i,j index).  This is the same offset scheme as used by NEMO.
   model_grid = grid_type(GO_ARAKAWA_C, &
-  !  BC_PERIODIC, BC_NON_PERIODIC ??
                          (/GO_BC_EXTERNAL,GO_BC_EXTERNAL,GO_BC_NONE/), &
                          GO_OFFSET_NE)
 

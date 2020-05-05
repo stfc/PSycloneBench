@@ -38,20 +38,20 @@ nemolite_acc:
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/psykal_acc
 
 clean:
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal clean
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/common clean
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions clean
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/original clean
-	${MAKE} -C ./benchmarks/shallow/SEQ clean
-	${MAKE} -C ./benchmarks/shallow/SEQ/original clean
-	${MAKE} -C ./benchmarks/shallow/OMP clean
-	${MAKE} -C ./benchmarks/smallmatvec/manual_versions/openmp clean
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal $@
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/common $@
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions $@
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/original $@
+	${MAKE} -C ./benchmarks/shallow/SEQ $@
+	${MAKE} -C ./benchmarks/shallow/SEQ/original $@
+	${MAKE} -C ./benchmarks/shallow/OMP $@
+	${MAKE} -C ./benchmarks/smallmatvec/manual_versions/openmp $@
 
 allclean:
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal allclean
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/psykal_serial clean
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/original allclean
-	${MAKE} -C ./benchmarks/shallow/SEQ allclean
-	${MAKE} -C ./benchmarks/shallow/SEQ/original allclean
-	${MAKE} -C ./benchmarks/shallow/OMP allclean
-	${MAKE} -C ./benchmarks/smallmatvec/manual_versions/openmp clean
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal $@
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions $@
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/original $@
+	${MAKE} -C ./benchmarks/shallow/SEQ $@
+	${MAKE} -C ./benchmarks/shallow/SEQ/original $@
+	${MAKE} -C ./benchmarks/shallow/OMP $@
+	${MAKE} -C ./benchmarks/smallmatvec/manual_versions/openmp $@

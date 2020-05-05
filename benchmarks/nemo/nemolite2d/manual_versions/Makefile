@@ -11,6 +11,7 @@ IMPLEMENTATIONS += psykal_dm
 # psykal_ompss and psykal_acc have not been adapted to this Makefile format
 # yet.
 
+.PHONY: clean allclean compile summary_table
 all: compile
 
 # Compile all enabled implementations (some targets need to start with an allclean)
@@ -32,4 +33,7 @@ summary_table:
 
 # Clean folders (and dependencies) of all enabled implementations
 clean:
+	$(foreach var,$(IMPLEMENTATIONS),cd $(var) && $(MAKE) clean && cd ..;)
+
+allclean:
 	$(foreach var,$(IMPLEMENTATIONS),cd $(var) && $(MAKE) allclean && cd ..;)
