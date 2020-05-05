@@ -1,7 +1,9 @@
 # Makefile for manual OpenCL version of PSyKAl'd NEMOLite2D.
 #
-# This Makefile picks up the compiler and flags to use from
-# environment variables.
+# This Makefile picks up the compiler and flags to use from environment
+# variables. Beside the standard compiler and optimization flags, if JIT
+# OpenCL is used the OPENCL_INCLUDE variable is required, if an offline OpenCL
+# compiler is used the OCL_COMPILER and OCL_LINKER are also required.
 
 LDFLAGS += ${OMPFLAGS}
 FFLAGS += ${OPENCL_INCLUDE}
