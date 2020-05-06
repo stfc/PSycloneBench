@@ -24,7 +24,6 @@ compile:
 summary_table:
 	@echo "Implementation\t\tCompiler\tArch\tua checksum\tuv checksum\ttime/step"
 	@$(foreach var,$(IMPLEMENTATIONS), \
-		cp namelist $(var)/. && \
 		cd $(var) && \
 		echo -n "$(var): \t\t" && \
 		$(MAKE) --no-print-directory summary && \
