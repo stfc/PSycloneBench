@@ -11,7 +11,7 @@ IMPLEMENTATIONS += psykal_dm
 # psykal_ompss and psykal_acc have not been adapted to this Makefile format
 # yet.
 
-.PHONY: clean allclean compile summary_table
+.PHONY: all clean allclean compile summary_table
 all: compile
 
 # Compile all enabled implementations (some targets need to start with an allclean)

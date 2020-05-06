@@ -3,21 +3,25 @@
 # This Makefile picks up the compiler and flags from
 # environment variables.
 
-# If F90 already has a custom mpi compiler command, it will use it,
+# If F90 already has a custom MPI compiler command, it will use it,
 # otherwise it will form a mpich or openmpi -family command using the
 # compiler defined in F90.
 ifndef F90
 $(error The F90 env variable must be defined)
 else
-ifeq ($(findstring mpi,$(F90)),)
+ifeq ($(findstring mpi,$(F90)),)  # If a 'mpi' string is not found in F90, the
+	                              # Makefile will try to construct it itself.
+# First we check that if the mpifort command is available in the environment.
 ifneq ($(shell mpifort --version > /dev/null 2> /dev/null; echo $$?),0)
 $(error This Makefile requires an MPI Fortran wrapper in the environment.)
 else
+# If it is available, we figure out which type of MPI implementation it is
+# by testing the --showme flag (which is only available in OpenMPI).
 ifeq ($(shell mpifort --showme > /dev/null 2>/dev/null; echo $$?),0)
-# OpenMPI-family MPI implementations
+# Construct F90 for OpenMPI-family MPI implementations.
 F90 := OMPI_MPIF90=$(F90) mpifort
 else
-# mpich-family MPI implementations
+# Construct F90 for mpich-family MPI implementations.
 F90 := mpifort -fc=${F90}
 endif
 endif

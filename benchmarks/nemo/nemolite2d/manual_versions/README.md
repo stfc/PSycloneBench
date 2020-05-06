@@ -7,8 +7,7 @@ three layers (Algorithm, Parallel System and Kernel) of the PSyKAl model but
 with the Parallel System layer implemented manually.
 In these implementations usually the Algorithm can be found in the
 `nemolite2d.f90` file, the manual PSy-layer is found in `time_step.f90` and
-the kernels which are encoded as independent functions in `time_step.f90` are
-found in the same directory or in the `../kernels` directory.
+the kernels are found in the same directory or in the `../kernels` directory.
 These are:
 
     - `psykal_serial`: Various serial versions of the PSyKAl form of

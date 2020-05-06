@@ -37,7 +37,7 @@ nemolite_acc:
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/single_file_acc
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/psykal_acc
 
-clean:
+clean allclean:
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal $@
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/common $@
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions $@
@@ -47,11 +47,3 @@ clean:
 	${MAKE} -C ./benchmarks/shallow/OMP $@
 	${MAKE} -C ./benchmarks/smallmatvec/manual_versions/openmp $@
 
-allclean:
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal $@
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions $@
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/original $@
-	${MAKE} -C ./benchmarks/shallow/SEQ $@
-	${MAKE} -C ./benchmarks/shallow/SEQ/original $@
-	${MAKE} -C ./benchmarks/shallow/OMP $@
-	${MAKE} -C ./benchmarks/smallmatvec/manual_versions/openmp $@
