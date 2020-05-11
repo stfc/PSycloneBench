@@ -183,11 +183,11 @@ task model_init( grid : region(ispace(int2d), grid_fields)) where
 
     var full_partition = partition(equal, grid, ispace(int2d, {1,1}))
   
-    var centre_region = image(grid, full_partition, calculate_internal_size)
-    var west_region = image(grid, full_partition, calculate_west_boundary)
-    var east_region = image(grid, full_partition, calculate_east_boundary)
-    var north_region = image(grid, full_partition, calculate_north_boundary)
-    var south_region = image(grid, full_partition, calculate_south_boundary)
+    var centre_region = image(disjoint, incomplete, grid, full_partition, calculate_internal_size)
+    var west_region = image(disjoint, incomplete, grid, full_partition, calculate_west_boundary)
+    var east_region = image(disjoint, incomplete, grid, full_partition, calculate_east_boundary)
+    var north_region = image(disjoint, incomplete, grid, full_partition, calculate_north_boundary)
+    var south_region = image(disjoint, incomplete, grid, full_partition, calculate_south_boundary)
     init_centre_launcher(centre_region[int2d({0,0})])
 
     init_west(west_region[int2d({0,0})]) 

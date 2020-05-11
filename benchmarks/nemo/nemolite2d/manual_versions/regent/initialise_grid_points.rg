@@ -54,7 +54,7 @@ task setup_sea_surface( sea_surface: region(ispace(int2d), uvt_time_field), grid
   
   var full_partition = partition(equal, sea_surface, ispace(int2d,{1,1}))
   --Only set sea_surface values in the non-boundaries
-  var centre_region = image(sea_surface, full_partition, calculate_internal_size)
+  var centre_region = image(disjoint, incomplete, sea_surface, full_partition, calculate_internal_size)
   init_surface_now(centre_region[int2d({0,0})], grid)
 
 end
@@ -89,7 +89,7 @@ task setup_sea_surface_now( sea_surface_now: region(ispace(int2d), uvt_field), g
   
   var full_partition = partition(equal, sea_surface_now, ispace(int2d,{1,1}))
   --Only set sea_surface values in the non-boundaries
-  var centre_region = image(sea_surface_now, full_partition, calculate_internal_size)
+  var centre_region = image(disjoint, incomplete, sea_surface_now, full_partition, calculate_internal_size)
   init_surface_now_u(centre_region[int2d({0,0})], grid)
   init_surface_now_v(centre_region[int2d({0,0})], grid)
 
