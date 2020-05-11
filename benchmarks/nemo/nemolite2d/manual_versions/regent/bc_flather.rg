@@ -4,9 +4,8 @@ require("initialise_grid_points")
 require("model_init")
 
 
-local c = regentlib.c
 
-sqrt = c.sqrt
+sqrt = regentlib.sqrt(double)
 
 
 --This is the SEVENTH loop

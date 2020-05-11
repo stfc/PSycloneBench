@@ -6,7 +6,7 @@ require("initialise_grid_points")
 
 local c = regentlib.c
 
-sin = c.sin
+sin = regentlib.sin(double)
 
 --This is the FOURTH loop
 --Writes to 2 to N 2 to M

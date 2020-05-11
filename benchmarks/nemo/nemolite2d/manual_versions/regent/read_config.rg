@@ -42,7 +42,6 @@ terra read_config()
       return
       quote 
       var x = get_optional_arg([field.cmd_line])
-      c.printf([field.cmd_line]) 
       if x ~= nil then 
         conf.[field.field] = c.atoll(x) 
       end

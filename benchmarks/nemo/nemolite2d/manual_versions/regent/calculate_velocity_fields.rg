@@ -4,8 +4,11 @@ require("initialise_grid_points")
 require("model_init")
 
 local c = regentlib.c
-
-sin = c.sin
+--local math = terralib.includec("math.h")
+sin = regentlib.sin(double)
+--terra sin(f : double)
+--  return
+--end
 
 task calculate_halo_size( private_bounds: rect2d) : rect2d
   return rect2d({ private_bounds.lo - {1,1}, private_bounds.hi + {1,1} })
@@ -34,7 +37,7 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
                                            velocity_full.{u_now,v_now},
                        sea_bed_to_mean_sea_level.{u,t,v}, sea_surface.{u_now,v_now,t_now},
                        sea_surface.u_after) do
-   
+--    __demand(__vectorize)
     for point in velocity do
 
      if ( (grid_region[point].tmask + grid_region[point+{1,0}].tmask > int1d(0)) and (grid_region[point].tmask == int1d(1) and grid_region[point + {1,0}].tmask == int1d(1)) ) then

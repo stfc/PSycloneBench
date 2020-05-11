@@ -132,24 +132,24 @@ task main()
   var full_velocity = partition(equal, velocity, full_ispace)
 
   --Create the 1 to N, 1 to M partitions
-   var _1N1M_velocity = image(velocity, full_velocity, calculate_1_to_N_1_to_M)
+   var _1N1M_velocity = image(disjoint, incomplete, velocity, full_velocity, calculate_1_to_N_1_to_M)
 
   --Create the 2 to N 2 to M partitions
-   var _2N2M_sea_surface = image(sea_surface, full_sea_surface, calculate_2_to_N_2_to_M)
+   var _2N2M_sea_surface = image(disjoint, incomplete, sea_surface, full_sea_surface, calculate_2_to_N_2_to_M)
 
   --Create the 2 to N 2 to M-1 partitions
-   var _2N2M1_sea_surface = image(sea_surface, full_sea_surface, calculate_2_to_N_2_to_M1)
-   var _2N2M1_velocity = image(velocity, full_velocity, calculate_2_to_N_2_to_M1)
+   var _2N2M1_sea_surface = image(disjoint, incomplete, sea_surface, full_sea_surface, calculate_2_to_N_2_to_M1)
+   var _2N2M1_velocity = image(disjoint, incomplete, velocity, full_velocity, calculate_2_to_N_2_to_M1)
 
   --Create the 2 to N-1 2 to M partitions
-   var _2N12M_sea_surface = image(sea_surface, full_sea_surface, calculate_2_to_N1_2_to_M)
-   var _2N12M_velocity = image(velocity, full_velocity, calculate_2_to_N1_2_to_M)
+   var _2N12M_sea_surface = image(disjoint, incomplete, sea_surface, full_sea_surface, calculate_2_to_N1_2_to_M)
+   var _2N12M_velocity = image(disjoint, incomplete, velocity, full_velocity, calculate_2_to_N1_2_to_M)
 
   --Create the 1 to N+1 1 to M partition
-   var _FN1M_velocity = image(velocity, full_velocity, calculate_1_to_full_1_to_M)
+   var _FN1M_velocity = image(disjoint, incomplete, velocity, full_velocity, calculate_1_to_full_1_to_M)
 
   --Create the 1 to N 1 to M+1 partition
-   var _1NFM_velocity = image(velocity, full_velocity, calculate_1_to_N_1_to_full)
+   var _1NFM_velocity = image(disjoint, incomplete, velocity, full_velocity, calculate_1_to_N_1_to_full)
 
   var tilesize : int
   tilesize = conf.t1
@@ -165,9 +165,9 @@ task main()
   end
   var partition_space = ispace(int2d, {x = local_x, y = local_y})
   var partitioned_2N2M1_velocity = partition(equal, _2N2M1_velocity[int2d({0,0})], partition_space)
-  var _2N2M1_velocity_halos = image(velocity, partitioned_2N2M1_velocity, calculate_halo_size)
+  var _2N2M1_velocity_halos = image(disjoint, incomplete, velocity, partitioned_2N2M1_velocity, calculate_halo_size)
   var partitioned_2N12M_velocity = partition(equal, _2N12M_velocity[int2d({0,0})], partition_space)
-  var _2N12M_velocity_halos = image(velocity, partitioned_2N12M_velocity, calculate_halo_size)
+  var _2N12M_velocity_halos = image(disjoint, incomplete, velocity, partitioned_2N12M_velocity, calculate_halo_size)
 
   tilesize = conf.t2
   c.printf("Tilesize 2: %i\n", tilesize)
@@ -181,22 +181,22 @@ task main()
   end
   var partition_space2 = ispace(int2d, {x = local_x, y = local_y})
   var partitioned_2N2M_sea_surface = partition(equal, _2N2M_sea_surface[int2d({0,0})], partition_space2)
-  var _2N2M_sea_surface_halos = image(sea_surface, partitioned_2N2M_sea_surface, calculate_halo_size)
+  var _2N2M_sea_surface_halos = image(disjoint, complete, sea_surface, partitioned_2N2M_sea_surface, calculate_halo_size)
   var partitioned_full_velocity = partition(equal, full_velocity[int2d({0,0})], partition_space2)
   var partitioned_full_sea_surface = partition(equal, full_sea_surface[int2d({0,0})], partition_space2)
   var partitioned_2N2M1_sea_surface = partition(equal, _2N2M1_sea_surface[int2d({0,0})], partition_space2)
-  var _2N2M1_sea_surface_halos = image(sea_surface, partitioned_2N2M1_sea_surface, calculate_halo_size)
+  var _2N2M1_sea_surface_halos = image(disjoint, incomplete, sea_surface, partitioned_2N2M1_sea_surface, calculate_halo_size)
   var partitioned_2N12M_sea_surface = partition(equal, _2N12M_sea_surface[int2d({0,0})], partition_space2)
-  var _2N12M_sea_surface_halos = image(sea_surface, partitioned_2N12M_sea_surface, calculate_halo_size)
-
+  var _2N12M_sea_surface_halos = image(disjoint, incomplete, sea_surface, partitioned_2N12M_sea_surface, calculate_halo_size)
+ 
   var partition_space3 = ispace(int2d, {x = 1, y = local_y})
   var partitioned_1NFM_velocity = partition(equal, _1NFM_velocity[int2d({0,0})], partition_space3)
-  var flather_1NFM_velocity = image(velocity, partitioned_1NFM_velocity, flather_v_bounds)
+  var flather_1NFM_velocity = image(disjoint, complete, velocity, partitioned_1NFM_velocity, flather_v_bounds)
 
 
   var partition_space4 = ispace(int2d, {x = local_x, y = 1})
   var partitioned_FN1M_velocity = partition(equal, _FN1M_velocity[int2d({0,0})], partition_space4)
-  var flather_FN1M_velocity = image(velocity, partitioned_FN1M_velocity, flather_u_bounds)
+  var flather_FN1M_velocity = image(disjoint, complete, velocity, partitioned_FN1M_velocity, flather_u_bounds)
 
   model_write( 0, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, 0)
   var visc = setup_data[0].visc 
