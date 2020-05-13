@@ -41,3 +41,11 @@ allclean: clean
 	${MAKE} -C ${TIMER_DIR} allclean
 	${MAKE} -C ${COMMON_DIR} allclean
 	${MAKE} -C ${FCL_DIR} allclean
+
+summary:
+	@echo -n "${CC}\t\tundef\t"
+	PSYCLONE_KERNELS_FILE=allkernels.cl ./nemolite2d.exe | awk \
+		'BEGIN {ORS="\t"} \
+		{if ($$2 == "checksum") {print $$4} } \
+		{if ($$1 == "Time-stepping") {print $$5} } \
+		END {ORS="\n"; print ""}'
