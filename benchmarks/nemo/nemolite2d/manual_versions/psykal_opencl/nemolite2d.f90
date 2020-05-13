@@ -1,13 +1,13 @@
 program gocean2d
-  use dl_timer
-  use parallel_utils_mod, only: get_rank, parallel_abort !ARPDBG
+  use dl_timer, only: timer_start, timer_stop, timer_init, timer_report, i_def64
   use grid_mod
   use field_mod
   use initialisation_mod, only: initialisation
   use model_mod
-  use boundary_conditions_mod
   use gocean2d_io_mod, only: model_write
-  use gocean_mod,      only: gocean_initialise, gocean_finalise, model_write_log
+  use gocean_mod,      only: model_write_log, gocean_initialise, &
+                             gocean_finalise
+  !use likwid
 
   !> GOcean2d is a Horizontal 2D hydrodynamic ocean model initially developed
   !! by Hedong Liu, UK National Oceanography Centre (NOC), which:
@@ -31,9 +31,14 @@ program gocean2d
   type(r2d_field) :: ua_fld, va_fld
 
   ! time stepping index
-  integer :: istp
-  integer :: itimer0
+  integer     :: istp  
+  real(go_wp) :: rstp 
+  integer     :: itimer0
 
+  ! Scratch space for logging messages
+  character(len=160) :: log_str
+
+  ! Initialise GOcean infrastructure
   call gocean_initialise()
 
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
@@ -45,6 +50,7 @@ program gocean2d
 
   !! read in model parameters and configure the model grid 
   CALL model_init(model_grid)
+  !call likwid_markerInit()
 
   ! Create fields on this grid
 
@@ -78,16 +84,24 @@ program gocean2d
 
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
 
+  write(log_str, "('Simulation domain = (',I4,':',I4,',',I4,':',I4,')')") &
+                       model_grid%subdomain%global%xstart, &
+                       model_grid%subdomain%global%xstop,  &
+                       model_grid%subdomain%global%ystart, &
+                       model_grid%subdomain%global%ystop
+  call model_write_log("((A))", TRIM(log_str))
+
   ! Start timer for time-stepping section
   CALL timer_start(itimer0, label='Time-stepping', &
-                   num_repeats=INT((nitend-nit000+1),8) )
+                   num_repeats=INT(nitend-nit000+1,kind=i_def64) )
 
   !! time stepping 
   do istp = nit000, nitend, 1
 
      !call model_write_log("('istp == ',I6)",istp)
+     rstp = real(istp, go_wp)
 
-     call step(model_grid, istp,                   &
+     call step(istp,                               &
                ua_fld, va_fld, un_fld, vn_fld,     &
                sshn_t_fld, sshn_u_fld, sshn_v_fld, &
                ssha_t_fld, ssha_u_fld, ssha_v_fld, &
@@ -102,17 +116,16 @@ program gocean2d
   call timer_stop(itimer0)
 
   ! Compute and output some checksums for error checking
-  call model_write_log("('ua checksum = ',E16.8)", &
+  call model_write_log("('ua checksum = ', E16.8)", &
                        field_checksum(ua_fld))
-  call model_write_log("('va checksum = ',E16.8)", &
+  call model_write_log("('va checksum = ', E16.8)", &
                        field_checksum(va_fld))
 
   !! finalise the model run
   call model_finalise()
-  
-  if (get_rank() == 1) then
-    call model_write_log("((A))", 'Simulation finished!!')
-  endif
+  !call likwid_markerClose()
+
+  call model_write_log("((A))", 'Simulation finished!!')
 
   call gocean_finalise()
 
@@ -120,26 +133,21 @@ end program gocean2d
 
 !+++++++++++++++++++++++++++++++++++
 
-subroutine step(grid, istp, &
-                ua, va, un, vn, &
-                sshn, sshn_u, sshn_v, ssha, ssha_u, ssha_v, &
-                hu, hv, ht)
-  use kind_params_mod
-  use grid_mod
-  use field_mod
-  use time_step_mod, only: invoke_time_step
-  use gocean2d_io_mod, only: model_write
-  implicit none
-  type(grid_type), intent(in) :: grid
-  !> The current time step
-  integer,         intent(in) :: istp
-  type(r2d_field), intent(inout) :: un, vn, sshn, sshn_u, sshn_v
-  type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
-  type(r2d_field), intent(in) :: hu, hv, ht
+SUBROUTINE step(istp, ua, va, un, vn, sshn_t, sshn_u, sshn_v, ssha_t, &
+                ssha_u, ssha_v, hu, hv, ht)
+  USE time_step_mod, ONLY: invoke_time_step
+  USE kind_params_mod
+  USE grid_mod
+  USE field_mod
+  USE gocean2d_io_mod, ONLY: model_write
+  IMPLICIT NONE
+  INTEGER, INTENT(INOUT) :: istp
+  TYPE(r2d_field), INTENT(INOUT) :: un, vn, sshn_t, sshn_u, sshn_v
+  TYPE(r2d_field), INTENT(INOUT) :: ua, va, ssha_t, ssha_u, ssha_v
+  TYPE(r2d_field), INTENT(INOUT) :: hu, hv, ht
 
-  call invoke_time_step(istp, ssha, ssha_u, ssha_v, &
-                        sshn, sshn_u, sshn_v, &
-                        hu, hv, ht, ua, va, un, vn)
+  ! Call manually-constructed PSy-layer
+  CALL invoke_time_step(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, &
+                        ua, ht, ssha_u, va, ssha_v, istp)
 
 end subroutine step
-
