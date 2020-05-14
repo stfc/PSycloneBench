@@ -8,9 +8,10 @@ program gocean2d
   use gocean_mod,      only: model_write_log, gocean_initialise, &
                              gocean_finalise
 
-  !> A Horizontal 2D hydrodynamic ocean model which
-  !!   1) using structured grid
-  !!   2) using direct data addressing structures
+  !> GOcean2d is a Horizontal 2D hydrodynamic ocean model initially developed
+  !! by Hedong Liu, UK National Oceanography Centre (NOC), which:
+  !!   1) uses structured grid
+  !!   2) uses direct data addressing structures
 
   implicit none
 

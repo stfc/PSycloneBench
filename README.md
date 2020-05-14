@@ -38,20 +38,9 @@ by Hedong Liu of the National Oceanography Centre, Liverpool, UK.
 
 The `manual_versions` directory contains various implementations of
 NEMOLite2D where the application has been split-up into Algorithm PSy
-and Kernel layers but the PSy layer has been written manually. In
-summary:
-
-* psykal_serial - serial versions with various optimisations applied
-                  to the PSy layer.
-* psykal_omp - PSy layer parallelised using OpenMP.
-* psykal_dm - PSy layer parallelised using distributed memory (MPI).
-* psykal_ocl - PSy layer parallelised using OpenCL.
-* single_file_acc - Original, single-file version parallelised using
-                    OpenACC.
-* psykal_acc - PSy layer paralellised using OpenACC.
-
-Please see the README.md files in each of the directories for more
-information.
+and Kernel layers but the PSy layer has been written manually.
+See the [README.md](benchmarks/nemo/nemolite2d/manual_versions/README.md)
+file in the NemoLite2D manual_versions directory for more information.
 
 (Note that the OpenACC versions are based upon work by Jeremy
 Appleyard of NVIDIA).

@@ -9,9 +9,10 @@ program gocean2d
   use gocean_mod,      only: model_write_log, gocean_initialise, &
                              gocean_finalise
 
-  !> A Horizontal 2D hydrodynamic ocean model which
-  !!   1) using structured grid
-  !!   2) using direct data addressing structures
+  !> GOcean2d is a Horizontal 2D hydrodynamic ocean model initially developed
+  !! by Hedong Liu, UK National Oceanography Centre (NOC), which:
+  !!   1) uses structured grid
+  !!   2) uses direct data addressing structures
 
   implicit none
 
@@ -39,7 +40,6 @@ program gocean2d
   ! points immediately to the North and East of a T point all have the
   ! same i,j index).  This is the same offset scheme as used by NEMO.
   model_grid = grid_type(GO_ARAKAWA_C, &
-  !  BC_PERIODIC, BC_NON_PERIODIC ??
                          (/GO_BC_EXTERNAL,GO_BC_EXTERNAL,GO_BC_NONE/), &
                          GO_OFFSET_NE)
 
@@ -138,26 +138,6 @@ subroutine step(grid, istp, &
   call invoke_time_step(istp, ssha, ssha_u, ssha_v, &
                         sshn, sshn_u, sshn_v, &
                         hu, hv, ht, ua, va, un, vn)
-
-!  call invoke(                                               &
-!              continuity(istp, ssha, sshn_t, sshn_u, sshn_v, &
-!                         hu, hv, un, vn),                    &
-!              momentum_u(ua, un, vn,                         &
-!                         ssha_u, sshn_t, sshn_u, sshn_v),    &
-!              momentum_v(va, un, vn, hu, hv, ht,             &
-!                         ssha_v, sshn_t, sshn_u, sshn_v),    &
-!              bc_ssh(istp, ssha),                            &
-!              bc_solid_u(ua),                                &
-!              bc_solid_v(va),                                &
-!              bc_flather_u(ua, hu, sshn_u),                  &
-!              bc_flather_v(va, hv, sshn_v),                  &
-!              copy_field(ua, un),                            &
-!              copy_field(va, vn),                            &
-!              copy_field(ssha, sshn_t),                      &
-!              next_sshu(sshn_u, sshn_t),                     &
-!              next_sshv(sshn_v, sshn_t)                      &
-!             )
-
 
 !  call model_write(grid, istp, ht, sshn, un, vn)
 

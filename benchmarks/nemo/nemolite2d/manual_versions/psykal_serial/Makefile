@@ -5,36 +5,21 @@
 # OMPFLAGS  - Flags for compiling with OpenMP
 # AR        - Command to use when creating an archive (.a)
 
-# Location of the dl_timer and infrastucture code
-SHARED_DIR = ../../../../../shared
+.PHONY: all nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
+.DEFAULT_GOAL := nemolite2d
 
-TIMER_DIR = ${SHARED_DIR}/dl_timer
-TIMER_INC = ${TIMER_DIR}/src
-TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
-INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
-INF_INC = ${INF_DIR}/src
-INF_LIB = ${INF_DIR}/src/lib_fd.a
-COMMON_DIR = ../../common
-COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
-
-LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
-
-# The kernels used by this application and their location
-KERNEL_DIR = ../kernels/fortran
-KERNELS = boundary_conditions_mod.o \
-          continuity_mod.o \
-          momentum_mod.o \
-          time_update_mod.o \
-          infrastructure_mod.o
+include ../common.mk
 
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
+LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
 COMMON_MODULES = ${COMMON_LIB} ${KERNELS} ${INF_LIB}
 
-.PHONY: all inf_lib timer_lib nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
+# Interdependencies between modules, alphabetical order
+time_step_mod.o: ${COMMON_LIB} ${KERNELS} inf_lib
+
 
 # The targets that this Makefile supports
-
 all: nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv \
 nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
 
@@ -96,36 +81,6 @@ nemolite2d_8arrays: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel_8arr
 	${MAKE} MODULE_LIST="time_step_mod_alignall_preload_nopeel_8arrays.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_8arrays.exe
 
-# Interdependencies between modules, alphabetical order
-
-time_step_mod.o: inf_lib ${KERNELS}
-
-# Generic rules
-
-%.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) ${TIMER_LIB} $(LDFLAGS)
-
-%.o: %.f90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
-
-%.o: %.F90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
-
-%.o: %.mod
-
-# If we need a .f90 file that doesn't exist then it must be a kernel.
-# Create a link to the required file...
-%.f90:
-	ln -sf ../../kernels/fortran/$@ .
-
-timer_lib:
-	${MAKE} -C ${TIMER_DIR} sm_lib
-
-inf_lib:
-	${MAKE} -C ${INF_DIR}
-
-${COMMON_LIB}: inf_lib timer_lib
-	${MAKE} -C ${COMMON_DIR}
 
 clean: 
 	rm -f *.o *.mod *.MOD *~
@@ -142,3 +97,10 @@ allclean: clean libclean
 
 docs:
 	doxygen gocean2d.doxy.config
+
+summary:
+	@echo -n "${CC}\t\tcpu\t"
+	@./nemolite2d.exe | awk 'BEGIN {ORS="\t"} \
+		{if ($$2 == "checksum") {print $$4} } \
+		{if ($$1 == "Time-stepping") {print $$5} } \
+		END {ORS="\n"; print ""}'
