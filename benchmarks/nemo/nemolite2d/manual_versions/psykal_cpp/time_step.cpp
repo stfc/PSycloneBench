@@ -3,8 +3,10 @@
 #include <vector>
 #include <cstdlib>
 
-// Compared to the Fortran implementations:
-//  - Swap loop order
+// Kernels
+#include "../../kernels/opencl/continuity_kern.c"
+#include "../../kernels/opencl/momentum_u_kern.c"
+#include "../../kernels/opencl/momentum_v_kern.c"
 
 extern "C" void c_invoke_time_step(
         // Fields
@@ -22,33 +24,56 @@ extern "C" void c_invoke_time_step(
         double * va,
         double * ssha_v,
         // Grid
-        double * e12t,
+        int * tmask,
+        double * area_t,
+        double * area_u,
+        double * area_v,
+        double * dx_u,
+        double * dx_v,
+        double * dx_t,
+        double * dy_u,
+        double * dy_v,
+        double * dy_t,
+        double * gphiu,
         // Scalars
         int istp,
-        int nx,
-        int ny,
-        double rdt
+        int internal_xstart,
+        int internal_xstop,
+        int internal_ystart,
+        int internal_ystop,
+        int width,
+        double rdt,
+        double cbfr,
+        double visc,
+        double omega,
+        double d2r,
+        double g
         ){
 
-    int M = nx;
-    int N = ny;
-    for(int jj = 20; jj < M - 20; jj++){
-        for(int ji = 20; ji < N - 20; ji++){
-            // Continuity kernel
-            int idx = jj * M + ji;
-            int idxim1 = idx - 1;
-            int idxjm1 = idx - M;
-
-            double rtmp1 = (sshn_u[idx]    + hu[idx])    * un[idx];
-            double rtmp2 = (sshn_u[idxim1] + hu[idxim1]) * un[idxim1];
-            double rtmp3 = (sshn_v[idx]    + hv[idx])    * vn[idx];
-            double rtmp4 = (sshn_v[idxjm1] + hv[idxjm1]) * vn[idxjm1];
-
-            ssha_t[idx] = sshn_t[idx] + (rtmp2 - rtmp1 + rtmp4 - rtmp3) *
-                rdt / e12t[idx];
-
+    // Continuity kernel
+    for(int jj = internal_ystart; jj < internal_ystop; jj++){
+        for(int ji = internal_xstart; ji < internal_xstop; ji++){
+            continuity_code(ji, jj, width, ssha_t, sshn_t, sshn_u, sshn_v, \
+                hu, hv, un, vn, rdt, area_t);
         }
     }
-
+    
+    // Momentum_u kernel
+    for(int jj = internal_ystart; jj < internal_ystop; jj++){
+        for(int ji = internal_xstart; ji < internal_xstop; ji++){
+            momentum_u_code(ji, jj, width, ua, un, vn, hu, hv, ht, ssha_u, \
+                sshn_t, sshn_u, sshn_v, tmask, dx_u, dx_v, dx_t, dy_u, dy_t, \
+                area_u, gphiu, rdt, cbfr, visc, omega, d2r, g);
+        }
+    }
+    
+    // Momentum_v kernel
+    for(int jj = internal_ystart; jj < internal_ystop; jj++){
+        for(int ji = internal_xstart; ji < internal_xstop; ji++){
+            momentum_v_code(ji, jj, width, va, un, vn, hu, hv, ht, ssha_v, \
+                sshn_t, sshn_u, sshn_v, tmask, dx_v, dx_t, dy_u, dy_v, dy_t, \
+                area_v, gphiu, rdt, cbfr, visc, omega, d2r, g);
+        }
+    }
     
 }

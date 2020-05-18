@@ -2,6 +2,7 @@
 // This header isn't available/required in OpenCL
 #include <math.h>
 #include <stdio.h>
+#else
 #include "opencl_utils.h"
 
 #ifdef __APPLE__
@@ -82,8 +83,6 @@ void set_args_momv(cl_kernel kern,
 
 #endif
 
-#include "physical_params.h"
-
 /*
   type, extends(kernel_type) :: momentum_v
      type(arg), dimension(18) :: meta_args =  &
@@ -146,18 +145,20 @@ __kernel void momentum_v_code(int width,
 			      const __global double* restrict e2t,
 			      const __global double* restrict e12v,
 			      const __global double* restrict gphiv,
-			      double rdt, double cbfr, double visc){
+			      double rdt, double cbfr, double visc,
+                  double omega, double d2r, double g){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
 #else
 /** Interface to standard C version of kernel */
-void momentum_v_code(int ji, int jj, int width,
+inline void momentum_v_code(int ji, int jj, int width,
 		     double *va, double *un, double *vn, 
 		     double *hu, double *hv, double *ht, double *ssha_v, 
 		     double *sshn, double *sshn_u, double *sshn_v, 
 		     int *tmask, double *e1v, double *e1t, double *e2u,
 		     double *e2v, double *e2t, double *e12v, double *gphiv,
-		     double rdt, double cbfr, double visc){
+		     double rdt, double cbfr, double visc,
+             double omega, double d2r, double g){
 #endif
 
   double u_e, u_w, v_n, v_s;
@@ -261,11 +262,11 @@ void momentum_v_code(int ji, int jj, int width,
   // for variable viscosity, such as turbulent viscosity
 
   // -Coriolis' force (can be implemented implicitly)
-  cor = -0.5*(2. * OMEGA * sin(gphiv[idx] * d2r) * (u_ec + u_wc)) * 
+  cor = -0.5*(2. * omega * sin(gphiv[idx] * d2r) * (u_ec + u_wc)) * 
     e12v[idx] * (hv[idx] + sshn_v[idx]);
 
   // -pressure gradient
-  hpg = -G * (hv[idx] + sshn_v[idx]) * e1v[idx] * 
+  hpg = -g * (hv[idx] + sshn_v[idx]) * e1v[idx] * 
     (sshn[idxjp1] - sshn[idx]);
 
   // -linear bottom friction (implemented implicitly.

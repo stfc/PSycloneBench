@@ -2,6 +2,7 @@
 // This header isn't available/required in OpenCL
 #include <math.h>
 #include <stdio.h>
+#else
 #include "opencl_utils.h"
 
 #ifdef __APPLE__
@@ -101,8 +102,6 @@ void set_args_momu(cl_kernel kern,
 
 #endif
 
-#include "physical_params.h"
-
 /*
   type, extends(kernel_type) :: momentum_u
      type(arg), dimension(18) :: meta_args =  &
@@ -171,14 +170,14 @@ __kernel void momentum_u_code(int width,
   int jj = get_global_id(1);
 #else
 /** Interface to standard C version of kernel */
-void momentum_u_code(int ji, int jj, int width,
+inline void momentum_u_code(int ji, int jj, int width,
 		     double *ua, double *un, double *vn,
 		     double *hu, double *hv, double *ht, double *ssha_u,
 		     double *sshn, double *sshn_u, double *sshn_v,
 		     int *tmask,
 		     double *e1u, double *e1v, double *e1t,
 		     double *e2u, double *e2t, double *e12u, double *gphiu,
-		     double rdt, double cbfr, double visc){
+		     double rdt, double cbfr, double visc, double omega, double d2r, double g){
 #endif
   double u_e, u_w, v_n, v_s;
   double v_nc, v_sc;
@@ -278,11 +277,11 @@ void momentum_u_code(int ji, int jj, int width,
   // for variable viscosity, such as turbulent viscosity
 
   // -Coriolis' force (can be implemented implicitly)
-  cor = 0.5 * (2. * OMEGA * sin(gphiu[idx] * d2r) * (v_sc + v_nc)) * 
+  cor = 0.5 * (2. * omega * sin(gphiu[idx] * d2r) * (v_sc + v_nc)) * 
     e12u[idx] * (hu[idx] + sshn_u[idx]);
 
   // -pressure gradient
-  hpg = -G * (hu[idx] + sshn_u[idx]) * e2u[idx] * 
+  hpg = -g * (hu[idx] + sshn_u[idx]) * e2u[idx] * 
     (sshn[idxip1] - sshn[idx]);
 
   // -linear bottom friction (implemented implicitly.

@@ -1,5 +1,6 @@
 #ifndef __OPENCL_VERSION__
 #include <stdio.h>
+#else
 #include "opencl_utils.h"
 
 #ifdef __APPLE__
@@ -108,13 +109,13 @@ __kernel void continuity_code(int width,
 #else
 
 /** Interface to standard C version of kernel */
-void continuity_code(int ji, int jj,
+inline void continuity_code(int ji, int jj,
 		     int width,                     
 		     double *ssha,
 		     double *sshn,
 		     double *sshn_u,
 		     double *sshn_v,
-		     double* hu,
+		     double *hu,
 		     double *hv,
 		     double *un,
 		     double *vn,
@@ -123,13 +124,10 @@ void continuity_code(int ji, int jj,
 #endif
     /* Locals */
     double rtmp1, rtmp2, rtmp3, rtmp4;
-    int idxim1, idxjm1;
-    int idx = jj*width + ji;
 
-    if(jj == 0)return;
-
-    idxim1 = idx - 1;
-    idxjm1 = idx - width;
+    int idx = jj * width + ji;
+    int idxim1 = idx - 1;
+    int idxjm1 = idx - width;
 
     rtmp1 = (sshn_u[idx] + hu[idx]) * un[idx];
     rtmp2 = (sshn_u[idxim1] + hu[idxim1]) * un[idxim1];
@@ -138,6 +136,4 @@ void continuity_code(int ji, int jj,
 
     ssha[idx] = sshn[idx] + (rtmp2 - rtmp1 + rtmp4 - rtmp3) *
       rdt / e12t[idx];
-    // Following line is for testing only
-    //ssha[idx] = (double)idx;
   }

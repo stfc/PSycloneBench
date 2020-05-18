@@ -15,14 +15,25 @@ module time_step_mod
     ! http://fortranwiki.org/fortran/show/Generating+C+Interfaces
     interface
         subroutine wrapper_c_invoke_time_step( &
-            ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, &
-            un, vn, ua, ht, ssha_u, va, ssha_v, e12t, istp, nx, ny, rdt &
+            ! Fields
+            ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, &
+            va, ssha_v, &
+            ! Grid
+            tmask, area_t, area_u, area_v, dx_u, dx_v, dx_t, dy_u, dy_v, &
+            dy_t, gphiu, &
+            ! Scalars
+            istp, internal_xstart, internal_xstop, internal_ystart, &
+            internal_ystop, width, rdt, cbfr, visc, omega, d2r, g &
         ) bind (C, name="c_invoke_time_step")
             use iso_c_binding
-            real(kind=c_double), intent(inout), dimension(*) :: ssha_t, sshn_t, &
-                sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v, e12t
-            real(kind=c_double), intent(in) :: rdt
-            integer(kind=c_int), intent(in), value :: istp, nx, ny
+            real(kind=c_double), intent(inout), dimension(*) :: ssha_t, &
+                sshn_t, sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, &
+                ssha_v, area_t, area_u, area_v, dx_u, dx_v, dx_t, dy_u, dy_v, &
+                dy_t, gphiu
+            integer(kind=c_int), intent(inout), dimension(*) :: tmask
+            real(kind=c_double), intent(in) :: rdt, cbfr, visc, omega, d2r, g
+            integer(kind=c_int), intent(in), value :: istp, internal_xstart, &
+                internal_xstop, internal_ystart, internal_ystop, width
         end subroutine wrapper_c_invoke_time_step
     end interface    
 
@@ -45,31 +56,41 @@ contains
         TYPE(r2d_field), intent(inout), target :: ssha_t, sshn_t, sshn_u, &
             sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v
         INTEGER, intent(in) :: istp
-        INTEGER:: istop, jstop, nx, ny
-
-
-        LOGICAL, save :: first_time=.true.
-
-        ! Look-up loop bounds
-        istop = ssha_t%grid%subdomain%internal%xstop
-        jstop = ssha_t%grid%subdomain%internal%ystop
-        nx = ssha_t%grid%nx
-        ny = ssha_t%grid%ny
-
-        ! Any steps that need to be done just the first time
-        IF (first_time) THEN
-            first_time = .false.
-        END IF
 
         ! FIXME: Should we use %get_data() instead? The dl_esm_inf has some
         ! infrastructure for device_ptr and dirty data to manage when data is
         ! modified that may be handy here.
         call wrapper_c_invoke_time_step( &
+            ! Fields
             ssha_t%data, sshn_t%data, sshn_u%data, sshn_v%data, hu%data, &
             hv%data, un%data, vn%data, ua%data, ht%data, ssha_u%data, &
             va%data, ssha_v%data, &
+            ! Grid
+            sshn_t%grid%tmask, &
             sshn_t%grid%area_t, &
-            istp, nx, ny, rdt)
+            sshn_t%grid%area_u, &
+            sshn_t%grid%area_v, &
+            sshn_t%grid%dx_u, &
+            sshn_t%grid%dx_v, &
+            sshn_t%grid%dx_t, &
+            sshn_t%grid%dy_u, &
+            sshn_t%grid%dx_v, &
+            sshn_t%grid%dx_t, &
+            sshn_t%grid%gphiu, &
+            ! Scalars
+            istp, &
+            ssha_t%grid%subdomain%internal%xstart, &
+            ssha_t%grid%subdomain%internal%xstop, &
+            ssha_t%grid%subdomain%internal%ystart, &
+            ssha_t%grid%subdomain%internal%ystop, &
+            size(ssha_t%data, 1), & ! Size of the contiguous dimension
+            rdt, &
+            cbfr, &
+            visc, &
+            omega, &
+            d2r, &
+            g &
+        )
 
     END SUBROUTINE invoke_time_step
 end module time_step_mod
