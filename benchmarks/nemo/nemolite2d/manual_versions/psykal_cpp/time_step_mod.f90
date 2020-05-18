@@ -8,19 +8,21 @@ module time_step_mod
     ! extern "C" void c_invoke_time_step(double * c_ssha_t, double * c_sshn_t,
     !   double * c_sshn_u, double * c_sshn_v, double * c_hu, double * c_hv,
     !   double * c_hn, double * c_vn, double * c_ua, double * c_ht,
-    !   double * c_ssha_u, double * c_va, double * c_ssha_v, int istp, int nsize)
+    !   double * c_ssha_u, double * c_va, double * c_ssha_v, double * e12t,
+    !   int istp, int nx, int ny)
 
     ! Fortran to C wrapper function as recommended in
     ! http://fortranwiki.org/fortran/show/Generating+C+Interfaces
     interface
         subroutine wrapper_c_invoke_time_step( &
             ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, &
-            un, vn, ua, ht, ssha_u, va, ssha_v, istp, nx, ny &
+            un, vn, ua, ht, ssha_u, va, ssha_v, e12t, istp, nx, ny, rdt &
         ) bind (C, name="c_invoke_time_step")
             use iso_c_binding
             real(kind=c_double), intent(inout), dimension(*) :: ssha_t, sshn_t, &
-                sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v
-            integer(c_int), intent(in), value :: istp, nx, ny
+                sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v, e12t
+            real(kind=c_double), intent(in) :: rdt
+            integer(kind=c_int), intent(in), value :: istp, nx, ny
         end subroutine wrapper_c_invoke_time_step
     end interface    
 
@@ -65,7 +67,9 @@ contains
         call wrapper_c_invoke_time_step( &
             ssha_t%data, sshn_t%data, sshn_u%data, sshn_v%data, hu%data, &
             hv%data, un%data, vn%data, ua%data, ht%data, ssha_u%data, &
-            va%data, ssha_v%data, istp, nx, ny)
+            va%data, ssha_v%data, &
+            sshn_t%grid%area_t, &
+            istp, nx, ny, rdt)
 
     END SUBROUTINE invoke_time_step
 end module time_step_mod

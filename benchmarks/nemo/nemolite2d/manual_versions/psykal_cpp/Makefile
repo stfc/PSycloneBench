@@ -69,7 +69,7 @@ time_step.o: time_step.cpp
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
-	rm -f *.o *.mod *.MOD *~
+	rm -f *.o *.mod *.MOD *~ *.dat
 	rm -f gnu_opt_report.txt
 
 allclean: clean
