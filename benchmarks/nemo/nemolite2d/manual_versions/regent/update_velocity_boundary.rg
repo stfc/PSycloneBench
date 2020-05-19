@@ -26,9 +26,7 @@ task update_uvel_boundary( velocity : region(ispace(int2d), uv_time_field),
 
   __demand(__vectorize)
   for point in velocity do
---    if( grid_region[point].tmask * grid_region[point + {1,0}].tmask == int1d(0)) then
       velocity[point].u_after = 0.0
---    end
   end
 
 end
@@ -55,9 +53,7 @@ task update_vvel_boundary( velocity : region(ispace(int2d), uv_time_field),
 
   __demand(__vectorize)
   for point in velocity do
---    if( grid_region[point].tmask * grid_region[point + {0,1}].tmask == int1d(0)) then
       velocity[point].v_after = 0.0
---    end
   end
 
 

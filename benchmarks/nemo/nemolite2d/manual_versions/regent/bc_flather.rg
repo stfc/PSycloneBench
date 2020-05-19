@@ -49,7 +49,6 @@ task bc_flather_v_loop(velocity : region(ispace(int2d), uv_time_field),
      for jj = ymin, ymax do
          for ji = xmin, xmax do
              var point = int2d({ji,jj})
---             if(grid_region[point].tmask + grid_region[point + {0,1}].tmask > int1d(-1)) then
 
                 if(grid_region[point].tmask < int1d(0)) then
                   velocity[point].v_after = velocity[point + {0,1}].v_after
@@ -63,7 +62,6 @@ task bc_flather_v_loop(velocity : region(ispace(int2d), uv_time_field),
                                             - sea_surface[point + {0,-1}].v_now)
                 end
 
---             end
          end
      end
 
@@ -115,7 +113,6 @@ task bc_flather_u_loop(velocity : region(ispace(int2d), uv_time_field),
     for jj = ymin, ymax do
         for ji = xmin, xmax do
             var point = int2d({ji,jj})        
---            if( grid_region[point].tmask + grid_region[point + {1,0}].tmask > int1d(-1)) then
             
                 if(grid_region[point].tmask < int1d(0)) then
                     velocity[point].u_after = velocity[point + {1,0}].u_after
@@ -128,7 +125,6 @@ task bc_flather_u_loop(velocity : region(ispace(int2d), uv_time_field),
                                             * (sea_surface[point].u_now
                                                - sea_surface[point + {-1,0}].u_now)
                 end
---            end
          end
     end
 end

@@ -40,7 +40,6 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --    __demand(__vectorize)
     for point in velocity do
 
---     if ( (grid_region[point].tmask + grid_region[point+{1,0}].tmask > int1d(0)) and (grid_region[point].tmask == int1d(1) and grid_region[point + {1,0}].tmask == int1d(1)) ) then
 -- ! advection
 --        u_e  = 0.5 * (un%data(ji,jj) + un%data(ji+1,jj)) * un%grid%dy_t(ji+1,jj)   !add length scale.
 --        depe = ht%data(ji+1,jj) + sshn_t%data(ji+1,jj)
@@ -245,7 +244,6 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
                               / ( sea_bed_to_mean_sea_level[point].u
                                  + sea_surface[point].u_after )
                               / (1.0 + cbfr * rdt)     
---     end --If tmask
    end
 
 end
@@ -311,7 +309,6 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 
   for point in velocity do
 
---    if( (grid_region[point].tmask + grid_region[point+{1,0}].tmask > int1d(0)) and (grid_region[point].tmask == int1d(1) and grid_region[point + {0,1}].tmask == int1d(1))) then
 
 --    ! kernel v adv
 --    v_n  = 0.5 * (vn%data(ji,jj) + vn%data(ji,jj+1)) * vn%grid%dx_t(ji,jj+1)
@@ -517,7 +514,6 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
                               / (sea_bed_to_mean_sea_level[point].v 
                                 + sea_surface[point].v_after)
                               / (1.0 + cbfr * rdt)
---    end
   end
 
 end

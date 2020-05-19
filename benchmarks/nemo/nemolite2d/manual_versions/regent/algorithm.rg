@@ -96,7 +96,10 @@ task main()
                                    y = setup_data[0].jpjglo + 3},
                                    {x = 1, y = 1} )
    var grid = region(grid_space, grid_fields)
+<<<<<<< HEAD
    var loop_conditions_data = region(grid_space, loop_conditions) 
+=======
+>>>>>>> af63ea75043ad965c2a1c4d0f149d037b441cd75
 --Initialise values (some of these are not changed after)
    fill(grid.tmask, -2)
    fill(grid.{dx_t, dx_u, dx_v}, setup_data[0].dx)
@@ -104,6 +107,7 @@ task main()
    fill(grid.{area_t, area_u, area_v}, 0)
    fill(grid.{gphi_u, gphi_v}, 50.0)
    fill(grid.{xt, yt}, 0.0)
+<<<<<<< HEAD
  --Initialise loop condition data - 1 means we don't use this value.
    fill(loop_conditions_data.{compute_vel_ufield,compute_vel_vfield}, int1d(1))
    fill(loop_conditions_data.{update_sea_surface_t}, int1d(1))
@@ -114,6 +118,11 @@ task main()
 
   --Initialise model
   model_init(grid, loop_conditions_data)
+=======
+
+  --Initialise model
+  model_init(grid)
+>>>>>>> af63ea75043ad965c2a1c4d0f149d037b441cd75
 
  var sea_surface = region(grid_space, uvt_time_field)
  fill(sea_surface.{u_now, u_after, v_now, v_after, t_now, t_after}, 0.0)
@@ -332,7 +341,7 @@ task main()
     end
     __demand(__trace, __index_launch)
     for part in partition_space2 do
-    update_u_height_launcher(partitioned_2N12M_sea_surface[part],
+    update_u_height_launcher(partitioned_2N2M1_sea_surface[part],
                              full_grid[point],
                              _2N2M1_sea_surface_halos[part])
     end
