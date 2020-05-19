@@ -96,6 +96,7 @@ task main()
                                    y = setup_data[0].jpjglo + 3},
                                    {x = 1, y = 1} )
    var grid = region(grid_space, grid_fields)
+   var loop_conditions_data = region(grid_space, loop_conditions) 
 --Initialise values (some of these are not changed after)
    fill(grid.tmask, -2)
    fill(grid.{dx_t, dx_u, dx_v}, setup_data[0].dx)
@@ -103,9 +104,16 @@ task main()
    fill(grid.{area_t, area_u, area_v}, 0)
    fill(grid.{gphi_u, gphi_v}, 50.0)
    fill(grid.{xt, yt}, 0.0)
+ --Initialise loop condition data - 1 means we don't use this value.
+   fill(loop_conditions_data.{compute_vel_ufield,compute_vel_vfield}, int1d(1))
+   fill(loop_conditions_data.{update_sea_surface_t}, int1d(1))
+   fill(loop_conditions_data.{update_uvel_boundary, update_vvel_boundary}, int1d(1))
+   fill(loop_conditions_data.{bc_flather_u, bc_flather_v}, int1d(1))
+   fill(loop_conditions_data.{update_u_height, update_v_height}, int1d(1))
+
 
   --Initialise model
-  model_init(grid)
+  model_init(grid, loop_conditions_data)
 
  var sea_surface = region(grid_space, uvt_time_field)
  fill(sea_surface.{u_now, u_after, v_now, v_after, t_now, t_after}, 0.0)
@@ -203,6 +211,43 @@ task main()
   var rdt  = setup_data[0].rdt
   var cbfr = setup_data[0].cbfr
   var point : int2d = int2d({0,0})
+
+  -- update_velocity_ufield partition
+  var loop_vel_ufield_partition = partition( loop_conditions_data.compute_vel_ufield, ispace(int1d, 1 ) )
+  var vel_ufield_partitions = cross_product(partitioned_2N2M1_velocity, loop_vel_ufield_partition)
+ 
+  --update_velocity_vfield partition
+  var loop_vel_vfield_partition = partition( loop_conditions_data.compute_vel_vfield, ispace(int1d, 1) )
+  var vel_vfield_partitions = cross_product(partitioned_2N12M_velocity, loop_vel_vfield_partition)
+
+  --update sea_surface_t partition
+  var loop_update_sst_partition = partition( loop_conditions_data.update_sea_surface_t, ispace(int1d, 1) )
+  var update_sst_partitions = cross_product(partitioned_2N2M_sea_surface, loop_update_sst_partition )
+
+  --update_vvel_boundary partition
+  var loop_update_vvel_boundary_partition = partition( loop_conditions_data.update_vvel_boundary, ispace(int1d, 1) )
+  var update_vvel_bound_partitions = cross_product( partitioned_1NFM_velocity, loop_update_vvel_boundary_partition)
+
+  --update_uvel_boundary partition
+  var loop_update_uvel_boundary_partition = partition( loop_conditions_data.update_uvel_boundary, ispace(int1d, 1) )
+  var update_uvel_bound_partitions  = cross_product( partitioned_FN1M_velocity, loop_update_uvel_boundary_partition)
+
+  --bc_flather_v partition
+  var loop_update_bc_flather_v_partition = partition( loop_conditions_data.bc_flather_v, ispace(int1d, 1) )
+  var bc_flather_v_partitions = cross_product( flather_1NFM_velocity , loop_update_bc_flather_v_partition)
+
+  --bc_flather_u partition
+  var loop_update_bc_flather_u_partition = partition( loop_conditions_data.bc_flather_u, ispace(int1d, 1) )
+  var bc_flather_u_partitions = cross_product( flather_FN1M_velocity, loop_update_bc_flather_u_partition)
+
+  --update_u_height partition
+--  var loop_update_u_height_partition = partition( loop_conditions_data.update_u_height, ispace(int1d, 1) )
+--  var update_u_height_partitions = cross_product( partitioned_2N2M1_sea_surface, loop_update_u_height_partition)
+
+  --update_v_height partition
+--  var loop_update_v_height_partition = partition( loop_conditions_data.update_v_height, ispace(int1d, 1) )
+--  var update_v_height_partitions = cross_product( partitioned_2N12M_sea_surface, update_v_height_partitions )
+
   __fence(__execution, __block)
   var start_time = get_time()
   __fence(__execution, __block) 
@@ -211,12 +256,6 @@ task main()
   __demand(__trace)
   for i = setup_data[0].nit000, setup_data[0].nitend+1 do
   
---     calculate_sea_surface_t(_2N2M_sea_surface[point],
---                            full_sea_surface[point],
---                            full_sea_bed_to_mean_sea_level[point],
---                            full_velocity[point],
---                            full_grid[point],
---                            rdt)
      __demand(__trace, __index_launch)
     for part in partition_space2 do
       calculate_sea_surface_t(partitioned_2N2M_sea_surface[part],
@@ -227,9 +266,9 @@ task main()
                               rdt)
                              
     end
-     __demand(__trace, __index_launch)
+--     __demand(__trace, __index_launch)
      for part in partition_space do
-       update_velocity_ufield(partitioned_2N2M1_velocity[part],
+       update_velocity_ufield(vel_ufield_partitions[part][0],
                               full_grid[point],
                               _2N2M1_velocity_halos[part],
                               full_sea_bed_to_mean_sea_level[point],
@@ -241,9 +280,9 @@ task main()
                               cbfr,
                               d2r)
      end
-     __demand(__trace, __index_launch)
+--     __demand(__trace, __index_launch)
      for part in partition_space do 
-       update_velocity_vfield(partitioned_2N12M_velocity[part],
+       update_velocity_vfield(vel_vfield_partitions[part][0],
                               full_grid[point],
                               _2N12M_velocity_halos[part],
                               full_sea_bed_to_mean_sea_level[point],
@@ -257,50 +296,35 @@ task main()
                               
      end
 --    __fence(__execution, __block)
-    __demand(__trace, __index_launch)
+--    __demand(__trace , __index_launch)
     for part in partition_space2 do
-    update_sea_surface_t(partitioned_2N2M_sea_surface[part],
+    update_sea_surface_t(update_sst_partitions[part][0],
                          full_grid[point],
                          rdt,
                          i)
     end
---    update_sea_surface_t(_2N2M_sea_surface[point], full_grid[point], rdt, i)
     for part in partition_space3 do
-    update_vvel_boundary(partitioned_1NFM_velocity[part],
+    update_vvel_boundary(update_vvel_bound_partitions[part][0],
                          full_grid[point])
     end
---    update_vvel_boundary(_1NFM_velocity[point], full_grid[point])
---    c.printf("FN1M_vel: %i %i\n", _FN1M_velocity[point].bounds.lo.x, _FN1M_velocity[point].bounds.hi.x)
     for part in partition_space4 do
-    update_uvel_boundary(partitioned_FN1M_velocity[part],
+    update_uvel_boundary(update_uvel_bound_partitions[part][0],
                          full_grid[point])
     end
---    update_uvel_boundary(_1NFM_velocity[point], full_grid[point])
---  __fence(__execution, __block)
     for part in partition_space3 do
-    bc_flather_v_loop(flather_1NFM_velocity[part],
+    bc_flather_v_loop(bc_flather_v_partitions[part][0],
                       full_sea_bed_to_mean_sea_level[point],
                       full_sea_surface[point],
                       full_grid[point],
                       g)
     end
---    bc_flather_v_loop(_1NFM_velocity[point], 
---                      full_sea_bed_to_mean_sea_level[point],
---                      full_sea_surface[point],
---                      full_grid[point],
---                      g)
     for part in partition_space4 do
-    bc_flather_u_loop(flather_FN1M_velocity[part],
+    bc_flather_u_loop(bc_flather_u_partitions[part][0],
                       full_sea_bed_to_mean_sea_level[point],
                       full_sea_surface[point],
                       full_grid[point],
                       g)
     end
---   bc_flather_u_loop(_FN1M_velocity[point],
---                      full_sea_bed_to_mean_sea_level[point],
---                      full_sea_surface[point],
---                      full_grid[point],
---                      g)
     __demand(__trace, __index_launch)
     for part in partition_space2 do
     update_velocity_and_t_height(partitioned_full_velocity[part],
@@ -308,7 +332,7 @@ task main()
     end
     __demand(__trace, __index_launch)
     for part in partition_space2 do
-    update_u_height_launcher(partitioned_2N2M1_sea_surface[part],
+    update_u_height_launcher(partitioned_2N12M_sea_surface[part],
                              full_grid[point],
                              _2N2M1_sea_surface_halos[part])
     end

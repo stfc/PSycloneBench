@@ -46,13 +46,14 @@ task update_sea_surface_t(sea_surface : region(ispace(int2d),uvt_time_field),
   var omega_tide : double = 2.0 * 3.14159 / (12.42 * 3600.0)
   var rtime : double = fstep * rdt
   var tide_value : double = amp_tide * sin(omega_tide * rtime)
+__demand(__vectorize)
   for point in sea_surface do
-    if( grid_region[point + {0,-1}].tmask < int1d(0)
-      or grid_region[point + {0,1}].tmask < int1d(0)
-      or grid_region[point + {1,0}].tmask < int1d(0)
-      or grid_region[point + {-1,0}].tmask < int1d(0)) then
+--    if( grid_region[point + {0,-1}].tmask < int1d(0)
+--      or grid_region[point + {0,1}].tmask < int1d(0)
+--      or grid_region[point + {1,0}].tmask < int1d(0)
+--      or grid_region[point + {-1,0}].tmask < int1d(0)) then
       sea_surface[point].t_after = tide_value
-    end
+--    end
   end
 
 

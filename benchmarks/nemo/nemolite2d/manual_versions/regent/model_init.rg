@@ -26,6 +26,18 @@ fspace grid_fields{
 --  dy_f : double
 }
 
+fspace loop_conditions{
+  compute_vel_ufield : int1d,
+  compute_vel_vfield : int1d,
+  update_sea_surface_t : int1d,
+  update_uvel_boundary : int1d,
+  update_vvel_boundary : int1d,
+  bc_flather_v : int1d,
+  bc_flather_u : int1d,
+  update_u_height : int1d,
+  update_v_height: int1d
+}
+
 local SOLID_BOUNDARY = 0
 local WET  = 1
 local TIDAL_MASK = -1
@@ -146,6 +158,108 @@ task init_south( tmask_south : region(ispace(int2d), grid_fields)) where writes(
   end
 end
 
+task loop_bound_compute_vel_ufield( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+    writes( loop_conditions_data.compute_vel_ufield), reads(grid.tmask) do
+
+    for point in loop_conditions_data do
+      if( grid[point].tmask == int1d(1) and grid[point + {1,0}].tmask == int1d(1)) then
+        loop_conditions_data[point].compute_vel_ufield = int1d(0)
+      end
+    end
+
+end
+
+task loop_bound_compute_vel_vfield( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+    writes( loop_conditions_data.compute_vel_vfield), reads(grid.tmask) do
+
+    for point in loop_conditions_data do
+      if( grid[point].tmask == int1d(1) and grid[point + {0,1}].tmask == int1d(1)) then
+        loop_conditions_data[point].compute_vel_vfield = int1d(0)
+      end
+    end
+
+end
+
+task loop_bound_update_sea_surface_t(  grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+    writes( loop_conditions_data.update_sea_surface_t), reads(grid.tmask) do
+    
+    for point in loop_conditions_data do
+      if( grid[point].tmask == int1d(1) ) then
+            if( grid[point + {0,-1}].tmask < int1d(0)
+            or grid[point + {0,1}].tmask < int1d(0)
+            or grid[point + {1,0}].tmask < int1d(0)
+            or grid[point + {-1,0}].tmask < int1d(0)) then
+              loop_conditions_data[point].update_sea_surface_t = int1d(0)
+            end
+      end
+    end
+end
+
+task loop_bound_update_uvel_boundary(  grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+    writes( loop_conditions_data.update_uvel_boundary), reads(grid.tmask) do
+   
+    for point in loop_conditions_data do
+      if( grid[point].tmask == int1d(0) or grid[point + {1,0}].tmask == int1d(0)) then
+        loop_conditions_data[point].update_uvel_boundary = int1d(0)
+      end
+    end
+
+end
+
+task loop_bound_update_vvel_boundary( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+    writes( loop_conditions_data.update_vvel_boundary), reads(grid.tmask) do
+
+    for point in loop_conditions_data do
+      if( grid[point].tmask == int1d(0) or grid[point + {0,1}].tmask == int1d(0)) then
+        loop_conditions_data[point].update_vvel_boundary = int1d(0)
+      end
+    end
+
+end
+
+task loop_bound_bc_flather_v( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+    writes( loop_conditions_data.bc_flather_v), reads(grid.tmask) do
+
+    for point in loop_conditions_data do
+      if( grid[point].tmask + grid[point + {0,1}].tmask > int1d(-1)) then
+        loop_conditions_data[point].bc_flather_v = int1d(0)
+      end
+    end
+
+end
+
+task loop_bound_bc_flather_u( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+    writes( loop_conditions_data.bc_flather_u), reads(grid.tmask) do
+
+    for point in loop_conditions_data do
+      if( grid[point].tmask + grid[point + {1,0}].tmask > int1d(-1)) then
+        loop_conditions_data[point].bc_flather_u = int1d(0)
+      end
+    end
+
+end
+
+task loop_bound_update_u_height( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+    writes( loop_conditions_data.update_u_height), reads(grid.tmask) do
+
+    for point in loop_conditions_data do
+      if( grid[point].tmask + grid[point + {1,0}].tmask > int1d(0)) then
+        loop_conditions_data[point].update_u_height = int1d(0)
+      end
+    end
+
+end
+
+task loop_bound_update_v_height( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+    writes( loop_conditions_data.update_v_height), reads(grid.tmask) do
+
+    for point in loop_conditions_data do
+      if( grid[point].tmask + grid[point + {0,1}].tmask > int1d(0)) then
+        loop_conditions_data[point].update_v_height = int1d(0)
+      end
+    end
+
+end
 
 task print_tmask( tmask_centre : region(ispace(int2d), grid_fields) ) where reads( tmask_centre.tmask) do
   var xlo = tmask_centre.bounds.lo.x
@@ -178,8 +292,9 @@ task calculate_north_boundary( private_bounds: rect2d) : rect2d
   return rect2d( { {private_bounds.lo.x, private_bounds.hi.y-1}, {private_bounds.hi.x, private_bounds.hi.y} })
 end
 
-task model_init( grid : region(ispace(int2d), grid_fields)) where
-    writes(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_v, gphi_u, gphi_v, xt, yt, area_t, area_u, area_v}), reads(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_u, dy_v, gphi_u, gphi_v, xt, yt, area_t ,area_u, area_v}) do
+task model_init( grid : region(ispace(int2d), grid_fields) , loop_conditions_data : region(ispace(int2d), loop_conditions)) where
+    writes(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_v, gphi_u, gphi_v, xt, yt, area_t, area_u, area_v}), reads(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_u, dy_v, gphi_u, gphi_v, xt, yt, area_t ,area_u, area_v}),
+    writes( loop_conditions_data.{compute_vel_ufield, compute_vel_vfield, update_sea_surface_t, update_uvel_boundary, update_vvel_boundary, bc_flather_v, bc_flather_u, update_u_height, update_v_height }) do
 
     var full_partition = partition(equal, grid, ispace(int2d, {1,1}))
   
@@ -197,6 +312,18 @@ task model_init( grid : region(ispace(int2d), grid_fields)) where
     init_north(north_region[int2d({0,0})])
 
     init_south(south_region[int2d({0,0})])
+
+
+    loop_bound_compute_vel_ufield(grid, loop_conditions_data)
+    loop_bound_compute_vel_vfield(grid, loop_conditions_data)
+    loop_bound_update_sea_surface_t(grid, loop_conditions_data)
+    loop_bound_update_uvel_boundary(grid, loop_conditions_data) 
+    loop_bound_update_vvel_boundary(grid, loop_conditions_data)
+    loop_bound_bc_flather_v(grid, loop_conditions_data)
+    loop_bound_bc_flather_u(grid, loop_conditions_data)
+    loop_bound_update_u_height(grid, loop_conditions_data)
+    loop_bound_update_v_height(grid, loop_conditions_data)
+
 
     init_grid_coordinates(grid)
 --    for point in ispace(int2d,{1,1}) do
