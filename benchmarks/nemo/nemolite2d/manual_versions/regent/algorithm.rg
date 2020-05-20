@@ -252,7 +252,7 @@ task main()
   __fence(__execution, __block) 
   --Main timestepping loop to do!
 
-  __demand(__trace, __spmd)
+  __demand(__trace) --, __spmd)
   for i = setup_data[0].nit000, setup_data[0].nitend+1 do
   
      __demand(__trace, __index_launch)

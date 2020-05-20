@@ -5,10 +5,12 @@ require("model_init")
 
 local c = regentlib.c
 --local math = terralib.includec("math.h")
-sin = regentlib.sin(double)
+local sin = regentlib.sin(double)
 --terra sin(f : double)
 --  return
 --end
+
+local copysign = regentlib.copysign(double)
 
 task calculate_halo_size( private_bounds: rect2d) : rect2d
   return rect2d({ private_bounds.lo - {1,1}, private_bounds.hi + {1,1} })
@@ -81,34 +83,16 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --    ! -advection (currently first order upwind)
 --        uu_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * un%data(ji,jj)              + &
 --             & (0.5_go_wp + SIGN(0.5_go_wp, u_w)) * un%data(ji-1,jj)
-      var sign_u_w : double = 0.0
-      if(u_w >= 0.0) then
-        sign_u_w = 1.0 
-      else
-        sign_u_w = -1.0
-      end
-      var uu_w = (0.5 - 0.5 * sign_u_w) * velocity_full[point].u_now 
-               + (0.5 + 0.5 * sign_u_w) * velocity_full[point + {-1,0}].u_now
+      var uu_w = (0.5 - copysign(0.5 , u_w)) * velocity_full[point].u_now 
+               + (0.5 + copysign(0.5 , u_w)) * velocity_full[point + {-1,0}].u_now
 
 --        uu_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * un%data(ji,jj)              + &
 --             & (0.5_go_wp - SIGN(0.5_go_wp, u_e)) * un%data(ji+1,jj)
-      var sign_u_e : double = 0.0
-      if(u_e >= 0.0) then
-        sign_u_e = 1.0 
-      else
-        sign_u_e = -1.0
-      end
-      var uu_e = (0.5 + 0.5 * sign_u_e) * velocity_full[point].u_now
-               + (0.5 - 0.5 * sign_u_e) * velocity_full[point + {1,0}].u_now
+      var uu_e = (0.5 + copysign(0.5 , u_e)) * velocity_full[point].u_now
+               + (0.5 - copysign(0.5 , u_e)) * velocity_full[point + {1,0}].u_now
 
 
       var uu_s : double = 0.0
-      var sign_v_s : double = 0.0
-      if(v_s >= 0.0) then
-        sign_v_s = 1.0 
-      else
-        sign_v_s = -1.0
-      end
 --        IF(un%grid%tmask(ji,jj-1) <=0 .OR. un%grid%tmask(ji+1,jj-1) <= 0) THEN 
 --           uu_s = (0.5_go_wp - SIGN(0.5_go_wp, v_s)) * un%data(ji,jj)
 --        ELSE
@@ -117,22 +101,16 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --        END If
       if (grid_region[point + {0,-1}].tmask <= int1d(0) 
           or grid_region[point + {1,-1}].tmask <= int1d(0) ) then
-          uu_s = (0.5 - 0.5 *sign_v_s) * velocity_full[point].u_now
+          uu_s = (0.5 - copysign(0.5 , v_s)) * velocity_full[point].u_now
 
       else
-         uu_s = (0.5 - 0.5 *sign_v_s) * velocity_full[point].u_now
-              + (0.5 + 0.5 *sign_v_s) * velocity_full[point + {0,-1}].u_now
+         uu_s = (0.5 - copysign(0.5 , v_s)) * velocity_full[point].u_now
+              + (0.5 + copysign(0.5 , v_s)) * velocity_full[point + {0,-1}].u_now
  
       end
 
 
       var uu_n : double = 0.0
-      var sign_v_n : double = 0.0
-      if(v_n >= 0.0) then
-        sign_v_n = 1.0 
-      else
-        sign_v_n = -1.0
-      end
 --    IF(un%grid%tmask(ji,jj+1) <=0 .OR. un%grid%tmask(ji+1,jj+1) <= 0) THEN
 --       uu_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * un%data(ji,jj)
 --    ELSE
@@ -142,10 +120,10 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 --
       if( grid_region[point + {0,1}].tmask <= int1d(0) 
           or grid_region[point + {1,1}].tmask <= int1d(0)) then
-          uu_n = (0.5 + 0.5 * sign_v_n) * velocity_full[point].u_now 
+          uu_n = (0.5 + copysign(0.5 , v_n)) * velocity_full[point].u_now 
       else
-          uu_n = (0.5 + 0.5 * sign_v_n) * velocity_full[point].u_now 
-               + (0.5 - 0.5 * sign_v_n) * velocity_full[point + {0,1}].u_now
+          uu_n = (0.5 + copysign(0.5 , v_n)) * velocity_full[point].u_now 
+               + (0.5 - copysign(0.5 , v_n)) * velocity_full[point + {0,1}].u_now
       end
 
 
@@ -352,25 +330,14 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 --    ! -advection (currently first order upwind)i
 --    vv_s = (0.5_go_wp - SIGN(0.5_go_wp, v_s)) * vn%data(ji,jj)     + &
 --         & (0.5_go_wp + SIGN(0.5_go_wp, v_s)) * vn%data(ji,jj-1)
-      var sign_v_s : double = 0.0
-      if(v_s >= 0.0) then
-        sign_v_s = 1.0 
-      else
-        sign_v_s = -1.0
-      end
-      var vv_s = (0.5 - 0.5*sign_v_s) * velocity_full[point].v_now
-               + (0.5 + 0.5*sign_v_s) * velocity_full[point + {0,-1}].v_now
+      var vv_s = (0.5 - copysign(0.5 , v_s)) * velocity_full[point].v_now
+               + (0.5 + copysign(0.5 , v_s)) * velocity_full[point + {0,-1}].v_now
 
 --    vv_n = (0.5_go_wp + SIGN(0.5_go_wp, v_n)) * vn%data(ji,jj)     + &
 --         & (0.5_go_wp - SIGN(0.5_go_wp, v_n)) * vn%data(ji,jj+1)
       var sign_v_n : double = 0.0
-      if(v_n >= 0.0) then
-        sign_v_n = 1.0 
-      else
-        sign_v_n = -1.0
-      end
-      var vv_n = (0.5 + 0.5*sign_v_n) * velocity_full[point].v_now 
-               + (0.5 - 0.5*sign_v_n) * velocity_full[point + {0,1}].v_now
+      var vv_n = (0.5 + copysign(0.5 , v_n)) * velocity_full[point].v_now 
+               + (0.5 - copysign(0.5 , v_n)) * velocity_full[point + {0,1}].v_now
 
 --    IF(vn%grid%tmask(ji-1,jj) <= 0 .OR. vn%grid%tmask(ji-1,jj+1) <= 0) THEN
 --       vv_w = (0.5_go_wp - SIGN(0.5_go_wp, u_w)) * vn%data(ji,jj)
@@ -379,27 +346,15 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 --            & (0.5_go_wp + SIGN(0.5_go_wp, u_w)) * vn%data(ji-1,jj)
 --    END If
       var vv_w : double = 0.0
-      var sign_u_w : double = 0.0
-      if(u_w >= 0.0) then
-        sign_u_w = 1.0 
-      else
-        sign_u_w = -1.0
-      end
       if( grid_region[point + {-1,0}].tmask <= int1d(0) 
        or grid_region[point + {-1,1}].tmask <= int1d(0)) then
-        vv_w = (0.5 - 0.5*sign_u_w) * velocity_full[point].v_now
+        vv_w = (0.5 - copysign(0.5 , u_w)) * velocity_full[point].v_now
       else
-        vv_w = (0.5 - 0.5*sign_u_w) * velocity_full[point].v_now
-             + (0.5 + 0.5*sign_u_w) * velocity_full[point + {-1,0}].v_now 
+        vv_w = (0.5 - copysign(0.5 , u_w)) * velocity_full[point].v_now
+             + (0.5 + copysign(0.5 , u_w)) * velocity_full[point + {-1,0}].v_now 
       end
 
       var vv_e : double = 0.0
-      var sign_u_e : double = 0.0
-      if(u_e >= 0.0) then
-        sign_u_e = 1.0 
-      else
-        sign_u_e = -1.0
-      end
 --    IF(vn%grid%tmask(ji+1,jj) <= 0 .OR. vn%grid%tmask(ji+1,jj+1) <= 0) THEN
 --       vv_e = (0.5_go_wp + SIGN(0.5_go_wp, u_e)) * vn%data(ji,jj)
 --    ELSE
@@ -408,10 +363,10 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
 --    END IF
       if( grid_region[point + {1,0}].tmask <= int1d(0)
        or grid_region[point + {1,1}].tmask <= int1d(0) ) then
-         vv_e = (0.5 + 0.5 * sign_u_e) * velocity_full[point].v_now
+         vv_e = (0.5 + copysign(0.5 , u_e)) * velocity_full[point].v_now
       else
-         vv_e = (0.5 + 0.5 * sign_u_e) * velocity_full[point].v_now
-              + (0.5 - 0.5 * sign_u_e) * velocity_full[point + {1,0}].v_now
+         vv_e = (0.5 + copysign(0.5 , u_e)) * velocity_full[point].v_now
+              + (0.5 - copysign(0.5 , u_e)) * velocity_full[point + {1,0}].v_now
       end
 
 --    adv = vv_w * u_w * depw - vv_e * u_e * depe + &
