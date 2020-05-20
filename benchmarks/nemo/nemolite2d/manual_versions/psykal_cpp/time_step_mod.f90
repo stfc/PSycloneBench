@@ -47,9 +47,7 @@ contains
             sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v
         INTEGER, intent(in) :: istp
 
-        ! FIXME: Should we use %get_data() instead? The dl_esm_inf has some
-        ! infrastructure for device_ptr and dirty data to manage when data is
-        ! modified that may be handy here.
+        ! TODO: Should this use %get_data() instead?
         call wrapper_c_invoke_time_step( &
             ! Fields
             ssha_t%data, &
