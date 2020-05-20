@@ -3,7 +3,7 @@
 # of an equivalent namelist in each one.
 
 # All compilers should be able to compile these IMPLEMENTATIONS
-IMPLEMENTATIONS = psykal_serial psykal_omp
+IMPLEMENTATIONS = psykal_serial psykal_cpp psykal_omp
 # Uncomment IMPLEMENTATIONS below if your environment has MPI compilers
 IMPLEMENTATIONS += psykal_dm
 # Uncomment IMPLEMENTATIONS below if your environment has OpenCL compilers

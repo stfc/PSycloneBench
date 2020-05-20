@@ -80,5 +80,9 @@ allclean: clean
 	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${TIMER_DIR} allclean
 
-docs:
-	doxygen gocean2d.doxy.config
+summary:
+	@echo -n "${CC}\t\tcpu\t"
+	@./nemolite2d.exe | awk 'BEGIN {ORS="\t"} \
+		{if ($$2 == "checksum") {print $$4} } \
+		{if ($$1 == "Time-stepping") {print $$5} } \
+		END {ORS="\n"; print ""}'
