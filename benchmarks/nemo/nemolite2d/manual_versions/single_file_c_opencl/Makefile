@@ -19,7 +19,7 @@ all: $(EXECS)
 COMMON_MODULES = opencl_utils.o timing.o nemolite2d_utils.o
 
 # Source files containing (OpenCL) kernels
-KERNEL_DIR = ../../../kernels/opencl
+KERNEL_DIR = ../../kernels/c_family
 ALL_KERNEL_MODULES = continuity_kern.o momentum_u_kern.o momentum_v_kern.o \
                  boundary_conditions_kern.o time_update_kern.o
 

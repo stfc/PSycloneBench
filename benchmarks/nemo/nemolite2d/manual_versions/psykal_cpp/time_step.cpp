@@ -4,11 +4,11 @@
 #include <cstdlib>
 
 // Kernels
-#include "../../kernels/opencl/continuity_kern.c"
-#include "../../kernels/opencl/momentum_u_kern.c"
-#include "../../kernels/opencl/momentum_v_kern.c"
-#include "../../kernels/opencl/boundary_conditions_kern.c"
-#include "../../kernels/opencl/time_update_kern.c"
+#include "../../kernels/c_family/continuity_kern.c"
+#include "../../kernels/c_family/momentum_u_kern.c"
+#include "../../kernels/c_family/momentum_v_kern.c"
+#include "../../kernels/c_family/boundary_conditions_kern.c"
+#include "../../kernels/c_family/time_update_kern.c"
 
 extern "C" void c_invoke_time_step(
         // Fields
