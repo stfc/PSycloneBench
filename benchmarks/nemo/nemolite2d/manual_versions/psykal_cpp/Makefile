@@ -59,7 +59,7 @@ time_step_mod.o: ${COMMON_LIB} inf_lib
 	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS} -lstdc++
 
 time_step.o: time_step.cpp
-	$(CXX) $(CFLAGS) -DDEBUG -c $<
+	$(CXX) $(CFLAGS) -c $<
 
 %.o: %.f90
 	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
