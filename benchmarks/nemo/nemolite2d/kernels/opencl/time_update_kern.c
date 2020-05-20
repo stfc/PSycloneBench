@@ -1,7 +1,7 @@
 #ifndef __OPENCL_VERSION__
 #include <stdio.h>
+#else
 #include "opencl_utils.h"
-
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else

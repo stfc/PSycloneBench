@@ -3,17 +3,18 @@ F90=gfortran
 CC=gcc
 CXX=g++
 
-CFLAGS="-O3"
+# Common optimization flags for CFLAGS and F90FLAGS
+OPTFLAGS=" -Ofast -mtune=native -finline-limit=50000 -fopt-info-all=gnu_opt_report.txt"
+
+CFLAGS=$OPTFLAGS
 F90FLAGS="-Wall -Wsurprising -Wuninitialized"
 #F90FLAGS += -O0
 #F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g
 F90FLAGS+=" -faggressive-function-elimination"
-F90FLAGS+=" -Ofast -mtune=native -finline-limit=50000 -fopt-info-all=gnu_opt_report.txt"
-F90FLAGS+=" -march=core2 -mtune=core2"
+F90FLAGS+=$OPTFLAGS
 # f2py does not break long lines so tell gfortran not to
 # limit the length of a line
 F90FLAGS+=" -ffree-line-length-none"
-#F90FLAGS = -O3
 
 OMPFLAGS=""
 OMPFLAGS+=" -fopenmp"
@@ -28,3 +29,4 @@ export OMPFLAGS
 export LDFLAGS
 export AR
 export CC
+export CXX

@@ -2,7 +2,7 @@
 // This header isn't available/required in OpenCL
 #include <math.h>
 #endif
-#include "physical_params.h"
+
 /*
 
   type, extends(kernel_type) :: bc_ssh
@@ -311,13 +311,14 @@ __kernel void bc_flather_u_code(int width,
 				__global double* restrict ua,
 				__global double* restrict hu,
 				__global double* restrict sshn_u,
-				__global int* restrict tmask){
+				__global int* restrict tmask,
+                double g){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
   if(ji > (width-2))return;
 #else
 void bc_flather_u_code(int ji, int jj, int width,
-		       double *ua, double *hu, double *sshn_u, int *tmask){
+		       double *ua, double *hu, double *sshn_u, int *tmask, double g){
 #endif
   int idx = jj*width + ji;
 
@@ -331,10 +332,10 @@ void bc_flather_u_code(int ji, int jj, int width,
 
   if(tmask[idx] < 0){
     ua[idx] = ua[idx+1] +
-      sqrt(G/hu[idx]) * (sshn_u[idx] - sshn_u[idx+1]);
+      sqrt(g/hu[idx]) * (sshn_u[idx] - sshn_u[idx+1]);
   }
   else if(tmask[idx+1]< 0){
-    ua[idx] = ua[idx-1] + sqrt(G/hu[idx]) *
+    ua[idx] = ua[idx-1] + sqrt(g/hu[idx]) *
 	 (sshn_u[idx] - sshn_u[idx-1]);
   }
   
@@ -370,14 +371,15 @@ __kernel void bc_flather_v_code(int width,
 				__global double* restrict va,
 				__global double* restrict hv, 
 				__global double* restrict sshn_v, 
-				__global int* restrict tmask){
+				__global int* restrict tmask,
+                double g){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
   int nrow = (int)get_global_size(1);
   if(jj > (nrow-2))return;
 #else
 void bc_flather_v_code(int ji, int jj, int width,
-		       double *va, double *hv, double *sshn_v, int *tmask){
+		       double *va, double *hv, double *sshn_v, int *tmask, double g){
 #endif
   int idx = jj*width + ji;
 
@@ -388,11 +390,11 @@ void bc_flather_v_code(int ji, int jj, int width,
   if(tmask[idx] + tmask[idx+width] <= -1) return;
     
   if(tmask[idx] < 0){
-    va[idx] = va[idx+width] + sqrt(G/hv[idx]) *
+    va[idx] = va[idx+width] + sqrt(g/hv[idx]) *
 	 (sshn_v[idx] - sshn_v[idx+width]);
   }
   else if(tmask[idx+width] < 0){
-    va[idx] = va[idx-width] + sqrt(G/hv[idx]) *
+    va[idx] = va[idx-width] + sqrt(g/hv[idx]) *
       (sshn_v[idx] - sshn_v[idx-width]);
   }
 

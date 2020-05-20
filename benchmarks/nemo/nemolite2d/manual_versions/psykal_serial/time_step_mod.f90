@@ -99,6 +99,7 @@ contains
 
     call timer_stop(cont_timer)
 
+
     call timer_start(mom_timer, label='Momentum')
 
 !    do jj = ua%internal%ystart, ua%internal%ystop, 1
