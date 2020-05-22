@@ -18,10 +18,11 @@ COMMON_MODULES = ${COMMON_LIB} ${KERNELS} ${INF_LIB}
 # Interdependencies between modules, alphabetical order
 time_step_mod.o: ${COMMON_LIB} ${KERNELS} inf_lib
 
+IMPLEMENTATIONS=nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv \
+nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
 
 # The targets that this Makefile supports
-all: nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv \
-nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
+all: ${IMPLEMENTATIONS}
 
 # Normal targets. Need to link with OpenMP in order to use OMP timer
 nemolite2d: ${COMMON_MODULES} time_step_mod.o nemolite2d.o
@@ -104,3 +105,15 @@ summary:
 		{if ($$2 == "checksum") {print $$4} } \
 		{if ($$1 == "Time-stepping") {print $$5} } \
 		END {ORS="\n"; print ""}'
+
+# Execute all enabled implementations with their best full node performance and
+# report their ua and uv final checksums and the time-stepping time.
+summary_table:
+	@echo "Implementation\t\tCompiler\tArch\tua checksum\tuv checksum\ttime/step"
+	@$(foreach var,$(IMPLEMENTATIONS), \
+		echo -n "$(var)\t${CC}\t\tcpu\t" && \
+		./$(var).exe | awk 'BEGIN {ORS="\t"} \
+			{if ($$2 == "checksum") {print $$4} } \
+			{if ($$1 == "Time-stepping") {print $$5} } \
+			END {ORS="\n"; print ""}'; \
+	)

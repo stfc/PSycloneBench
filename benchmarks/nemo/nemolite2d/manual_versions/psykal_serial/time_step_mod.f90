@@ -75,6 +75,9 @@ contains
     !vwhole_ystart = 1 ! vystart - NBOUNDARY
     !vwhole_ystop  = N ! vystop  + NBOUNDARY
 
+    !write(*,*) ssha%grid%subdomain%global%nx, ssha%grid%subdomain%internal%xstop
+    !write(*,*) ssha%grid%subdomain%global%ny, ssha%grid%subdomain%internal%ystop
+
     call timer_start(cont_timer, label='Continuity')
 
 !    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
