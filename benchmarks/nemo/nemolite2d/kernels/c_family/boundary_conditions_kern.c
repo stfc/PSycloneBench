@@ -160,10 +160,10 @@
 
 #ifdef __OPENCL_VERSION__
 __kernel void bc_ssh_code(int width,
-			  int istep,
-			  __global double* restrict ssha,
-			  __global int* restrict tmask,
-			  double rdt){
+              int istep,
+              __global double* restrict ssha,
+              __global int* restrict tmask,
+              double rdt){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
   int nrow = (int)get_global_size(1);
@@ -171,7 +171,7 @@ __kernel void bc_ssh_code(int width,
   if(jj==0 || jj > (nrow-2))return;
 #else
 inline void bc_ssh_code(int ji, int jj, int width,
-		 int istep, double *ssha, int *tmask, double rdt){
+         int istep, double *ssha, int *tmask, double rdt){
 #endif
   int idx = jj*width + ji;
 
@@ -225,8 +225,8 @@ inline void bc_ssh_code(int ji, int jj, int width,
     /** Kernel to apply solid boundary conditions for u-velocity */
 #ifdef __OPENCL_VERSION__
 __kernel void bc_solid_u_code(int width,
-			      __global double* restrict ua,
-			      __global int* restrict tmask){
+                  __global double* restrict ua,
+                  __global int* restrict tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
   if(ji > (width-2))return;
@@ -262,8 +262,8 @@ inline void bc_solid_u_code(int ji, int jj, int width, double *ua, int *tmask){
   /** Kernel to apply solid boundary conditions for v-velocity */
 #ifdef __OPENCL_VERSION__
 __kernel void bc_solid_v_code(int width,
-			      __global double* restrict va,
-			      __global int* restrict tmask){
+                  __global double* restrict va,
+                  __global int* restrict tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
   int nrow = (int)get_global_size(1);
@@ -308,17 +308,17 @@ inline void bc_solid_v_code(int ji, int jj, int width, double *va, int *tmask){
 /** Kernel to apply Flather condition to U */
 #ifdef __OPENCL_VERSION__
 __kernel void bc_flather_u_code(int width,
-				__global double* restrict ua,
-				__global double* restrict hu,
-				__global double* restrict sshn_u,
-				__global int* restrict tmask,
+                __global double* restrict ua,
+                __global double* restrict hu,
+                __global double* restrict sshn_u,
+                __global int* restrict tmask,
                 double g){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
   if(ji > (width-2))return;
 #else
 inline void bc_flather_u_code(int ji, int jj, int width,
-		       double *ua, double *hu, double *sshn_u, int *tmask, double g){
+               double *ua, double *hu, double *sshn_u, int *tmask, double g){
 #endif
   int idx = jj*width + ji;
 
@@ -336,7 +336,7 @@ inline void bc_flather_u_code(int ji, int jj, int width,
   }
   else if(tmask[idx+1]< 0){
     ua[idx] = ua[idx-1] + sqrt(g/hu[idx]) *
-	 (sshn_u[idx] - sshn_u[idx-1]);
+     (sshn_u[idx] - sshn_u[idx-1]);
   }
   
 }
@@ -368,10 +368,10 @@ inline void bc_flather_u_code(int ji, int jj, int width,
       of velocity */
 #ifdef __OPENCL_VERSION__
 __kernel void bc_flather_v_code(int width,
-				__global double* restrict va,
-				__global double* restrict hv, 
-				__global double* restrict sshn_v, 
-				__global int* restrict tmask,
+                __global double* restrict va,
+                __global double* restrict hv, 
+                __global double* restrict sshn_v, 
+                __global int* restrict tmask,
                 double g){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
@@ -379,7 +379,7 @@ __kernel void bc_flather_v_code(int width,
   if(jj > (nrow-2))return;
 #else
 inline void bc_flather_v_code(int ji, int jj, int width,
-		       double *va, double *hv, double *sshn_v, int *tmask, double g){
+               double *va, double *hv, double *sshn_v, int *tmask, double g){
 #endif
   int idx = jj*width + ji;
 
@@ -391,7 +391,7 @@ inline void bc_flather_v_code(int ji, int jj, int width,
     
   if(tmask[idx] < 0){
     va[idx] = va[idx+width] + sqrt(g/hv[idx]) *
-	 (sshn_v[idx] - sshn_v[idx+width]);
+     (sshn_v[idx] - sshn_v[idx+width]);
   }
   else if(tmask[idx+width] < 0){
     va[idx] = va[idx-width] + sqrt(g/hv[idx]) *

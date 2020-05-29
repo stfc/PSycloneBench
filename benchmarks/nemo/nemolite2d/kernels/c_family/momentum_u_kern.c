@@ -13,89 +13,89 @@
 
 /** Set the arguments for the OpenCL kernel */
 void set_args_momu(cl_kernel kern,
-		   cl_int *nx,
-		   cl_mem *ua_device,
-		   cl_mem *un_device,
-		   cl_mem *vn_device,
-		   cl_mem *hu_device,
-		   cl_mem *hv_device,
-		   cl_mem *ht_device,
-		   cl_mem *ssha_u_device,
-		   cl_mem *sshn_device,
-		   cl_mem *sshn_u_device,
-		   cl_mem *sshn_v_device,
-		   cl_mem *tmask_device,
-		   cl_mem *e1u_device, cl_mem *e1v_device,
-		   cl_mem *e1t_device, cl_mem *e2u_device,
-		   cl_mem *e2t_device, cl_mem *e12u_device,
-		   cl_mem *gphiu_device,
-		   cl_double *rdt, cl_double *cbfr, cl_double *visc){
+           cl_int *nx,
+           cl_mem *ua_device,
+           cl_mem *un_device,
+           cl_mem *vn_device,
+           cl_mem *hu_device,
+           cl_mem *hv_device,
+           cl_mem *ht_device,
+           cl_mem *ssha_u_device,
+           cl_mem *sshn_device,
+           cl_mem *sshn_u_device,
+           cl_mem *sshn_v_device,
+           cl_mem *tmask_device,
+           cl_mem *e1u_device, cl_mem *e1v_device,
+           cl_mem *e1t_device, cl_mem *e2u_device,
+           cl_mem *e2t_device, cl_mem *e12u_device,
+           cl_mem *gphiu_device,
+           cl_double *rdt, cl_double *cbfr, cl_double *visc){
   cl_int ret;
   cl_int arg_idx = 0;
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)nx);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)ua_device);
+               (void *)ua_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)un_device);
+               (void *)un_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)vn_device);
+               (void *)vn_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)hu_device);
+               (void *)hu_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)hv_device);
+               (void *)hv_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)ht_device);
+               (void *)ht_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)ssha_u_device);
+               (void *)ssha_u_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)sshn_device);
+               (void *)sshn_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)sshn_u_device);
+               (void *)sshn_u_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)sshn_v_device);
+               (void *)sshn_v_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)tmask_device);
+               (void *)tmask_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)e1u_device);
+               (void *)e1u_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)e1v_device);
+               (void *)e1v_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)e1t_device);
+               (void *)e1t_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)e2u_device);
+               (void *)e2u_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)e2t_device);
+               (void *)e2t_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)e12u_device);
+               (void *)e12u_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
-		       (void *)gphiu_device);
+               (void *)gphiu_device);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double),
-		       (void *)rdt);
+               (void *)rdt);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double),
-		       (void *)cbfr);
+               (void *)cbfr);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double),
-		       (void *)visc);
+               (void *)visc);
   check_status("clSetKernelArg", ret);
   fprintf(stdout, "Set %d arguments for Momentum-u kernel\n", arg_idx);
 }
@@ -147,37 +147,37 @@ void set_args_momu(cl_kernel kern,
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */
 __kernel void momentum_u_code(int width,
-			      __global double* restrict ua,
-			      const __global double* restrict un,
-			      const __global double* restrict vn,
-			      const __global double* restrict hu,
-			      const __global double* restrict hv,
-			      const __global double* restrict ht,
-			      const __global double* restrict ssha_u,
-			      const __global double* restrict sshn,
-			      const __global double* restrict sshn_u,
-			      const __global double* restrict sshn_v,
-			      const __global int* restrict tmask,
-			      const __global double* restrict e1u,
-			      const __global double* restrict e1v,
-			      const __global double* restrict e1t,
-			      const __global double* restrict e2u,
-			      const __global double* restrict e2t,
-			      const __global double* restrict e12u,
-			      const __global double* restrict gphiu,
-			      double rdt, double cbfr, double visc){
+                  __global double* restrict ua,
+                  const __global double* restrict un,
+                  const __global double* restrict vn,
+                  const __global double* restrict hu,
+                  const __global double* restrict hv,
+                  const __global double* restrict ht,
+                  const __global double* restrict ssha_u,
+                  const __global double* restrict sshn,
+                  const __global double* restrict sshn_u,
+                  const __global double* restrict sshn_v,
+                  const __global int* restrict tmask,
+                  const __global double* restrict e1u,
+                  const __global double* restrict e1v,
+                  const __global double* restrict e1t,
+                  const __global double* restrict e2u,
+                  const __global double* restrict e2t,
+                  const __global double* restrict e12u,
+                  const __global double* restrict gphiu,
+                  double rdt, double cbfr, double visc){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
 #else
 /** Interface to standard C version of kernel */
 inline void momentum_u_code(int ji, int jj, int width,
-		     double *ua, double *un, double *vn,
-		     double *hu, double *hv, double *ht, double *ssha_u,
-		     double *sshn, double *sshn_u, double *sshn_v,
-		     int *tmask,
-		     double *e1u, double *e1v, double *e1t,
-		     double *e2u, double *e2t, double *e12u, double *gphiu,
-		     double rdt, double cbfr, double visc, double omega, double d2r, double g){
+             double *ua, double *un, double *vn,
+             double *hu, double *hv, double *ht, double *ssha_u,
+             double *sshn, double *sshn_u, double *sshn_v,
+             int *tmask, double *e1u, double *e1v, double *e1t,
+             double *e2u, double *e2t, double *e12u, double *gphiu,
+             double rdt, double cbfr, double visc, double omega,
+             double d2r, double g){
 #endif
   double u_e, u_w, v_n, v_s;
   double v_nc, v_sc;
@@ -198,7 +198,7 @@ inline void momentum_u_code(int ji, int jj, int width,
 
 #ifdef SIMPLE_MOMENTUM
   ua[idx] = (un[idx] * (hu[idx] + sshn_u[idx]) + rdt * 
-	     (1.0) / e12u[idx]) / 
+         (1.0) / e12u[idx]) / 
     (hu[idx] + ssha_u[idx]) / (1.0 + cbfr * rdt) ;
 #else
   idxim1 = idx - 1;
@@ -219,12 +219,12 @@ inline void momentum_u_code(int ji, int jj, int width,
   v_sc = 0.5 * (vn[idxjm1] + vn[idxip1jm1]);
   v_s  = 0.5 * v_sc * (e1v[idxjm1] + e1v[idxip1jm1]);
   deps = 0.5 * (hv[idxjm1] + sshn_v[idxjm1] + hv[idxip1jm1] +
-		sshn_v[idxip1jm1]);
+        sshn_v[idxip1jm1]);
 
   v_nc = 0.5 * (vn[idx] + vn[idxip1]);
   v_n  = 0.5 * v_nc * (e1v[idx] + e1v[idxip1]);
   depn = 0.5 * (hv[idx] + sshn_v[idx] + hv[idxip1] +
-		sshn_v[idxip1]);
+        sshn_v[idxip1]);
 
   // -advection (currently first order upwind)
   uu_w = (0.5 - copysign(0.5, u_w)) * un[idx] +
