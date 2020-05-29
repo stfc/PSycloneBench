@@ -53,7 +53,7 @@ subroutine matrix_vector_kernel_code(cell,              &
     end do
     ik = (cell-1)*nlayers + k + 1
     ! lhs_e = matmul(matrix(:,:,ik),x_e)
-    call libxsmm_dmmcall(xmm, matrix(:,:,ik+k), x_e, lhs_e)
+    call libxsmm_dmmcall(xmm, matrix(:,:,ik), x_e, lhs_e)
     do df = 1,ndf1
        lhs(map1(df)+k) = lhs(map1(df)+k) + lhs_e(df)
     end do
