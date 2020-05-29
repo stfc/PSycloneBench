@@ -1,37 +1,43 @@
 #!/usr/bin/env bash
 
-# This script executes the selected matrix_vector multiplication implementation
-# with a variety of OpenMP configurations to analyse the threading scalability.
+# This script has Intel-specific KMP environment variables in it
+
+# This script executes the selected original and xsmm matrix_vector
+# multiplication implementation with a variety of OpenMP
+# configurations to analyse its performance.
 
 # The configurable parameters are:
 #   - $v: matrix_vector implementation
 #   - $ps: problem size (horizontal)
-#   - $omp_s: OpenMP implementation
-#   - $omp_sch: OpenMP scheduler
-#   - $omp_aff: OpenMP affinity
+#   - $omp_sch: OpenMP scheduler [static, dynamic, guided]
+#   - $omp_aff: OpenMP affinity [none, compact, scatter]
 #   - $smt: Number of SMT
 #   - $cores: Number of cores
+
 # Update the for statements to configure each parameter search space.
 
-output=scalability.txt
+echo "Don't forget to set the parameters to the required values"
+exit
 
-echo "Scalability plot" | tee $output
+output=results.txt
+
+echo "Original vs libxsmm plot" | tee $output
 
 for v in orig xsmm ; do
     for ps in 32; do
-        for omp_s in colouring ; do
+	for vertical in 32 100; do
             for omp_sch in static ; do
             for omp_aff in scatter ;  do
-            for smt in 1 ; do
-            for cores in 1 2 4 6; do
-                echo $v $omp_s $smt $cores
+            for smt in 1 2; do
+            for cores in 1 2 4 6 8; do
+                echo $v $smt $cores
                 OMP_NUM_THREADS=$(( ${cores} * ${smt} )) \
                     KMP_HW_SUBSET=${cores}c,${smt}t \
                     KMP_AFFINITY=$omp_aff OMP_SCHEDULE=$omp_sch \
-                    ./kdriver_$v -g $ps 16 > output
+                    ./kdriver_$v -g $ps $vertical > output
                 t=$(cat output | grep "Loop time" | awk '{print $5}')
                 check=$(cat output | grep "Reduction value" | awk '{print $3}')
-                echo $v $ps $omp_s $omp_sch $omp_aff $cores $smt $t $check >> $output
+                echo $v $ps $vertical $omp_sch $omp_aff $cores $smt $t $check >> $output
             done
             done
             done
