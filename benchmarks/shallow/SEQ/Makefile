@@ -36,7 +36,7 @@ all: $(EXECS)
 
 # Targets involving the PSyclone code-generation framework
 shallow_gen.f90: infrastructure_mod.f90 shallow_alg.f90
-	psyclone -api gocean1.0 shallow_alg.f90 -oalg shallow_gen.f90 -opsy psy.f90
+	psyclone -s ./ocl_transform.py -api gocean1.0 shallow_alg.f90 -oalg shallow_gen.f90 -opsy psy.f90
 
 # psy.f90 is generated at the same time as shallow_gen.f90
 psy.f90: shallow_gen.f90
