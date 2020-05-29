@@ -1,0 +1,12 @@
+#BSUB -J runLFRic
+#BSUB -o /lustre/scafellpike/local/HCP055/pxs02/rxf70-pxs02/PSycloneBench/benchmarks/smallmatvec/manual_versions/libxsmm/%J.out
+#BSUB -e /lustre/scafellpike/local/HCP055/pxs02/rxf70-pxs02/PSycloneBench/benchmarks/smallmatvec/manual_versions/libxsmm/%J.err
+#BSUB -n 1
+#BSUB -R 'span[ptile=32]'
+#BSUB -W 01:00
+#BSUB -q scafellpikeSKL
+#BSUB -x
+
+cd /lustre/scafellpike/local/HCP055/pxs02/rxf70-pxs02/PSycloneBench/benchmarks/smallmatvec/manual_versions/libxsmm
+./runme.sh
+
