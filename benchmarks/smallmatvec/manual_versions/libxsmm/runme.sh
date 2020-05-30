@@ -17,8 +17,8 @@
 #   - $cores: Number of cores
 #   - $v: matrix_vector implementation [orig, xsmm]
 
-echo "Don't forget to set the parameters to the required values"
-exit
+# echo "Don't forget to set the parameters to the required values"
+# exit
 
 echo "Original vs libxsmm timing results"
 
@@ -26,11 +26,11 @@ for ps in 32; do
     for vertical in 32 100; do
         for omp_sch in static ; do
             for omp_aff in scatter ;  do
-		for smt in 1 2; do
+		for smt in 1; do
 		    output=libxsmm_results_h${ps}_v${vertical}_sch${omp_sch}_aff${omp_aff}_smt${smt}.txt
-		    for cores in 1 2 4 6 8; do
+                    for cores in 1 2 4 8 12 16 24 32; do
 			echo $v $ps $vertical $omp_sch $omp_aff $cores $smt
-			echo -n $v $ps $vertical $omp_sch $omp_aff $cores $smt >> $output
+			echo -n $ps $vertical $omp_sch $omp_aff $cores $smt >> $output
 			for v in orig xsmm ; do
 			    OMP_NUM_THREADS=$(( ${cores} * ${smt} )) \
 			      KMP_HW_SUBSET=${cores}c,${smt}t \
@@ -38,7 +38,7 @@ for ps in 32; do
 			      ./kdriver_$v -g $ps $vertical > output
 			    t=$(cat output | grep "Loop time" | awk '{print $5}')
 			    check=$(cat output | grep "Reduction value" | awk '{print $3}')
-			    echo -n $t $check >> $output
+			    echo -n " " $t $check >> $output
 			done
 			echo >> $output
 		    done

@@ -3,8 +3,8 @@ FFLAGS=-qopenmp -Ofast
 LDFLAGS=
 
 # MKLFLAGS="-L${MKLROOT}/lib/intel64 -mkl"
-XSMM_INCLUDE=-I${HOME}/libxsmm/libxsmm-1.15/include
-XSMM_LINK=-L/home/rford/libxsmm/libxsmm-1.15/lib -lxsmmf -lxsmm -lxsmmnoblas
+XSMM_INCLUDE=-I/lustre/scafellpike/local/HCP055/pxs02/rxf70-pxs02/libxsmm-1.15/include
+XSMM_LINK=-L/lustre/scafellpike/local/HCP055/pxs02/rxf70-pxs02/libxsmm-1.15/lib -lxsmmf -lxsmm -lxsmmnoblas
 
 all : kdriver_orig kdriver_xsmm
 
@@ -22,13 +22,13 @@ matrix_vector_kernel_xsmm_mod.o: constants_mod.o
 	$(FC) $(FFLAGS) -c $<
 
 kdriver_orig: kdriver_orig.o matrix_vector_kernel_mod.o constants_mod.o
-	$(FC) $(FFLAGS) -xAVX2 -o $@ $^ $(LDFLAGS)
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
 
 kdriver_orig.o: kdriver.f90
 	$(FC) $(FFLAGS) -c $< -o kdriver_orig.o
 
 kdriver_xsmm: kdriver_xsmm.o matrix_vector_kernel_xsmm_mod.o constants_mod.o
-	$(FC) $(FFLAGS) -xAVX2 -o $@ $^ $(LDFLAGS) ${XSMM_LINK}
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) ${XSMM_LINK}
 
 kdriver_xsmm.o: kdriver.f90
 	$(FC) $(FFLAGS) -c $< -o kdriver_xsmm.o
