@@ -15,7 +15,7 @@
 #   - $omp_aff: OpenMP affinity [none, compact, scatter]
 #   - $smt: Number of SMT
 #   - $cores: Number of cores
-#   - $v: matrix_vector implementation [orig, xsmm]
+#   - $v: matrix_vector implementation [orig, xsmm, reorder]
 
 # echo "Don't forget to set the parameters to the required values"
 # exit
@@ -31,7 +31,7 @@ for ps in 32; do
                     for cores in 1 2 4 8 12 16 24 32; do
 			echo $v $ps $vertical $omp_sch $omp_aff $cores $smt
 			echo -n $ps $vertical $omp_sch $omp_aff $cores $smt >> $output
-			for v in orig xsmm ; do
+			for v in orig xsmm reorder; do
 			    OMP_NUM_THREADS=$(( ${cores} * ${smt} )) \
 			      KMP_HW_SUBSET=${cores}c,${smt}t \
 			      KMP_AFFINITY=$omp_aff OMP_SCHEDULE=$omp_sch \
