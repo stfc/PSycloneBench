@@ -112,7 +112,7 @@ set cbtics  norangelimit autofreq
 set rtics axis in scale 1,0.5 nomirror norotate  autojustify
 set rtics  norangelimit autofreq 
 unset ttics
-set title "Matvec benchmark, increasing columns, 32 threads, 2*16-core skylake, 32 vertical"
+set title "Matvec benchmark, increasing columns, 32 threads, 2*16-core skylake, 32 levels"
 set title  font "" norotate
 set timestamp bottom 
 set timestamp "" 

@@ -1,18 +1,20 @@
 
 This directory allows the performance of the default matrix vector
-kernel benchmark to be compared with a libxsmm version. In the libxsmm
-version the matmul intrinsic is replaced and an explicit just-in-time
-compilation call is placed outside of the k-loop.
+kernel benchmark to be compared with a libxsmm version and the kinner
+version with the matrix data reordered. In the libxsmm version the
+matmul intrinsic is replaced and an explicit just-in-time compilation
+call is placed outside of the k-loop.
 
-This code was originally proposed, implemented and tested (on the full
-LFRic code) by Wolfgang Hayek where he found a significant performance
-improvement. This version differs slightly from his version as he also
-included a special case when the number of dofs in both cases is 1. In
-this benchmark we do not have this situation so can safely ignore this
-additional optimisation. Optimising for particular numbers of dofs is
-being done but is being treated as a separate optimisation.
+The libxsmm version was originally proposed, implemented and tested
+(on the full LFRic code) by Wolfgang Hayek where he found a
+significant performance improvement. This version differs slightly
+from his version as he also included a special case when the number of
+dofs in both cases is 1. In this benchmark we do not have this
+situation so can safely ignore this additional
+optimisation. Optimising for particular numbers of dofs is being done
+but is being treated as a separate optimisation.
 
-Files are
+The files in this directory are
 
 matrix_vector_kernel_mod.f90: the original matrix vector kernel with
 metadata removed to reduce the number of modules needed to compile the
@@ -20,6 +22,9 @@ example.
 
 matrix_vector_kernel_xsmm_mod.f90: the libxsmm modified matrix vector
     kernel which also has the metadata removed.
+
+matrix_vector_kernel_reorder_mod.f90: the kinner version with the
+    matrix assumed to be reordered.
 
 kdriver.f90: a standalone driver for the benchmark which includes the
     coloured OpenMP parallelisation in the horizontal. This version
@@ -31,7 +36,7 @@ kdriver.f90: a standalone driver for the benchmark which includes the
 constants_mod.f90: precision constants needed by the kernel and
     driver.
 
-Makefile: a Makefile designed to use the intel compiler. The makefile
+Makefile: a makefile designed to use the intel compiler. The makefile
     relies on libxsmm being installed and pointed to appropriately in
     order to compile the codes (the original and the xsmm version).
 
@@ -40,3 +45,8 @@ runme.sh: a sample script to run the benchmark for different
     tailored to the particular cpu the code is being run on and the
     problem sizes being examined.
 
+results: results of running this benchmark on skylake processors
+
+submitRun.lsf: a sample script for running this benchmark on with
+    lsf. The path in this submission script will have to be changed
+    for the particular environment.

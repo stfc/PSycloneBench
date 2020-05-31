@@ -43,7 +43,7 @@ unset grid
 unset raxis
 set theta counterclockwise right
 set style parallel front  lt black linewidth 2.000 dashtype solid
-set key title "matvec orig vs libxsmm" center
+set key title "" center
 set key fixed left top vertical Right noreverse enhanced autotitle nobox
 set key noinvert samplen 4 spacing 1 width 0 height 0 
 set key maxcolumns 0 maxrows 0
@@ -112,7 +112,7 @@ set cbtics  norangelimit autofreq
 set rtics axis in scale 1,0.5 nomirror norotate  autojustify
 set rtics  norangelimit autofreq 
 unset ttics
-set title "matvec benchmark orig vs libxsmm 32 columns 32 levels" 
+set title "matvec benchmark 32*32 columns 32 levels on skylake" 
 set title  font "" norotate
 set timestamp bottom 
 set timestamp "" 
@@ -164,5 +164,5 @@ set psdir
 set fit brief errorvariables nocovariancevariables errorscaling prescale nowrap v5
 GNUTERM = "wxt"
 ## Last datafile plotted: "libxsmm_results_h32_v32_schstatic_affscatter_smt1_r2.txt"
-plot 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r4.txt' u 5:(1.0/$7) t 'orig run 1' w linesp, 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r4.txt' u 5:(1.0/$9) t 'libxsmm run 1' w linesp, 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r4.txt' u 5:(1.0/$11) t 'kinner re-ordered matrix run 1' w linesp, 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r5.txt' u 5:(1.0/$7) t 'orig run 2' w linesp, 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r5.txt' u 5:(1.0/$9) t 'libxsmm run 2' w linesp, 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r5.txt' u 5:(1.0/$11) t 'kinner reordered matrix run 2' w linesp
+plot 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r1.txt' u 5:(1.0/$7) t 'orig run 1' w linesp, 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r1.txt' u 5:(1.0/$9) t 'libxsmm run 1' w linesp, 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r1.txt' u 5:(1.0/$11) t 'kinner re-ordered matrix run 1' w linesp, 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r2.txt' u 5:(1.0/$7) t 'orig run 2' w linesp, 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r2.txt' u 5:(1.0/$9) t 'libxsmm run 2' w linesp, 'libxsmm_results_h32_v32_schstatic_affscatter_smt1_r2.txt' u 5:(1.0/$11) t 'kinner reordered matrix run 2' w linesp
 #    EOF
