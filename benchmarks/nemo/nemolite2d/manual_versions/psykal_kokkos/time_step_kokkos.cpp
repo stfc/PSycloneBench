@@ -56,7 +56,7 @@ extern "C" void c_invoke_time_step(
         ){
 
     // Execution policy for a multi-dimensional (2D) iteration space.
-    typedef Kokkos::MDRangePolicy< Kokkos::Rank<2> > mdrange_policy;
+    typedef Kokkos::MDRangePolicy<Kokkos::Rank<2>, Kokkos::OpenMP> mdrange_policy;
 
     // MDRangePolicy uses an open interval (does not include the end
     // point), while the provided 'stop' represent closed ranges.

@@ -31,6 +31,7 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 
 # Import Kokkos build infrastructure
 KOKKOS_PATH=${HOME}/build/kokkos
+KOKKOS_DEVICES=OpenMP
 include $(KOKKOS_PATH)/Makefile.kokkos
 
 # Linking the executable needs the -lstdc++ to link also the std lib functions
@@ -41,7 +42,7 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 
 # C++ rules
 time_step_kokkos.o: time_step_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
-	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CFLAGS) -c $<
+	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CFLAGS) $(OMPFLAGS) -c $<
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
