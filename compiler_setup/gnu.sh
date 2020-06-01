@@ -25,6 +25,7 @@ AR=ar
 
 export F90
 export F90FLAGS
+export CFLAGS
 export OMPFLAGS
 export LDFLAGS
 export AR

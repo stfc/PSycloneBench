@@ -1,76 +1,61 @@
-# Makefile for manual OpenMP version of PSyKAl'd NEMOLite2D.
+# Makefile for manual C++ version of PSyKAl'd NEMOLite2D.
 #
 # This Makefile picks up the compiler to use any flags from
 # environment variables. e.g. to use gfortran:
 # 
 # export F90=gfortran
+# export CXX=g++
+# export CFLAGS="-O3"
 # export F90FLAGS="-O3"
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
 
-# Location of the dl_timer and infrastucture code
-SHARED_DIR = ../../../../../shared
+.PHONY: nemolite2d nemolite2d_omp
+.DEFAULT_GOAL := nemolite2d
 
-TIMER_DIR = ${SHARED_DIR}/dl_timer
-TIMER_INC = ${TIMER_DIR}/src
-TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
-INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
-INF_INC = ${INF_DIR}/src
-INF_LIB = ${INF_DIR}/src/lib_fd.a
+include ../common.mk
 
-COMMON_DIR = ../../common
-COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
-
-# The targets that this Makefile supports
-EXECS = nemolite2d
-MODULES = time_step_mod.o
-
-# API lib is an archive that must come at the end of the list of objects
+# INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
-COMMON_MODULES = $(MODULES)
-
-.PHONY: all nemolite2d timer_lib inf_lib
-
-all: $(EXECS)
-
-timer_lib:
-	${MAKE} -C ${TIMER_DIR} sm_lib
-
-inf_lib:
-	${MAKE} -C ${INF_DIR}
-
-${COMMON_LIB}:
-	${MAKE} -C ${COMMON_DIR}
+LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
+COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${KERNELS} ${INF_LIB}
 
 # Normal targets
 nemolite2d: ${COMMON_LIB} timer_lib inf_lib time_step.o
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step.o" nemolite2d.exe
 
+nemolite2d_omp: ${COMMON_LIB} timer_lib inf_lib time_step_omp.o
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_omp.o" nemolite2d_omp.exe
+
+nemolite2d_ompopt: ${COMMON_LIB} timer_lib inf_lib time_step_ompopt.o
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_ompopt.o" nemolite2d_ompopt.exe
+
 nemolite2d.o: $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
+time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
+                 time_update_mod.o boundary_conditions_mod.o
 
-time_step_mod.o: ${COMMON_LIB} inf_lib
-
-# Generic rules
-
-# It needs the -stdc++ to link also the std lib functions called from C++ code
+# Linking the executable needs the -lstdc++ to link also the std lib functions
+# called from C++ code
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS} -lstdc++
+	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
+		$(LDFLAGS) ${OMPFLAGS} -lstdc++
 
+# C++ rules
 time_step.o: time_step.cpp
-	$(CXX) $(CFLAGS) -c $<
+	$(CXX) $(CFLAGS) -c $< -o $@
 
-%.o: %.f90
-	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+time_step_omp.o: time_step_omp.cpp
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
 
-%.o: %.F90
-	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+time_step_ompopt.o: time_step_ompopt.cpp
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~ *.dat
-	rm -f gnu_opt_report.txt
+	rm -f gnu_opt_report.txt *.optrpt
 
 allclean: clean
 	rm -f ${KERNELS:.o=.f90}

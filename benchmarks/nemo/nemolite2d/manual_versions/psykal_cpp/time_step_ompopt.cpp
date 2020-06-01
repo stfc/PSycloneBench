@@ -10,6 +10,12 @@
 #include "../../kernels/c_family/boundary_conditions_kern.c"
 #include "../../kernels/c_family/time_update_kern.c"
 
+// Optimizations:
+// - Fuse some kernels (x1.1), fusing more kernels didn't make any difference.
+// - Change array copies with swaps is x1.1 faster, but since the fortran->c
+// call passes pointers locations by value the swap is not permanent.
+// - Tests with __restrict__ or assume_aligned didn't improve performance.
+
 extern "C" void c_invoke_time_step(
         // Fields
         double * ssha_t,
@@ -52,40 +58,24 @@ extern "C" void c_invoke_time_step(
         double g
         ){
 
-    // Continuity kernel (internal domain)
+    // Continuity, momentum and bc_ssh kernels (internal domain)
+    #pragma omp parallel for
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             continuity_code(ji, jj, width, ssha_t, sshn_t, sshn_u, sshn_v, \
                 hu, hv, un, vn, rdt, area_t);
-        }
-    }
-
-    // Momentum_u kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop; ji++){
+            bc_ssh_code(ji, jj, width, istep, ssha_t, tmask, rdt);
             momentum_u_code(ji, jj, width, ua, un, vn, hu, hv, ht, ssha_u, \
                 sshn_t, sshn_u, sshn_v, tmask, dx_u, dx_v, dx_t, dy_u, dy_t, \
                 area_u, gphiu, rdt, cbfr, visc, omega, d2r, g);
-        }
-    }
-
-    // Momentum_v kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             momentum_v_code(ji, jj, width, va, un, vn, hu, hv, ht, ssha_v, \
                 sshn_t, sshn_u, sshn_v, tmask, dx_v, dx_t, dy_u, dy_v, dy_t, \
                 area_v, gphiu, rdt, cbfr, visc, omega, d2r, g);
         }
     }
 
-    // Boundary conditions bc_ssh kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop; ji++){
-            bc_ssh_code(ji, jj, width, istep, ssha_t, tmask, rdt);
-        }
-    }
-
     // Boundary conditions bc_solid_u kernel (whole domain but top x boundary)
+    #pragma omp parallel for
     for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop; ji++){
             bc_solid_u_code(ji, jj, width, ua, tmask);
@@ -93,13 +83,16 @@ extern "C" void c_invoke_time_step(
     }
 
     // Boundary conditions bc_solid_v kernel (whole domain but top y boundary)
+    #pragma omp parallel for
     for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             bc_solid_v_code(ji, jj, width, va, tmask);
         }
     }
 
+
     // Boundary conditions bc_flather_u kernel (whole domain but top x boundary)
+    #pragma omp parallel for
     for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop; ji++){
             bc_flather_u_code(ji, jj, width, ua, hu, sshn_u, tmask, g);
@@ -107,6 +100,7 @@ extern "C" void c_invoke_time_step(
     }
 
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
+    #pragma omp parallel for
     for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             bc_flather_v_code(ji, jj, width, va, hv, sshn_v, tmask, g);
@@ -114,6 +108,7 @@ extern "C" void c_invoke_time_step(
     }
 
     // Copy 'next' fields to 'current' fields (whole domain)
+    #pragma omp parallel for
     for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             int idx = jj * width + ji;
@@ -123,16 +118,26 @@ extern "C" void c_invoke_time_step(
         }
     }
 
-    // Time update kernel (internal domain u points)
+    // Swap un<->ua, vn<->va, sshn_t<->ssha_t
+    /*double * tmp;
+    tmp = un;
+    un = ua;
+    ua = tmp;
+
+    tmp = vn;
+    vn = va;
+    va = tmp;
+
+    tmp = sshn_t;
+    sshn_t = ssha_t;
+    ssha_t = tmp;
+    */
+
+    // Time update kernels (internal domain u points)
+    #pragma omp parallel for
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop - 1; ji++){
             next_sshu_code(ji, jj, width, sshn_u, sshn_t, tmask, area_t, area_u);
-        }
-    }
-
-    // Time update kernel (internal domain v points)
-    for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             next_sshv_code(ji, jj, width, sshn_v, sshn_t, tmask, area_t, area_v);
         }
     }

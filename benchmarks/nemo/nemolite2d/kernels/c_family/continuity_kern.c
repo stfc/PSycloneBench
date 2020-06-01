@@ -106,6 +106,7 @@ __kernel void continuity_code(int width,
 			      __global double* restrict e12t){
     int ji = get_global_id(0);
     int jj = get_global_id(1);
+    if(jj == 0)return;
 #else
 
 /** Interface to standard C version of kernel */
