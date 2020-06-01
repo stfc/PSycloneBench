@@ -42,14 +42,9 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
 		$(LDFLAGS) ${OMPFLAGS} -lstdc++
 
-# C++ rules
-time_step.o: time_step.cpp
-	$(CXX) $(CFLAGS) -c $< -o $@
-
-time_step_omp.o: time_step_omp.cpp
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
-
-time_step_ompopt.o: time_step_ompopt.cpp
+# C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
+# the imported ../common.mk)
+%.o: %.cpp
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
 
 clean: 
