@@ -101,61 +101,78 @@ extern "C" void c_invoke_time_step(
     );
     
     // Boundary conditions bc_ssh kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop; ji++){
+    Kokkos::parallel_for("bc_ssh",
+        mdrange_policy({internal_ystart, internal_xstart},
+                       {internal_ystop, internal_xstop}),
+        KOKKOS_LAMBDA (const int jj, const int ji) {
             bc_ssh_code(ji, jj, width, istep, ssha_t, tmask, rdt);
         }
-    }
-
+    );
+    
     // Boundary conditions bc_solid_u kernel (whole domain but top x boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
-        for(int ji = internal_xstart - 1; ji <= internal_xstop; ji++){
+    Kokkos::parallel_for("bc_ssh",
+        mdrange_policy({internal_ystart - 1, internal_xstart - 1},
+                       {internal_ystop + 1, internal_xstop}),
+        KOKKOS_LAMBDA (const int jj, const int ji) {
             bc_solid_u_code(ji, jj, width, ua, tmask);
         }
-    }
+    );
 
     // Boundary conditions bc_solid_v kernel (whole domain but top y boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
-            bc_solid_v_code(ji, jj, width, va, tmask);
+    Kokkos::parallel_for("bc_solid_v",
+        mdrange_policy({internal_ystart - 1, internal_xstart - 1},
+                       {internal_ystop, internal_xstop + 1}),
+        KOKKOS_LAMBDA (const int jj, const int ji) {
+            bc_solid_u_code(ji, jj, width, ua, tmask);
         }
-    }
+    );
 
     // Boundary conditions bc_flather_u kernel (whole domain but top x boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
-        for(int ji = internal_xstart - 1; ji <= internal_xstop; ji++){
+    Kokkos::parallel_for("bc_solid_v",
+        mdrange_policy({internal_ystart - 1, internal_xstart - 1},
+                       {internal_ystop + 1, internal_xstop}),
+        KOKKOS_LAMBDA (const int jj, const int ji) {
             bc_flather_u_code(ji, jj, width, ua, hu, sshn_u, tmask, g);
         }
-    }
+    );
 
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
+    Kokkos::parallel_for("bc_solid_v",
+        mdrange_policy({internal_ystart - 1, internal_xstart - 1},
+                       {internal_ystop, internal_xstop + 1}),
+        KOKKOS_LAMBDA (const int jj, const int ji) {
             bc_flather_v_code(ji, jj, width, va, hv, sshn_v, tmask, g);
         }
-    }
+    );
 
     // Copy 'next' fields to 'current' fields (whole domain)
-    for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj++){
-        for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
+    Kokkos::parallel_for("bc_solid_v",
+        mdrange_policy({internal_ystart - 1, internal_xstart - 1},
+                       {internal_ystop + 1, internal_xstop + 1}),
+        KOKKOS_LAMBDA (const int jj, const int ji) {
             int idx = jj * width + ji;
             un[idx] = ua[idx];
             vn[idx] = va[idx];
             sshn_t[idx] = ssha_t[idx];
         }
-    }
+    );
 
     // Time update kernel (internal domain u points)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop - 1; ji++){
+    Kokkos::parallel_for("continuity",
+        mdrange_policy({internal_ystart, internal_xstart},
+                       {internal_ystop, internal_xstop - 1}),
+        KOKKOS_LAMBDA (const int jj, const int ji) {
             next_sshu_code(ji, jj, width, sshn_u, sshn_t, tmask, area_t, area_u);
         }
-    }
+    );
 
     // Time update kernel (internal domain v points)
-    for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop; ji++){
+    Kokkos::parallel_for("continuity",
+        mdrange_policy({internal_ystart, internal_xstart},
+                       {internal_ystop - 1, internal_xstop}),
+        KOKKOS_LAMBDA (const int jj, const int ji) {
             next_sshv_code(ji, jj, width, sshn_v, sshn_t, tmask, area_t, area_v);
         }
-    }
+    );
+
 }

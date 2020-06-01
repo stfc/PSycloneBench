@@ -53,7 +53,7 @@ clean:
 
 allclean: clean
 	rm -f ${KERNELS:.o=.f90}
-	rm -f *.exe fparser.log
+	rm -f *.exe fparser.log *.a
 	rm -rf *_wpl_dir/
 	${MAKE} -C ${COMMON_DIR} allclean
 	${MAKE} -C ${INF_DIR} distclean
