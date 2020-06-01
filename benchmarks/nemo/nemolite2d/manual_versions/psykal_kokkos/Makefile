@@ -12,12 +12,6 @@
 
 .PHONY: nemolite2d_kokkos
 .DEFAULT_GOAL := nemolite2d_kokkos
-
-# Import Kokkos build infrastructure
-KOKKOS_PATH=${HOME}/build/kokkos
-include $(KOKKOS_PATH)/Makefile.kokkos
-
-
 include ../common.mk
 
 # INF_LIB is an archive that must come at the end of the list of objects
@@ -34,6 +28,10 @@ nemolite2d.o: $(COMMON_MODULES)
 # Interdependencies between modules, alphabetical order
 time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
                  time_update_mod.o boundary_conditions_mod.o
+
+# Import Kokkos build infrastructure
+KOKKOS_PATH=${HOME}/build/kokkos
+include $(KOKKOS_PATH)/Makefile.kokkos
 
 # Linking the executable needs the -lstdc++ to link also the std lib functions
 # called from C++ code
@@ -61,7 +59,7 @@ allclean: clean
 
 summary:
 	@echo -n "${CC}\t\tcpu\t"
-	@./nemolite2d.exe | awk 'BEGIN {ORS="\t"} \
+	@./nemolite2d_kokkos.exe | awk 'BEGIN {ORS="\t"} \
 		{if ($$2 == "checksum") {print $$4} } \
 		{if ($$1 == "Time-stepping") {print $$5} } \
 		END {ORS="\n"; print ""}'

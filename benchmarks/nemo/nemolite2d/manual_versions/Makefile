@@ -3,9 +3,9 @@
 # of an equivalent namelist in each one.
 
 # All compilers should be able to compile these IMPLEMENTATIONS
-# IMPLEMENTATIONS = psykal_serial
-# IMPLEMENTATIONS += psykal_cpp
-# IMPLEMENTATIONS += psykal_omp
+IMPLEMENTATIONS = psykal_serial
+IMPLEMENTATIONS += psykal_cpp
+IMPLEMENTATIONS += psykal_omp
 # Uncomment IMPLEMENTATIONS below if your environment has MPI compilers
 # IMPLEMENTATIONS += psykal_dm
 # Uncomment IMPLEMENTATIONS below if your environment has the Kokkos libraries
@@ -21,7 +21,7 @@ all: compile
 # Compile all enabled implementations (some targets need to start with an allclean)
 compile:
 	$(foreach var,$(IMPLEMENTATIONS), \
-		cd $(var) && $(MAKE) allclean && $(MAKE) nemolite2d; cd ..;)
+		cd $(var) && $(MAKE) allclean && $(MAKE); cd ..;)
 
 # Execute all enabled implementations with their best full node performance and
 # report their ua and uv final checksums and the time-stepping time.
