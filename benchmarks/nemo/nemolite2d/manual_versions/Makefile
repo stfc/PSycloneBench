@@ -3,9 +3,13 @@
 # of an equivalent namelist in each one.
 
 # All compilers should be able to compile these IMPLEMENTATIONS
-IMPLEMENTATIONS = psykal_serial psykal_cpp psykal_omp
+# IMPLEMENTATIONS = psykal_serial
+# IMPLEMENTATIONS += psykal_cpp
+# IMPLEMENTATIONS += psykal_omp
 # Uncomment IMPLEMENTATIONS below if your environment has MPI compilers
-IMPLEMENTATIONS += psykal_dm
+# IMPLEMENTATIONS += psykal_dm
+# Uncomment IMPLEMENTATIONS below if your environment has the Kokkos libraries
+IMPLEMENTATIONS += psykal_kokkos
 # Uncomment IMPLEMENTATIONS below if your environment has OpenCL compilers
 # IMPLEMENTATIONS += psykal_ocl
 # psykal_ompss and psykal_acc have not been adapted to this Makefile format

@@ -53,8 +53,6 @@ extern "C" void c_invoke_time_step(
         double g
         ){
 
-    Kokkos::initialize();
-
     // Continuity kernel (internal domain)
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
@@ -116,7 +114,7 @@ extern "C" void c_invoke_time_step(
         }
     }
 
-    // Update infrastructure (whole domain)
+    // Copy 'next' fields to 'current' fields (whole domain)
     for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             int idx = jj * width + ji;
@@ -126,14 +124,14 @@ extern "C" void c_invoke_time_step(
         }
     }
 
-    // Time update kernel (internal domain ?)
+    // Time update kernel (internal domain u points)
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop - 1; ji++){
             next_sshu_code(ji, jj, width, sshn_u, sshn_t, tmask, area_t, area_u);
         }
     }
 
-    // Time update kernel (internal domain ?)
+    // Time update kernel (internal domain v points)
     for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             next_sshv_code(ji, jj, width, sshn_v, sshn_t, tmask, area_t, area_v);
