@@ -11,6 +11,11 @@
 #include "../../kernels/c_family/boundary_conditions_kern.c"
 #include "../../kernels/c_family/time_update_kern.c"
 
+bool first_time = true;
+
+using ExecSpace = Kokkos::HostSpace::execution_space;
+using range_policy = Kokkos::RangePolicy<ExecSpace>;
+
 extern "C" void c_invoke_time_step(
         // Fields
         double * ssha_t,
@@ -53,32 +58,48 @@ extern "C" void c_invoke_time_step(
         double g
         ){
 
+    // Execution policy for a multi-dimensional (2D) iteration space.
+    typedef Kokkos::MDRangePolicy< Kokkos::Rank<2> > mdrange_policy;
+
+    if(first_time){
+        Kokkos::initialize();
+        first_time = false;
+    }
+
     // Continuity kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop; ji++){
+    Kokkos::parallel_for("continuity",
+        mdrange_policy({internal_ystart, internal_xstart},
+                       {internal_ystop, internal_xstop}),
+        KOKKOS_LAMBDA (const int jj, const int ji) {
             continuity_code(ji, jj, width, ssha_t, sshn_t, sshn_u, sshn_v, \
                 hu, hv, un, vn, rdt, area_t);
         }
-    }
+    );
 
     // Momentum_u kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop; ji++){
+    Kokkos::parallel_for("momentum_u",
+        mdrange_policy({internal_ystart, internal_xstart},
+                       {internal_ystop, internal_xstop}),
+        KOKKOS_LAMBDA (const int jj, const int ji) {
             momentum_u_code(ji, jj, width, ua, un, vn, hu, hv, ht, ssha_u, \
                 sshn_t, sshn_u, sshn_v, tmask, dx_u, dx_v, dx_t, dy_u, dy_t, \
                 area_u, gphiu, rdt, cbfr, visc, omega, d2r, g);
+
         }
-    }
+    );
 
     // Momentum_v kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop; ji++){
+    Kokkos::parallel_for("momentum_v",
+        mdrange_policy({internal_ystart, internal_xstart},
+                       {internal_ystop, internal_xstop}),
+        KOKKOS_LAMBDA (const int jj, const int ji) {
             momentum_v_code(ji, jj, width, va, un, vn, hu, hv, ht, ssha_v, \
                 sshn_t, sshn_u, sshn_v, tmask, dx_v, dx_t, dy_u, dy_v, dy_t, \
                 area_v, gphiu, rdt, cbfr, visc, omega, d2r, g);
-        }
-    }
 
+        }
+    );
+    
     // Boundary conditions bc_ssh kernel (internal domain)
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){

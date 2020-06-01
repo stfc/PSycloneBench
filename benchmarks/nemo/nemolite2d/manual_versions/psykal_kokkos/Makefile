@@ -37,9 +37,9 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 
 # Linking the executable needs the -lstdc++ to link also the std lib functions
 # called from C++ code
-%.exe: $(MODULE_LIST)
+%.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) 
 	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) ${OMPFLAGS} -lstdc++
+		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LINK_DEPENDS) $(KOKKOS_LDFLAGS) $(KOKKOS_LIBS) -lstdc++
 
 # C++ rules
 time_step_kokkos.o: time_step_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
