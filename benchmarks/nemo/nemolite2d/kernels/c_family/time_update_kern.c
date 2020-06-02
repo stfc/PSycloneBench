@@ -1,7 +1,7 @@
 #ifndef __OPENCL_VERSION__
 #include <stdio.h>
+#else
 #include "opencl_utils.h"
-
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
@@ -106,7 +106,7 @@ __kernel void next_sshu_code(int width,
   int ji = get_global_id(0);
   int jj = get_global_id(1);
 #else
-  void next_sshu_code(int ji, int jj, int width,
+inline void next_sshu_code(int ji, int jj, int width,
 		      double* sshn_u,
 		      const double* sshn,
 		      const int* tmask,
@@ -170,7 +170,7 @@ __kernel void next_sshv_code(int width,
   int ji = get_global_id(0);
   int jj = get_global_id(1);
 #else
-void next_sshv_code(int ji, int jj, int width,
+inline void next_sshv_code(int ji, int jj, int width,
 		    double* sshn_v,
 		    double* sshn,
 		    int* tmask,
