@@ -12,8 +12,9 @@
 
 // Optimizations:
 // - Fuse some kernels (x1.1), fusing more kernels didn't make any difference.
-// - Change array copies with swaps is x1.1 faster, but since the fortran->c
-// call passes pointers locations by value the swap is not permanent.
+// - Change array copies with swaps is x1.1 faster, but at the moment the
+// optimization is commented out because since the fortran->c call passes
+// pointers by value the swap is not permanent (produces wrong results).
 // - Tests with __restrict__ or assume_aligned didn't improve performance.
 
 extern "C" void c_invoke_time_step(
@@ -118,8 +119,11 @@ extern "C" void c_invoke_time_step(
         }
     }
 
-    // Swap un<->ua, vn<->va, sshn_t<->ssha_t
-    /*double * tmp;
+    // The field copies can be done with a Swap operation as shown below.
+    // But at the moment the swapping is not permanent when the
+    // function returns to time_step_mod (Fortran PSy layer).
+    /*
+    double * tmp;
     tmp = un;
     un = ua;
     ua = tmp;
