@@ -1,7 +1,7 @@
 # Makefile for manual C++ kokkos version of PSyKAl'd NEMOLite2D.
 #
 # This Makefile picks up the compiler to use any flags from
-# environment variables. e.g. to use gfortran:
+# environment variables. e.g. to use g++:
 # 
 # export F90=gfortran
 # export CXX=g++
@@ -9,6 +9,11 @@
 # export F90FLAGS="-O3"
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
+
+# Additionally it needs the path to a Kokkos installation and execution
+# devices
+KOKKOS_PATH ?= ${HOME}/build/kokkos
+KOKKOS_DEVICES=OpenMP  # Currently this can only be OpenMP
 
 .PHONY: nemolite2d_kokkos
 .DEFAULT_GOAL := nemolite2d_kokkos
@@ -29,9 +34,7 @@ nemolite2d.o: $(COMMON_MODULES)
 time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
                  time_update_mod.o boundary_conditions_mod.o
 
-# Import Kokkos build infrastructure
-KOKKOS_PATH=${HOME}/build/kokkos
-KOKKOS_DEVICES=OpenMP
+# Import needed kokkos environment variables
 include $(KOKKOS_PATH)/Makefile.kokkos
 
 # Linking the executable needs the -lstdc++ to link also the std lib functions
