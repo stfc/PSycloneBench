@@ -84,7 +84,7 @@ nemolite2d_8arrays: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel_8arr
 
 
 clean: 
-	rm -f *.o *.mod *.MOD *~
+	rm -f *.o *.mod *.MOD *~ go2d_* tmask_*
 
 libclean:
 	${MAKE} -C ${INF_DIR} distclean
