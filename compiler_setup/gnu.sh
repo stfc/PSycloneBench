@@ -2,6 +2,7 @@
 F90=gfortran
 CC=gcc
 CXX=g++
+COMPILER_VERSION="gnu-$(gcc -dumpfullversion)"
 
 # Common optimization flags for CFLAGS and F90FLAGS
 OPTFLAGS=" -Ofast -mtune=native -finline-limit=50000 -fopt-info-all=gnu_opt_report.txt"
@@ -24,10 +25,11 @@ LDFLAGS=""
 AR=ar
 
 export F90
+export CC
+export CXX
+export COMPILER_VERSION
 export F90FLAGS
 export CFLAGS
 export OMPFLAGS
 export LDFLAGS
 export AR
-export CC
-export CXX

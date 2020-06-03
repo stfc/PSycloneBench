@@ -100,7 +100,7 @@ docs:
 	doxygen gocean2d.doxy.config
 
 summary:
-	@echo -n "${CC}\t\tcpu\t"
+	@echo -n "$(call get_cpu)\t${COMPILER_VERSION}\t"
 	@./nemolite2d.exe | awk 'BEGIN {ORS="\t"} \
 		{if ($$2 == "checksum") {print $$4} } \
 		{if ($$1 == "Time-stepping") {print $$5} } \
@@ -109,9 +109,9 @@ summary:
 # Execute all enabled implementations with their best full node performance and
 # report their ua and uv final checksums and the time-stepping time.
 summary_table:
-	@echo "Implementation\t\tCompiler\tArch\tua checksum\tuv checksum\ttime/step"
+	@echo "Implementation\t\tPlatform\tCompiler\tua checksum\tuv checksum\ttime/step"
 	@$(foreach var,$(IMPLEMENTATIONS), \
-		echo -n "$(var)\t${CC}\t\tcpu\t" && \
+		echo -n "$(var)\tcpu\t${COMPILER_VERSION}\t" && \
 		./$(var).exe | awk 'BEGIN {ORS="\t"} \
 			{if ($$2 == "checksum") {print $$4} } \
 			{if ($$1 == "Time-stepping") {print $$5} } \
