@@ -1,10 +1,10 @@
-FC=ifort
-FFLAGS=-qopenmp -Ofast
-LDFLAGS=
+FC ?= ifort
+FFLAGS ?= -qopenmp -Ofast
+LDFLAGS ?=
 
-# MKLFLAGS="-L${MKLROOT}/lib/intel64 -mkl"
-XSMM_INCLUDE=-I/lustre/scafellpike/local/HCP055/pxs02/rxf70-pxs02/libxsmm-1.15/include
-XSMM_LINK=-L/lustre/scafellpike/local/HCP055/pxs02/rxf70-pxs02/libxsmm-1.15/lib -lxsmmf -lxsmm -lxsmmnoblas
+XSMM_DIR ?= ${HOME}/libxsmm-1.15
+XSMM_INCLUDE ?= -I${XSMM_DIR}/include
+XSMM_LINK ?= -L${XSMM_DIR}/lib -lxsmmf -lxsmm -lxsmmnoblas
 
 all : kdriver_orig kdriver_xsmm kdriver_reorder
 
@@ -19,8 +19,6 @@ kdriver_reorder.o: matrix_vector_kernel_reorder_mod.o constants_mod.o
 matrix_vector_kernel_reorder_mod.o: constants_mod.o
 
 # Compile object targets
-%.o: %.F90
-	$(FC) $(FFLAGS) -c $<
 %.o: %.f90
 	$(FC) $(FFLAGS) -c $<
 
@@ -48,16 +46,7 @@ kdriver_reorder.o: kdriver.f90
 matrix_vector_kernel_reorder_mod.o: matrix_vector_kernel_reorder_mod.f90
 	$(FC) $(FFLAGS) -c $< -o matrix_vector_kernel_reorder_mod.o ${XSMM_INCLUDE}
 
-run:
-	@for v in $(VERSIONS); do \
-		./kdriver; \
-	done
-
-versions:
-	@echo $(VERSIONS)
-
 clean:
 	rm -f *.o *.mod *.optrpt *.s kdriver_orig kdriver_xsmm kdriver_reorder
 
 allclean: clean
-

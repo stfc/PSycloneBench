@@ -14,11 +14,11 @@ situation so can safely ignore this additional
 optimisation. Optimising for particular numbers of dofs is being done
 but is being treated as a separate optimisation.
 
-The files in this directory are
+The files in this directory are:
 
 matrix_vector_kernel_mod.f90: the original matrix vector kernel with
-metadata removed to reduce the number of modules needed to compile the
-example.
+    metadata removed to reduce the number of modules needed to compile
+    the example.
 
 matrix_vector_kernel_xsmm_mod.f90: the libxsmm modified matrix vector
     kernel which also has the metadata removed.
@@ -36,17 +36,19 @@ kdriver.f90: a standalone driver for the benchmark which includes the
 constants_mod.f90: precision constants needed by the kernel and
     driver.
 
-Makefile: a makefile designed to use the intel compiler. The makefile
+Makefile: a makefile designed to use the Intel compiler. The makefile
     relies on libxsmm being installed and pointed to appropriately in
-    order to compile the codes (the original and the xsmm version).
+    order to compile the xsmm version. The location of libxsmm can be
+    set using the XSMM_DIR variable. It defaults to
+    ${HOME}/libxsmm-1.15.
 
 runme.sh: a sample script to run the benchmark for different
     resolutions, different numbers of processors etc. This should be
     tailored to the particular cpu the code is being run on and the
     problem sizes being examined.
 
-results: results of running this benchmark on skylake processors
+results: results of running this benchmark on Skylake processors
 
-submitRun.lsf: a sample script for running this benchmark on with
+submitRun.lsf: a sample script for running this benchmark with
     lsf. The path in this submission script will have to be changed
     for the particular environment.
