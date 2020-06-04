@@ -44,7 +44,7 @@ kdriver_reorder.o: kdriver.f90
 	$(FC) $(FFLAGS) -c $< -o kdriver_reorder.o
 
 matrix_vector_kernel_reorder_mod.o: matrix_vector_kernel_reorder_mod.f90
-	$(FC) $(FFLAGS) -c $< -o matrix_vector_kernel_reorder_mod.o ${XSMM_INCLUDE}
+	$(FC) $(FFLAGS) -c $< -o matrix_vector_kernel_reorder_mod.o
 
 clean:
 	rm -f *.o *.mod *.optrpt *.s kdriver_orig kdriver_xsmm kdriver_reorder
