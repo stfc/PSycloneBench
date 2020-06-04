@@ -49,6 +49,6 @@ runme.sh: a sample script to run the benchmark for different
 
 results: results of running this benchmark on Skylake processors
 
-submitRun.lsf: a sample script for running this benchmark with
-    lsf. The path in this submission script will have to be changed
-    for the particular environment.
+submitRun.lsf: a sample script for running this benchmark with lsf (on
+    Scafell Pike). The value of <LOCATION> in this submission script
+    would have to be set appropriately for the particular environment.
