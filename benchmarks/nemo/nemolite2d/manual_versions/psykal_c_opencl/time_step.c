@@ -57,13 +57,13 @@ static const char* kernel_files[K_NUM_KERNELS] =
   "../../kernels/c_family/continuity_kern.c",
   "../../kernels/c_family/momentum_u_kern.c",
   "../../kernels/c_family/momentum_v_kern.c",
-  "./boundary_conditions_kern.c",
-  "./boundary_conditions_kern.c",
-  "./boundary_conditions_kern.c",
-  "./boundary_conditions_kern.c",
-  "./boundary_conditions_kern.c",
-  "./time_update_kern.c",
-  "./time_update_kern.c"   
+  "../../kernels/c_family/boundary_conditions_kern.c",
+  "../../kernels/c_family/boundary_conditions_kern.c",
+  "../../kernels/c_family/boundary_conditions_kern.c",
+  "../../kernels/c_family/boundary_conditions_kern.c",
+  "../../kernels/c_family/boundary_conditions_kern.c",
+  "../../kernels/c_family/time_update_kern.c",
+  "../../kernels/c_family/time_update_kern.c"   
 };
 
 // OpenCL variables should be permanent between multiple invoke calls

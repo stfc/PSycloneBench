@@ -84,46 +84,6 @@ void set_args_momv(cl_kernel kern,
 #endif
 #endif
 
-/*
-  type, extends(kernel_type) :: momentum_v
-     type(arg), dimension(18) :: meta_args =  &
-          (/ arg(READWRITE, CV, POINTWISE),  & ! va
-             arg(READ,      CU, POINTWISE),  & ! un
-             arg(READ,      CV, POINTWISE),  & ! vn
-             arg(READ,      CU, POINTWISE),  & ! hu
-             arg(READ,      CV, POINTWISE),  & ! hv
-             arg(READ,      CT, POINTWISE),  & ! ht
-             arg(READ,      CV, POINTWISE),  & ! ssha_v
-             arg(READ,      CT, POINTWISE),  & ! sshn_t
-             arg(READ,      CU, POINTWISE),  & ! sshn_u
-             arg(READ,      CV, POINTWISE),  & ! sshn_v
-             arg(READ,      GRID_MASK_T),    &
-             arg(READ,      GRID_DX_V),      &
-             arg(READ,      GRID_DX_T),      &
-             arg(READ,      GRID_DY_U),      &
-             arg(READ,      GRID_DY_V),      &
-             arg(READ,      GRID_DY_T),      &
-             arg(READ,      GRID_AREA_V),    &
-             arg(READ,      GRID_LAT_V)      &
-           /)
-
-     !> We update only those points within the internal region
-     !! of the simulated domain.
-     integer :: ITERATES_OVER = INTERNAL_PTS
-
-     !> Although the staggering of variables used in an Arakawa
-     !! C grid is well defined, the way in which they are indexed is
-     !! an implementation choice. This can be thought of as choosing
-     !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel assumes that the U,V and F points that
-     !! share the same index as a given T point are those immediately
-     !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
-
-  contains
-    procedure, nopass :: code => momentum_v_code
-  end type momentum_v
-*/
 
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */

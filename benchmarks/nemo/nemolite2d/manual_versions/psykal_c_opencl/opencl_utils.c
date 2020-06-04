@@ -110,10 +110,10 @@ void init_device(cl_device_id *device,
   else if(strstr(version_str, "OpenCL 2.0")){
     cl_version = 200;
   }
-  else{
+  /*else{
     fprintf(stderr, "Unsupported OpenCL version: %s\n", version_str);
-    //exit(1);
-  }
+    exit(1);
+  }*/
 
   /* Create OpenCL context for just 1 device */
   cl_context_properties cl_props[3];

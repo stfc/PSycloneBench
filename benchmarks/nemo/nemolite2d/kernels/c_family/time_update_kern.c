@@ -1,6 +1,8 @@
-#ifndef __OPENCL_VERSION__
+#ifndef __OPENCL_VERSION__  // If its not an OpenCL Kernel
 #include <stdio.h>
-#else
+
+#ifdef OPENCL_HOST // If it is OpenCL infrastructure
+
 #include "opencl_utils.h"
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -67,34 +69,8 @@ void set_args_next_sshu(cl_kernel kern,
 }
 
 #endif
+#endif
 
-/*
-  type, extends(kernel_type) :: next_sshu
-     type(arg), dimension(5) :: meta_args =  &
-          (/ arg(READWRITE, CU, POINTWISE),  &
-             arg(READ,      CU, POINTWISE),  &
-             arg(READ,      GRID_MASK_T),    &
-             arg(READ,      GRID_AREA_T),    &
-             arg(READ,      GRID_AREA_U)     &
-           /)
-
-     !> We update only those points within the internal region
-     !! of the simulated domain.
-     integer :: ITERATES_OVER = INTERNAL_PTS
-
-     !> Although the staggering of variables used in an Arakawa
-     !! C grid is well defined, the way in which they are indexed is
-     !! an implementation choice. This can be thought of as choosing
-     !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel assumes that the U,V and F points that
-     !! share the same index as a given T point are those immediately
-     !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
-
-  contains
-    procedure, nopass :: code => next_sshu_code
-  end type next_sshu
-*/
 
 #ifdef __OPENCL_VERSION__
 __kernel void next_sshu_code(int width,
@@ -132,34 +108,6 @@ inline void next_sshu_code(int ji, int jj, int width,
 
 }
 
-/*
-  type, extends(kernel_type) :: next_sshv
-     type(arg), dimension(5) :: meta_args =  &
-          (/ arg(READWRITE, CV, POINTWISE),  &
-             arg(READ,      CV, POINTWISE),  &
-             arg(READ,      GRID_MASK_T),    &
-             arg(READ,      GRID_AREA_T),    &
-             arg(READ,      GRID_AREA_V)     &
-           /)
-
-     !> We update only those points within the internal region
-     !! of the simulated domain.
-     integer :: ITERATES_OVER = INTERNAL_PTS
-
-     !> Although the staggering of variables used in an Arakawa
-     !! C grid is well defined, the way in which they are indexed is
-     !! an implementation choice. This can be thought of as choosing
-     !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel assumes that the U,V and F points that
-     !! share the same index as a given T point are those immediately
-     !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
-
-  contains
-    procedure, nopass :: code => next_sshv_code
-  end type next_sshv
-*/
-  
 #ifdef __OPENCL_VERSION__
 __kernel void next_sshv_code(int width,
 			     __global double* restrict sshn_v,

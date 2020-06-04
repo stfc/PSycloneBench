@@ -1,162 +1,11 @@
-#ifndef __OPENCL_VERSION__
-// This header isn't available/required in OpenCL
+#ifndef __OPENCL_VERSION__  // If its not an OpenCL Kernel
+#include <stdio.h>
 #include <math.h>
+
+#ifdef OPENCL_HOST // If it is OpenCL infrastructure
+
 #endif
-
-/*
-
-  type, extends(kernel_type) :: bc_ssh
-     type(arg), dimension(3) :: meta_args =        &
-          (/ arg(READ,      I_SCALAR, POINTWISE),  &
-             arg(READWRITE, CT,       POINTWISE),  &
-             arg(READ,      GRID_MASK_T)           &
-           /)
-
-     !> Although this is a boundary-conditions kernel, it only
-     !! acts on the internal points of the domain
-     integer :: ITERATES_OVER = INTERNAL_PTS
-
-     !> Although the staggering of variables used in an Arakawa
-     !! C grid is well defined, the way in which they are indexed is
-     !! an implementation choice. This can be thought of as choosing
-     !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel assumes that the U,V and F points that
-     !! share the same index as a given T point are those immediately
-     !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
-
-  contains
-    procedure, nopass :: code => bc_ssh_code
-  end type bc_ssh
-
-*/
-
-/*
-
-  type, extends(kernel_type) :: bc_solid_u
-     type(arg), dimension(2) :: meta_args =  &
-          (/ arg(READWRITE, CU, POINTWISE),  &
-             arg(READ,      GRID_MASK_T)     &
-           /)
-
-     !> This is a boundary-conditions kernel and therefore
-     !! acts on all points of the domain rather than just
-     !! those that are internal
-     integer :: ITERATES_OVER = ALL_PTS
-
-     !> Although the staggering of variables used in an Arakawa
-     !! C grid is well defined, the way in which they are indexed is
-     !! an implementation choice. This can be thought of as choosing
-     !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel assumes that the U,V and F points that
-     !! share the same index as a given T point are those immediately
-     !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
-
-  contains
-    procedure, nopass :: code => bc_solid_u_code
-  end type bc_solid_u
-*/
-
-/*
-  type, extends(kernel_type) :: bc_solid_v
-     type(arg), dimension(2) :: meta_args =  &
-          (/ arg(READWRITE, CV, POINTWISE),  &
-             arg(READ,      GRID_MASK_T)     &
-           /)
-
-     !> This is a boundary-conditions kernel and therefore
-     !! acts on all points of the domain rather than just
-     !! those that are internal
-     integer :: ITERATES_OVER = ALL_PTS
-
-     !> Although the staggering of variables used in an Arakawa
-     !! C grid is well defined, the way in which they are indexed is
-     !! an implementation choice. This can be thought of as choosing
-     !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel assumes that the U,V and F points that
-     !! share the same index as a given T point are those immediately
-     !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
-
-  contains
-    procedure, nopass :: code => bc_solid_v_code
-  end type bc_solid_v
-*/
-
-/*
-  type, extends(kernel_type) :: bc_flather_u
-     type(arg), dimension(4) :: meta_args =  &
-          (/ arg(READWRITE, CU, POINTWISE),  & ! ua
-             arg(READ,      CU, POINTWISE),  & ! hu
-             arg(READ,      CU, POINTWISE),  & ! sshn_u
-             arg(READ,      GRID_MASK_T)     &
-           /)
-
-     !> This is a boundary-conditions kernel and therefore
-     !! acts on all points of the domain rather than just
-     !! those that are internal
-     integer :: ITERATES_OVER = ALL_PTS
-
-     !> Although the staggering of variables used in an Arakawa
-     !! C grid is well defined, the way in which they are indexed is
-     !! an implementation choice. This can be thought of as choosing
-     !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel assumes that the U,V and F points that
-     !! share the same index as a given T point are those immediately
-     !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
-
-  contains
-    procedure, nopass :: code => bc_flather_u_code
-  end type bc_flather_u
-*/
-
-/*
-  type, extends(kernel_type) :: bc_flather_v
-     type(arg), dimension(4) :: meta_args =  &
-          (/ arg(READWRITE, CV, POINTWISE),  & ! va
-             arg(READ,      CV, POINTWISE),  & ! hv
-             arg(READ,      CV, POINTWISE),  & ! sshn_v
-             arg(READ,      GRID_MASK_T)     &
-           /)
-
-     !> This is a boundary-conditions kernel and therefore
-     !! acts on all points of the domain rather than just
-     !! those that are internal
-     integer :: ITERATES_OVER = ALL_PTS
-
-     !> Although the staggering of variables used in an Arakawa
-     !! C grid is well defined, the way in which they are indexed is
-     !! an implementation choice. This can be thought of as choosing
-     !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel assumes that the U,V and F points that
-     !! share the same index as a given T point are those immediately
-     !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
-
-  contains
-    procedure, nopass :: code => bc_flather_v_code
-  end type bc_flather_v
-*/
-
-/*
-  subroutine invoke_bc_ssh(istep, ssha)
-    implicit none
-    integer,            intent(in)    :: istep
-    type(r2d_field),    intent(inout) :: ssha
-    ! Locals
-    integer  :: ji, jj
-
-    DO jj = ssha%internal%ystart, ssha%internal%ystop
-       DO ji = ssha%internal%xstart, ssha%internal%xstop
-          call bc_ssh_code(ji, jj, &
-                           istep, ssha%data, ssha%grid%tmask)
-       END DO
-    END DO
-
-  end subroutine invoke_bc_ssh
-*/
+#endif
 
 #ifdef __OPENCL_VERSION__
 __kernel void bc_ssh_code(int width,
@@ -197,30 +46,6 @@ inline void bc_ssh_code(int ji, int jj, int width,
   }
 }
   
-  /*
-  !> Manual version of code to invoke kernel that applies solid 
-  !! boundary conditions for u-velocity
-  subroutine invoke_bc_solid_u(ua)
-    implicit none
-    type(r2d_field), intent(inout) :: ua
-    ! Locals
-    integer  :: ji, jj
-
-! Original loop was:
-!            DO jj = 1, jpj
-!              DO ji = 0, jpi
-! In original code, tmask is declared with one more row and column than
-! any other field. ji==jpi IS last column of u field.
-! 1/ How do I determine the full range of array indices to loop over for ua?
-! 2/ If I do that, is tmask(ji+1,jj) going to stay within bounds?
-    do jj = ua%whole%ystart, ua%whole%ystop, 1
-       do ji = ua%whole%xstart, ua%whole%xstop, 1
-          call bc_solid_u_code(ji, jj, ua%data, ua%grid%tmask)
-       end do
-    end do
-
-  end subroutine invoke_bc_solid_u
-*/
 
     /** Kernel to apply solid boundary conditions for u-velocity */
 #ifdef __OPENCL_VERSION__
@@ -240,24 +65,6 @@ inline void bc_solid_u_code(int ji, int jj, int width, double *ua, int *tmask){
   }
 
 }
-  
-  /*
-  !> Manual version of code to invoke the kernel
-  !! that applies the solid-bc to a field on V pts.
-  subroutine invoke_bc_solid_v(va)
-    implicit none
-    type(r2d_field), intent(inout) :: va
-    ! Locals
-    integer  :: ji, jj
-
-    do jj = va%whole%ystart, va%whole%ystop, 1
-       do ji = va%whole%xstart, va%whole%xstop, 1
-          call bc_solid_v_code(ji,jj,va%data,va%grid%tmask)
-      end do
-    end do
-
-  end subroutine invoke_bc_solid_v
-*/
   
   /** Kernel to apply solid boundary conditions for v-velocity */
 #ifdef __OPENCL_VERSION__
@@ -279,32 +86,6 @@ inline void bc_solid_v_code(int ji, int jj, int width, double *va, int *tmask){
 
 }
   
-  /*
-  !>                                  Du                 Dssh
-  !!Flather open boundary condition [---- = sqrt(g/H) * ------]
-  !!                                  Dn                 Dn
-  !! ua and va in du/dn should be the specified tidal forcing
-  subroutine invoke_bc_flather_u(ua, hu, sshn_u)
-    implicit none
-    type(r2d_field), intent(inout) :: ua
-    type(r2d_field), intent(in) :: hu, sshn_u
-    ! Locals
-    integer  :: ji, jj
-
-    ! Original loop was:
-    !            DO jj = 1, jpj
-    !              DO ji = 0, jpi  
-    DO jj = ua%whole%ystart, ua%whole%ystop, 1
-       DO ji = ua%whole%xstart, ua%whole%xstop, 1
-          call bc_flather_u_code(ji,jj, &
-                                 ua%data, hu%data, sshn_u%data, &
-                                 ua%grid%tmask)
-       END DO
-    END DO
-  
-  end subroutine invoke_bc_flather_u
-*/  
-
 /** Kernel to apply Flather condition to U */
 #ifdef __OPENCL_VERSION__
 __kernel void bc_flather_u_code(int width,
@@ -340,29 +121,6 @@ inline void bc_flather_u_code(int ji, int jj, int width,
   }
   
 }
-
-  /*
-  !> Manual version of code to invoke the kernel for applying the
-  !! Flather boundary condition to the v component of velocity.
-  subroutine invoke_bc_flather_v(va, hv, sshn_v)
-    implicit none
-    type(r2d_field), intent(inout) :: va
-    type(r2d_field), intent(in)    :: hv, sshn_v
-    ! Locals
-    integer  :: ji, jj
-
-    !kernel Flather v 
-
-    DO jj = va%whole%ystart, va%whole%ystop, 1
-       DO ji = va%whole%xstart, va%whole%xstop, 1
-          call bc_flather_v_code(ji,jj, &
-                                 va%data, hv%data, sshn_v%data, &
-                                 va%grid%tmask)
-       END DO
-    END DO
-
-  end subroutine invoke_bc_flather_v
-*/
 
   /** Kernel to apply Flather boundary condition to v component
       of velocity */
