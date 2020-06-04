@@ -1,8 +1,9 @@
-#ifndef __OPENCL_VERSION__
+#ifndef __OPENCL_VERSION__  // If its not an OpenCL Kernel
 #include <stdio.h>
-#else
-#include "opencl_utils.h"
 
+#ifdef OPENCL_HOST // If it is OpenCL infrastructure
+
+#include "opencl_utils.h"
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
@@ -59,6 +60,7 @@ void set_args_continuity(cl_kernel cont_kernel,
   fprintf(stdout, "Set %d arguments for Continuity kernel\n", arg_idx);
 }
 #endif
+#endif
 /*
   type, extends(kernel_type) :: continuity
      type(arg), dimension(10) :: meta_args =    &
@@ -91,7 +93,7 @@ void set_args_continuity(cl_kernel cont_kernel,
   end type continuity
 */
 
-#ifdef __OPENCL_VERSION__
+#ifdef __OPENCL_VERSION__  // If it is an OpenCL kernel
 /** Interface to OpenCL version of kernel */
 __kernel void continuity_code(int width,                     
 			      __global double* restrict ssha,

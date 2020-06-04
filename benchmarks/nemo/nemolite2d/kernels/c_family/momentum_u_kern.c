@@ -1,10 +1,10 @@
-#ifndef __OPENCL_VERSION__
-// This header isn't available/required in OpenCL
-#include <math.h>
+#ifndef __OPENCL_VERSION__  // If its not an OpenCL Kernel
 #include <stdio.h>
-#else
-#include "opencl_utils.h"
+#include <math.h>
 
+#ifdef OPENCL_HOST // If it is OpenCL infrastructure
+
+#include "opencl_utils.h"
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
@@ -101,6 +101,7 @@ void set_args_momu(cl_kernel kern,
 }
 
 #endif
+#endif
 
 /*
   type, extends(kernel_type) :: momentum_u
@@ -165,7 +166,8 @@ __kernel void momentum_u_code(int width,
                   const __global double* restrict e2t,
                   const __global double* restrict e12u,
                   const __global double* restrict gphiu,
-                  double rdt, double cbfr, double visc){
+                  double rdt, double cbfr, double visc,
+                  double omega, double d2r, double g){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
 #else

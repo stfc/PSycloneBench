@@ -1,10 +1,10 @@
-#ifndef __OPENCL_VERSION__
-// This header isn't available/required in OpenCL
-#include <math.h>
+#ifndef __OPENCL_VERSION__  // If its not an OpenCL Kernel
 #include <stdio.h>
-#else
-#include "opencl_utils.h"
+#include <math.h>
 
+#ifdef OPENCL_HOST // If it is OpenCL infrastructure
+
+#include "opencl_utils.h"
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
@@ -81,6 +81,7 @@ void set_args_momv(cl_kernel kern,
 
 }
 
+#endif
 #endif
 
 /*

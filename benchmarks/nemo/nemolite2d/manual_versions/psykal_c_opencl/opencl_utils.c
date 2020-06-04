@@ -112,7 +112,7 @@ void init_device(cl_device_id *device,
   }
   else{
     fprintf(stderr, "Unsupported OpenCL version: %s\n", version_str);
-    exit(1);
+    //exit(1);
   }
 
   /* Create OpenCL context for just 1 device */
@@ -356,24 +356,25 @@ cl_program get_binary_kernel(cl_context context,
   fprintf(stdout, "Read %d bytes for binary %s\n", binary_sizes[0], bname);
 
   /* Create the program object from the loaded binary */
-  cl_program program = clCreateProgramWithBinary(context, (cl_uint)1,
+  /*cl_program program = clCreateProgramWithBinary(context, (cl_uint)1,
 						 device,
 						 binary_sizes,
 						 binary_buffers,
-						 binary_status, &ret);
+						 binary_status,
+                         &ret);
   check_status("clCreateProgramWithBinary", ret);
   check_status("Loading binary", binary_status[0]);
-
   // Build the program that was just created.
   ret = clBuildProgram(program, 0, NULL, "", NULL, NULL);
   check_status("clBuildProgram", ret);
 
-  /* Clean up */
+  // Clean up
   for(int ibuf=0; ibuf<num_binaries; ibuf++){
     free(binary_buffers[ibuf]);
   }
 
-  return program;
+  return program; */
+  return NULL;
 }
 
 /** Returns the duration of the supplied OpenCL event in nanoseconds.

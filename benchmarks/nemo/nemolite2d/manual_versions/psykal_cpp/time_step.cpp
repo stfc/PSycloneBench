@@ -1,7 +1,4 @@
 #include <iostream>
-#include <chrono>
-#include <vector>
-#include <cstdlib>
 
 // Kernels
 #include "../../kernels/c_family/continuity_kern.c"

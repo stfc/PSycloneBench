@@ -40,8 +40,8 @@ time_step.o: opencl_utils.o
 
 # C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
 # the imported ../common.mk)
-%.o: %.cpp
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
+%.o: %.c
+	gcc $(CFLAGS) $(OMPFLAGS) -c $< -o $@
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean

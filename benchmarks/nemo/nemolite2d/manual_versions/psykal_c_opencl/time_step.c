@@ -1,4 +1,3 @@
-#include <iostream>
 #include "opencl_utils.h"
 
 #ifdef __APPLE__
@@ -20,7 +19,7 @@
 /* Number of OpenCL command queues we will use */
 #define NUM_QUEUES 2
 
-bool first_time = true;
+int first_time = 1;
 
 enum KERNELS {
   K_CONTINUITY,
@@ -49,6 +48,22 @@ static const char* kernel_names[K_NUM_KERNELS] =
   "bc_flather_v_code",
   "next_sshu_code",
   "next_sshv_code"
+};
+
+/* The source files containing each kernel (only used if not compiling
+   them to a single image) */
+static const char* kernel_files[K_NUM_KERNELS] =
+{
+  "../../kernels/c_family/continuity_kern.c",
+  "../../kernels/c_family/momentum_u_kern.c",
+  "../../kernels/c_family/momentum_v_kern.c",
+  "./boundary_conditions_kern.c",
+  "./boundary_conditions_kern.c",
+  "./boundary_conditions_kern.c",
+  "./boundary_conditions_kern.c",
+  "./boundary_conditions_kern.c",
+  "./time_update_kern.c",
+  "./time_update_kern.c"   
 };
 
 // OpenCL variables should be permanent between multiple invoke calls
@@ -99,7 +114,7 @@ cl_event clkernevt[K_NUM_KERNELS];
 
 
 
-extern "C" void c_invoke_time_step(
+void c_invoke_time_step(
         // Fields
         double * ssha_t,
         double * sshn_t,
@@ -165,8 +180,45 @@ extern "C" void c_invoke_time_step(
 
         init_device(&device, version_str, &context);
 
+        for(int ji=0; ji<NUM_QUEUES; ji++){
+            int ret;
+            /* The Intel/Altera OpenCL SDK is only version 1.0 */
+            /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
+            to call the ...WithProperties version of this routine */
+            command_queue[ji] = clCreateCommandQueue(
+                    context, device, queue_properties, &ret);
+            check_status("clCreateCommandQueue", ret);
+        }
+
+        // Create our Program object (contains all of the individual kernels)
+        if(image_file){
+            /* We expect all kernels to have been compiled into a single image */
+            fprintf(stderr, " Single image version not supported at the moment.");
+            exit(1);
+            program = get_program(context, &device, version_str, image_file);
+        }else{
+            //fprintf(stderr, "Please set NEMOLITE2D_SINGLE_IMAGE to point to the "
+            //                ".aocx file containing the compiled kernels\n");
+            //exit(1);
+        }
+        
+        /* Create OpenCL Kernels and associated event objects (latter used
+        to obtain detailed timing information). */
+        for(int ikern=0; ikern<K_NUM_KERNELS; ikern++){
+            int ret;
+            if(!image_file){
+                program = get_program(context, &device, version_str,
+                    kernel_files[ikern]);
+            }
+            fprintf(stdout, "Creating kernel %s...\n", kernel_names[ikern]);
+            clkernel[ikern] = clCreateKernel(program, kernel_names[ikern], &ret);
+            check_status("clCreateKernel", ret);
+      }
+
+
+
         printf("OpenCL initialization done\n");
-        first_time = false;
+        first_time = 0;
     }
 
     // Continuity kernel (internal domain)
