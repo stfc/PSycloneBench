@@ -40,7 +40,9 @@ time_step.o: opencl_utils.o
 
 # C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
 # the imported ../common.mk)
-%.o: %.c
+# Since kernels are included directly any modification in the kernel files
+# must trigger a recompilation.
+%.o: %.c ../../kernels/c_family/*.c
 	gcc $(CFLAGS) $(OMPFLAGS) -c $< -o $@
 
 clean: 

@@ -3,12 +3,14 @@
 
 #ifdef OPENCL_HOST // If it is OpenCL infrastructure
 
+/*
 #include "opencl_utils.h"
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
 #include <CL/cl.h>
 #endif
+*/
 
 void set_args_next_sshv(cl_kernel kern,
 			cl_int *nx,

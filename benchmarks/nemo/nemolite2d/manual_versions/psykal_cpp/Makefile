@@ -44,7 +44,9 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 
 # C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
 # the imported ../common.mk)
-%.o: %.cpp
+# Since kernels are included directly any modification in the kernel files
+# must trigger a recompilation.
+%.o: %.cpp ../../kernels/c_family/*.c
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
 
 clean: 

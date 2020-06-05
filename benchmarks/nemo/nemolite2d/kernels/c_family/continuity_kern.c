@@ -3,12 +3,12 @@
 
 #ifdef OPENCL_HOST // If it is OpenCL infrastructure
 
-#include "opencl_utils.h"
-#ifdef __APPLE__
-#include <OpenCL/opencl.h>
-#else
-#include <CL/cl.h>
-#endif
+//#include "opencl_utils.h"
+//#ifdef __APPLE__
+//#include <OpenCL/opencl.h>
+//#else
+//#include <CL/cl.h>
+//#endif
 
 void set_args_continuity(cl_kernel cont_kernel,
 			 cl_int *nx,

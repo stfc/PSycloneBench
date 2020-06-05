@@ -7,6 +7,7 @@
 #endif
 
 // Kernels
+#define OPENCL_HOST
 #include "../../kernels/c_family/continuity_kern.c"
 #include "../../kernels/c_family/momentum_u_kern.c"
 #include "../../kernels/c_family/momentum_v_kern.c"
@@ -180,8 +181,8 @@ void c_invoke_time_step(
 
         init_device(&device, version_str, &context);
 
+        int ret;
         for(int ji=0; ji<NUM_QUEUES; ji++){
-            int ret;
             /* The Intel/Altera OpenCL SDK is only version 1.0 */
             /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
             to call the ...WithProperties version of this routine */
@@ -205,7 +206,6 @@ void c_invoke_time_step(
         /* Create OpenCL Kernels and associated event objects (latter used
         to obtain detailed timing information). */
         for(int ikern=0; ikern<K_NUM_KERNELS; ikern++){
-            int ret;
             if(!image_file){
                 program = get_program(context, &device, version_str,
                     kernel_files[ikern]);
@@ -213,9 +213,176 @@ void c_invoke_time_step(
             fprintf(stdout, "Creating kernel %s...\n", kernel_names[ikern]);
             clkernel[ikern] = clCreateKernel(program, kernel_names[ikern], &ret);
             check_status("clCreateKernel", ret);
-      }
+        } 
+  
+        /* Create Device Memory Buffers -- just works with square domains nx==ny */
+        int num_buffers = 0;
+        int buff_size = width*width*sizeof(cl_double);
+        ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+			                         NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        ssha_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+                                       NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        ssha_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+                                       NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        sshn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+                                     NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        sshn_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+				                       NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        sshn_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+				                       NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        hu_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+			                       NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        hv_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+			                       NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        ht_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+			                       NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+  
+        /* Velocity fields */
+        un_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+			                       NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        vn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+			                       NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+#ifndef SINGLE_KERNEL
+        ua_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+			                       NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        va_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+			                       NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+#endif
 
+        /* Mesh scale factors */
+        e1t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+			                        NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        e1u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+			                        NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        e1v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+			                        NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        e2u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+			                        NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        e2v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+			                        NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        e2t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+			                        NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        e12u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+                                     NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        e12v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+                                     NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        tmask_device = clCreateBuffer(context, CL_MEM_READ_ONLY,
+				        (size_t)(width*width*sizeof(cl_int)), NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        e12t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+                                     NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
 
+        /* Coriolis parameters */
+        gphiu_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+				                      NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        gphiv_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+				                      NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+
+        fprintf(stdout, "Created %d device buffers OK\n", num_buffers);
+
+        /* Set OpenCL Kernel Parameters for Continuity */
+        set_args_continuity(clkernel[K_CONTINUITY],
+		    &width,
+		    &ssha_device, &sshn_device,
+		    &sshn_u_device, &sshn_v_device,
+		    &hu_device, &hv_device,
+		    &un_device, &vn_device,
+		    &rdt, &e12t_device); 
+        /* Set OpenCL Kernel Parameters for Momentum-u */
+        set_args_momu(clkernel[K_MOM_U],
+            &width,
+            &ua_device, &un_device, &vn_device,
+            &hu_device, &hv_device, &ht_device,
+            &ssha_u_device, &sshn_device,
+            &sshn_u_device, &sshn_v_device,
+            &tmask_device,
+            &e1u_device, &e1v_device,
+            &e1t_device, &e2u_device,
+            &e2t_device, &e12u_device,
+            &gphiu_device,
+            &rdt, &cbfr, &visc);
+      /* Set OpenCL Kernel Parameters for Momentum-v */
+      set_args_momv(clkernel[K_MOM_V],
+            &width,
+            &va_device, &un_device, &vn_device,
+            &hu_device, &hv_device, &ht_device,
+            &ssha_v_device, &sshn_device,
+            &sshn_u_device, &sshn_v_device,
+            &tmask_device,
+            &e1v_device, &e1t_device,
+            &e2u_device, &e2v_device,
+            &e2t_device, &e12v_device,
+            &gphiv_device,
+            &rdt, &cbfr, &visc);
+
+      /* Set OpenCL Kernel Parameters for bc_ssh */
+      set_args_bc_ssh(clkernel[K_BC_SSH],
+            &width,
+            &istep,
+            &ssha_device,
+            &tmask_device,
+            &rdt);
+
+      /* Set OpenCL Kernel Parameters for bc_solid_v */
+      set_args_bc_solid_u(clkernel[K_BC_SOLID_U],
+            &width,
+            &ua_device,
+            &tmask_device);
+
+      /* Set OpenCL Kernel Parameters for bc_solid_v */
+      set_args_bc_solid_v(clkernel[K_BC_SOLID_V],
+            &width,
+            &ua_device,
+            &tmask_device);
 
         printf("OpenCL initialization done\n");
         first_time = 0;
