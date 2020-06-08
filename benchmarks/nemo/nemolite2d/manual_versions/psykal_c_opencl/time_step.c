@@ -350,8 +350,9 @@ void c_invoke_time_step(
             &e2t_device, &e12u_device,
             &gphiu_device,
             &rdt, &cbfr, &visc);
-      /* Set OpenCL Kernel Parameters for Momentum-v */
-      set_args_momv(clkernel[K_MOM_V],
+
+        /* Set OpenCL Kernel Parameters for Momentum-v */
+        set_args_momv(clkernel[K_MOM_V],
             &width,
             &va_device, &un_device, &vn_device,
             &hu_device, &hv_device, &ht_device,
@@ -364,25 +365,150 @@ void c_invoke_time_step(
             &gphiv_device,
             &rdt, &cbfr, &visc);
 
-      /* Set OpenCL Kernel Parameters for bc_ssh */
-      set_args_bc_ssh(clkernel[K_BC_SSH],
+        /* Set OpenCL Kernel Parameters for bc_ssh */
+        set_args_bc_ssh(clkernel[K_BC_SSH],
             &width,
             &istep,
             &ssha_device,
             &tmask_device,
             &rdt);
 
-      /* Set OpenCL Kernel Parameters for bc_solid_v */
-      set_args_bc_solid_u(clkernel[K_BC_SOLID_U],
+        /* Set OpenCL Kernel Parameters for bc_solid_v */
+        set_args_bc_solid_u(clkernel[K_BC_SOLID_U],
             &width,
             &ua_device,
             &tmask_device);
 
-      /* Set OpenCL Kernel Parameters for bc_solid_v */
-      set_args_bc_solid_v(clkernel[K_BC_SOLID_V],
+        /* Set OpenCL Kernel Parameters for bc_solid_v */
+        set_args_bc_solid_v(clkernel[K_BC_SOLID_V],
             &width,
             &ua_device,
             &tmask_device);
+
+        /* Set OpenCL Kernel Parameters for next_sshu kernel */
+        set_args_next_sshu(clkernel[K_NEXT_SSH_U],
+            &width, &sshn_u_device, &sshn_device, &tmask_device,
+            &e12t_device, &e12u_device);
+      
+        /* Set OpenCL Kernel Parameters for next_sshv kernel */
+        set_args_next_sshv(clkernel[K_NEXT_SSH_V],
+            &width, &sshn_v_device, &sshn_device, &tmask_device,
+            &e12t_device, &e12v_device);
+
+        /* Create an array to store the event associated with each write
+        to the device */
+        cl_event *write_events = (cl_event*)malloc(num_buffers*sizeof(cl_event));
+        int buf_idx = 0;
+        ret = clEnqueueWriteBuffer(command_queue[0], ssha_device, 1, 0,
+			     (size_t)buff_size, (void *)ssha_t, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+#ifndef SINGLE_KERNEL
+        ret = clEnqueueWriteBuffer(command_queue[0], ssha_u_device, 1, 0,
+			     (size_t)buff_size, (void *)ssha_u, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], ssha_v_device, 1, 0,
+			     (size_t)buff_size, (void *)ssha_v, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+#endif
+        ret = clEnqueueWriteBuffer(command_queue[0], sshn_device, 1, 0,
+			     (size_t)buff_size, (void *)sshn, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], sshn_u_device, 1, 0,
+			     (size_t)buff_size, (void *)sshn_u, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], sshn_v_device, 1, 0,
+			     (size_t)buff_size, (void *)sshn_v, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], hu_device, 1, 0,
+			     (size_t)buff_size, (void *)hu, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], hv_device, 1, 0,
+			     (size_t)buff_size, (void *)hv, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+#ifndef SINGLE_KERNEL
+        ret = clEnqueueWriteBuffer(command_queue[0], ht_device, 1, 0,
+			     (size_t)buff_size, (void *)ht, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+#endif
+        ret = clEnqueueWriteBuffer(command_queue[0], un_device, 1, 0,
+			     (size_t)buff_size, (void *)un, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], vn_device, 1, 0,
+			     (size_t)buff_size, (void *)vn, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+#ifndef SINGLE_KERNEL
+        ret = clEnqueueWriteBuffer(command_queue[0], ua_device, 1, 0,
+			     (size_t)buff_size, (void *)ua, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], va_device, 1, 0,
+			     (size_t)buff_size, (void *)va, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], e1u_device, 1, 0,
+			     (size_t)buff_size, (void *)e1u, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], e1v_device, 1, 0,
+			     (size_t)buff_size, (void *)e1v, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], e1t_device, 1, 0,
+			     (size_t)buff_size, (void *)e1t, 0,
+			     NULL, &(write_events[buf_idx++]));
+        ret = clEnqueueWriteBuffer(command_queue[0], e2u_device, 1, 0,
+			     (size_t)buff_size, (void *)e2u, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], e2v_device, 1, 0,
+			     (size_t)buff_size, (void *)e2v, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], e2t_device, 1, 0,
+			     (size_t)buff_size, (void *)e2t, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], e12u_device, 1, 0,
+			     (size_t)buff_size, (void *)e12u, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], e12v_device, 1, 0,
+			     (size_t)buff_size, (void *)e12v, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+#endif
+        ret = clEnqueueWriteBuffer(command_queue[0], e12t_device, 1, 0,
+			     (size_t)buff_size, (void *)e12t, 0,
+			     NULL, &(write_events[buf_idx++]));
+    check_status("clEnqueueWriteBuffer", ret);
+#ifndef SINGLE_KERNEL
+        ret = clEnqueueWriteBuffer(command_queue[0], gphiu_device, 1, 0,
+			     (size_t)buff_size, (void *)gphiu, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], gphiv_device, 1, 0,
+			     (size_t)buff_size, (void *)gphiv, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], tmask_device, 1, 0,
+			     (size_t)(width*width*sizeof(cl_int)), (void *)tmask, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
+#endif
+        ret = clWaitForEvents(num_buffers, write_events);
+        check_status("clWaitForEvents", ret);
+
 
         printf("OpenCL initialization done\n");
         first_time = 0;
