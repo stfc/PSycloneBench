@@ -84,10 +84,10 @@ extern "C" void c_invoke_time_step(
         }
     );
 
-    // Momentum_u kernel (internal domain)
+    // Momentum_u kernel (internal domain but top x)
     Kokkos::parallel_for("momentum_u",
         mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop, internal_xstop}),
+                       {internal_ystop, internal_xstop - 1}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
             momentum_u_code(ji, jj, width, ua, un, vn, hu, hv, ht, ssha_u, \
                 sshn_t, sshn_u, sshn_v, tmask, dx_u, dx_v, dx_t, dy_u, dy_t, \
@@ -96,10 +96,10 @@ extern "C" void c_invoke_time_step(
         }
     );
 
-    // Momentum_v kernel (internal domain)
+    // Momentum_v kernel (internal domain but top y)
     Kokkos::parallel_for("momentum_v",
         mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop, internal_xstop}),
+                       {internal_ystop - 1, internal_xstop}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
             momentum_v_code(ji, jj, width, va, un, vn, hu, hv, ht, ssha_v, \
                 sshn_t, sshn_u, sshn_v, tmask, dx_v, dx_t, dy_u, dy_v, dy_t, \
