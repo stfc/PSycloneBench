@@ -154,7 +154,7 @@ extern "C" void c_invoke_time_step(
     );
 
     // Copy 'next' fields to 'current' fields (whole domain)
-    Kokkos::parallel_for("bc_solid_v",
+    Kokkos::parallel_for("copy_fields",
         mdrange_policy({internal_ystart - 1, internal_xstart - 1},
                        {internal_ystop + 1, internal_xstop + 1}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
@@ -166,7 +166,7 @@ extern "C" void c_invoke_time_step(
     );
 
     // Time update kernel (internal domain u points)
-    Kokkos::parallel_for("continuity",
+    Kokkos::parallel_for("next_sshu",
         mdrange_policy({internal_ystart, internal_xstart},
                        {internal_ystop, internal_xstop - 1}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
@@ -175,7 +175,7 @@ extern "C" void c_invoke_time_step(
     );
 
     // Time update kernel (internal domain v points)
-    Kokkos::parallel_for("continuity",
+    Kokkos::parallel_for("next_sshv",
         mdrange_policy({internal_ystart, internal_xstart},
                        {internal_ystop - 1, internal_xstop}),
         KOKKOS_LAMBDA (const int jj, const int ji) {

@@ -4,7 +4,7 @@ This directory contains various version of the PSyKAl form of
 NEMOLite2D that has had its PSy layers manually implemented in C++.
 
 The Fortran(NemoLite2d) to C++(PSy-layer) interoperability is done
-with a `iso_c_binding` interface of the function `c_invoke_time_step`
+with an `iso_c_binding` interface for the function `c_invoke_time_step`
 in the `time_step_mod.f90`.
 When compiling this function can be linked with object files defining
 it in C or C++ (if the function is marked as `extern 'C'`).

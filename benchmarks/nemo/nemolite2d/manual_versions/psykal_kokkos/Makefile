@@ -1,6 +1,6 @@
 # Makefile for manual C++ kokkos version of PSyKAl'd NEMOLite2D.
 #
-# This Makefile picks up the compiler to use any flags from
+# This Makefile picks up the compiler to use plus any flags from
 # environment variables. e.g. to use g++:
 # 
 # export F90=gfortran

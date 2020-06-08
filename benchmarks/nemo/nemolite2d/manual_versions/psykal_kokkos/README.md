@@ -12,7 +12,7 @@ a good introduction to its concepts and APIs can be found in their
 
 ## Implementation limitations ##
 
-Kokkos has several abstraction to control where (execution spaces),
+Kokkos has several abstractions to control where (execution spaces) and
 how (execution policies and execution patterns) computation is executed
 and how memory is laid out (Views).
 
