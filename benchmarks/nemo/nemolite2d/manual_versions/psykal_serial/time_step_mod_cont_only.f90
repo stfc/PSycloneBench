@@ -39,44 +39,23 @@ contains
     ! end locals for momentum
     ! Locals for BCs
     real(go_wp) :: amp_tide, omega_tide, rtime
-
-    M  = ssha%grid%subdomain%global%nx
-    N  = ssha%grid%subdomain%global%ny
+    ! Locals for loop bounds
+    integer :: xstart, xstop, ystart, ystop
 
     ! In the general case we have to reason about whether or not the
     ! domain has PBCs and what sort of offset convention the kernels
     ! use. However, this is a middle layer specific to NEMOLite2D and
     ! therefore we know that we have no periodic BCs and are using a
     ! NE stagger
-    !txstart = 2 ! grid%simulation_domain%xstart
-    !tystart = 2 ! grid%simulation_domain%ystart
-
-    !uxstart = 2 ! grid%simulation_domain%xstart
-    !uxstop  = M - 1
-    !uystart = 2 ! grid%simulation_domain%ystart
-    !uystop  = N
-
-    !vxstart = 2 ! grid%simulation_domain%xstart
-    !vxstop  = M
-    !vystart = 2 ! grid%simulation_domain%ystart
-    !vystop  = N - 1
-
-    !uwhole_xstart = 1 ! uxstart - NBOUNDARY
-    !uwhole_xstop  = M ! uxstop  + NBOUNDARY
-    !uwhole_ystart = 1 ! uystart - NBOUNDARY
-    !uwhole_ystop  = N+1 ! uystop  + NBOUNDARY
-
-    !vwhole_xstart = 1 ! vxstart - NBOUNDARY
-    !vwhole_xstop  = M+1 ! vxstop  + NBOUNDARY
-    !vwhole_ystart = 1 ! vystart - NBOUNDARY
-    !vwhole_ystop  = N ! vystop  + NBOUNDARY
+    xstart = ssha%grid%subdomain%internal%xstart
+    ystart = ssha%grid%subdomain%internal%ystart
+    xstop = ssha%grid%subdomain%internal%xstop
+    ystop = ssha%grid%subdomain%internal%ystop
 
     call timer_start(cont_timer, label='Continuity')
 
-!    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
-!      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
-    do jj = 2, N, 1
-      do ji = 2, M, 1
+    do jj = ystart, ystop
+      do ji = xstart, xstop
 
 !        call continuity_code(ji, jj,                             &
 !                             ssha%data, sshn_t%data,             &
