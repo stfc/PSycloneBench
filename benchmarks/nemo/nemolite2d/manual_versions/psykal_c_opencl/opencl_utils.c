@@ -17,9 +17,11 @@
 #define VERBOSE 0
 
 /** Query the available OpenCL devices and choose one */
-void init_device(cl_device_id *device,
-		 char *version_str,
-		 cl_context *context)
+void init_device(
+        int platform_selection,
+        cl_device_id *device,
+		char *version_str,
+		cl_context *context)
 {
   /** The version of OpenCL supported by the selected device */
   int cl_version;
@@ -46,8 +48,15 @@ void init_device(cl_device_id *device,
 	    idev, (long)(platform_ids[idev]), result_str);
   }
 
-  ret = clGetDeviceIDs(platform_ids[0], CL_DEVICE_TYPE_DEFAULT, MAX_DEVICES,
-		       device_ids, &ret_num_devices);
+  if (platform_selection < ret_num_platforms){
+    fprintf(stdout, "Selecting platform %d.\n", platform_selection);
+  }else{
+    fprintf(stderr, "Selected platform %d does not exist.\n", platform_selection);
+    exit(-1);
+  }
+
+  ret = clGetDeviceIDs(platform_ids[platform_selection], CL_DEVICE_TYPE_DEFAULT,
+                       MAX_DEVICES, device_ids, &ret_num_devices);
   check_status("clGetDeviceIDs", ret);
   fprintf(stdout, "Have %d devices\n", ret_num_devices);
   for (idev=0; idev<ret_num_devices; idev++){
@@ -119,7 +128,7 @@ void init_device(cl_device_id *device,
   cl_context_properties cl_props[3];
   /* The list of properties for this context is zero terminated */
   cl_props[0] = CL_CONTEXT_PLATFORM;
-  cl_props[1] = (cl_context_properties)(platform_ids[0]);
+  cl_props[1] = (cl_context_properties)(platform_ids[platform_selection]);
   cl_props[2] = 0;
 
   *context = clCreateContext(cl_props, 1, device, NULL, NULL, &ret);

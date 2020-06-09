@@ -178,8 +178,13 @@ void c_invoke_time_step(
                 exit(1);
             }
         }
+        
+        int platform = 0; // By default choose platform number 0
+        if( (env_string = getenv("OPENCL_PLATFORM")) ){
+            platform = atoi(env_string); // If not valid conversion it also returns 0
+        }
 
-        init_device(&device, version_str, &context);
+        init_device(platform, &device, version_str, &context);
 
         int ret;
         for(int ji=0; ji<NUM_QUEUES; ji++){
@@ -413,7 +418,7 @@ void c_invoke_time_step(
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
 #endif
-        ret = clEnqueueWriteBuffer(command_queue[0], sshn_device, 1, 0,
+/*        ret = clEnqueueWriteBuffer(command_queue[0], sshn_device, 1, 0,
 			     (size_t)buff_size, (void *)sshn, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
@@ -506,6 +511,7 @@ void c_invoke_time_step(
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
 #endif
+        */
         ret = clWaitForEvents(num_buffers, write_events);
         check_status("clWaitForEvents", ret);
 

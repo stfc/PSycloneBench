@@ -9,7 +9,9 @@
 
 #define STD_STRING_LEN 128
 
-void init_device(cl_device_id *device,
+void init_device(
+         int platform_selection,
+         cl_device_id *device,
 		 char *version_str,
 		 cl_context *context);
 
