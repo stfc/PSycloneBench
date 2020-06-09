@@ -60,7 +60,7 @@ extern "C" void c_invoke_time_step(
         }
     }
 
-    // Momentum_u kernel (internal domain but top x)
+    // Momentum_u kernel (internal domain u points)
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop - 1; ji++){
             momentum_u_code(ji, jj, width, ua, un, vn, hu, hv, ht, ssha_u, \
@@ -69,7 +69,7 @@ extern "C" void c_invoke_time_step(
         }
     }
 
-    // Momentum_v kernel (internal domain but top y)
+    // Momentum_v kernel (internal domain v points)
     for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             momentum_v_code(ji, jj, width, va, un, vn, hu, hv, ht, ssha_v, \

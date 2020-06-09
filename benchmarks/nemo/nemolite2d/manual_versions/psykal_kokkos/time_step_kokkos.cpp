@@ -84,7 +84,7 @@ extern "C" void c_invoke_time_step(
         }
     );
 
-    // Momentum_u kernel (internal domain but top x)
+    // Momentum_u kernel (internal domain u points)
     Kokkos::parallel_for("momentum_u",
         mdrange_policy({internal_ystart, internal_xstart},
                        {internal_ystop, internal_xstop - 1}),
@@ -96,7 +96,7 @@ extern "C" void c_invoke_time_step(
         }
     );
 
-    // Momentum_v kernel (internal domain but top y)
+    // Momentum_v kernel (internal domain v points)
     Kokkos::parallel_for("momentum_v",
         mdrange_policy({internal_ystart, internal_xstart},
                        {internal_ystop - 1, internal_xstop}),

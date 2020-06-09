@@ -61,7 +61,7 @@ extern "C" void c_invoke_time_step(
         }
     }
 
-    // Momentum_u kernel (internal domain but top x)
+    // Momentum_u kernel (internal domain u points)
     #pragma omp parallel for
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop - 1; ji++){
@@ -71,7 +71,7 @@ extern "C" void c_invoke_time_step(
         }
     }
 
-    // Momentum_v kernel (internal domain but top y)
+    // Momentum_v kernel (internal domain v points)
     #pragma omp parallel for
     for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
