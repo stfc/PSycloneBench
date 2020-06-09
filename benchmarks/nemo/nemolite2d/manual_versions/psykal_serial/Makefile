@@ -10,6 +10,22 @@
 
 include ../common.mk
 
+# List of implementations that will me compiled with 'make all' and executed
+# with 'make summary_table'
+IMPLEMENTATIONS=nemolite2d nemolite2d_align nemolite2d_preload
+
+# The implementations commented out below don't produce the same results but
+# can still be compiled with 'make <IMPLEMENTATION>'
+#
+# Implementation that produce slightly different results:
+# IMPLEMENTATIONS += nemolite2d_alignall nemolite2d_nopeel
+#
+# Implementation that produce NaN results:
+# IMPLEMENTATIONS += nemolite2d_nodiv nemolite2d_8arrays
+#
+# Implementations that purposely produce different results:
+# IMPLEMENTATIONS += nemolite2d_cont_only
+
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
 LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
@@ -17,9 +33,6 @@ COMMON_MODULES = ${COMMON_LIB} ${KERNELS} ${INF_LIB}
 
 # Interdependencies between modules, alphabetical order
 time_step_mod.o: ${COMMON_LIB} ${KERNELS} inf_lib
-
-IMPLEMENTATIONS=nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv \
-nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
 
 # The targets that this Makefile supports
 all: ${IMPLEMENTATIONS}
@@ -100,7 +113,7 @@ docs:
 	doxygen gocean2d.doxy.config
 
 summary:
-	@echo -n "$(call get_cpu)\t${COMPILER_VERSION}\t"
+	@echo -n "cpu\t${COMPILER_VERSION}\t"
 	@./nemolite2d.exe | awk 'BEGIN {ORS="\t"} \
 		{if ($$2 == "checksum") {print $$4} } \
 		{if ($$1 == "Time-stepping") {print $$5} } \
