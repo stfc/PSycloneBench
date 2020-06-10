@@ -8,3 +8,4 @@
 __pycache__/
 gnu_opt_report.txt
 *.optrpt
+KokkosCore_config*
