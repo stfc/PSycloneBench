@@ -8,44 +8,22 @@ def trans(psy):
     globaltrans = tinfo.get_trans_name('KernelGlobalsToArguments')
     cltrans = tinfo.get_trans_name('OCLTrans')
 
-    # Get the invoke
-    schedule = psy.invokes.get('invoke_0').schedule
+    for invoke in psy.invokes.invoke_list:
+        print("Converting to OpenCL invoke: " + invoke.name)
+        schedule = invoke.schedule
 
-    # Remove the globals from inside each kernel
-    for idx, kern in enumerate(schedule.kernels()):
-        globaltrans.apply(kern)
+        # Skip invoke_2
+        if invoke.name == "invoke_2":
+            continue
 
-    # Transform invoke to OpenCL
-    cltrans.apply(schedule)
+        # Remove the globals from inside each kernel
+        for kern in schedule.kernels():
+            print("Remove glovals from kernel: " + kern.name)
+            if kern.name == "time_smooth_code":
+                import pdb; pdb.set_trace()
+            globaltrans.apply(kern)
 
-    # Get the invoke
-    schedule = psy.invokes.get('invoke_1').schedule
-
-    # Remove the globals from inside each kernel
-    for idx, kern in enumerate(schedule.kernels()):
-        globaltrans.apply(kern)
-
-    # Transform invoke to OpenCL
-    cltrans.apply(schedule)
-
-    # Get the invoke
-    schedule = psy.invokes.get('invoke_2').schedule
-
-    # Remove the globals from inside each kernel
-    for idx, kern in enumerate(schedule.kernels()):
-        globaltrans.apply(kern)
-
-    # Transform invoke to OpenCL
-    cltrans.apply(schedule)
-
-    # Get the invoke
-    schedule = psy.invokes.get('invoke_3').schedule
-
-    # Remove the globals from inside each kernel
-    for idx, kern in enumerate(schedule.kernels()):
-        globaltrans.apply(kern)
-
-    # Transform invoke to OpenCL
-    cltrans.apply(schedule)
+        # Transform invoke to OpenCL
+        cltrans.apply(schedule)
 
     return psy

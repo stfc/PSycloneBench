@@ -104,7 +104,7 @@ libclean:
 clean: 
 	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~ psy.f90 shallow_gen.f90
-	rm -f gnu_opt_report.txt
+	rm -f gnu_opt_report.txt *.cl
 
 allclean: clean libclean
 	rm -f *.exe
