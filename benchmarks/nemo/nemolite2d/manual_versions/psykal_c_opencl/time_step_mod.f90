@@ -12,19 +12,19 @@ module time_step_mod
             va, ssha_v, &
             ! Grid
             tmask, area_t, area_u, area_v, dx_u, dx_v, dx_t, dy_u, dy_v, &
-            dy_t, gphiu, &
+            dy_t, gphiu, gphiv, &
             ! Scalars
             istp, internal_xstart, internal_xstop, internal_ystart, &
-            internal_ystop, width, rdt, cbfr, visc, omega, d2r, g &
+            internal_ystop, width, total_size, rdt, cbfr, visc, omega, d2r, g &
         ) bind (C, name="c_invoke_time_step")
             use iso_c_binding
             real(kind=c_double), intent(inout), dimension(*) :: ssha_t, &
                 sshn_t, sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, &
                 ssha_v, area_t, area_u, area_v, dx_u, dx_v, dx_t, dy_u, dy_v, &
-                dy_t, gphiu
+                dy_t, gphiu, gphiv
             integer(kind=c_int), intent(inout), dimension(*) :: tmask
             integer(kind=c_int), intent(in), value :: istp, internal_xstart, &
-                internal_xstop, internal_ystart, internal_ystop, width
+                internal_xstop, internal_ystart, internal_ystop, width, total_size
             real(kind=c_double), intent(in), value :: rdt, cbfr, visc, omega, &
                 d2r, g
         end subroutine wrapper_c_invoke_time_step
@@ -75,6 +75,7 @@ contains
             sshn_t%grid%dx_v, &
             sshn_t%grid%dx_t, &
             sshn_t%grid%gphiu, &
+            sshn_t%grid%gphiv, &
             ! Scalars
             istp, &
             ssha_t%grid%subdomain%internal%xstart - 1, & ! 1 -> 0 indexing
@@ -82,6 +83,7 @@ contains
             ssha_t%grid%subdomain%internal%ystart - 1, & ! 1 -> 0 indexing
             ssha_t%grid%subdomain%internal%ystop - 1, & ! 1 -> 0 indexing
             size(ssha_t%data, 1), & ! Size of the contiguous dimension
+            size(ssha_t%data), & ! Total array size
             rdt, &
             cbfr, &
             visc, &

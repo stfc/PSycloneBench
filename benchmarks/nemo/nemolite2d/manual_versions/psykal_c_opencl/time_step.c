@@ -94,15 +94,15 @@ cl_mem un_device = NULL;
 cl_mem vn_device = NULL;
 cl_mem ua_device = NULL;
 cl_mem va_device = NULL;
-cl_mem e1u_device = NULL;
-cl_mem e1v_device = NULL;
-cl_mem e1t_device = NULL;
-cl_mem e2u_device = NULL;
-cl_mem e2v_device = NULL;
-cl_mem e2t_device = NULL;
-cl_mem e12u_device = NULL;
-cl_mem e12v_device = NULL;
-cl_mem e12t_device = NULL;
+cl_mem area_t_device = NULL;
+cl_mem area_u_device = NULL;
+cl_mem area_v_device = NULL;
+cl_mem dx_u_device = NULL;
+cl_mem dx_v_device = NULL;
+cl_mem dx_t_device = NULL;
+cl_mem dy_u_device = NULL;
+cl_mem dy_v_device = NULL;
+cl_mem dy_t_device = NULL;
 cl_mem gphiu_device = NULL;
 cl_mem gphiv_device = NULL;
 cl_mem tmask_device = NULL;
@@ -142,6 +142,7 @@ void c_invoke_time_step(
         double * dy_v,
         double * dy_t,
         double * gphiu,
+        double * gphiv,
         // Scalars
         int istep,
         int internal_xstart,
@@ -149,6 +150,7 @@ void c_invoke_time_step(
         int internal_ystart,
         int internal_ystop,
         int width,
+        int total_size,
         double rdt,
         double cbfr,
         double visc,
@@ -156,6 +158,9 @@ void c_invoke_time_step(
         double d2r,
         double g
         ){
+
+    int ret;
+    int buff_size = total_size * sizeof(cl_double);
 
     if(first_time){
         printf("OpenCL initialization\n");
@@ -186,7 +191,6 @@ void c_invoke_time_step(
 
         init_device(platform, &device, version_str, &context);
 
-        int ret;
         for(int ji=0; ji<NUM_QUEUES; ji++){
             /* The Intel/Altera OpenCL SDK is only version 1.0 */
             /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
@@ -220,9 +224,9 @@ void c_invoke_time_step(
             check_status("clCreateKernel", ret);
         } 
   
-        /* Create Device Memory Buffers -- just works with square domains nx==ny */
+        /* Create Device Memory Buffers*/
         int num_buffers = 0;
-        int buff_size = width*width*sizeof(cl_double);
+        fprintf(stdout, "Creating buffers of size %d ...\n", total_size);
         ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			                         NULL, &ret);
         num_buffers++;
@@ -269,7 +273,6 @@ void c_invoke_time_step(
 			                       NULL, &ret);
         num_buffers++;
         check_status("clCreateBuffer", ret);
-#ifndef SINGLE_KERNEL
         ua_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			                       NULL, &ret);
         num_buffers++;
@@ -278,47 +281,46 @@ void c_invoke_time_step(
 			                       NULL, &ret);
         num_buffers++;
         check_status("clCreateBuffer", ret);
-#endif
 
         /* Mesh scale factors */
-        e1t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+        area_t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
         num_buffers++;
         check_status("clCreateBuffer", ret);
-        e1u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+        area_u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
         num_buffers++;
         check_status("clCreateBuffer", ret);
-        e1v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+        area_v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
         num_buffers++;
         check_status("clCreateBuffer", ret);
-        e2u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+        dx_u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
         num_buffers++;
         check_status("clCreateBuffer", ret);
-        e2v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+        dx_v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
         num_buffers++;
         check_status("clCreateBuffer", ret);
-        e2t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+        dx_t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
         num_buffers++;
         check_status("clCreateBuffer", ret);
-        e12u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+        dy_u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
                                      NULL, &ret);
         num_buffers++;
         check_status("clCreateBuffer", ret);
-        e12v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+        dy_v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
+                                     NULL, &ret);
+        num_buffers++;
+        check_status("clCreateBuffer", ret);
+        dy_t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
                                      NULL, &ret);
         num_buffers++;
         check_status("clCreateBuffer", ret);
         tmask_device = clCreateBuffer(context, CL_MEM_READ_ONLY,
-				        (size_t)(width*width*sizeof(cl_int)), NULL, &ret);
-        num_buffers++;
-        check_status("clCreateBuffer", ret);
-        e12t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
-                                     NULL, &ret);
+				        (size_t)(total_size*sizeof(cl_int)), NULL, &ret);
         num_buffers++;
         check_status("clCreateBuffer", ret);
 
@@ -341,7 +343,7 @@ void c_invoke_time_step(
 		    &sshn_u_device, &sshn_v_device,
 		    &hu_device, &hv_device,
 		    &un_device, &vn_device,
-		    &rdt, &e12t_device); 
+		    &rdt, &area_t_device); 
         /* Set OpenCL Kernel Parameters for Momentum-u */
         set_args_momu(clkernel[K_MOM_U],
             &width,
@@ -350,9 +352,9 @@ void c_invoke_time_step(
             &ssha_u_device, &sshn_device,
             &sshn_u_device, &sshn_v_device,
             &tmask_device,
-            &e1u_device, &e1v_device,
-            &e1t_device, &e2u_device,
-            &e2t_device, &e12u_device,
+            &dx_u_device, &dx_v_device,
+            &dx_t_device, &dy_u_device,
+            &dy_t_device, &area_u_device,
             &gphiu_device,
             &rdt, &cbfr, &visc);
 
@@ -364,9 +366,9 @@ void c_invoke_time_step(
             &ssha_v_device, &sshn_device,
             &sshn_u_device, &sshn_v_device,
             &tmask_device,
-            &e1v_device, &e1t_device,
-            &e2u_device, &e2v_device,
-            &e2t_device, &e12v_device,
+            &dx_v_device, &dx_t_device,
+            &dy_u_device, &dy_v_device,
+            &dy_t_device, &area_v_device,
             &gphiv_device,
             &rdt, &cbfr, &visc);
 
@@ -393,22 +395,22 @@ void c_invoke_time_step(
         /* Set OpenCL Kernel Parameters for next_sshu kernel */
         set_args_next_sshu(clkernel[K_NEXT_SSH_U],
             &width, &sshn_u_device, &sshn_device, &tmask_device,
-            &e12t_device, &e12u_device);
+            &area_t_device, &area_u_device);
       
         /* Set OpenCL Kernel Parameters for next_sshv kernel */
         set_args_next_sshv(clkernel[K_NEXT_SSH_V],
             &width, &sshn_v_device, &sshn_device, &tmask_device,
-            &e12t_device, &e12v_device);
+            &area_t_device, &area_v_device);
 
         /* Create an array to store the event associated with each write
         to the device */
         cl_event *write_events = (cl_event*)malloc(num_buffers*sizeof(cl_event));
         int buf_idx = 0;
+        // Fields
         ret = clEnqueueWriteBuffer(command_queue[0], ssha_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha_t, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-#ifndef SINGLE_KERNEL
         ret = clEnqueueWriteBuffer(command_queue[0], ssha_u_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha_u, 0,
 			     NULL, &(write_events[buf_idx++]));
@@ -417,9 +419,8 @@ void c_invoke_time_step(
 			     (size_t)buff_size, (void *)ssha_v, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-#endif
-/*        ret = clEnqueueWriteBuffer(command_queue[0], sshn_device, 1, 0,
-			     (size_t)buff_size, (void *)sshn, 0,
+        ret = clEnqueueWriteBuffer(command_queue[0], sshn_device, 1, 0,
+			     (size_t)buff_size, (void *)sshn_t, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
         ret = clEnqueueWriteBuffer(command_queue[0], sshn_u_device, 1, 0,
@@ -438,12 +439,10 @@ void c_invoke_time_step(
 			     (size_t)buff_size, (void *)hv, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-#ifndef SINGLE_KERNEL
         ret = clEnqueueWriteBuffer(command_queue[0], ht_device, 1, 0,
 			     (size_t)buff_size, (void *)ht, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-#endif
         ret = clEnqueueWriteBuffer(command_queue[0], un_device, 1, 0,
 			     (size_t)buff_size, (void *)un, 0,
 			     NULL, &(write_events[buf_idx++]));
@@ -452,7 +451,6 @@ void c_invoke_time_step(
 			     (size_t)buff_size, (void *)vn, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-#ifndef SINGLE_KERNEL
         ret = clEnqueueWriteBuffer(command_queue[0], ua_device, 1, 0,
 			     (size_t)buff_size, (void *)ua, 0,
 			     NULL, &(write_events[buf_idx++]));
@@ -461,43 +459,43 @@ void c_invoke_time_step(
 			     (size_t)buff_size, (void *)va, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-        ret = clEnqueueWriteBuffer(command_queue[0], e1u_device, 1, 0,
-			     (size_t)buff_size, (void *)e1u, 0,
+
+        // Grid
+        ret = clEnqueueWriteBuffer(command_queue[0], area_t_device, 1, 0,
+			     (size_t)buff_size, (void *)area_t, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-        ret = clEnqueueWriteBuffer(command_queue[0], e1v_device, 1, 0,
-			     (size_t)buff_size, (void *)e1v, 0,
+        ret = clEnqueueWriteBuffer(command_queue[0], area_u_device, 1, 0,
+			     (size_t)buff_size, (void *)area_u, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-        ret = clEnqueueWriteBuffer(command_queue[0], e1t_device, 1, 0,
-			     (size_t)buff_size, (void *)e1t, 0,
+        ret = clEnqueueWriteBuffer(command_queue[0], area_v_device, 1, 0,
+			     (size_t)buff_size, (void *)area_v, 0,
 			     NULL, &(write_events[buf_idx++]));
-        ret = clEnqueueWriteBuffer(command_queue[0], e2u_device, 1, 0,
-			     (size_t)buff_size, (void *)e2u, 0,
-			     NULL, &(write_events[buf_idx++]));
-        check_status("clEnqueueWriteBuffer", ret);
-        ret = clEnqueueWriteBuffer(command_queue[0], e2v_device, 1, 0,
-			     (size_t)buff_size, (void *)e2v, 0,
+        ret = clEnqueueWriteBuffer(command_queue[0], dx_u_device, 1, 0,
+			     (size_t)buff_size, (void *)dx_u, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-        ret = clEnqueueWriteBuffer(command_queue[0], e2t_device, 1, 0,
-			     (size_t)buff_size, (void *)e2t, 0,
+        ret = clEnqueueWriteBuffer(command_queue[0], dx_v_device, 1, 0,
+			     (size_t)buff_size, (void *)dx_v, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-        ret = clEnqueueWriteBuffer(command_queue[0], e12u_device, 1, 0,
-			     (size_t)buff_size, (void *)e12u, 0,
+        ret = clEnqueueWriteBuffer(command_queue[0], dx_t_device, 1, 0,
+			     (size_t)buff_size, (void *)dx_t, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-        ret = clEnqueueWriteBuffer(command_queue[0], e12v_device, 1, 0,
-			     (size_t)buff_size, (void *)e12v, 0,
+        ret = clEnqueueWriteBuffer(command_queue[0], dy_u_device, 1, 0,
+			     (size_t)buff_size, (void *)dy_u, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-#endif
-        ret = clEnqueueWriteBuffer(command_queue[0], e12t_device, 1, 0,
-			     (size_t)buff_size, (void *)e12t, 0,
+        ret = clEnqueueWriteBuffer(command_queue[0], dy_v_device, 1, 0,
+			     (size_t)buff_size, (void *)dy_v, 0,
 			     NULL, &(write_events[buf_idx++]));
-    check_status("clEnqueueWriteBuffer", ret);
-#ifndef SINGLE_KERNEL
+        check_status("clEnqueueWriteBuffer", ret);
+        ret = clEnqueueWriteBuffer(command_queue[0], dy_t_device, 1, 0,
+			     (size_t)buff_size, (void *)dy_t, 0,
+			     NULL, &(write_events[buf_idx++]));
+        check_status("clEnqueueWriteBuffer", ret);
         ret = clEnqueueWriteBuffer(command_queue[0], gphiu_device, 1, 0,
 			     (size_t)buff_size, (void *)gphiu, 0,
 			     NULL, &(write_events[buf_idx++]));
@@ -507,12 +505,10 @@ void c_invoke_time_step(
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
         ret = clEnqueueWriteBuffer(command_queue[0], tmask_device, 1, 0,
-			     (size_t)(width*width*sizeof(cl_int)), (void *)tmask, 0,
+			     (size_t)(total_size*sizeof(cl_int)), (void *)tmask, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
-#endif
-        */
-        ret = clWaitForEvents(num_buffers, write_events);
+        ret = clWaitForEvents(buf_idx, write_events);
         check_status("clWaitForEvents", ret);
 
 
@@ -520,88 +516,167 @@ void c_invoke_time_step(
         first_time = 0;
     }
 
+    printf("Iteration %d\n", istep);
+    size_t local_size[2] = {64, 1};
+
     // Continuity kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
+    /*for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             continuity_code(ji, jj, width, ssha_t, sshn_t, sshn_u, sshn_v, \
                 hu, hv, un, vn, rdt, area_t);
         }
-    }
+    }*/
+    size_t continuity_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t continuity_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_CONTINUITY], 2,
+        continuity_offset, continuity_size, local_size, 0, NULL,
+        &(clkernevt[K_CONTINUITY]));
+    check_status("clEnqueueNDRangeKernel(Continuity)", ret);
 
     // Momentum_u kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
+    /*for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             momentum_u_code(ji, jj, width, ua, un, vn, hu, hv, ht, ssha_u, \
                 sshn_t, sshn_u, sshn_v, tmask, dx_u, dx_v, dx_t, dy_u, dy_t, \
                 area_u, gphiu, rdt, cbfr, visc, omega, d2r, g);
         }
-    }
-
+    }*/
+    /*size_t momu_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t momu_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_MOM_U], 2,
+            momu_offset, momu_size, local_size, 0, NULL,
+			&(clkernevt[K_MOM_U]));
+    check_status("clEnqueueNDRangeKernel(Mom-u)", ret);
+*/
     // Momentum_v kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
+    /*for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             momentum_v_code(ji, jj, width, va, un, vn, hu, hv, ht, ssha_v, \
                 sshn_t, sshn_u, sshn_v, tmask, dx_v, dx_t, dy_u, dy_v, dy_t, \
                 area_v, gphiu, rdt, cbfr, visc, omega, d2r, g);
         }
-    }
-
+    }*/
+    /*size_t momv_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t momv_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_MOM_V], 2,
+            momv_offset, momv_size, local_size, 0, NULL,
+			&(clkernevt[K_MOM_V]));
+    check_status("clEnqueueNDRangeKernel(Mom-v)", ret);
+*/
     // Boundary conditions bc_ssh kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
+    /*for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             bc_ssh_code(ji, jj, width, istep, ssha_t, tmask, rdt);
         }
-    }
+    }*/
+    size_t bcssh_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t bcssh_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_SSH], 2,
+            bcssh_offset, bcssh_size, local_size, 0, NULL,
+			&(clkernevt[K_BC_SSH]));
+    check_status("clEnqueueNDRangeKernel(bc-ssh)", ret);
 
     // Boundary conditions bc_solid_u kernel (whole domain but top x boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
+    /*for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop; ji++){
             bc_solid_u_code(ji, jj, width, ua, tmask);
         }
-    }
+    }*/
+    size_t solidu_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t solidu_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_SOLID_U], 2,
+            solidu_offset, solidu_size, local_size, 0, NULL,
+			&(clkernevt[K_BC_SOLID_U]));
+    check_status("clEnqueueNDRangeKernel(bc-solid-u)", ret);
 
     // Boundary conditions bc_solid_v kernel (whole domain but top y boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
+    /*for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             bc_solid_v_code(ji, jj, width, va, tmask);
         }
-    }
+    }*/
+    size_t solidv_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t solidv_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_SOLID_V], 2,
+            solidv_offset, solidv_size, local_size, 0, NULL,
+			&(clkernevt[K_BC_SOLID_V]));
+    check_status("clEnqueueNDRangeKernel(bc-solid-v)", ret);
 
     // Boundary conditions bc_flather_u kernel (whole domain but top x boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
+    /*for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop; ji++){
             bc_flather_u_code(ji, jj, width, ua, hu, sshn_u, tmask, g);
         }
-    }
-
+    }*/
+    /*size_t flatheru_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t flatheru_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_FLATHER_U], 2,
+            flatheru_offset, flatheru_size, local_size, 0, NULL,
+			&(clkernevt[K_BC_FLATHER_U]));
+    check_status("clEnqueueNDRangeKernel(bc-flather-u)", ret);
+*/
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
+    /*for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             bc_flather_v_code(ji, jj, width, va, hv, sshn_v, tmask, g);
         }
-    }
+    }*/
+    /*
+    size_t flatherv_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t flatherv_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_FLATHER_V], 2,
+            flatherv_offset, flatherv_size, local_size, 0, NULL,
+			&(clkernevt[K_BC_FLATHER_V]));
+    check_status("clEnqueueNDRangeKernel(bc-flather-v)", ret);
+    */
 
     // Copy 'next' fields to 'current' fields (whole domain)
-    for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj++){
+    /*for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             int idx = jj * width + ji;
             un[idx] = ua[idx];
             vn[idx] = va[idx];
             sshn_t[idx] = ssha_t[idx];
         }
-    }
+    }*/
+    ret = clEnqueueCopyBuffer(command_queue[0], ua_device, un_device, 0, 0,
+			      buff_size,0, NULL, NULL);
+    check_status("clEnqueueCopyBuffer", ret);
+    ret = clEnqueueCopyBuffer(command_queue[0], va_device, vn_device, 0, 0,
+			      buff_size,0, NULL, NULL);
+    check_status("clEnqueueCopyBuffer", ret);
+    ret = clEnqueueCopyBuffer(command_queue[0], ssha_device, sshn_device, 0, 0,
+			      buff_size,0, NULL, NULL);
+    check_status("clEnqueueCopyBuffer", ret);
 
     // Time update kernel (internal domain u points)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
+    /*for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop - 1; ji++){
             next_sshu_code(ji, jj, width, sshn_u, sshn_t, tmask, area_t, area_u);
         }
-    }
+    }*/
+    size_t nextu_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t nextu_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_NEXT_SSH_U], 2,
+            nextu_offset, nextu_size, local_size, 0, NULL,
+			&(clkernevt[K_NEXT_SSH_U]));
+    check_status("clEnqueueNDRangeKernel(next-sshu)", ret);
 
     // Time update kernel (internal domain v points)
-    for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
+    /*for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             next_sshv_code(ji, jj, width, sshn_v, sshn_t, tmask, area_t, area_v);
         }
-    }
+    }*/
+    size_t nextv_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t nextv_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_NEXT_SSH_U], 2,
+            nextv_offset, nextv_size, local_size, 0, NULL,
+			&(clkernevt[K_NEXT_SSH_V]));
+    check_status("clEnqueueNDRangeKernel(next-sshv)", ret);
+
+    // Wait for the completion of all kernels  -- wait below assumes they are in-order
+    ret = clWaitForEvents(1, &(clkernevt[K_NEXT_SSH_V]));
+    check_status("clWaitForEvents", ret);
+
 }

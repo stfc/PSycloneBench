@@ -43,7 +43,7 @@ time_step.o: opencl_utils.o
 # Since kernels are included directly any modification in the kernel files
 # must trigger a recompilation.
 %.o: %.c ../../kernels/c_family/*.c
-	gcc $(CFLAGS) $(OMPFLAGS) -c $< -o $@
+	gcc -g $(CFLAGS) $(OMPFLAGS) -c $< -o $@
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
