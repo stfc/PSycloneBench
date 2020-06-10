@@ -40,6 +40,7 @@ extern "C" void c_invoke_time_step(
         double * dy_v,
         double * dy_t,
         double * gphiu,
+        double * gphiv,
         // Scalars
         int istep,
         int internal_xstart,
@@ -103,7 +104,7 @@ extern "C" void c_invoke_time_step(
         KOKKOS_LAMBDA (const int jj, const int ji) {
             momentum_v_code(ji, jj, width, va, un, vn, hu, hv, ht, ssha_v, \
                 sshn_t, sshn_u, sshn_v, tmask, dx_v, dx_t, dy_u, dy_v, dy_t, \
-                area_v, gphiu, rdt, cbfr, visc, omega, d2r, g);
+                area_v, gphiv, rdt, cbfr, visc, omega, d2r, g);
 
         }
     );

@@ -10,7 +10,7 @@
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
 
-.PHONY: nemolite2d nemolite2d_omp
+.PHONY: all nemolite2d nemolite2d_omp nemolite2d_ompopt
 .DEFAULT_GOAL := nemolite2d
 
 include ../common.mk
@@ -21,6 +21,8 @@ LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
 COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${KERNELS} ${INF_LIB}
 
 # Normal targets
+all: nemolite2d nemolite2d_omp
+
 nemolite2d: ${COMMON_LIB} timer_lib inf_lib time_step.o
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step.o" nemolite2d.exe
 
