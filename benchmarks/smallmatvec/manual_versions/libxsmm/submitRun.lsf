@@ -1,0 +1,11 @@
+#BSUB -J runBench
+#BSUB -o <LOCATION>/%J.out
+#BSUB -e <LOCATION>/%J.err
+#BSUB -n 1
+#BSUB -R 'span[ptile=32]'
+#BSUB -W 01:00
+#BSUB -q scafellpikeSKL
+#BSUB -x
+
+cd <LOCATION>
+./runme.sh
