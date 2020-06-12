@@ -10,10 +10,33 @@
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
 
-# Additionally it needs the path to a Kokkos installation and execution
-# devices
-KOKKOS_PATH ?= ${HOME}/build/kokkos
-KOKKOS_DEVICES=OpenMP  # Currently this can only be OpenMP
+
+
+# The Kokkos installation path must be provided, but this installation must
+# support the requested device. A way to handle this is using Spack and
+# installing the needed versions with `pack install kokkos [+device]`,
+# then we will query the location using `spack location ...`
+
+# Alternatively manually install Kokkos with the desired options and provide
+# the path to the intallation directory uncommenting the line below:
+# KOKKOS_PATH ?= ${HOME}/build/kokkos
+
+ifndef $(KOKKOS_DEVICES)
+# By default us the OpenMP device
+KOKKOS_DEVICES=OpenMP
+endif
+ifeq ($(KOKKOS_DEVICES),OpenMP)
+$(info "Using OpenMP device")
+KOKKOS_PATH ?= $(shell spack location -i kokkos +openmp ~cuda)
+else ifeq ($(KOKKOS_DEVICES),Cuda)
+$(info "Using CUDA device")
+KOKKOS_PATH ?= $(shell spack location -i kokkos +cuda)
+# Still use the selected compiler but using the Kokkos nvcc wrapper
+NVCC_WRAPPER_DEFAULT_COMPILER = $(CXX)
+CXX := $(KOKKOS_PATH)/bin/nvcc_wrapper
+endif
+
+$(info $(KOKKOS_PATH))
 
 .PHONY: nemolite2d_kokkos
 .DEFAULT_GOAL := nemolite2d_kokkos
@@ -51,7 +74,7 @@ clean:
 	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~ *.dat
 	rm -f gnu_opt_report.txt *.optrpt
-	rm -rf KokkosCore_*
+	rm -rf KokkosCore_* Makefile.kokkos.f90
 
 allclean: clean
 	rm -f ${KERNELS:.o=.f90}
