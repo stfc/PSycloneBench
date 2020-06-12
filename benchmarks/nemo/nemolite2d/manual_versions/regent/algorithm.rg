@@ -20,6 +20,11 @@ local g = 9.80665
 local omega = 7.292116e-05
 local d2r = pi / 180.0
 
+
+terra set_mappers()
+
+end
+
 task get_time() : double
 
   return c.legion_get_current_time_in_micros()
@@ -324,11 +329,14 @@ task main()
                       full_grid[point],
                       g)
     end
-    __demand(__trace, __index_launch)
-    for part in partition_space2 do
-    update_velocity_and_t_height(partitioned_full_velocity[part],
-                                 partitioned_full_sea_surface[part])
-    end
+--     __demand(__trace, __index_launch)
+--     for part in partition_space2 do
+--     update_velocity_and_t_height(partitioned_full_velocity[part],
+--                                 partitioned_full_sea_surface[part])
+--    end
+    copy(velocity.{u_after, v_after},velocity.{u_now, v_now})
+    copy(sea_surface.{t_after}, sea_surface.{t_now})
+
     __demand(__trace, __index_launch)
     for part in partition_space2 do
     update_u_height_launcher(partitioned_2N2M1_sea_surface[part],
@@ -355,5 +363,18 @@ task main()
 end
 
 
+if os.getenv('SAVEOBJ') == '1' then
+  local root_dir = arg[0]:match(".*/") or "./"
+  local out_dir = (os.getenv('OBJNAME') and os.getenv('OBJNAME'):match('.*/')) or root_dir
+  local link_flags = terralib.newlist({"-L" .. out_dir, "-lm", "-lgfortran", "-lgocean2d_io_mod"})
 
-regentlib.start(main)
+--  if os.getenv('STANDALONE') == '1' then
+--    os.execute('cp ' .. os.getenv('LG_RT_DIR') .. '/../bindings/regent/' ..
+--        regentlib.binding_library .. ' ' .. out_dir)
+--  end
+
+  local exe = os.getenv('OBJNAME') or "nemolite2D"
+  regentlib.saveobj(main, exe, "executable", set_mappers, link_flags)
+else
+  regentlib.start(main)
+end

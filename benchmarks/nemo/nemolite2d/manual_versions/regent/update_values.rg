@@ -38,7 +38,7 @@ end
 __demand(__leaf)
 task update_u_height_launcher( sea_surface : region(ispace(int2d), uvt_time_field), grid_region : region(ispace(int2d), grid_fields), 
                                sea_surface_halos : region(ispace(int2d), uvt_time_field) )
-                     where writes(sea_surface.u_now), reads(grid_region.area_u, grid_region.area_t, grid_region.tmask, sea_surface_halos.t_now) do
+                     where writes(sea_surface.u_now), reads(grid_region.area_u, grid_region.area_t, grid_region.tmask, sea_surface_halos.t_after) do
  --    do jj = 2, N, 1
 --!dir$ vector always
 --      do ji = 2, M-1, 1
@@ -64,13 +64,13 @@ task update_u_height_launcher( sea_surface : region(ispace(int2d), uvt_time_fiel
 --         END IF
 
         if(grid_region[point].tmask * grid_region[point + {1,0}].tmask > int1d(0)) then
-           var rtmp1 : double = grid_region[point].area_t * sea_surface_halos[point].t_now
-                          + grid_region[point+{1,0}].area_t * sea_surface_halos[point+{1,0}].t_now
+           var rtmp1 : double = grid_region[point].area_t * sea_surface_halos[point].t_after
+                          + grid_region[point+{1,0}].area_t * sea_surface_halos[point+{1,0}].t_after
            sea_surface[point].u_now = 0.5 * rtmp1 / grid_region[point].area_u
         elseif( grid_region[point].tmask <= int1d(0) ) then
-           sea_surface[point].u_now = sea_surface_halos[point + {1,0}].t_now
+           sea_surface[point].u_now = sea_surface_halos[point + {1,0}].t_after
         elseif( grid_region[point + {1,0}].tmask <= int1d(0)) then
-           sea_surface[point].u_now = sea_surface_halos[point].t_now
+           sea_surface[point].u_now = sea_surface_halos[point].t_after
         end
 
 
@@ -89,7 +89,7 @@ end
 __demand(__leaf)
 task update_v_height_launcher( sea_surface : region(ispace(int2d), uvt_time_field), grid_region : region(ispace(int2d), grid_fields),
                                sea_surface_halos : region(ispace(int2d), uvt_time_field) )
-                     where writes(sea_surface.v_now), reads(grid_region.area_v, grid_region.area_t, grid_region.tmask, sea_surface_halos.t_now) do
+                     where writes(sea_surface.v_now), reads(grid_region.area_v, grid_region.area_t, grid_region.tmask, sea_surface_halos.t_after) do
 
 
 --    do jj = 2, N-1, 1
@@ -118,13 +118,13 @@ task update_v_height_launcher( sea_surface : region(ispace(int2d), uvt_time_fiel
 --            sshn_v%data(ji,jj) = sshn_t%data(ji,jj)
 --         end if
          if(grid_region[point].tmask * grid_region[point + {0,1}].tmask > int1d(0)) then
-           var rtmp1 : double = grid_region[point].area_t * sea_surface_halos[point].t_now
-                          + grid_region[point+{0,1}].area_t * sea_surface_halos[point+{0,1}].t_now
+           var rtmp1 : double = grid_region[point].area_t * sea_surface_halos[point].t_after
+                          + grid_region[point+{0,1}].area_t * sea_surface_halos[point+{0,1}].t_after
            sea_surface[point].v_now = 0.5 * rtmp1 / grid_region[point].area_v
         elseif( grid_region[point].tmask <= int1d(0) ) then
-           sea_surface[point].v_now = sea_surface_halos[point + {0,1}].t_now
+           sea_surface[point].v_now = sea_surface_halos[point + {0,1}].t_after
         elseif( grid_region[point + {0,1}].tmask <= int1d(0)) then
-           sea_surface[point].v_now = sea_surface_halos[point].t_now
+           sea_surface[point].v_now = sea_surface_halos[point].t_after
         end 
     end
 
