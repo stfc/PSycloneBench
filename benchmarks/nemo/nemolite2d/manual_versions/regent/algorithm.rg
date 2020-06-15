@@ -5,6 +5,7 @@ import "regent"
 require("bc_flather")
 require("calculate_sea_surface_height_t")
 require("calculate_velocity_fields")
+require("checksum")
 require("initialise_grid_points")
 require("model_init")
 require("model_write")
@@ -360,6 +361,10 @@ task main()
   __fence(__execution, __block)
   var time_taken = finish_time - start_time
   c.printf("Runtime is %f seconds\n", double(time_taken) / 1000000.0)
+  var ua_checksum = checksum_task(velocity.{u_after})
+  var va_checksum = checksum_task(velocity.{v_after})
+  c.printf("ua checksum %e\n", ua_checksum) 
+  c.printf("va checksum %e\n", va_checksum)
 end
 
 
