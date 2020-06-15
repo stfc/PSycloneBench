@@ -10,33 +10,27 @@
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
 
+KOKKOS_PATH ?= $(HOME)/tools/kokkos
 
-
-# The Kokkos installation path must be provided, but this installation must
-# support the requested device. A way to handle this is using Spack and
-# installing the needed versions with `pack install kokkos [+device]`,
-# then we will query the location using `spack location ...`
-
-# Alternatively manually install Kokkos with the desired options and provide
-# the path to the intallation directory uncommenting the line below:
-# KOKKOS_PATH ?= ${HOME}/build/kokkos
-
-ifndef $(KOKKOS_DEVICES)
 # By default us the OpenMP device
+ifndef $(KOKKOS_DEVICES)
 KOKKOS_DEVICES=OpenMP
 endif
+
+# Configuration specific to the selected Kokkos device 
 ifeq ($(KOKKOS_DEVICES),OpenMP)
 $(info "Using OpenMP device")
-KOKKOS_PATH ?= $(shell spack location -i kokkos +openmp ~cuda)
+EXEC_SPACE = OpenMP
 else ifeq ($(KOKKOS_DEVICES),Cuda)
 $(info "Using CUDA device")
-KOKKOS_PATH ?= $(shell spack location -i kokkos +cuda)
+EXEC_SPACE = Cuda
 # Still use the selected compiler but using the Kokkos nvcc wrapper
 NVCC_WRAPPER_DEFAULT_COMPILER = $(CXX)
 CXX := $(KOKKOS_PATH)/bin/nvcc_wrapper
+KOKKOS_CUDA_OPTIONS = "enable_lambda"
+else
+$(error "Unrecognised KOKKOS_DEVICES value: $(KOKKOS_DEVICES)")
 endif
-
-$(info $(KOKKOS_PATH))
 
 .PHONY: nemolite2d_kokkos
 .DEFAULT_GOAL := nemolite2d_kokkos
@@ -68,7 +62,7 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 
 # C++ rules
 time_step_kokkos.o: time_step_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
-	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CFLAGS) $(OMPFLAGS) -c $<
+	$(CXX) -DEXEC_SPACE=$(EXEC_SPACE) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CFLAGS) $(OMPFLAGS) -c $<
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
