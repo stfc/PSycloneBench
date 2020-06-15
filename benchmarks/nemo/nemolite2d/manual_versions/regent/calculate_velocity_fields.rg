@@ -10,7 +10,29 @@ local sin = regentlib.sin(double)
 --  return
 --end
 
-local copysign = regentlib.copysign(double)
+-- local copysign = regentlib.copysign(double)
+
+struct convert_struct{
+  union{
+    d : double;
+    l : int64;
+  }
+}
+terra double_as_int64(x : double) : int64
+ var c : convert_struct
+ c.d = x
+ return c.l
+end
+
+terra int64_as_double(x: int64) : double
+  var c : convert_struct
+  c.l = x
+  return c.d
+end
+
+terra copysign( x : double, y: double) : double
+  return int64_as_double(  ( double_as_int64(x) and not(1LL << 63)) ^ (double_as_int64(y) and (1LL << 63) ) )
+end
 
 task calculate_halo_size( private_bounds: rect2d) : rect2d
   return rect2d({ private_bounds.lo - {1,1}, private_bounds.hi + {1,1} })
