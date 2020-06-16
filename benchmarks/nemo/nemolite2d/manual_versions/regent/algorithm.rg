@@ -369,7 +369,7 @@ end
 
 
 if os.getenv('SAVEOBJ') == '1' then
-  local root_dir = arg[0]:match(".*/") or "./"
+  local root_dir = "./"
   local out_dir = (os.getenv('OBJNAME') and os.getenv('OBJNAME'):match('.*/')) or root_dir
   local link_flags = terralib.newlist({"-L" .. out_dir, "-lm", "-lgfortran", "-lgocean2d_io_mod"})
 

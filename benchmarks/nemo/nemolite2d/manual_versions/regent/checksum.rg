@@ -35,7 +35,7 @@ where reads(input_field) do
 
   var sum : double = 0.0
   for x in input_field do
-    sum = sum + input_field[x]
+    sum = sum + abs(input_field[x])
   end
   return sum
 end
