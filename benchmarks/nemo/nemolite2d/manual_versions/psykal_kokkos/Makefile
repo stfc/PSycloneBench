@@ -11,6 +11,7 @@
 # export AR=ar
 
 KOKKOS_PATH ?= $(HOME)/tools/kokkos
+KOKKOS_DEBUG ?= yes
 
 # By default us the OpenMP device
 ifndef $(KOKKOS_DEVICES)
@@ -23,8 +24,11 @@ $(info "Using OpenMP device")
 EXEC_SPACE = OpenMP
 else ifeq ($(KOKKOS_DEVICES),Cuda)
 $(info "Using CUDA device")
+KOKKOS_ARCH = Pascal61
 EXEC_SPACE = Cuda
-# Still use the selected compiler but using the Kokkos nvcc wrapper
+# nvcc fails with some complex flags, overwirte CFLAGS to just O3
+CFLAGS := "-O3"
+# Still use the selected compiler but using the Kokkos nvcc_wrapper
 NVCC_WRAPPER_DEFAULT_COMPILER = $(CXX)
 CXX := $(KOKKOS_PATH)/bin/nvcc_wrapper
 KOKKOS_CUDA_OPTIONS = "enable_lambda"
@@ -57,8 +61,11 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 # Linking the executable needs the -lstdc++ to link also the std lib functions
 # called from C++ code
 %.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) 
+	echo  $(KOKKOS_LINK_DEPENDS)
+	echo  $(KOKKOS_LDFLAGS)
 	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LINK_DEPENDS) $(KOKKOS_LDFLAGS) $(KOKKOS_LIBS) -lstdc++
+		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LINK_DEPENDS) $(KOKKOS_LIBS) \
+		-L/opt/nvidia/cuda-10/lib64 -L. -lstdc++
 
 # C++ rules
 time_step_kokkos.o: time_step_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
