@@ -1,0 +1,44 @@
+# -Mipa=inline:reshape (compile and link) + -Minfo without the =accel
+FC=pgfortran
+FFLAGS=-ta=tesla:managed -Minfo -O
+LDFLAGS=
+# FFLAGS=-ta=tesla:managed -Minfo -Mipa=inline:reshape
+# LDFLAGS=-Mipa=inline:reshape
+
+all : kdriver_openacc_basic kdriver_openacc_nvidia1 kdriver_openacc_nvidia2 kdriver_openacc_nvidia3 kdriver_openacc_nvidia4
+
+# Dependencies
+kdriver.o: matrix_vector_kernel_mod.o constants_mod.o
+matrix_vector_kernel_mod.o: constants_mod.o
+
+kdriver_openacc_basic.o: matrix_vector_kernel_openacc_basic_mod.o matrix_vector_kernel_openacc_nvidia1_mod.o matrix_vector_kernel_openacc_nvidia2_mod.o constants_mod.o
+matrix_vector_kernel_openacc_basic_mod.o: constants_mod.o
+matrix_vector_kernel_openacc_nvidia1_mod.o: constants_mod.o
+matrix_vector_kernel_openacc_nvidia2_mod.o: constants_mod.o
+kdriver_openacc_nvidia3.o: constants_mod.o
+kdriver_openacc_nvidia4.o: constants_mod.o
+
+# Compile object targets
+%.o: %.F90
+	$(FC) $(FFLAGS) -c $<
+%.o: %.f90
+	$(FC) $(FFLAGS) -c $<
+
+kdriver_openacc_basic: kdriver_openacc_basic.o matrix_vector_kernel_openacc_basic_mod.o constants_mod.o
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
+
+kdriver_openacc_nvidia1: kdriver_openacc_basic.o matrix_vector_kernel_openacc_nvidia1_mod.o constants_mod.o
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
+
+kdriver_openacc_nvidia2: kdriver_openacc_basic.o matrix_vector_kernel_openacc_nvidia2_mod.o constants_mod.o
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
+
+kdriver_openacc_nvidia3: kdriver_openacc_nvidia3.o constants_mod.o
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
+
+kdriver_openacc_nvidia4: kdriver_openacc_nvidia4.o constants_mod.o
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
+
+clean:
+	rm -f *.o *.mod *.optrpt *.s kdriver_orig kdriver_openacc_basic kdriver_openacc_nvidia?
+

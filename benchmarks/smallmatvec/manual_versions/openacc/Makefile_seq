@@ -1,0 +1,20 @@
+# -Mipa=inline:reshape (compile and link) + -Minfo without the =accel
+FC=pgfortran
+FFLAGS=-Minfo -ta=host -O0
+LDFLAGS=
+
+all : kdriver_orig
+
+# Dependencies
+kdriver.o: matrix_vector_kernel_mod.o constants_mod.o
+matrix_vector_kernel_mod.o: constants_mod.o
+
+%.o: %.f90
+	$(FC) $(FFLAGS) -c $<
+
+kdriver_orig: kdriver.o matrix_vector_kernel_mod.o constants_mod.o
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
+
+clean:
+	rm -f *.o *.mod *.optrpt *.s kdriver_orig
+

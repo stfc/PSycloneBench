@@ -1,0 +1,25 @@
+FC=pgfortran
+FFLAGS=-ta=tesla:managed -Minfo -O
+LDFLAGS=
+# FFLAGS=-ta=tesla:managed -Minfo -Mipa=inline:reshape
+# LDFLAGS=-Mipa=inline:reshape
+
+all : kdriver_openacc_reorder1 kdriver_openacc_reorder2
+
+%.o: %.f90
+	$(FC) $(FFLAGS) -c $<
+
+kdriver_openacc_basic.o: matrix_vector_kernel_reorder_mod.o constants_mod.o
+matrix_vector_kernel_reorder_mod.o: constants_mod.o
+
+kdriver_openacc_reorder2.o: constants_mod.o
+
+kdriver_openacc_reorder1: kdriver_openacc_basic.o matrix_vector_kernel_reorder_mod.o constants_mod.o
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
+
+kdriver_openacc_reorder2: kdriver_openacc_reorder2.o constants_mod.o
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
+
+clean:
+	rm -f *.o *.mod *.optrpt *.s kdriver_openacc_basic kdriver_openacc_nvidia? kdriver_openacc_reorder?
+
