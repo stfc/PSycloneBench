@@ -65,16 +65,6 @@ extern "C" void c_invoke_time_step(
         first_time = false;
     }
 
-    // In this implementation we will use 1D UnmanagedViews as they wrap the
-    // raw pointer passed in the function. This have several limitations as
-    // kokkos does not see the 2D pattern and can't choose the appropriate
-    // data-layout for it.
-    using UnmanagedView = kokkos::View<
-            double*, 
-            Kokkos::HostSpace,
-            Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-
-    UnmanagedView ssha_t_view(ssh_t, width*width);
 
     // The execution space is given as a preprocessor define when compiling
     // this file. e.g. `g++ -DEXEC_SPACE=OpenMP time_step_kokkos.cpp -c`
