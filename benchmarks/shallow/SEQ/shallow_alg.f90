@@ -200,6 +200,8 @@ program shallow
     ! Time is in seconds but we never actually need it
     !time = time + dt
 
+    call model_write_log("('P CHECKSUM after ',I6,' steps = ',E24.16)", &
+                       itmax, field_checksum(pnew_fld))
     call model_write(ncycle, p_fld, u_fld, v_fld)
 
     ! TIME SMOOTHING AND UPDATE FOR NEXT CYCLE

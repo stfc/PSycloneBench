@@ -1,7 +1,7 @@
 &global_domain
   m = 128,          ! points in the y direction
   n = 128,          ! points in the x direction
-  itmax = 2000,     ! number of iterations
+  itmax = 10,     ! number of iterations
   mprint = 5000     ! frequency of output prints
 /
 

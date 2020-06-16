@@ -14,6 +14,8 @@ TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/lib_fd.a
+FORTCL_INC = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/
+FORTCL_LIB = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/libFortCL.a
 
 # The modules that are common to both targets
 MODULES = physical_params_mod.o \
@@ -36,14 +38,27 @@ all: $(EXECS)
 
 # Targets involving the PSyclone code-generation framework
 shallow_gen.f90: infrastructure_mod.f90 shallow_alg.f90
-	psyclone -s ./ocl_transform.py -api gocean1.0 shallow_alg.f90 -oalg shallow_gen.f90 -opsy psy.f90
+	psyclone -api gocean1.0 shallow_alg.f90 -oalg shallow_gen.f90 -opsy psy.f90
+
+shallow_gen_ocl.f90: infrastructure_mod.f90 shallow_alg.f90
+	psyclone -s ./ocl_transform.py --kernel-renaming single -api gocean1.0 \
+		shallow_alg.f90 -oalg shallow_gen_ocl.f90 -opsy psy_ocl.f90
 
 # psy.f90 is generated at the same time as shallow_gen.f90
 psy.f90: shallow_gen.f90
 
+psy_ocl.f90: shallow_gen_ocl.f90
+
 # The generated code depends on the generated Psy middle-layer
-shallow_gen: inf_lib timer_lib
-	${MAKE} MODULE_LIST="shallow_gen.o ${COMMON_MODULES} ${GENERATED_MODULES}" shallow_gen.exe
+shallow_gen: inf_lib timer_lib shallow_gen.o ${GENERATED_MODULES}
+	$(F90) $(OMPFLAGS) -o $@.exe shallow_gen.o ${COMMON_MODULES} ${GENERATED_MODULES} \
+	   	$(TIMER_LIB) $(LDFLAGS)
+
+shallow_ocl: ocl_inf_lib timer_lib shallow_gen_ocl.o infrastructure_mod.o psy_ocl.o
+	$(F90) $(OMPFLAGS) -o $@.exe shallow_gen_ocl.o ${COMMON_MODULES} \
+		infrastructure_mod.o psy_ocl.o $(TIMER_LIB) $(LDFLAGS) -lOpenCL
+	#echo "// Shallow OpenCL kernels\n\n" > allkernels.cl
+	cat *.cl >> allkernels.cl
 
 # Our module providing fake infrastructure kernels is in the INF directory
 # but we need it to be in the same directory as all of the other kernel
@@ -59,21 +74,21 @@ shallow_base.o: $(COMMON_MODULES)
 
 shallow_gen.o: $(COMMON_MODULES) ${GENERATED_MODULES}
 
+shallow_gen_ocl.o: $(COMMON_MODULES) infrastructure_mod.o psy_ocl.o
+
 # Interdependencies between modules, alphabetical order
 
-apply_bcs_mod.o: inf_lib
-compute_cu_mod.o: inf_lib
-infrastructure_mod.o: inf_lib
+#apply_bcs_mod.o: inf_lib
+#compute_cu_mod.o: inf_lib
+#infrastructure_mod.o: inf_lib
 initial_conditions_mod.o: physical_params_mod.o model_mod.o
-model_mod.o: inf_lib \
-             physical_params_mod.o \
+model_mod.o: physical_params_mod.o \
              shallow_io_mod.o \
              time_smooth_mod.o
-physical_params_mod.o:  inf_lib
-shallow_io_mod.o: inf_lib
-time_smooth_mod.o: inf_lib
-time_step_mod.o: inf_lib \
-                 apply_bcs_mod.o \
+#physical_params_mod.o:  inf_lib
+#shallow_io_mod.o: inf_lib
+#time_smooth_mod.o: inf_lib
+time_step_mod.o: apply_bcs_mod.o \
                  compute_cu_mod.o \
                  compute_cv_mod.o \
                  compute_pnew_mod.o \
@@ -82,11 +97,12 @@ time_step_mod.o: inf_lib \
                  compute_z_mod.o \
                  compute_h_mod.o
 
-%.exe: $(MODULE_LIST)
-	$(F90) $(OMPFLAGS) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS)
 
 %.o: %.f90
 	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
+
+%_ocl.o: %_ocl.f90
+	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -I${FORTCL_INC} -c $<
 
 %.o: %.F90
 	$(F90) $(F90FLAGS) -I${INF_INC} -I${TIMER_INC} -c $<
@@ -95,7 +111,12 @@ timer_lib:
 	${MAKE} -C ${TIMER_DIR} sm_lib
 
 inf_lib:
+	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${INF_DIR}
+
+ocl_inf_lib:
+	${MAKE} -C ${INF_DIR} distclean
+	${MAKE} -C ${INF_DIR} cl_fd_lib
 
 libclean:
 	${MAKE} -C ${INF_DIR} distclean
@@ -103,8 +124,8 @@ libclean:
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
-	rm -f *.o *.mod *.MOD *~ psy.f90 shallow_gen.f90
-	rm -f gnu_opt_report.txt *.cl
+	rm -f *.o *.mod *.MOD *~ psy.f90 shallow_gen.f90 shallow_gen_ocl.f90 psy_ocl.f90
+	rm -f gnu_opt_report.txt *.cl *.dat.0
 
 allclean: clean libclean
 	rm -f *.exe
