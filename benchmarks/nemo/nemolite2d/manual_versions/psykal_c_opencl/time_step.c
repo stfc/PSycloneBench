@@ -525,11 +525,26 @@ void c_invoke_time_step(
 
 
         printf("OpenCL initialization done\n");
+        printf("OpenCL ystart=%d\n",internal_ystart);
+        printf("OpenCL ystop=%d\n",internal_ystop);
+        printf("OpenCL xstart=%d\n",internal_xstart);
+        printf("OpenCL xstop=%d\n",internal_xstop);
         first_time = 0;
     }
 
-    printf("Iteration %d\n", istep);
-    size_t local_size[2] = {64, 1};
+    // To get good performance the local size need to be increased (e.g {32, 1},
+    // {64,1 } in order for this to be valid to any problem size it needs to
+    // be in line with the dl_esm_inf ALIGNMENT and the global_sizes specified
+    // below.
+    size_t local_size[2] = {1, 1};
+
+    // NDRanges use an open interval (does not include the end
+    // point), while the provided 'stop' represent closed ranges.
+    // Therefore we need to increase by 1 the 'stop' values (since they
+    // are passed by values this only affects this function).
+    internal_ystop = internal_ystop + 1;
+    internal_xstop = internal_xstop + 1;
+
 
     // Continuity kernel (internal domain)
     /*for(int jj = internal_ystart; jj <= internal_ystop; jj++){
@@ -538,8 +553,8 @@ void c_invoke_time_step(
                 hu, hv, un, vn, rdt, area_t);
         }
     }*/
-    size_t continuity_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
-    size_t continuity_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    size_t continuity_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
+    size_t continuity_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_CONTINUITY], 2,
         continuity_offset, continuity_size, local_size, 0, NULL,
         &(clkernevt[K_CONTINUITY]));
@@ -553,8 +568,8 @@ void c_invoke_time_step(
                 area_u, gphiu, rdt, cbfr, visc, omega, d2r, g);
         }
     }*/
-    size_t momu_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
-    size_t momu_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    size_t momu_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
+    size_t momu_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_MOM_U], 2,
             momu_offset, momu_size, local_size, 0, NULL,
 			&(clkernevt[K_MOM_U]));
@@ -568,8 +583,8 @@ void c_invoke_time_step(
                 area_v, gphiu, rdt, cbfr, visc, omega, d2r, g);
         }
     }*/
-    size_t momv_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
-    size_t momv_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    size_t momv_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
+    size_t momv_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop};
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_MOM_V], 2,
             momv_offset, momv_size, local_size, 0, NULL,
 			&(clkernevt[K_MOM_V]));
@@ -581,8 +596,17 @@ void c_invoke_time_step(
             bc_ssh_code(ji, jj, width, istep, ssha_t, tmask, rdt);
         }
     }*/
-    size_t bcssh_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
-    size_t bcssh_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+
+    /* Set bc_ssh_code again because the istep argument is different */
+    set_args_bc_ssh(clkernel[K_BC_SSH],
+        &width,
+        &istep,
+        &ssha_device,
+        &tmask_device,
+        &rdt);
+
+    size_t bcssh_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
+    size_t bcssh_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_SSH], 2,
             bcssh_offset, bcssh_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_SSH]));
@@ -594,8 +618,8 @@ void c_invoke_time_step(
             bc_solid_u_code(ji, jj, width, ua, tmask);
         }
     }*/
-    size_t solidu_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
-    size_t solidu_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    size_t solidu_offset[2] = {(size_t)internal_xstart - 1, (size_t)internal_ystart - 1};
+    size_t solidu_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop + 1}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_SOLID_U], 2,
             solidu_offset, solidu_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_SOLID_U]));
@@ -607,8 +631,8 @@ void c_invoke_time_step(
             bc_solid_v_code(ji, jj, width, va, tmask);
         }
     }*/
-    size_t solidv_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
-    size_t solidv_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    size_t solidv_offset[2] = {(size_t)internal_xstart - 1, (size_t)internal_ystart - 1};
+    size_t solidv_size[2] = {(size_t)internal_xstop + 1, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_SOLID_V], 2,
             solidv_offset, solidv_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_SOLID_V]));
@@ -620,8 +644,8 @@ void c_invoke_time_step(
             bc_flather_u_code(ji, jj, width, ua, hu, sshn_u, tmask, g);
         }
     }*/
-    size_t flatheru_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
-    size_t flatheru_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    size_t flatheru_offset[2] = {(size_t)internal_xstart - 1, (size_t)internal_ystart - 1};
+    size_t flatheru_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop + 1}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_FLATHER_U], 2,
             flatheru_offset, flatheru_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_FLATHER_U]));
@@ -634,8 +658,8 @@ void c_invoke_time_step(
         }
     }*/
     
-    size_t flatherv_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
-    size_t flatherv_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    size_t flatherv_offset[2] = {(size_t)internal_xstart - 1, (size_t)internal_ystart - 1};
+    size_t flatherv_size[2] = {(size_t)internal_xstop + 1, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_FLATHER_V], 2,
             flatherv_offset, flatherv_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_FLATHER_V]));
@@ -666,8 +690,8 @@ void c_invoke_time_step(
             next_sshu_code(ji, jj, width, sshn_u, sshn_t, tmask, area_t, area_u);
         }
     }*/
-    size_t nextu_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
-    size_t nextu_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    size_t nextu_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
+    size_t nextu_size[2] = {(size_t)internal_xstop - 1, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_NEXT_SSH_U], 2,
             nextu_offset, nextu_size, local_size, 0, NULL,
 			&(clkernevt[K_NEXT_SSH_U]));
@@ -679,8 +703,8 @@ void c_invoke_time_step(
             next_sshv_code(ji, jj, width, sshn_v, sshn_t, tmask, area_t, area_v);
         }
     }*/
-    size_t nextv_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
-    size_t nextv_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
+    size_t nextv_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart - 1};
+    size_t nextv_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_NEXT_SSH_U], 2,
             nextv_offset, nextv_size, local_size, 0, NULL,
 			&(clkernevt[K_NEXT_SSH_V]));
@@ -688,6 +712,25 @@ void c_invoke_time_step(
 
     // Wait for the completion of all kernels  -- wait below assumes they are in-order
     ret = clWaitForEvents(1, &(clkernevt[K_NEXT_SSH_V]));
+    check_status("clWaitForEvents", ret);
+
+    // Read the data back
+    cl_event read_events[3];
+    int nread = 0;
+    ret = clEnqueueReadBuffer(command_queue[0], ssha_device, CL_TRUE, 0,
+			    (size_t)buff_size, (void *)ssha_t, 0, NULL, &(read_events[0]));
+    nread++;
+    check_status("clEnqueueReadBuffer", ret);
+    ret = clEnqueueReadBuffer(command_queue[0], ua_device, CL_TRUE, 0,
+			    (size_t)buff_size, (void *)ua, 0, NULL, &(read_events[1]));
+    nread++;
+    check_status("clEnqueueReadBuffer", ret);
+    ret = clEnqueueReadBuffer(command_queue[0], va_device, CL_TRUE, 0,
+			    (size_t)buff_size, (void *)va, 0, NULL, &(read_events[2]));
+    nread++;
+    check_status("clEnqueueReadBuffer", ret);
+
+    clWaitForEvents(nread, read_events);
     check_status("clWaitForEvents", ret);
 
 }
