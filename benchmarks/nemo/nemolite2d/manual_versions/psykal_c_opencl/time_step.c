@@ -356,7 +356,8 @@ void c_invoke_time_step(
             &dx_t_device, &dy_u_device,
             &dy_t_device, &area_u_device,
             &gphiu_device,
-            &rdt, &cbfr, &visc);
+            &rdt, &cbfr, &visc,
+            &omega, &d2r, &g);
 
         /* Set OpenCL Kernel Parameters for Momentum-v */
         set_args_momv(clkernel[K_MOM_V],
@@ -370,7 +371,8 @@ void c_invoke_time_step(
             &dy_u_device, &dy_v_device,
             &dy_t_device, &area_v_device,
             &gphiv_device,
-            &rdt, &cbfr, &visc);
+            &rdt, &cbfr, &visc,
+            &omega, &d2r, &g);
 
         /* Set OpenCL Kernel Parameters for bc_ssh */
         set_args_bc_ssh(clkernel[K_BC_SSH],
@@ -391,6 +393,16 @@ void c_invoke_time_step(
             &width,
             &ua_device,
             &tmask_device);
+
+        /* Set OpenCL Kernel Parameters for bc_flather_u */
+        set_args_bc_flather_u(clkernel[K_BC_FLATHER_U],
+            &width, &ua_device, &hu_device,
+            &sshn_u_device, &tmask_device, &g);
+
+        /* Set OpenCL Kernel Parameters for bc_flather_v */
+        set_args_bc_flather_v(clkernel[K_BC_FLATHER_V],
+            &width, &va_device, &hv_device,
+            &sshn_v_device, &tmask_device, &g);
 
         /* Set OpenCL Kernel Parameters for next_sshu kernel */
         set_args_next_sshu(clkernel[K_NEXT_SSH_U],
@@ -541,13 +553,13 @@ void c_invoke_time_step(
                 area_u, gphiu, rdt, cbfr, visc, omega, d2r, g);
         }
     }*/
-    /*size_t momu_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t momu_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
     size_t momu_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_MOM_U], 2,
             momu_offset, momu_size, local_size, 0, NULL,
 			&(clkernevt[K_MOM_U]));
     check_status("clEnqueueNDRangeKernel(Mom-u)", ret);
-*/
+
     // Momentum_v kernel (internal domain)
     /*for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
@@ -556,13 +568,13 @@ void c_invoke_time_step(
                 area_v, gphiu, rdt, cbfr, visc, omega, d2r, g);
         }
     }*/
-    /*size_t momv_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t momv_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
     size_t momv_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_MOM_V], 2,
             momv_offset, momv_size, local_size, 0, NULL,
 			&(clkernevt[K_MOM_V]));
     check_status("clEnqueueNDRangeKernel(Mom-v)", ret);
-*/
+
     // Boundary conditions bc_ssh kernel (internal domain)
     /*for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
@@ -608,27 +620,26 @@ void c_invoke_time_step(
             bc_flather_u_code(ji, jj, width, ua, hu, sshn_u, tmask, g);
         }
     }*/
-    /*size_t flatheru_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
+    size_t flatheru_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
     size_t flatheru_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_FLATHER_U], 2,
             flatheru_offset, flatheru_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_FLATHER_U]));
     check_status("clEnqueueNDRangeKernel(bc-flather-u)", ret);
-*/
+
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
     /*for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             bc_flather_v_code(ji, jj, width, va, hv, sshn_v, tmask, g);
         }
     }*/
-    /*
+    
     size_t flatherv_offset[2] = {(size_t)internal_ystart, (size_t)internal_xstart};
     size_t flatherv_size[2] = {(size_t)internal_ystop, (size_t)internal_xstop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_FLATHER_V], 2,
             flatherv_offset, flatherv_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_FLATHER_V]));
     check_status("clEnqueueNDRangeKernel(bc-flather-v)", ret);
-    */
 
     // Copy 'next' fields to 'current' fields (whole domain)
     /*for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj++){

@@ -30,7 +30,8 @@ void set_args_momv(cl_kernel kern,
            cl_mem *e2u_device, cl_mem *e2v_device,
            cl_mem *e2t_device, cl_mem *e12v_device,
            cl_mem *gphiv_device,
-           cl_double *rdt, cl_double *cbfr, cl_double *visc){
+           cl_double *rdt, cl_double *cbfr, cl_double *visc,
+           cl_double *omega, cl_double *d2r, cl_double *g){
   cl_int ret;
   cl_int arg_idx = 0;
 
@@ -77,6 +78,12 @@ void set_args_momv(cl_kernel kern,
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double), (void *)cbfr);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double), (void *)visc);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double), (void *)omega);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double), (void *)d2r);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double), (void *)g);
   check_status("clSetKernelArg", ret);
 
   fprintf(stdout, "Set %d arguments for Momentum-v kernel\n", arg_idx);

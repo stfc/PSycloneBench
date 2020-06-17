@@ -83,7 +83,8 @@ void set_args_bc_flather_u(cl_kernel bc_flather_u,
 			 cl_mem *ua_device,
 			 cl_mem *hu_device,
 			 cl_mem *sshn_u_device,
-			 cl_mem *tmask_device){
+			 cl_mem *tmask_device,
+             cl_double *g){
     cl_int ret;
     int arg_idx = 0;
     ret = clSetKernelArg(bc_flather_u, arg_idx++, sizeof(cl_int),
@@ -101,6 +102,9 @@ void set_args_bc_flather_u(cl_kernel bc_flather_u,
     ret = clSetKernelArg(bc_flather_u, arg_idx++, sizeof(cl_mem),
 		       (void *)tmask_device);
     check_status("clSetKernelArg", ret);
+    ret = clSetKernelArg(bc_flather_u, arg_idx++, sizeof(cl_double),
+		       (void *)g);
+    check_status("clSetKernelArg", ret);
 
     fprintf(stdout, "Set %d arguments for bc_flather_u kernel\n", arg_idx);
 
@@ -112,7 +116,8 @@ void set_args_bc_flather_v(cl_kernel bc_flather_v,
 			 cl_mem *va_device,
 			 cl_mem *hv_device,
 			 cl_mem *sshn_v_device,
-			 cl_mem *tmask_device){
+			 cl_mem *tmask_device,
+             cl_double *g){
     cl_int ret;
     int arg_idx = 0;
     ret = clSetKernelArg(bc_flather_v, arg_idx++, sizeof(cl_int),
@@ -129,6 +134,9 @@ void set_args_bc_flather_v(cl_kernel bc_flather_v,
     check_status("clSetKernelArg", ret);
     ret = clSetKernelArg(bc_flather_v, arg_idx++, sizeof(cl_mem),
 		       (void *)tmask_device);
+    check_status("clSetKernelArg", ret);
+    ret = clSetKernelArg(bc_flather_v, arg_idx++, sizeof(cl_double),
+		       (void *)g);
     check_status("clSetKernelArg", ret);
 
     fprintf(stdout, "Set %d arguments for bc_flather_v kernel\n", arg_idx);
