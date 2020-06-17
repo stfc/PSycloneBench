@@ -2,6 +2,8 @@ import "regent"
 
 require("model_init")
 
+--Declare our field space types
+
 fspace uvt_field{
   u : double,
   v : double,
@@ -25,7 +27,7 @@ fspace uv_time_field{
 }
 
 
--- Import max/min for Terra
+-- Import max/min
 max = regentlib.fmax
 min = regentlib.fmin
 
@@ -34,13 +36,13 @@ task calculate_internal_size( private_bounds: rect2d) : rect2d
   return rect2d({ private_bounds.lo + {1,1}, private_bounds.hi - {1,1} })
 end
 
-
+--Initialise the sea surface values
 task init_surface_now( sea_surface : region(ispace(int2d), uvt_time_field), grid_region : region(ispace(int2d), grid_fields) ) where
      writes(sea_surface.{u_now, v_now}),
      reads(grid_region.{area_u, area_t, area_v}, sea_surface.t_now)
 do
   var bounds = rect2d( {{sea_surface.bounds.lo.x, sea_surface.bounds.lo.y}, {sea_surface.bounds.hi.x-1, sea_surface.bounds.hi.y-1}})
-  for point in bounds do --sea_surface do
+  for point in bounds do
     var rtmp = grid_region[point + {1,0}].area_t * sea_surface[point+{1,0}].t_now + grid_region[point].area_t * sea_surface[point].t_now
     sea_surface[point].u_now = 0.5 * rtmp / grid_region[point].area_u 
 
@@ -63,7 +65,6 @@ end
 task init_surface_now_u( sea_surface_now : region(ispace(int2d), uvt_field), grid_region : region(ispace(int2d), grid_fields) ) where writes (sea_surface_now.u),
                               reads(grid_region.{area_u, area_t}, sea_surface_now.t) do
 
---TODO partition this for parallelism
   for point in sea_surface_now do
     var rtmp = grid_region[point + {1,0}].area_t * sea_surface_now[point+{1,0}].t + grid_region[point].area_t * sea_surface_now[point].t
     sea_surface_now[point].u = 0.5 * rtmp / grid_region[point].area_u 
@@ -75,7 +76,6 @@ end
 task init_surface_now_v( sea_surface_now : region(ispace(int2d), uvt_field), grid_region : region(ispace(int2d), grid_fields) ) where writes (sea_surface_now.v),
                     reads(grid_region.{area_v, area_t}, sea_surface_now.t) do
 
---TODO partition this for parallelism
   for point in sea_surface_now do
     var rtmp = grid_region[point + {0,1}].area_t * sea_surface_now[point+{0,1}].t + grid_region[point].area_t * sea_surface_now[point].t
     sea_surface_now[point].v = 0.5 * rtmp / grid_region[point].area_v 
@@ -95,26 +95,8 @@ task setup_sea_surface_now( sea_surface_now: region(ispace(int2d), uvt_field), g
 
 end
 
-task setup_sea_surface_after( sea_surface_after : region(ispace(int2d), uvt_field))
-
-  -- Initialise values
-
-end
-
 task setup_sea_bed_to_mean_sea_level(  sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field))
 
   -- Initialise values
-
-end
-
-task setup_velocity_now( velocity_now : region(ispace(int2d), uv_field))
-
-  -- Initialise values
-
-end
-
-task setup_velocity_after( velocity_after : region(ispace(int2d), uv_field))
-
-  -- Initialise value
 
 end

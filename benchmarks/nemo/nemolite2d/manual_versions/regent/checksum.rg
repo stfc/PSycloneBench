@@ -6,36 +6,26 @@ local c = regentlib.c
 
 local abs = c.fabs
 
---local function make_checksum_task(field_name)
---
-----  local sum = regentlib.newsymbol(double, "sum")
-----  local nil_sum = rexpr sum = 0.0 end
-----  local loop_stuff = rexpr sum = sum + abs(input_region.[field_name]) end
---  local input_region = regentlib.newsymbol(region(ispace(int2d), uv_time_field), "input_region")
-----  local task_name = regentlib.newsymbol(string, "checksum_".."field_name")
---
---  local task t( [input_region] ) where reads(input_region.[field_name]) do
---     var sum = 0.0
---     for x in [input_region] do
---     sum = sum + abs(input_region[x].[field_name])
---     end
---     return sum
---  end
---  return t
---end
---
---local u_after = "u_after"
---local v_after = "v_after"
---
---make_checksum_task(u_after)
---make_checksum_task(v_after)
+--It is possible to do these checksum tasks without field specific inputs, however this disabled RDIR which could lose performance
 
-task checksum_task( input_field : region(ispace(int2d), double)) : double
-where reads(input_field) do
+--Checksum task for u_after
+task checksum_task_u_after( input_field : region(ispace(int2d), uv_time_field)) : double
+where reads(input_field.u_after) do
 
   var sum : double = 0.0
   for x in input_field do
-    sum = sum + abs(input_field[x])
+    sum = sum + abs(input_field[x].u_after)
+  end
+  return sum
+end
+
+--Checksum task for v_after
+task checksum_task_v_after( input_field : region(ispace(int2d), uv_time_field)) : double
+where reads(input_field.v_after) do
+
+  var sum : double = 0.0
+  for x in input_field do
+    sum = sum + abs(input_field[x].v_after)
   end
   return sum
 end

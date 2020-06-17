@@ -1,7 +1,7 @@
 import "regent"
 
 
-
+--Import the task functions
 require("bc_flather")
 require("calculate_sea_surface_height_t")
 require("calculate_velocity_fields")
@@ -16,16 +16,20 @@ require("update_values")
 require("update_velocity_boundary")
 
 local c = regentlib.c
+
+--Set some global constants
 local pi = 3.1415926535897932
 local g = 9.80665 
 local omega = 7.292116e-05
 local d2r = pi / 180.0
 
 
+--Empty function used to set the code to use the default legion mapper when building an executable
 terra set_mappers()
 
 end
 
+--Timing function
 task get_time() : double
 
   return c.legion_get_current_time_in_micros()
@@ -33,6 +37,11 @@ end
 
 --INDEXING is ARRAY(X:M, Y:N)
 
+-- These task functions compute all the loop bounds required for a nemolite2d computation
+
+task calculate_internal(private_bounds : rect2d) : rect2d
+  return rect2d({{2,2}, {private_bounds.hi.x-2, private_bounds.hi.y-2 }})
+end
 
 task calculate_1_to_N_1_to_M(private_bounds : rect2d) : rect2d
   return rect2d({{1,1}, {private_bounds.hi.x-1, private_bounds.hi.y-1}})
@@ -90,6 +99,7 @@ task flather_u_bounds( private_bounds : rect2d) : rect2d
 
 end
 
+--Main computation task
 task main() 
   var conf : config = read_config()
   var single_point = ispace(int1d, 1)
@@ -121,20 +131,19 @@ task main()
   --Initialise model
   model_init(grid, loop_conditions_data)
 
+--Create the sea surface field.
  var sea_surface = region(grid_space, uvt_time_field)
  fill(sea_surface.{u_now, u_after, v_now, v_after, t_now, t_after}, 0.0)
  setup_sea_surface(sea_surface, grid)
 
+--Create the velocity field
  var velocity = region(grid_space, uv_time_field)
  fill(velocity.{u_now, u_after, v_now, v_after}, 0.0)
 
-
+--Create the sea_bed_to_mean_sea_level field
   var sea_bed_to_mean_sea_level = region(grid_space, uvt_field)
   fill(sea_bed_to_mean_sea_level.{u, v, t}, setup_data[0].dep_const)
   setup_sea_bed_to_mean_sea_level( sea_bed_to_mean_sea_level )
-
-
---  c.printf("%i\n", __raw(velocity).tree_id)
 
 
   --Create the partitions we need for the various computations
@@ -145,6 +154,7 @@ task main()
   var full_sea_bed_to_mean_sea_level = partition(equal, sea_bed_to_mean_sea_level, full_ispace)
   var full_velocity = partition(equal, velocity, full_ispace)
 
+--Create the partitions to handle the for loops from the Fortran code where possible.
   --Create the 1 to N, 1 to M partitions
    var _1N1M_velocity = image(disjoint, incomplete, velocity, full_velocity, calculate_1_to_N_1_to_M)
 
@@ -167,7 +177,6 @@ task main()
 
   var tilesize : int
   tilesize = conf.t1
-  c.printf("Tilesize 1: %i\n", tilesize)
   --Partition the velocity field as required for the update_velocity launcher
   var local_x : int = setup_data[0].jpiglo / tilesize
   if(local_x < 1) then
@@ -184,7 +193,6 @@ task main()
   var _2N12M_velocity_halos = image(disjoint, incomplete, velocity, partitioned_2N12M_velocity, calculate_halo_size)
 
   tilesize = conf.t2
-  c.printf("Tilesize 2: %i\n", tilesize)
   local_x = setup_data[0].jpiglo / tilesize
   if(local_x < 1) then
     local_x = 1
@@ -218,6 +226,7 @@ task main()
   var cbfr = setup_data[0].cbfr
   var point : int2d = int2d({0,0})
 
+--Compute the partitions to resolve if statements in the code as partitions where possible.
   -- update_velocity_ufield partition
   var loop_vel_ufield_partition = partition( loop_conditions_data.compute_vel_ufield, ispace(int1d, 1 ) )
   var vel_ufield_partitions = cross_product(partitioned_2N2M1_velocity, loop_vel_ufield_partition)
@@ -245,20 +254,12 @@ task main()
   var loop_update_bc_flather_u_partition = partition( loop_conditions_data.bc_flather_u, ispace(int1d, 1) )
   var bc_flather_u_partitions = cross_product( flather_FN1M_velocity, loop_update_bc_flather_u_partition)
 
-  --update_u_height partition
---  var loop_update_u_height_partition = partition( loop_conditions_data.update_u_height, ispace(int1d, 1) )
---  var update_u_height_partitions = cross_product( partitioned_2N2M1_sea_surface, loop_update_u_height_partition)
-
-  --update_v_height partition
---  var loop_update_v_height_partition = partition( loop_conditions_data.update_v_height, ispace(int1d, 1) )
---  var update_v_height_partitions = cross_product( partitioned_2N12M_sea_surface, update_v_height_partitions )
-
   __fence(__execution, __block)
   var start_time = get_time()
   __fence(__execution, __block) 
   --Main timestepping loop to do!
 
-  __demand(__trace) --, __spmd)
+  __demand(__trace, __spmd)
   for i = setup_data[0].nit000, setup_data[0].nitend+1 do
   
      __demand(__trace, __index_launch)
@@ -271,6 +272,7 @@ task main()
                               rdt)
                              
     end
+-- This is currently commented out as Regent cannot yet index launch two-level projection functors (#845)
 --     __demand(__trace, __index_launch)
      for part in partition_space do
        update_velocity_ufield(vel_ufield_partitions[part][0],
@@ -285,6 +287,7 @@ task main()
                               cbfr,
                               d2r)
      end
+-- This is currently commented out as Regent cannot yet index launch two-level projection functors (#845)
 --     __demand(__trace, __index_launch)
      for part in partition_space do 
        update_velocity_vfield(vel_vfield_partitions[part][0],
@@ -300,7 +303,7 @@ task main()
                               d2r)
                               
      end
---    __fence(__execution, __block)
+-- This is currently commented out as Regent cannot yet index launch two-level projection functors (#845)
 --    __demand(__trace , __index_launch)
     for part in partition_space2 do
     update_sea_surface_t(update_sst_partitions[part][0],
@@ -330,13 +333,14 @@ task main()
                       full_grid[point],
                       g)
     end
---     __demand(__trace, __index_launch)
---     for part in partition_space2 do
---     update_velocity_and_t_height(partitioned_full_velocity[part],
---                                 partitioned_full_sea_surface[part])
---    end
-    copy(velocity.{u_after, v_after},velocity.{u_now, v_now})
-    copy(sea_surface.{t_after}, sea_surface.{t_now})
+     __demand(__trace, __index_launch)
+     for part in partition_space2 do
+     update_velocity_and_t_height(partitioned_full_velocity[part],
+                                 partitioned_full_sea_surface[part])
+    end
+--  Regent provides copy functions inbuilt into the language. Performance was not found to be as good as the above task function however.
+--    copy(velocity.{u_after, v_after},velocity.{u_now, v_now})
+--    copy(sea_surface.{t_after}, sea_surface.{t_now})
 
     __demand(__trace, __index_launch)
     for part in partition_space2 do
@@ -350,10 +354,7 @@ task main()
                              full_grid[point],
                              _2N12M_sea_surface_halos[part])
     end
---    c.legion_runtime_issue_execution_fence(__runtime(), __context()) 
---    if( i % setup_data[0].record == 0) then
-        model_write( i, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, i % setup_data[0].record)
---    end
+    model_write( i, sea_surface, sea_bed_to_mean_sea_level, velocity, grid, i % setup_data[0].record)
 
   end
   __fence(__execution, __block)
@@ -361,8 +362,9 @@ task main()
   __fence(__execution, __block)
   var time_taken = finish_time - start_time
   c.printf("Runtime is %f seconds\n", double(time_taken) / 1000000.0)
-  var ua_checksum = checksum_task(velocity.{u_after})
-  var va_checksum = checksum_task(velocity.{v_after})
+  var internal_velocity = image(disjoint, incomplete, velocity, full_velocity, calculate_internal)
+  var ua_checksum = checksum_task_u_after(internal_velocity[int2d({0,0})])
+  var va_checksum = checksum_task_v_after(internal_velocity[int2d({0,0})])
   c.printf("ua checksum %e\n", ua_checksum) 
   c.printf("va checksum %e\n", va_checksum)
 end
@@ -372,13 +374,7 @@ if os.getenv('SAVEOBJ') == '1' then
   local root_dir = "./"
   local out_dir = (os.getenv('OBJNAME') and os.getenv('OBJNAME'):match('.*/')) or root_dir
   local link_flags = terralib.newlist({"-L" .. out_dir, "-lm", "-lgfortran", "-lgocean2d_io_mod"})
-
---  if os.getenv('STANDALONE') == '1' then
---    os.execute('cp ' .. os.getenv('LG_RT_DIR') .. '/../bindings/regent/' ..
---        regentlib.binding_library .. ' ' .. out_dir)
---  end
-
-  local exe = os.getenv('OBJNAME') or "nemolite2D"
+  local exe = os.getenv('OBJNAME') or "nemolite2d.exe"
   regentlib.saveobj(main, exe, "executable", set_mappers, link_flags)
 else
   regentlib.start(main)

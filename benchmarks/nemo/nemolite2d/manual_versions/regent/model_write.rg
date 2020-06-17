@@ -6,6 +6,7 @@ local stdio = terralib.includec("stdio.h")
 local cstring = terralib.includec("string.h")
 local c = regentlib.c
 
+--Writes out the output using c function calls.
 task model_write(step: int, sea_surface : region(ispace(int2d), uvt_time_field), sea_bed_to_mean_sea_level : region(ispace(int2d), uvt_field),
                  velocity : region(ispace(int2d), uv_time_field), grid: region(ispace(int2d), grid_fields), l_write : int) 
      where reads(sea_surface.t_now, grid.{xt, yt}, sea_bed_to_mean_sea_level.t, velocity.{u_now,v_now}) do
@@ -34,5 +35,3 @@ task model_write(step: int, sea_surface : region(ispace(int2d), uvt_time_field),
   end
 end
 
---task main()
---regentlib.start(main)

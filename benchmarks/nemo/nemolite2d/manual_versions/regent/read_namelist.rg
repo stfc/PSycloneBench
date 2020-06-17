@@ -1,11 +1,9 @@
 import "regent"
 
--- terralib.includepath = "/home/aidan/Legion/tests/read_nemolite"
 terralib.includepath = ".;"..terralib.includepath
 local stdlib = terralib.includec("stdlib.h")
 local stdio = terralib.includec("stdio.h")
 local gocean2d_io_mod = terralib.includec("gocean2d_io_mod.h")
---terralib.linklibrary("libgfortran.so.4")
 terralib.linklibrary("libgfortran.so")
 terralib.linklibrary("./libgocean2d_io_mod.so")
 
@@ -24,8 +22,7 @@ fspace setup_type{
   visc: double
 }
 
-
--- test reading using C
+--Uses the libgocean2d_io_mod to read the namelist into the setup_type
 task read_namelist(in1 : region(ispace(int1d), setup_type)) where writes(in1) do
   var t_jpi = 0
   var t_jpj = 0

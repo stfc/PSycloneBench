@@ -5,22 +5,21 @@ require("initialise_grid_points")
 require("model_init")
 
 local c = regentlib.c
---This is the FIRST loop.
--- Writes to 2 to N, 2 to M
--- Reads from 1 to N, 1 to M
 
+--This is the FIRST loop.
+__demand(__leaf)
 task calculate_sea_surface_t(sea_surface : region(ispace(int2d), uvt_time_field),
                           sea_surface_halos : region(ispace(int2d), uvt_time_field),
                           sea_bed_to_mean_sea_level: region(ispace(int2d), uvt_field),
                           velocity : region(ispace(int2d), uv_time_field),
                           grid_region : region(ispace(int2d), grid_fields),
                           rdt : double)
-     where -- sea_surface * sea_bed_to_mean_sea_level,
+     where
      writes( sea_surface.t_after ), reads( sea_surface_halos.{u_now,v_now,t_now},
                    sea_bed_to_mean_sea_level.{u,v}, velocity.{u_now,v_now},
                    grid_region.area_t) do
 
-
+  __demand(__vectorize)
   for point in sea_surface do
     var rtmp1 = (sea_surface_halos[point].u_now + sea_bed_to_mean_sea_level[point].u) 
               * velocity[point].u_now

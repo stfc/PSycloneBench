@@ -6,6 +6,7 @@ local c = regentlib.c
 local stdlib = terralib.includec("stdlib.h")
 local stdio = terralib.includec("stdio.h")
 
+--Set up the top level grid field
 fspace grid_fields{
   tmask : int1d,
   dx_t : double,
@@ -22,7 +23,7 @@ fspace grid_fields{
   xt : double,
   yt : double
 -- gphi_f  : double  
---  dx_f : double -- Don't use f field in this code
+--  dx_f : double -- Don't use f fields in this code
 --  dy_f : double
 }
 
@@ -81,7 +82,6 @@ end
 
 task init_grid_coordinates_launcher( tmask_full : region(ispace(int2d), grid_fields)) where writes(tmask_full.{xt, yt}), reads(tmask_full.{dx_t, dy_t}) do
 
-  
   var full_partition = partition(equal, tmask_full, ispace(int2d, {4,4}))
   __demand(__index_launch)
   for point in ispace(int2d, {4,4}) do
@@ -114,7 +114,6 @@ end
 
 task init_centre( tmask_centre : region(ispace(int2d), grid_fields)) where writes( tmask_centre.tmask) do
 
---  __demand(__vectorize)
   for point in tmask_centre do
     tmask_centre[point].tmask = WET
   end
@@ -292,6 +291,8 @@ task calculate_north_boundary( private_bounds: rect2d) : rect2d
   return rect2d( { {private_bounds.lo.x, private_bounds.hi.y-1}, {private_bounds.hi.x, private_bounds.hi.y} })
 end
 
+
+--This initialises the fields in the model grid.
 task model_init( grid : region(ispace(int2d), grid_fields) , loop_conditions_data : region(ispace(int2d), loop_conditions)) where
     writes(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_v, gphi_u, gphi_v, xt, yt, area_t, area_u, area_v}), reads(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_u, dy_v, gphi_u, gphi_v, xt, yt, area_t ,area_u, area_v}),
     writes( loop_conditions_data.{compute_vel_ufield, compute_vel_vfield, update_sea_surface_t, update_uvel_boundary, update_vvel_boundary, bc_flather_v, bc_flather_u, update_u_height, update_v_height }) do
@@ -326,10 +327,6 @@ task model_init( grid : region(ispace(int2d), grid_fields) , loop_conditions_dat
 
 
     init_grid_coordinates(grid)
---    for point in ispace(int2d,{1,1}) do
---      init_grid_areas(full_partition[point])
---    end
---    init_grid_areas_launcher(full_partition[int2d({0,0})])
   __demand(__vectorize)
   for point in grid do
     grid[point].area_t = grid[point].dx_t * grid[point].dy_t
