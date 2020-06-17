@@ -47,7 +47,7 @@ contains
             sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v
         INTEGER, intent(in) :: istp
 
-        ! TODO: issue #35 - Should this use %get_data() instead?
+        ! TODO: Should this use %get_data() instead?
         call wrapper_c_invoke_time_step( &
             ! Fields
             ssha_t%data, &
