@@ -83,68 +83,127 @@ extern "C" void c_invoke_time_step(
 
     // Execution policy for a multi-dimensional (2D) iteration space.
     typedef Kokkos::MDRangePolicy<Kokkos::Rank<2>, execution_space> mdrange_policy;
+    typedef Kokkos::View<double**> double_2dview;
+    typedef Kokkos::View<int**> int_2dview;
 
     // Fields
-    Kokkos::View<double**> ssha_t_view("ssha_t", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> sshn_t_view("sshn_t", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> sshn_u_view("sshn_u", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> sshn_v_view("sshn_v", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> hu_view("hu", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> hv_view("hv", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> un_view("un", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> vn_view("vn", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> ua_view("ua", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> ht_view("ht", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> ssha_u_view("ssha_u", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> va_view("va", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> ssha_v_view("ssha_v", internal_xstop+1, internal_ystop+1);
+    double_2dview ssha_t_view("ssha_t", internal_xstop+1, internal_ystop+1);
+    double_2dview sshn_t_view("sshn_t", internal_xstop+1, internal_ystop+1);
+    double_2dview sshn_u_view("sshn_u", internal_xstop+1, internal_ystop+1);
+    double_2dview sshn_v_view("sshn_v", internal_xstop+1, internal_ystop+1);
+    double_2dview hu_view("hu", internal_xstop+1, internal_ystop+1);
+    double_2dview hv_view("hv", internal_xstop+1, internal_ystop+1);
+    double_2dview un_view("un", internal_xstop+1, internal_ystop+1);
+    double_2dview vn_view("vn", internal_xstop+1, internal_ystop+1);
+    double_2dview ua_view("ua", internal_xstop+1, internal_ystop+1);
+    double_2dview ht_view("ht", internal_xstop+1, internal_ystop+1);
+    double_2dview ssha_u_view("ssha_u", internal_xstop+1, internal_ystop+1);
+    double_2dview va_view("va", internal_xstop+1, internal_ystop+1);
+    double_2dview ssha_v_view("ssha_v", internal_xstop+1, internal_ystop+1);
 
     // Grid
-    Kokkos::View<int**> tmask_view("tmask_v", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> area_t_view("area_t", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> area_u_view("area_u", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> area_v_view("area_v", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> dx_u_view("dx_u", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> dx_v_view("dx_v", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> dx_t_view("dx_t", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> dy_u_view("dy_u", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> dy_v_view("dy_v", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> dy_t_view("dy_t", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> gphiu_view("gphiu", internal_xstop+1, internal_ystop+1);
-    Kokkos::View<double**> gphiv_view("gphiv", internal_xstop+1, internal_ystop+1);
+    int_2dview tmask_view("tmask_v", internal_xstop+1, internal_ystop+1);
+    double_2dview area_t_view("area_t", internal_xstop+1, internal_ystop+1);
+    double_2dview area_u_view("area_u", internal_xstop+1, internal_ystop+1);
+    double_2dview area_v_view("area_v", internal_xstop+1, internal_ystop+1);
+    double_2dview dx_u_view("dx_u", internal_xstop+1, internal_ystop+1);
+    double_2dview dx_v_view("dx_v", internal_xstop+1, internal_ystop+1);
+    double_2dview dx_t_view("dx_t", internal_xstop+1, internal_ystop+1);
+    double_2dview dy_u_view("dy_u", internal_xstop+1, internal_ystop+1);
+    double_2dview dy_v_view("dy_v", internal_xstop+1, internal_ystop+1);
+    double_2dview dy_t_view("dy_t", internal_xstop+1, internal_ystop+1);
+    double_2dview gphiu_view("gphiu", internal_xstop+1, internal_ystop+1);
+    double_2dview gphiv_view("gphiv", internal_xstop+1, internal_ystop+1);
+
+
+    // Create Mirrors
+    double_2dview::HostMirror h_ssha_t = Kokkos::create_mirror_view( ssha_t_view );
+    double_2dview::HostMirror h_sshn_t = Kokkos::create_mirror_view( sshn_t_view );
+    double_2dview::HostMirror h_sshn_u = Kokkos::create_mirror_view( sshn_u_view );
+    double_2dview::HostMirror h_sshn_v = Kokkos::create_mirror_view( sshn_v_view );
+    double_2dview::HostMirror h_hu = Kokkos::create_mirror_view( hu_view );
+    double_2dview::HostMirror h_hv = Kokkos::create_mirror_view( hv_view );
+    double_2dview::HostMirror h_un = Kokkos::create_mirror_view( un_view );
+    double_2dview::HostMirror h_vn = Kokkos::create_mirror_view( vn_view );
+    double_2dview::HostMirror h_ua = Kokkos::create_mirror_view( ua_view );
+    double_2dview::HostMirror h_ht = Kokkos::create_mirror_view( ht_view );
+    double_2dview::HostMirror h_ssha_u = Kokkos::create_mirror_view( ssha_u_view );
+    double_2dview::HostMirror h_va = Kokkos::create_mirror_view( va_view );
+    double_2dview::HostMirror h_ssha_v = Kokkos::create_mirror_view( ssha_v_view );
+
+    int_2dview::HostMirror h_tmask = Kokkos::create_mirror_view( tmask_view );
+    double_2dview::HostMirror h_area_t = Kokkos::create_mirror_view( area_t_view );
+    double_2dview::HostMirror h_area_u = Kokkos::create_mirror_view( area_u_view );
+    double_2dview::HostMirror h_area_v = Kokkos::create_mirror_view( area_v_view );
+    double_2dview::HostMirror h_dx_u = Kokkos::create_mirror_view( dx_u_view );
+    double_2dview::HostMirror h_dx_v = Kokkos::create_mirror_view( dx_v_view );
+    double_2dview::HostMirror h_dx_t = Kokkos::create_mirror_view( dx_t_view );
+    double_2dview::HostMirror h_dy_u = Kokkos::create_mirror_view( dy_u_view );
+    double_2dview::HostMirror h_dy_v = Kokkos::create_mirror_view( dy_v_view );
+    double_2dview::HostMirror h_dy_t = Kokkos::create_mirror_view( dy_t_view );
+    double_2dview::HostMirror h_gphiu = Kokkos::create_mirror_view( gphiu_view );
+    double_2dview::HostMirror h_gphiv = Kokkos::create_mirror_view( gphiv_view );
+
 
     for(int jj=0; jj < internal_ystop+1; jj++){
         for(int ji=0; ji < internal_xstop+1; ji++){
             int idx = jj*width + ji;
-            ssha_t_view(jj, ji) = ssha_t[idx];
-            sshn_t_view(jj, ji) = sshn_t[idx];
-            sshn_u_view(jj, ji) = sshn_u[idx];
-            sshn_v_view(jj, ji) = sshn_v[idx];
-            hu_view(jj, ji) = hu[idx];
-            hv_view(jj, ji) = hv[idx];
-            un_view(jj, ji) = un[idx];
-            vn_view(jj, ji) = vn[idx];
-            ua_view(jj, ji) = ua[idx];
-            ht_view(jj, ji) = ht[idx];
-            ssha_u_view(jj, ji) = ssha_u[idx];
-            va_view(jj, ji) = va[idx];
-            ssha_v_view(jj, ji) = ssha_v[idx];
+            h_ssha_t(jj, ji) = ssha_t[idx];
+            h_sshn_t(jj, ji) = sshn_t[idx];
+            h_sshn_u(jj, ji) = sshn_u[idx];
+            h_sshn_v(jj, ji) = sshn_v[idx];
+            h_hu(jj, ji) = hu[idx];
+            h_hv(jj, ji) = hv[idx];
+            h_un(jj, ji) = un[idx];
+            h_vn(jj, ji) = vn[idx];
+            h_ua(jj, ji) = ua[idx];
+            h_ht(jj, ji) = ht[idx];
+            h_ssha_u(jj, ji) = ssha_u[idx];
+            h_va(jj, ji) = va[idx];
+            h_ssha_v(jj, ji) = ssha_v[idx];
 
-            tmask_view(jj, ji) = tmask[idx];
-            area_t_view(jj, ji) = area_t[idx];
-            area_u_view(jj, ji) = area_u[idx];
-            area_v_view(jj, ji) = area_v[idx];
-            dx_u_view(jj, ji) = dx_u[idx];
-            dx_v_view(jj, ji) = dx_v[idx];
-            dx_t_view(jj, ji) = dx_t[idx];
-            dy_u_view(jj, ji) = dy_u[idx];
-            dy_v_view(jj, ji) = dy_v[idx];
-            dy_t_view(jj, ji) = dy_t[idx];
-            gphiu_view(jj, ji) = gphiu[idx];
-            gphiv_view(jj, ji) = gphiv[idx];
+            h_tmask(jj, ji) = tmask[idx];
+            h_area_t(jj, ji) = area_t[idx];
+            h_area_u(jj, ji) = area_u[idx];
+            h_area_v(jj, ji) = area_v[idx];
+            h_dx_u(jj, ji) = dx_u[idx];
+            h_dx_v(jj, ji) = dx_v[idx];
+            h_dx_t(jj, ji) = dx_t[idx];
+            h_dy_u(jj, ji) = dy_u[idx];
+            h_dy_v(jj, ji) = dy_v[idx];
+            h_dy_t(jj, ji) = dy_t[idx];
+            h_gphiu(jj, ji) = gphiu[idx];
+            h_gphiv(jj, ji) = gphiv[idx];
         }
     }
 
+    // Copy Host Mirrors into Device Views (if device is not host)
+    Kokkos::deep_copy( ssha_t_view, h_ssha_t );
+    Kokkos::deep_copy( sshn_t_view, h_sshn_t );
+    Kokkos::deep_copy( sshn_u_view, h_sshn_u );
+    Kokkos::deep_copy( sshn_v_view, h_sshn_v );
+    Kokkos::deep_copy( hu_view, h_hu );
+    Kokkos::deep_copy( hv_view, h_hv );
+    Kokkos::deep_copy( un_view, h_un );
+    Kokkos::deep_copy( vn_view, h_vn );
+    Kokkos::deep_copy( ua_view, h_ua );
+    Kokkos::deep_copy( ht_view, h_ht );
+    Kokkos::deep_copy( ssha_u_view, h_ssha_u );
+    Kokkos::deep_copy( va_view, h_va );
+    Kokkos::deep_copy( ssha_v_view, h_ssha_v );
+
+    Kokkos::deep_copy( tmask_view, h_tmask );
+    Kokkos::deep_copy( area_t_view, h_area_t );
+    Kokkos::deep_copy( area_u_view, h_area_u );
+    Kokkos::deep_copy( area_v_view, h_area_v );
+    Kokkos::deep_copy( dx_u_view, h_dx_u );
+    Kokkos::deep_copy( dx_v_view, h_dx_v );
+    Kokkos::deep_copy( dx_t_view, h_dx_t );
+    Kokkos::deep_copy( dy_u_view, h_dy_u );
+    Kokkos::deep_copy( dy_v_view, h_dy_v );
+    Kokkos::deep_copy( dy_t_view, h_dy_t );
+    Kokkos::deep_copy( gphiu_view, h_gphiu );
+    Kokkos::deep_copy( gphiv_view, h_gphiv );
 
     // In this implementation the kernels are manually inlined because:
     // - Using the kernels/c_family/ , the GPU version created the LAMBDA and then
@@ -523,37 +582,39 @@ extern "C" void c_invoke_time_step(
         }
     );
 
+    // Copy Host Mirrors into Device Views (if device is not host)
+    Kokkos::deep_copy( h_ssha_t, ssha_t_view );
+    Kokkos::deep_copy( h_sshn_t, sshn_t_view);
+    Kokkos::deep_copy( h_sshn_u, sshn_u_view);
+    Kokkos::deep_copy( h_sshn_v, sshn_v_view);
+    Kokkos::deep_copy( h_hu, hu_view);
+    Kokkos::deep_copy( h_hv, hv_view);
+    Kokkos::deep_copy( h_un, un_view);
+    Kokkos::deep_copy( h_vn, vn_view);
+    Kokkos::deep_copy( h_ua, ua_view);
+    Kokkos::deep_copy( h_ht, ht_view);
+    Kokkos::deep_copy( h_ssha_u, ssha_u_view);
+    Kokkos::deep_copy( h_va, va_view);
+    Kokkos::deep_copy( h_ssha_v, ssha_v_view);
+
+
     // Copy data back to original location
     for(int jj=0; jj < internal_ystop+1; jj++){
         for(int ji=0; ji < internal_xstop+1; ji++){
-            //sshn_v_view(jj, ji) = 1.0;
             int idx = jj*width + ji;
-            ssha_t[idx] = ssha_t_view(jj, ji);
-            sshn_t[idx] = sshn_t_view(jj, ji);
-            sshn_u[idx] = sshn_u_view(jj, ji);
-            sshn_v[idx] = sshn_v_view(jj, ji);
-            hu[idx] = hu_view(jj, ji);
-            hv[idx] = hv_view(jj, ji);
-            un[idx] = un_view(jj, ji);
-            vn[idx] = vn_view(jj, ji);
-            ua[idx] = ua_view(jj, ji);
-            ht[idx] = ht_view(jj, ji);
-            ssha_u[idx] = ssha_u_view(jj, ji);
-            va[idx] = va_view(jj, ji);
-            ssha_v[idx] = ssha_v_view(jj, ji);
-
-            tmask[idx] = tmask_view(jj, ji);
-            area_t[idx] = area_t_view(jj, ji);
-            area_u[idx] = area_u_view(jj, ji); 
-            area_v[idx] = area_v_view(jj, ji);
-            dx_u[idx] = dx_u_view(jj, ji);
-            dx_v[idx] = dx_v_view(jj, ji);
-            dx_t[idx] = dx_t_view(jj, ji); 
-            dy_u[idx] = dy_u_view(jj, ji);
-            dy_v[idx] = dy_v_view(jj, ji);
-            dy_t[idx] = dy_t_view(jj, ji); 
-            gphiu[idx] = gphiu_view(jj, ji);
-            gphiv[idx] = gphiv_view(jj, ji);
+            ssha_t[idx] = h_ssha_t(jj, ji);
+            sshn_t[idx] = h_sshn_t(jj, ji);
+            sshn_u[idx] = h_sshn_u(jj, ji);
+            sshn_v[idx] = h_sshn_v(jj, ji);
+            hu[idx] = h_hu(jj, ji);
+            hv[idx] = h_hv(jj, ji);
+            un[idx] = h_un(jj, ji);
+            vn[idx] = h_vn(jj, ji);
+            ua[idx] = h_ua(jj, ji);
+            ht[idx] = h_ht(jj, ji);
+            ssha_u[idx] = h_ssha_u(jj, ji);
+            va[idx] = h_va(jj, ji);
+            ssha_v[idx] = h_ssha_v(jj, ji);
         }
     }
 }
