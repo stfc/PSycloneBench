@@ -46,11 +46,13 @@ LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
 COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${KERNELS} ${INF_LIB}
 
 # Normal targets
-nemolite2d_kokkos: ${COMMON_LIB} timer_lib inf_lib time_step_kokkos.o
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_kokkos.o" $@.exe
+nemolite2d_views_kokkos: ${COMMON_LIB} timer_lib inf_lib time_step_views_kokkos.o
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_views_kokkos.o" \
+		$@_$(KOKKOS_DEVICES).exe
 
-nemolite2d_kokkos_rawpointers: ${COMMON_LIB} timer_lib inf_lib time_step_kokkos_rawpointers.o
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_kokkos_rawpointers.o" $@.exe
+nemolite2d_rawpointers_kokkos: ${COMMON_LIB} timer_lib inf_lib time_step_rawpointers_kokkos.o
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_rawpointers_kokkos.o" \
+		$@_$(KOKKOS_DEVICES).exe
 
 nemolite2d.o: $(COMMON_MODULES)
 
@@ -71,10 +73,7 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 		-L/opt/nvidia/cuda-10/lib64 -L. -lstdc++
 
 # Kokkos files rules
-time_step_kokkos.o: time_step_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
-	$(CXX) -DEXEC_SPACE=$(EXEC_SPACE) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CFLAGS) $(OMPFLAGS) -c $<
-
-time_step_kokkos_rawpointers.o: time_step_kokkos_rawpointers.cpp $(KOKKOS_CPP_DEPENDS)
+%_kokkos.o: %_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
 	$(CXX) -DEXEC_SPACE=$(EXEC_SPACE) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CFLAGS) $(OMPFLAGS) -c $<
 
 clean: 
