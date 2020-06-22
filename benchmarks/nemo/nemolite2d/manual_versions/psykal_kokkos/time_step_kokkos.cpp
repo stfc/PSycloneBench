@@ -225,14 +225,27 @@ extern "C" void c_invoke_time_step(
             next_sshu_code(ji, jj, width, sshn_u, sshn_t, tmask, area_t, area_u);
         }
     );
+*/
 
     // Time update kernel (internal domain v points)
     Kokkos::parallel_for("next_sshv",
         mdrange_policy({internal_ystart, internal_xstart},
                        {internal_ystop - 1, internal_xstop}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
-            next_sshv_code(ji, jj, width, sshn_v, sshn_t, tmask, area_t, area_v);
+            double rtmp1;
+    
+            if((tmask_view(jj, ji) + tmask_view(jj + 1, ji)) <= 0){
+                return; //jump over non-computational domain
+            }
+            if((tmask_view(jj, ji) * tmask_view(jj + 1, ji)) > 0){
+                rtmp1 = area_t_view(jj, ji) * sshn_t_view(jj, ji) +
+                    area_t_view(jj + 1, ji) * sshn_t_view(jj + 1, ji);
+                sshn_v_view(jj, ji) = 0.5 * rtmp1 / area_v_view(jj, ji) ;
+            }else if(tmask_view(jj, ji) <= 0){
+                sshn_v_view(jj, ji) = sshn_t_view(jj + 1, ji);
+            }else if(tmask_view(jj + 1, ji) <= 0){
+                sshn_v_view(jj, ji) = sshn_t_view(jj, ji);
+            }
         }
     );
-*/
 }
