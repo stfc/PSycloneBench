@@ -119,8 +119,6 @@ program gocean2d
                        field_checksum(ua_fld))
   call model_write_log("('va checksum = ', E16.8)", &
                        field_checksum(va_fld))
-  call model_write_log("('ssha_t checksum = ', E16.8)", &
-                       field_checksum(ssha_t_fld))
 
   !! finalise the model run
   call model_finalise()

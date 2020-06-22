@@ -113,11 +113,44 @@ extern "C" void c_invoke_time_step(
     Kokkos::View<double**> gphiu_view("gphiu", internal_xstop+1, internal_ystop+1);
     Kokkos::View<double**> gphiv_view("gphiv", internal_xstop+1, internal_ystop+1);
 
+    for(int jj=0; jj < internal_ystop+1; jj++){
+        for(int ji=0; ji < internal_xstop+1; ji++){
+            int idx = jj*width + ji;
+            ssha_t_view(jj, ji) = ssha_t[idx];
+            sshn_t_view(jj, ji) = sshn_t[idx];
+            sshn_u_view(jj, ji) = sshn_u[idx];
+            sshn_v_view(jj, ji) = sshn_v[idx];
+            hu_view(jj, ji) = hu[idx];
+            hv_view(jj, ji) = hv[idx];
+            un_view(jj, ji) = un[idx];
+            vn_view(jj, ji) = vn[idx];
+            ua_view(jj, ji) = ua[idx];
+            ht_view(jj, ji) = ht[idx];
+            ssha_u_view(jj, ji) = ssha_u[idx];
+            va_view(jj, ji) = va[idx];
+            ssha_v_view(jj, ji) = ssha_v[idx];
+
+            tmask_view(jj, ji) = tmask[idx];
+            area_t_view(jj, ji) = area_t[idx];
+            area_u_view(jj, ji) = area_u[idx];
+            area_v_view(jj, ji) = area_v[idx];
+            dx_u_view(jj, ji) = dx_u[idx];
+            dx_v_view(jj, ji) = dx_v[idx];
+            dx_t_view(jj, ji) = dx_t[idx];
+            dy_u_view(jj, ji) = dy_u[idx];
+            dy_v_view(jj, ji) = dy_v[idx];
+            dy_t_view(jj, ji) = dy_t[idx];
+            gphiu_view(jj, ji) = gphiu[idx];
+            gphiv_view(jj, ji) = gphiv[idx];
+        }
+    }
+
+
     // In this implementation the kernels are manually inlined because:
-    // - Using the kernels/c_family/* , the GPU version created the LAMBDA and then
+    // - Using the kernels/c_family/ , the GPU version created the LAMBDA and then
     // a call to a gpu function.
     // - It can use 2D Views (which have a (x,y) notation instead of []).
-
+    
     // Continuity kernel (internal domain)
     Kokkos::parallel_for("continuity",
         mdrange_policy({internal_ystart, internal_xstart},
@@ -134,17 +167,107 @@ extern "C" void c_invoke_time_step(
                 rdt / area_t_view(jj, ji);
         }
     );
-/*
+
     // Momentum_u kernel (internal domain u points)
     Kokkos::parallel_for("momentum_u",
         mdrange_policy({internal_ystart, internal_xstart},
                        {internal_ystop, internal_xstop - 1}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
-            momentum_u_code(ji, jj, width, ua_view.data(), un_view.data(), vn_view.data(),
-                    hu_view.data(), hv_view.data(), ht_view.data(), ssha_u_view.data(), \
-                sshn_t_view.data(), sshn_u_view.data(), sshn_v_view.data(), tmask_view.data(), dx_u_view.data(), dx_v_view.data(), dx_t_view.data(), dy_u_view.data(), dy_t_view.data(), \
-                area_u_view.data(), gphiu_view.data(), rdt, cbfr, visc, omega, d2r, g);
+            double u_e, u_w, v_n, v_s;
+            double v_nc, v_sc;
+            double depe, depw, deps, depn;
+            double hpg, adv, cor, vis;
+            double dudx_e, dudx_w;
+            double dudy_s, dudy_n;
+            double uu_e, uu_n, uu_s, uu_w;
 
+            if(tmask_view(jj, ji) + tmask_view(jj, ji + 1) <= 0){
+                return; // jump over non-computational domain
+            }
+            if(tmask_view(jj, ji) <= 0 || tmask_view(jj, ji + 1) <= 0){
+                return; // jump over boundary u
+            }
+
+            u_e  = 0.5 * (un_view(jj, ji) + un_view(jj, ji + 1)) *
+                dy_t_view(jj, ji + 1);   // add length scale.
+            depe = ht_view(jj, ji + 1) + sshn_t_view(jj, ji + 1);
+
+            u_w  = 0.5 * (un_view(jj, ji) + un_view(jj, ji - 1)) *
+                dy_t_view(jj, ji);   // add length scale
+            depw = ht_view(jj, ji) + sshn_t_view(jj, ji);
+
+            v_sc = 0.5 * (vn_view(jj - 1, ji) + vn_view(jj - 1, ji + 1));
+            v_s  = 0.5 * v_sc * (dx_v_view(jj - 1, ji) + dx_v_view(jj - 1, ji + 1));
+            deps = 0.5 * (hv_view(jj - 1, ji) + sshn_v_view(jj - 1, ji) +
+                hv_view(jj - 1, ji + 1) + sshn_v_view(jj - 1, ji + 1));
+
+            v_nc = 0.5 * (vn_view(jj, ji) + vn_view(jj, ji + 1));
+            v_n  = 0.5 * v_nc * (dx_v_view(jj, ji) + dx_v_view(jj, ji + 1));
+            depn = 0.5 * (hv_view(jj, ji) + sshn_v_view(jj, ji) +
+                hv_view(jj, ji + 1) + sshn_v_view(jj, ji + 1));
+
+            // -advection (currently first order upwind)
+            uu_w = (0.5 - copysign(0.5, u_w)) * un_view(jj, ji) +
+                (0.5 + copysign(0.5, u_w)) * un_view(jj, ji - 1) ;
+            uu_e = (0.5 + copysign(0.5, u_e)) * un_view(jj, ji) +
+                (0.5 - copysign(0.5, u_e)) * un_view(jj, ji + 1) ;
+
+            if(tmask_view(jj - 1, ji) <=0 || tmask_view(jj - 1, ji + 1) <= 0){
+                uu_s = (0.5 - copysign(0.5, v_s)) * un_view(jj, ji);
+            }else{
+                uu_s = (0.5 - copysign(0.5, v_s)) * un_view(jj, ji) +
+                    (0.5 + copysign(0.5, v_s)) * un_view(jj - 1, ji) ;
+            }
+
+            if(tmask_view(jj + 1, ji) <=0 || tmask_view(jj + 1 + 1, ji) <= 0){
+                uu_n = (0.5 + copysign(0.5, v_n)) * un_view(jj, ji);
+            }else{
+                uu_n = (0.5 + copysign(0.5, v_n)) * un_view(jj, ji) +
+                    (0.5 - copysign(0.5, v_n)) * un_view(jj + 1, ji);
+            }
+
+            adv = uu_w * u_w * depw - uu_e * u_e * depe +
+                uu_s * v_s * deps - uu_n * v_n * depn;
+
+            // -viscosity
+
+            dudx_e = (un_view(jj, ji + 1) - un_view(jj, ji)) / dx_t_view(jj, ji + 1) *
+                (ht_view(jj, ji + 1) + sshn_t_view(jj, ji + 1));
+            dudx_w = (un_view(jj, ji) - un_view(jj, ji - 1)) / dx_t_view(jj, ji) *
+                (ht_view(jj, ji) + sshn_t_view(jj, ji));
+            if(tmask_view(jj - 1, ji) <=0 || tmask_view(jj - 1, ji + 1) <= 0){
+                dudy_s = 0.0; // slip boundary
+            }else{
+                dudy_s = (un_view(jj, ji) - un_view(jj - 1, ji)) / (dy_u_view(jj, ji) +
+                    dy_u_view(jj - 1, ji)) * (hu_view(jj, ji) + sshn_u_view(jj, ji) +
+                    hu_view(jj - 1, ji) + sshn_u_view(jj - 1, ji));
+            }
+
+            if(tmask_view(jj + 1, ji) <= 0 || tmask_view(jj + 1 + 1, ji) <= 0){
+                dudy_n = 0.0; // slip boundary
+            }else{
+                dudy_n = (un_view(jj + 1, ji) - un_view(jj, ji)) / (dy_u_view(jj, ji) +
+                        dy_u_view(jj + 1, ji)) * (hu_view(jj, ji) + sshn_u_view(jj, ji) +
+                        hu_view(jj + 1, ji) + sshn_u_view(jj + 1, ji));
+            }
+
+            vis = (dudx_e - dudx_w ) * dy_u_view(jj, ji)  + 
+                (dudy_n - dudy_s ) * dx_u_view(jj, ji) * 0.5;
+            vis = visc * vis;   // visc will be an array visc(1:jpijglou) 
+                                // for variable viscosity, such as turbulent viscosity
+
+            // -Coriolis' force (can be implemented implicitly)
+            cor = 0.5 * (2. * omega * sin(gphiu_view(jj, ji) * d2r) * (v_sc + v_nc)) * 
+                area_u_view(jj, ji) * (hu_view(jj, ji) + sshn_u_view(jj, ji));
+
+            // -pressure gradient
+            hpg = -g * (hu_view(jj, ji) + sshn_u_view(jj, ji)) * dy_u_view(jj, ji) * 
+                (sshn_t_view(jj, ji + 1) - sshn_t_view(jj, ji));
+
+            // -linear bottom friction (implemented implicitly.
+            ua_view(jj, ji) = (un_view(jj, ji) * (hu_view(jj, ji) + sshn_u_view(jj, ji)) +
+                rdt * (adv + vis + cor + hpg) / area_u_view(jj, ji)) / (hu_view(jj, ji) +
+                ssha_u_view(jj, ji)) / (1.0 + cbfr * rdt) ;
         }
     );
 
@@ -153,11 +276,102 @@ extern "C" void c_invoke_time_step(
         mdrange_policy({internal_ystart, internal_xstart},
                        {internal_ystop - 1, internal_xstop}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
-            momentum_v_code(ji, jj, width, va_view.data(), un_view.data(), vn_view.data(), hu_view.data(), hv_view.data(), ht_view.data(), ssha_v_view.data(), \
-                sshn_t_view.data(), sshn_u_view.data(), sshn_v_view.data(), tmask_view.data(), dx_v_view.data(), dx_t_view.data(), dy_u_view.data(), dy_v_view.data(), dy_t_view.data(), \
-                area_v_view.data(), gphiv_view.data(), rdt, cbfr, visc, omega, d2r, g);
 
-        }
+            double u_e, u_w, v_n, v_s;
+            double u_ec, u_wc, vv_e, vv_n, vv_s, vv_w;
+            double depe, depw, deps, depn;
+            double hpg, adv, cor, vis;
+            double dvdx_e, dvdx_w, dvdy_n, dvdy_s;
+            if(tmask_view(jj, ji) + tmask_view(jj, ji + 1) <= 0){
+                return; // jump over non-computatinal domain
+            }
+            if(tmask_view(jj, ji) <= 0 || tmask_view(jj + 1, ji) <= 0){
+                return; // jump over v boundary cells
+            }
+
+            // kernel v adv 
+            v_n = 0.5 * (vn_view(jj, ji) + vn_view(jj + 1, ji)) *
+                dx_t_view(jj + 1, ji); // add length scale.
+            depn = ht_view(jj + 1, ji) + sshn_t_view(jj + 1, ji);
+
+            v_s = 0.5 * (vn_view(jj, ji) + vn_view(jj - 1, ji)) *
+                dx_t_view(jj, ji); // add length scale
+            deps = ht_view(jj, ji) + sshn_t_view(jj, ji);
+
+            u_wc = 0.5 * (un_view(jj, ji - 1) + un_view(jj + 1, ji - 1));
+            u_w  = 0.5 * u_wc * (dy_u_view(jj, ji - 1) + dy_u_view(jj + 1, ji - 1));
+            depw = 0.50 * (hu_view(jj, ji - 1) + sshn_u_view(jj, ji - 1) + 
+                hu_view(jj + 1, ji - 1) + sshn_u_view(jj + 1, ji - 1));
+
+            u_ec = 0.5 * (un_view(jj, ji) + un_view(jj + 1, ji));
+            u_e  = 0.5 * u_ec * (dy_u_view(jj, ji) + dy_u_view(jj + 1, ji));
+            depe = 0.50 * (hu_view(jj, ji) + sshn_u_view(jj, ji) + 
+            hu_view(jj + 1, ji) + sshn_u_view(jj + 1, ji));
+
+            // -advection (currently first order upwind)
+            vv_s = (0.5 - copysign(0.5, v_s)) * vn_view(jj, ji) +  
+                (0.5 + copysign(0.5, v_s)) * vn_view(jj - 1, ji) ;
+            vv_n = (0.5 + copysign(0.5, v_n)) * vn_view(jj, ji) +  
+                (0.5 - copysign(0.5, v_n)) * vn_view(jj + 1, ji) ;
+
+            if(tmask_view(jj, ji - 1) <= 0 || tmask_view(jj + 1, ji - 1) <= 0){
+                vv_w = (0.5 - copysign(0.5, u_w)) * vn_view(jj, ji);
+            }else{
+                vv_w = (0.5 - copysign(0.5, u_w)) * vn_view(jj, ji) +  
+                    (0.5 + copysign(0.5, u_w)) * vn_view(jj, ji - 1) ;
+            }
+
+            if(tmask_view(jj, ji + 1) <= 0 || tmask_view(jj + 1 + 1, ji) <= 0){
+                vv_e = (0.5 + copysign(0.5, u_e)) * vn_view(jj, ji);
+            }else{
+                vv_e = (0.5 + copysign(0.5, u_e)) * vn_view(jj, ji) +
+                    (0.5 - copysign(0.5, u_e)) * vn_view(jj, ji + 1);
+            }
+
+            adv = vv_w * u_w * depw - vv_e * u_e * depe + 
+                vv_s * v_s * deps - vv_n * v_n * depn;
+
+            // -viscosity
+            dvdy_n = (vn_view(jj + 1, ji) - vn_view(jj, ji)) / dy_t_view(jj + 1, ji) * 
+                (ht_view(jj + 1, ji) + sshn_t_view(jj + 1, ji));
+            dvdy_s = (vn_view(jj, ji) - vn_view(jj - 1, ji)) / dy_t_view(jj, ji) * 
+                (ht_view(jj, ji) + sshn_t_view(jj, ji));
+
+            if(tmask_view(jj, ji - 1) <= 0 || tmask_view(jj + 1, ji - 1) <= 0){
+                dvdx_w = 0.0; // slip boundary
+            }else{
+                dvdx_w = (vn_view(jj, ji) - vn_view(jj, ji - 1)) / (dx_v_view(jj, ji) +
+                    dx_v_view(jj, ji - 1)) * (hv_view(jj, ji) + sshn_v_view(jj, ji) +
+                    hv_view(jj, ji - 1) + sshn_v_view(jj, ji - 1));
+            }
+
+            if(tmask_view(jj, ji + 1) <= 0 || tmask_view(jj + 1 + 1, ji) <= 0){
+                dvdx_e = 0.0; // slip boundary
+            }else{
+                dvdx_e = (vn_view(jj, ji + 1) - vn_view(jj, ji)) / (dx_v_view(jj, ji) +
+                    dx_v_view(jj, ji + 1)) * (hv_view(jj, ji) + sshn_v_view(jj, ji) +
+                    hv_view(jj, ji + 1) + sshn_v_view(jj, ji + 1));
+            }
+
+            vis = (dvdy_n - dvdy_s ) * dx_v_view(jj, ji)  + 
+                (dvdx_e - dvdx_w ) * dy_v_view(jj, ji) * 0.5  ;
+
+            vis = visc * vis;   // visc will be a array visc(1:jpijglou) 
+                                // for variable viscosity, such as turbulent viscosity
+
+            // -Coriolis' force (can be implemented implicitly)
+            cor = -0.5*(2. * omega * sin(gphiv_view(jj, ji) * d2r) * (u_ec + u_wc)) * 
+                area_v_view(jj, ji) * (hv_view(jj, ji) + sshn_v_view(jj, ji));
+
+            // -pressure gradient
+            hpg = -g * (hv_view(jj, ji) + sshn_v_view(jj, ji)) * dx_v_view(jj, ji) * 
+                (sshn_t_view(jj + 1, ji) - sshn_t_view(jj, ji));
+
+            // -linear bottom friction (implemented implicitly.
+            va_view(jj, ji) = (vn_view(jj, ji) * (hv_view(jj, ji) + sshn_v_view(jj, ji)) + 
+                rdt * (adv + vis + cor + hpg) / area_v_view(jj, ji) ) / 
+                ((hv_view(jj, ji) + ssha_v_view(jj, ji))) / (1.0 + cbfr * rdt) ;
+            }
     );
     
     // Boundary conditions bc_ssh kernel (internal domain)
@@ -165,16 +379,35 @@ extern "C" void c_invoke_time_step(
         mdrange_policy({internal_ystart, internal_xstart},
                        {internal_ystop, internal_xstop}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
-            bc_ssh_code(ji, jj, width, istep, ssha_t, tmask, rdt);
+
+            double amp_tide, omega_tide, rtime;
+
+            amp_tide = 0.2;
+            omega_tide = 2.0 * 3.14159 / (12.42 * 3600.0);
+            rtime = istep * rdt;
+  
+            if(tmask_view(jj, ji) <= 0) return;
+  
+            if(tmask_view(jj-1, ji) < 0){
+                ssha_t_view(jj, ji) = amp_tide * sin(omega_tide * rtime);
+            }else if(tmask_view(jj+1, ji) < 0){
+                ssha_t_view(jj, ji) = amp_tide * sin(omega_tide * rtime);
+            }else if(tmask_view(jj, ji+1) < 0){
+                ssha_t_view(jj, ji) = amp_tide * sin(omega_tide * rtime);
+            }else if(tmask_view(jj, ji-1) < 0){
+                ssha_t_view(jj, ji) = amp_tide * sin(omega_tide * rtime);
+            }
         }
     );
     
     // Boundary conditions bc_solid_u kernel (whole domain but top x boundary)
-    Kokkos::parallel_for("bc_ssh",
+    Kokkos::parallel_for("bc_solid_u",
         mdrange_policy({internal_ystart - 1, internal_xstart - 1},
                        {internal_ystop + 1, internal_xstop}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
-            bc_solid_u_code(ji, jj, width, ua, tmask);
+            if(tmask_view(jj, ji) * tmask_view(jj, ji+1) == 0){
+                ua_view(jj, ji) = 0.0;
+            }
         }
     );
 
@@ -183,25 +416,54 @@ extern "C" void c_invoke_time_step(
         mdrange_policy({internal_ystart - 1, internal_xstart - 1},
                        {internal_ystop, internal_xstop + 1}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
-            bc_solid_u_code(ji, jj, width, ua, tmask);
+            if(tmask_view(jj, ji) * tmask_view(jj+1, ji) == 0){
+                va_view(jj, ji) = 0.0;
+            }
         }
     );
 
     // Boundary conditions bc_flather_u kernel (whole domain but top x boundary)
-    Kokkos::parallel_for("bc_solid_v",
+    Kokkos::parallel_for("bc_flather_u",
         mdrange_policy({internal_ystart - 1, internal_xstart - 1},
                        {internal_ystop + 1, internal_xstop}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
-            bc_flather_u_code(ji, jj, width, ua, hu, sshn_u, tmask, g);
+            //                                   Du                 Dssh
+            // Flather open boundary condition [---- = sqrt(g/H) * ------]
+            //                                   Dn                 Dn
+            // ua and va in du/dn should be the specified tidal forcing
+
+            // Check whether this point lies within the domain
+            if(tmask_view(jj, ji) + tmask_view(jj, ji+1) <= -1) return;
+
+            if(tmask_view(jj, ji) < 0){
+                ua_view(jj, ji) = ua_view(jj, ji+1) + sqrt(g/hu_view(jj, ji)) *
+                    (sshn_u_view(jj, ji) - sshn_u_view(jj, ji+1));
+            }else if(tmask_view(jj, ji+1) < 0){
+                ua_view(jj, ji) = ua_view(jj, ji-1) + sqrt(g/hu_view(jj, ji)) *
+                    (sshn_u_view(jj, ji) - sshn_u_view(jj, ji-1));
+            }
         }
     );
 
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
-    Kokkos::parallel_for("bc_solid_v",
+    Kokkos::parallel_for("bc_flather_v",
         mdrange_policy({internal_ystart - 1, internal_xstart - 1},
                        {internal_ystop, internal_xstop + 1}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
-            bc_flather_v_code(ji, jj, width, va, hv, sshn_v, tmask, g);
+
+            // Check whether this point is inside the simulated domain
+            // \todo I could set-up a V-mask using exactly the same code structure
+            // as below. Could then apply the BC and multiply by V-mask and thus
+            // remove conditionals => get vectorisation.*/
+            if(tmask_view(jj, ji) + tmask_view(jj+1, ji) <= -1) return;
+    
+            if(tmask_view(jj, ji) < 0){
+                va_view(jj, ji) = va_view(jj+1, ji) + sqrt(g/hv_view(jj, ji)) *
+                    (sshn_v_view(jj, ji) - sshn_v_view(jj+1, ji));
+            }else if(tmask_view(jj+1, ji) < 0){
+                va_view(jj, ji) = va_view(jj-1, ji) + sqrt(g/hv_view(jj, ji)) *
+                    (sshn_v_view(jj, ji) - sshn_v_view(jj-1, ji));
+            }
         }
     );
 
@@ -210,10 +472,9 @@ extern "C" void c_invoke_time_step(
         mdrange_policy({internal_ystart - 1, internal_xstart - 1},
                        {internal_ystop + 1, internal_xstop + 1}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
-            int idx = jj * width + ji;
-            un(jj, ji) = ua(jj, ji);
-            vn(jj, ji) = va(jj, ji);
-            sshn_t(jj, ji) = ssha_t(jj, ji);
+            un_view(jj, ji) = ua_view(jj, ji);
+            vn_view(jj, ji) = va_view (jj, ji);
+            sshn_t_view(jj, ji) = ssha_t_view(jj, ji);
         }
     );
 
@@ -222,10 +483,24 @@ extern "C" void c_invoke_time_step(
         mdrange_policy({internal_ystart, internal_xstart},
                        {internal_ystop, internal_xstop - 1}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
-            next_sshu_code(ji, jj, width, sshn_u, sshn_t, tmask, area_t, area_u);
+
+            double rtmp1;
+
+            if(tmask_view(jj, ji) + tmask_view(jj, ji + 1) <= 0){
+                return; // jump over non-computational domain
+            }
+
+            if(tmask_view(jj, ji) * tmask_view(jj, ji + 1) > 0){
+                rtmp1 = area_t_view(jj, ji) * sshn_t_view(jj, ji) +
+                    area_t_view(jj, ji + 1) * sshn_t_view(jj, ji + 1);
+                sshn_u_view(jj, ji) = 0.5 * rtmp1 / area_u_view(jj, ji) ;
+            }else if(tmask_view(jj, ji) <= 0){
+                sshn_u_view(jj, ji) = sshn_t_view(jj, ji + 1);
+            }else if(tmask_view(jj, ji + 1) <= 0){
+                sshn_u_view(jj, ji) = sshn_t_view(jj, ji);
+            }
         }
     );
-*/
 
     // Time update kernel (internal domain v points)
     Kokkos::parallel_for("next_sshv",
@@ -233,7 +508,6 @@ extern "C" void c_invoke_time_step(
                        {internal_ystop - 1, internal_xstop}),
         KOKKOS_LAMBDA (const int jj, const int ji) {
             double rtmp1;
-    
             if((tmask_view(jj, ji) + tmask_view(jj + 1, ji)) <= 0){
                 return; //jump over non-computational domain
             }
@@ -248,4 +522,38 @@ extern "C" void c_invoke_time_step(
             }
         }
     );
+
+    // Copy data back to original location
+    for(int jj=0; jj < internal_ystop+1; jj++){
+        for(int ji=0; ji < internal_xstop+1; ji++){
+            //sshn_v_view(jj, ji) = 1.0;
+            int idx = jj*width + ji;
+            ssha_t[idx] = ssha_t_view(jj, ji);
+            sshn_t[idx] = sshn_t_view(jj, ji);
+            sshn_u[idx] = sshn_u_view(jj, ji);
+            sshn_v[idx] = sshn_v_view(jj, ji);
+            hu[idx] = hu_view(jj, ji);
+            hv[idx] = hv_view(jj, ji);
+            un[idx] = un_view(jj, ji);
+            vn[idx] = vn_view(jj, ji);
+            ua[idx] = ua_view(jj, ji);
+            ht[idx] = ht_view(jj, ji);
+            ssha_u[idx] = ssha_u_view(jj, ji);
+            va[idx] = va_view(jj, ji);
+            ssha_v[idx] = ssha_v_view(jj, ji);
+
+            tmask[idx] = tmask_view(jj, ji);
+            area_t[idx] = area_t_view(jj, ji);
+            area_u[idx] = area_u_view(jj, ji); 
+            area_v[idx] = area_v_view(jj, ji);
+            dx_u[idx] = dx_u_view(jj, ji);
+            dx_v[idx] = dx_v_view(jj, ji);
+            dx_t[idx] = dx_t_view(jj, ji); 
+            dy_u[idx] = dy_u_view(jj, ji);
+            dy_v[idx] = dy_v_view(jj, ji);
+            dy_t[idx] = dy_t_view(jj, ji); 
+            gphiu[idx] = gphiu_view(jj, ji);
+            gphiv[idx] = gphiv_view(jj, ji);
+        }
+    }
 }
