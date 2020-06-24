@@ -236,9 +236,12 @@ __kernel void bc_solid_u_code(int width,
   int jj = get_global_id(1);
   if(ji > (width-2))return;
 #else
-// This kernel didn't need the KOKKOS_INLINE_FUNCTION, why is this? does the
-// lambda inline this kernel but not the others?
-inline void bc_solid_u_code(int ji, int jj, int width, double *ua, int *tmask){
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void bc_solid_u_code(int ji, int jj, int width, double *ua, int *tmask){
 #endif
   int idx = jj*width + ji;
 
@@ -276,9 +279,12 @@ __kernel void bc_solid_v_code(int width,
   int nrow = (int)get_global_size(1);
   if(jj > (nrow-2))return;
 #else
-// This kernel didn't need the KOKKOS_INLINE_FUNCTION, why is this? does the
-// lambda inline this kernel but not the others?
-inline void bc_solid_v_code(int ji, int jj, int width, double *va, int *tmask){
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void bc_solid_v_code(int ji, int jj, int width, double *va, int *tmask){
 #endif
   int idx = jj*width + ji;
 

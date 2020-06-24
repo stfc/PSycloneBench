@@ -109,11 +109,12 @@ __kernel void continuity_code(int width,
     if(jj == 0)return;
 #else
 
-// This kernel didn't need the KOKKOS_INLINE_FUNCTION, why is this? does the
-// lambda inline this kernel but not the others?
-
-/** Interface to standard C version of kernel */
-inline void continuity_code(int ji, int jj,
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void continuity_code(int ji, int jj,
 		     int width,                     
 		     double *ssha,
 		     double *sshn,
