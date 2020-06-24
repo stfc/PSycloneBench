@@ -23,11 +23,17 @@ compiler then:
     > export KOKKOS_PATH=<path to kokkos>
     > make
 
-Kokkos has several abstractions to control where (execution spaces) and
-how (execution policies and execution patterns) computation is executed
-and how memory is laid out (Views).
+will compile the default `nemolite2d_views_kokkos_OpenMP.exe` binary.
 
-At the moment there are 2 implemented versions:
+Kokkos supports multiple execution spaces (e.g Serial, Threads, OpenMP,
+Cuda, HPX), these can be set for each Makefile target with the
+KOKKOS_DEVICES environment variable (examples below). If none is provided,
+it defaults to the OpenMP backend.
+
+Kokkos also has several abstractions to control where (execution spaces)
+and how (execution policies and execution patterns) computation is executed
+and how memory is laid out (Views). This make it possible to create very
+different Kokkos implementations, at the moment there are 2 versions:
 
 - Rawpointers version: This version uses the Kokkos parallel dispatch
 (execution policies and execution pattern) but in top of a raw pointer
@@ -45,7 +51,7 @@ the padding, and the synchonization between host and device (GPU execution)
 but it requieres additional copies of the data for each layer.
 This version is available in `time_step_views_kokkos.cpp` and can be built
 with an OpenMP or a Cuda backend by setting the KOKKOS_DEVICES environment
-variable (OpenMP by default) :
+variable:
 
     > make nemolite2d_views_kokkos KOKKOS_DEVICES=OpenMP
 
@@ -57,8 +63,6 @@ Model parameters (size of domain [jpiglo,jpjglo], number of time-steps
 [nitend], whether or not and how often to do output [irecord]) may be
 configured by editing the `namelist` file.
 
-Kokkos supports multiple execution spaces (e.g Serial, Threads, OpenMP,
-Cuda, HPX) but the current implementation is limited to OpenMP and Cuda.
 
 In the case of OpenMP we can configure the parallel environment using the
 standard OpenMP environment variables. For example, the number of threads

@@ -10,10 +10,11 @@
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
 
+# Additionally it needs the path to the Kokkos source code
 KOKKOS_PATH ?= $(HOME)/tools/kokkos
 KOKKOS_DEBUG ?= yes
 
-# By default us the OpenMP device
+# If no KOKKOS_DEVICES is specified, by default use the OpenMP
 ifndef $(KOKKOS_DEVICES)
 KOKKOS_DEVICES=OpenMP
 endif
@@ -21,12 +22,16 @@ endif
 # Configuration specific to the selected Kokkos device 
 ifeq ($(KOKKOS_DEVICES),OpenMP)
 $(info "Using OpenMP device")
-EXEC_SPACE = OpenMP
+# KOKKOS_OPTIONS := "aggresive_vectorization"
+else ifeq ($(KOKKOS_DEVICES),Serial)
+$(info "Using Serial device")
+# KOKKOS_OPTIONS := "aggresive_vectorization"
+else ifeq ($(KOKKOS_DEVICES),Pthreads)
+$(error "Pthreads device is currently not supported")
 else ifeq ($(KOKKOS_DEVICES),Cuda)
 $(info "Using CUDA device")
 KOKKOS_ARCH = Pascal61
-EXEC_SPACE = Cuda
-# nvcc fails with some complex flags, overwirte CFLAGS to just O3
+# nvcc doesn't support all compiler flags, overwirte CFLAGS to just O3
 CFLAGS := "-O3"
 # Still use the selected compiler but using the Kokkos nvcc_wrapper
 NVCC_WRAPPER_DEFAULT_COMPILER = $(CXX)
@@ -37,8 +42,10 @@ $(error "Unrecognised KOKKOS_DEVICES value: $(KOKKOS_DEVICES)")
 endif
 
 .PHONY: nemolite2d_kokkos
-.DEFAULT_GOAL := nemolite2d_kokkos
+.DEFAULT_GOAL := nemolite2d_views_kokkos
 include ../common.mk
+
+all: nemolite2d_views_kokkos nemolite2d_rawpointers_kokkos
 
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
@@ -74,7 +81,8 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 
 # Kokkos files rules
 %_kokkos.o: %_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
-	$(CXX) -DEXEC_SPACE=$(EXEC_SPACE) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CFLAGS) $(OMPFLAGS) -c $<
+	$(CXX) -DEXEC_SPACE=$(KOKKOS_DEVICES) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) \
+		$(CFLAGS) $(OMPFLAGS) -c $<
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
