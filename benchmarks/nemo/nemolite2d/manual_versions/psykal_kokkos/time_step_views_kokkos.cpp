@@ -4,13 +4,6 @@
 #include <cstdlib>
 #include <Kokkos_Core.hpp>
 
-// Kernels
-#include "../../kernels/c_family/continuity_kern.c"
-#include "../../kernels/c_family/momentum_u_kern.c"
-#include "../../kernels/c_family/momentum_v_kern.c"
-#include "../../kernels/c_family/boundary_conditions_kern.c"
-#include "../../kernels/c_family/time_update_kern.c"
-
 bool first_time = true;
 
 extern "C" void c_invoke_time_step(
@@ -48,7 +41,6 @@ extern "C" void c_invoke_time_step(
         int internal_ystart,
         int internal_ystop,
         int width,
-        int total_size,
         double rdt,
         double cbfr,
         double visc,
@@ -83,6 +75,8 @@ extern "C" void c_invoke_time_step(
 
     // Execution policy for a multi-dimensional (2D) iteration space.
     typedef Kokkos::MDRangePolicy<Kokkos::Rank<2>, execution_space> mdrange_policy;
+
+    // Create 2D View types for the Fields and Grid arrays
     typedef Kokkos::View<double**> double_2dview;
     typedef Kokkos::View<int**> int_2dview;
 
@@ -116,7 +110,7 @@ extern "C" void c_invoke_time_step(
     double_2dview gphiv_view("gphiv", internal_xstop+1, internal_ystop+1);
 
 
-    // Create Mirrors
+    // Create Mirrors (this overlap thew views if the execution device is the host)
     double_2dview::HostMirror h_ssha_t = Kokkos::create_mirror_view( ssha_t_view );
     double_2dview::HostMirror h_sshn_t = Kokkos::create_mirror_view( sshn_t_view );
     double_2dview::HostMirror h_sshn_u = Kokkos::create_mirror_view( sshn_u_view );
@@ -145,6 +139,7 @@ extern "C" void c_invoke_time_step(
     double_2dview::HostMirror h_gphiv = Kokkos::create_mirror_view( gphiv_view );
 
 
+    // Copy Fortran arrays into the Kokkos View Mirrors
     for(int jj=0; jj < internal_ystop+1; jj++){
         for(int ji=0; ji < internal_xstop+1; ji++){
             int idx = jj*width + ji;
@@ -177,7 +172,7 @@ extern "C" void c_invoke_time_step(
         }
     }
 
-    // Copy Host Mirrors into Device Views (if device is not host)
+    // Update Views with mirror data (only copies if device is not the host)
     Kokkos::deep_copy( ssha_t_view, h_ssha_t );
     Kokkos::deep_copy( sshn_t_view, h_sshn_t );
     Kokkos::deep_copy( sshn_u_view, h_sshn_u );
@@ -205,10 +200,11 @@ extern "C" void c_invoke_time_step(
     Kokkos::deep_copy( gphiu_view, h_gphiu );
     Kokkos::deep_copy( gphiv_view, h_gphiv );
 
-    // In this implementation the kernels are manually inlined because:
-    // - Using the kernels/c_family/ , the GPU version created the LAMBDA and then
-    // a call to a gpu function.
-    // - It can use 2D Views (which have a (x,y) notation instead of []).
+    // In this implementation the kernels are manually inlined because the
+    // implementations in ../../kernels/c_family/ use 1D raw pointer syntax
+    // instead of 2D Views (which have a (x,y) notation instead of []). These
+    // can still be split to a different file using the Kokkos functor pattern
+    // if needed for readability.
     
     // Continuity kernel (internal domain)
     Kokkos::parallel_for("continuity",
@@ -582,7 +578,7 @@ extern "C" void c_invoke_time_step(
         }
     );
 
-    // Copy Host Mirrors into Device Views (if device is not host)
+    // Update device data into the host mirror if necessary
     Kokkos::deep_copy( h_ssha_t, ssha_t_view );
     Kokkos::deep_copy( h_sshn_t, sshn_t_view);
     Kokkos::deep_copy( h_sshn_u, sshn_u_view);

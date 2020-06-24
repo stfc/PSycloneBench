@@ -73,8 +73,6 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 # Linking the executable needs the -lstdc++ to link also the std lib functions
 # called from C++ code
 %.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) 
-	echo  $(KOKKOS_LINK_DEPENDS)
-	echo  $(KOKKOS_LDFLAGS)
 	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
 		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LINK_DEPENDS) $(KOKKOS_LIBS) \
 		-L/opt/nvidia/cuda-10/lib64 -L. -lstdc++
@@ -100,7 +98,7 @@ allclean: clean
 
 summary:
 	@echo -n "${CC}\t\tcpu\t"
-	@./nemolite2d_kokkos.exe | awk 'BEGIN {ORS="\t"} \
+	@./nemolite2d_views_kokkos_OpenMP.exe | awk 'BEGIN {ORS="\t"} \
 		{if ($$2 == "checksum") {print $$4} } \
 		{if ($$1 == "Time-stepping") {print $$5} } \
 		END {ORS="\n"; print ""}'
