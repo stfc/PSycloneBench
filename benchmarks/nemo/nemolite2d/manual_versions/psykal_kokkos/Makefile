@@ -15,9 +15,7 @@ KOKKOS_PATH ?= $(HOME)/tools/kokkos
 KOKKOS_DEBUG ?= yes
 
 # If no KOKKOS_DEVICES is specified, by default use the OpenMP
-ifndef $(KOKKOS_DEVICES)
-KOKKOS_DEVICES=OpenMP
-endif
+KOKKOS_DEVICES ?= OpenMP
 
 # Configuration specific to the selected Kokkos device 
 ifeq ($(KOKKOS_DEVICES),OpenMP)
@@ -31,17 +29,21 @@ $(error "Pthreads device is currently not supported")
 else ifeq ($(KOKKOS_DEVICES),Cuda)
 $(info "Using CUDA device")
 KOKKOS_ARCH = Pascal61
-# nvcc doesn't support all compiler flags, overwirte CFLAGS to just O3
+# nvcc doesn't support all compiler flags, overwrite CFLAGS to just O3
 CFLAGS := "-O3"
 # Still use the selected compiler but using the Kokkos nvcc_wrapper
 NVCC_WRAPPER_DEFAULT_COMPILER = $(CXX)
 CXX := $(KOKKOS_PATH)/bin/nvcc_wrapper
+# The enable lambda option is necessary for the nvcc compiler to recognise
+# as CUDA kernels the lambda-inlined functions.
 KOKKOS_CUDA_OPTIONS = "enable_lambda"
+# If CUDA_LIB is not provided, infer path from the nvcc compiler location.
+CUDA_LIB ?= $(shell echo $(shell which nvcc) | sed 's/bin\/nvcc/lib64/g')
 else
 $(error "Unrecognised KOKKOS_DEVICES value: $(KOKKOS_DEVICES)")
 endif
 
-.PHONY: nemolite2d_kokkos
+.PHONY: nemolite2d_views_kokkos nemolite2d_rawpointers_kokkos clean allclean summary
 .DEFAULT_GOAL := nemolite2d_views_kokkos
 include ../common.mk
 
@@ -75,7 +77,7 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 %.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) 
 	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
 		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LINK_DEPENDS) $(KOKKOS_LIBS) \
-		-L/opt/nvidia/cuda-10/lib64 -L. -lstdc++
+		-L$(CUDA_LIB) -L. -lstdc++
 
 # Kokkos files rules
 %_kokkos.o: %_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
