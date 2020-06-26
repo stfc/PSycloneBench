@@ -36,7 +36,7 @@ and how memory is laid out (Views). This make it possible to create very
 different Kokkos implementations, at the moment there are 2 versions:
 
 - Rawpointers version: This version uses the Kokkos parallel dispatch
-(execution policies and execution pattern) but in top of a raw pointer
+(execution policies and execution pattern) but on top of a raw pointer
 arrays (given by the dl_esm_inf infrastructure). This
 version is memory space efficient as it doesn't need to do extra copies
 between the Fortran and Kokkos parts of the code, but it is not able to
@@ -51,7 +51,9 @@ the padding, and the synchonization between host and device (GPU execution)
 but it requieres additional copies of the data for each layer.
 This version is available in `time_step_views_kokkos.cpp` and can be built
 with an OpenMP or a Cuda backend by setting the KOKKOS_DEVICES environment
-variable:
+variable. Note that the Cuda back-end requires that the `nvcc` compiler is
+installed on the system and available in PATH. See below examples of how to
+compile the Kokkos View version for different devices:
 
     > make nemolite2d_views_kokkos KOKKOS_DEVICES=OpenMP
 
@@ -63,6 +65,11 @@ Model parameters (size of domain [jpiglo,jpjglo], number of time-steps
 [nitend], whether or not and how often to do output [irecord]) may be
 configured by editing the `namelist` file.
 
+Then the NemoLite2D simulation is started by executing the chosen binary
+(with the desired implementation and execution device) previously produced
+by the build system:
+
+    > ./nemolite2d_<version>_<device>.exe
 
 In the case of OpenMP we can configure the parallel environment using the
 standard OpenMP environment variables. For example, the number of threads

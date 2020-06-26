@@ -110,7 +110,11 @@ extern "C" void c_invoke_time_step(
     double_2dview gphiv_view("gphiv", internal_xstop+1, internal_ystop+1);
 
 
-    // Create Mirrors (this overlap thew views if the execution device is the host)
+    // Create Mirrors. These are needed when the execution devices do not
+    // share the same memory space as the host, the mirrors synchronise the
+    // data in both devices when requested by the deep_copy method. If the
+    // execution device has access to the host memory the Mirror overlaps
+    // with the View memory location (thus avoiding overheads).
     double_2dview::HostMirror h_ssha_t = Kokkos::create_mirror_view( ssha_t_view );
     double_2dview::HostMirror h_sshn_t = Kokkos::create_mirror_view( sshn_t_view );
     double_2dview::HostMirror h_sshn_u = Kokkos::create_mirror_view( sshn_u_view );
