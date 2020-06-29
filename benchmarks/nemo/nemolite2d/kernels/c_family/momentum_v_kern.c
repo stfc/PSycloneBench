@@ -140,12 +140,6 @@ inline void momentum_v_code(int ji, int jj, int width,
   int idxim1, idxjm1, idxip1, idxjp1, idxim1jp1;
   int idx = jj*width + ji;
   
-#ifdef __OPENCL_VERSION__
-  //int nrow = (int)get_global_size(1);
-  //if(ji==0 || ji > (width-2))return;
-  //if(jj==0 || jj > (nrow-2))return;
-#endif
-  
 #ifdef SIMPLE_MOMENTUM
   va[idx] = (vn[idx] * (hv[idx] + sshn_v[idx]) + 
            rdt * (1.0) / e12v[idx] ) / 

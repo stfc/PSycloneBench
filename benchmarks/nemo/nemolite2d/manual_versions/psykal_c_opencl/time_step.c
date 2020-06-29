@@ -532,23 +532,24 @@ void c_invoke_time_step(
         first_time = 0;
     }
 
-    // To get good performance the local size need to be increased (e.g {32, 1},
-    // {64,1 } in order for this to be valid to any problem size it needs to
-    // be in line with the dl_esm_inf ALIGNMENT and the global_sizes specified
-    // below.
-    size_t local_size[2] = {1, 1};
+    // To get good performance the first dimension of the local size need to be
+    // {32, 1} or {64,1}. The current implementation expects the second
+    // dimension to always be 1.
+    size_t local_size[2] = {64, 1};
 
-    // NDRanges use an open interval (does not include the end
-    // point), while the provided 'stop' represent closed ranges.
-    // Therefore we need to increase by 1 the 'stop' values (since they
-    // are passed by values this only affects this function).
-    // internal_ystop = internal_ystop + 1;
-    // internal_xstop = internal_xstop + 1;
-
+    // The work_group_size[0] values below should always be evently divisible by
+    // the local_size[0]. For this reason, sometimes it is necessary to increase
+    // the xstop value until it satisfies the condition. A new computed_xstop
+    // value is computed here which adds between 1 and total_size[0] to xstop.
+    // Note that the kernels will need a condition e.g:
+    //     if (ji > internal_xstop) return;
+    // to mask out the additional iterations.
+    int extra_xstop =  local_size[0] - (internal_xstop % local_size[0]);
+    int computed_xstop = internal_xstop + extra_xstop;
 
     // Continuity kernel (internal domain)
     size_t continuity_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
-    size_t continuity_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop}; 
+    size_t continuity_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_CONTINUITY], 2,
         continuity_offset, continuity_size, local_size, 0, NULL,
         &(clkernevt[K_CONTINUITY]));
@@ -556,7 +557,8 @@ void c_invoke_time_step(
 
     // Momentum_u kernel (internal domain)
     size_t momu_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
-    size_t momu_size[2] = {(size_t)internal_xstop - 1, (size_t)internal_ystop};
+    //size_t momu_size[2] = {(size_t)internal_xstop - 1, (size_t)internal_ystop};
+    size_t momu_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop};
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_MOM_U], 2,
             momu_offset, momu_size, local_size, 0, NULL,
 			&(clkernevt[K_MOM_U]));
@@ -564,7 +566,7 @@ void c_invoke_time_step(
 
     // Momentum_v kernel (internal domain)
     size_t momv_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
-    size_t momv_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop - 1};
+    size_t momv_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop - 1};
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_MOM_V], 2,
             momv_offset, momv_size, local_size, 0, NULL,
 			&(clkernevt[K_MOM_V]));
@@ -580,7 +582,7 @@ void c_invoke_time_step(
 
     // Boundary conditions bc_ssh kernel (internal domain)
     size_t bcssh_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
-    size_t bcssh_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop}; 
+    size_t bcssh_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_SSH], 2,
             bcssh_offset, bcssh_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_SSH]));
@@ -588,7 +590,7 @@ void c_invoke_time_step(
 
     // Boundary conditions bc_solid_u kernel (whole domain but top x boundary)
     size_t solidu_offset[2] = {(size_t)internal_xstart - 1, (size_t)internal_ystart - 1};
-    size_t solidu_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop + 1}; 
+    size_t solidu_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop + 1}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_SOLID_U], 2,
             solidu_offset, solidu_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_SOLID_U]));
@@ -596,7 +598,8 @@ void c_invoke_time_step(
 
     // Boundary conditions bc_solid_v kernel (whole domain but top y boundary)
     size_t solidv_offset[2] = {(size_t)internal_xstart - 1, (size_t)internal_ystart - 1};
-    size_t solidv_size[2] = {(size_t)internal_xstop + 1, (size_t)internal_ystop}; 
+    //size_t solidv_size[2] = {(size_t)internal_xstop + 1, (size_t)internal_ystop}; 
+    size_t solidv_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_SOLID_V], 2,
             solidv_offset, solidv_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_SOLID_V]));
@@ -604,7 +607,7 @@ void c_invoke_time_step(
 
     // Boundary conditions bc_flather_u kernel (whole domain but top x boundary)
     size_t flatheru_offset[2] = {(size_t)internal_xstart - 1, (size_t)internal_ystart - 1};
-    size_t flatheru_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop + 1}; 
+    size_t flatheru_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop + 1}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_FLATHER_U], 2,
             flatheru_offset, flatheru_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_FLATHER_U]));
@@ -612,7 +615,8 @@ void c_invoke_time_step(
 
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
     size_t flatherv_offset[2] = {(size_t)internal_xstart - 1, (size_t)internal_ystart - 1};
-    size_t flatherv_size[2] = {(size_t)internal_xstop + 1, (size_t)internal_ystop}; 
+    //size_t flatherv_size[2] = {(size_t)internal_xstop + 1, (size_t)internal_ystop}; 
+    size_t flatherv_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_FLATHER_V], 2,
             flatherv_offset, flatherv_size, local_size, 0, NULL,
 			&(clkernevt[K_BC_FLATHER_V]));
@@ -631,7 +635,8 @@ void c_invoke_time_step(
 
     // Time update kernel (internal domain u points)
     size_t nextu_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
-    size_t nextu_size[2] = {(size_t)internal_xstop - 1, (size_t)internal_ystop}; 
+    //size_t nextu_size[2] = {(size_t)internal_xstop - 1, (size_t)internal_ystop}; 
+    size_t nextu_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_NEXT_SSH_U], 2,
             nextu_offset, nextu_size, local_size, 0, NULL,
 			&(clkernevt[K_NEXT_SSH_U]));
@@ -639,7 +644,7 @@ void c_invoke_time_step(
 
     // Time update kernel (internal domain v points)
     size_t nextv_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
-    size_t nextv_size[2] = {(size_t)internal_xstop, (size_t)internal_ystop - 1};
+    size_t nextv_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop - 1};
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_NEXT_SSH_V], 2,
             nextv_offset, nextv_size, local_size, 0, NULL,
 			&(clkernevt[K_NEXT_SSH_V]));

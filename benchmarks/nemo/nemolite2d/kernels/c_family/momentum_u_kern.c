@@ -4,15 +4,6 @@
 
 #ifdef OPENCL_HOST // If it is OpenCL infrastructure
 
-/*
-#include "opencl_utils.h"
-#ifdef __APPLE__
-#include <OpenCL/opencl.h>
-#else
-#include <CL/cl.h>
-#endif
-*/
-
 /** Set the arguments for the OpenCL kernel */
 void set_args_momu(cl_kernel kern,
            cl_int *nx,
@@ -164,12 +155,6 @@ inline void momentum_u_code(int ji, int jj, int width,
   int idxim1, idxjm1, idxip1, idxjp1, idxip1jm1;
   int idx = jj*width + ji;
   
-#ifdef __OPENCL_VERSION__
-  //  int nrow = (int)get_global_size(1);
-  //if(ji==0 || ji > (width-2))return;
-  //if(jj==0 || jj > (nrow-2))return;
-#endif
-
 #ifdef SIMPLE_MOMENTUM
   ua[idx] = (un[idx] * (hu[idx] + sshn_u[idx]) + rdt * 
          (1.0) / e12u[idx]) / 

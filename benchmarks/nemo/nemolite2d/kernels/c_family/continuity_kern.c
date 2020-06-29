@@ -3,13 +3,6 @@
 
 #ifdef OPENCL_HOST // If it is OpenCL infrastructure
 
-//#include "opencl_utils.h"
-//#ifdef __APPLE__
-//#include <OpenCL/opencl.h>
-//#else
-//#include <CL/cl.h>
-//#endif
-
 void set_args_continuity(cl_kernel cont_kernel,
 			 cl_int *nx,
 			 cl_mem *ssha_device,
@@ -77,7 +70,7 @@ __kernel void continuity_code(int width,
 			      __global double* restrict e12t){
     int ji = get_global_id(0);
     int jj = get_global_id(1);
-    if(jj == 0)return;
+    //if(ji > width)return;
 #else
 
 /** Interface to standard C version of kernel */
