@@ -53,6 +53,7 @@ extern "C" void c_invoke_time_step(
         double g
         ){
 
+#define TASK_SIZE 32
 //Each double loop over jj then ji is divided into a new structure.
 //The outer loop, now loops over incrememnts of 32 (initially chosen arbitrarliy), and creates tasks of this size
 //For the dependencies supplied to OmpSs, as opposed to putting the full memory for now, we compute the "task row"
@@ -61,9 +62,9 @@ extern "C" void c_invoke_time_step(
 
     // Continuity kernel (internal domain)
     // Try dividing continuity code into 32 rows at a time
-    for(int jj = internal_ystart; jj <= internal_ystop; jj+=32){
-      int stop = std::min(jj+31, internal_ystop);
-      int task_row = jj/32;
+    for(int jj = internal_ystart; jj <= internal_ystop; jj+=TASK_SIZE){
+      int stop = std::min(jj+TASK_SIZE-1, internal_ystop);
+      int task_row = jj/TASK_SIZE;
       #pragma omp task firstprivate(jj, task_row, stop) \
                 output(ssha_t[task_row]) input(sshn_u[task_row], \
                                                hu[task_row], \
@@ -86,9 +87,9 @@ extern "C" void c_invoke_time_step(
 
     // Momentum_u kernel (internal domain u points)
     // Try dividing momentum_u_code into 32 rows at a time
-    for(int jj = internal_ystart; jj <= internal_ystop; jj+=32){
-      int stop = std::min(jj+31, internal_ystop);
-      int task_row = jj/32;
+    for(int jj = internal_ystart; jj <= internal_ystop; jj+=TASK_SIZE){
+      int stop = std::min(jj+TASK_SIZE-1, internal_ystop);
+      int task_row = jj/TASK_SIZE;
       #pragma omp task firstprivate(jj, task_row, stop) \
                        inout( ua[ task_row ] ) \
                           in( un[ task_row], \
@@ -121,9 +122,9 @@ extern "C" void c_invoke_time_step(
     }
 
     // Momentum_v kernel (internal domain v points)
-    for(int jj = internal_ystart; jj <= internal_ystop - 1; jj+=32){
-      int stop = std::min(jj+31, internal_ystop-1);
-      int task_row = jj/32;
+    for(int jj = internal_ystart; jj <= internal_ystop - 1; jj+=TASK_SIZE){
+      int stop = std::min(jj+TASK_SIZE-1, internal_ystop-1);
+      int task_row = jj/TASK_SIZE;
       #pragma omp task firstprivate(jj, task_row, stop) \
                   inout( va[task_row] ) \
                      in( un[task_row], \
@@ -159,9 +160,9 @@ extern "C" void c_invoke_time_step(
     }
 
     // Boundary conditions bc_ssh kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj+=32){
-      int stop = std::min(jj+31, internal_ystop);
-      int task_row = jj/32;
+    for(int jj = internal_ystart; jj <= internal_ystop; jj+=TASK_SIZE){
+      int stop = std::min(jj+TASK_SIZE-1, internal_ystop);
+      int task_row = jj/TASK_SIZE;
       #pragma omp task firstprivate(jj, task_row, stop) out( ssha_t[task_row] )
       for( int task_j =jj; task_j <= stop; task_j++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
@@ -171,9 +172,9 @@ extern "C" void c_invoke_time_step(
     }
 
     // Boundary conditions bc_solid_u kernel (whole domain but top x boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj+=32){
-      int stop = std::min(jj+31, internal_ystop+1);
-      int task_row = jj/32;
+    for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj+=TASK_SIZE){
+      int stop = std::min(jj+TASK_SIZE-1, internal_ystop+1);
+      int task_row = jj/TASK_SIZE;
       #pragma omp task firstprivate(jj, task_row, stop) out( ua[task_row] )
       for( int task_j =jj; task_j <= stop; task_j++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop; ji++){
@@ -183,9 +184,9 @@ extern "C" void c_invoke_time_step(
     }
 
     // Boundary conditions bc_solid_v kernel (whole domain but top y boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
-      int stop = std::min(jj+31, internal_ystop);
-      int task_row = jj/32;
+    for(int jj = internal_ystart - 1; jj <= internal_ystop; jj+=TASK_SIZE){
+      int stop = std::min(jj+TASK_SIZE-1, internal_ystop);
+      int task_row = jj/TASK_SIZE;
       #pragma omp task firstprivate(jj, task_row, stop) out( ua[task_row] )
       for( int task_j =jj; task_j <= stop; task_j++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
@@ -194,9 +195,9 @@ extern "C" void c_invoke_time_step(
       }
     }
     // Boundary conditions bc_flather_u kernel (whole domain but top x boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj+=32){
-      int stop = std::min(jj+31, internal_ystop);
-      int task_row = jj/32;
+    for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj+=TASK_SIZE){
+      int stop = std::min(jj+TASK_SIZE-1, internal_ystop);
+      int task_row = jj/TASK_SIZE;
       #pragma omp task firstprivate(jj, task_row, stop) out( ua[task_row] ) \
                                                          in( ua[task_row] , \
                                                              ua[task_row-1], \
@@ -216,15 +217,7 @@ extern "C" void c_invoke_time_step(
 
 #pragma omp taskwait
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
-    // Can't be parallelised over j, so single large task
-/*    #pragma omp task out( va[task_row]) \
-                      in( va[task_row], \
-                          va[task_row+1], \
-                          va[task_row-1], \
-                          hv[task_row], \
-                          sshn_v[task_row], \
-                          sshn_v[task_row+1], \
-                          sshn_v[task_row-1])*/
+    // Can't be parallelised over j, so no task (messes up dependence analysis for following tasks
     for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             bc_flather_v_code(ji, jj, width, va, hv, sshn_v, tmask, g);
@@ -232,9 +225,9 @@ extern "C" void c_invoke_time_step(
     }
 
     // Copy 'next' fields to 'current' fields (whole domain)
-    for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj+=32){
-      int stop = std::min(jj+31, internal_ystop+1);
-      int task_row = jj/32;
+    for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj+=TASK_SIZE){
+      int stop = std::min(jj+TASK_SIZE-1, internal_ystop+1);
+      int task_row = jj/TASK_SIZE;
         #pragma omp task firstprivate(jj, task_row, stop) out(un[task_row], \
                              vn[task_row], \
                              sshn_t[task_row]) \
@@ -252,9 +245,9 @@ extern "C" void c_invoke_time_step(
     }
 
     // Time update kernel (internal domain u points)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj+=32){
-      int stop = std::min(jj+31, internal_ystop);
-      int task_row = jj/32;
+    for(int jj = internal_ystart; jj <= internal_ystop; jj+=TASK_SIZE){
+      int stop = std::min(jj+TASK_SIZE-1, internal_ystop);
+      int task_row = jj/TASK_SIZE;
         #pragma omp task firstprivate(jj, task_row, stop) out(sshn_u[task_row]) \
                                                            in(sshn_t[task_row], \
                                                               sshn_t[task_row+1])                                                              
@@ -266,9 +259,9 @@ extern "C" void c_invoke_time_step(
     }
 
     // Time update kernel (internal domain v points)
-    for(int jj = internal_ystart; jj <= internal_ystop - 1; jj+=32){
-      int stop = std::min(jj+31, internal_ystop - 1);
-      int task_row = jj/32;
+    for(int jj = internal_ystart; jj <= internal_ystop - 1; jj+=TASK_SIZE){
+      int stop = std::min(jj+TASK_SIZE-1, internal_ystop - 1);
+      int task_row = jj/TASK_SIZE;
         #pragma omp task firstprivate(jj, task_row, stop) out(sshn_v[task_row]) \
                                                            in(sshn_t[task_row], \
                                                               sshn_t[task_row+1])                                                              
