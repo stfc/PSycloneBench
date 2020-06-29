@@ -32,6 +32,9 @@ nemolite2d_omp: ${COMMON_LIB} timer_lib inf_lib time_step_omp.o
 nemolite2d_ompopt: ${COMMON_LIB} timer_lib inf_lib time_step_ompopt.o
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_ompopt.o" nemolite2d_ompopt.exe
 
+nemolite2d_ompss: ${COMMON_LIB} timer_lib_parallel inf_lib time_step_ompss.o
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_ompss.o" nemolite2d_ompss.exe
+
 nemolite2d.o: $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
@@ -40,12 +43,26 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 
 # Linking the executable needs the -lstdc++ to link also the std lib functions
 # called from C++ code
+#%.exe: $(MODULE_LIST)
+#	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
+#		$(LDFLAGS) ${OMPFLAGS} -lstdc++
+
+
+nemolite2d_ompss.exe: $(MODULE_LIST)
+	mcxx --ompss -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
+              $(LDFLAGS) ${OMPFLAGS} -lgfortran -lstdc++
+
 %.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) ${OMPFLAGS} -lstdc++
+	$(CXX) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
+              $(LDFLAGS) ${OMPFLAGS} -lgfortran -lstdc++
+
 
 # C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
 # the imported ../common.mk)
+
+time_step_ompss.o: time_step_ompss.cpp
+	mcxx --ompss $(OMPFLAGS) -c $< -o $@
+
 %.o: %.cpp
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
 
