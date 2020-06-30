@@ -253,11 +253,11 @@ void check_status(const char *text, cl_int err){
 
 cl_program get_program(cl_context context,
 		       const cl_device_id *device,
-		       const char *version_str,
+		       int is_source_file,
 		       const char *filename){
   cl_program program;
 
-  if( strstr(version_str, "FPGA SDK") ){
+  if(!is_source_file){
     program = get_binary_kernel(context, device, filename);
   }
   else{
@@ -324,31 +324,17 @@ cl_program get_binary_kernel(cl_context context,
   FILE *fp;
   const int num_binaries = 1;
   /** Array of pointers to buffers containing kernel binaries */
-  unsigned char *binary_buffers[num_binaries];
+  const unsigned char *binary_buffers[num_binaries];
   size_t binary_sizes[num_binaries];
   cl_int binary_status[num_binaries];
-  /* Modified filename of the kernel binary (as opposed to source) */
-  char bname[STD_STRING_LEN];
   char *ptr;
   /* Holds return value of calls to OpenCL API */
   cl_int ret;
   /* Modify the name of the kernel to point to a pre-compiled .aocx file */
-  strcpy(bname, filename);
+  printf("Loading %s\n", filename); fflush(0);
   
-  if(ptr = strstr(bname, ".c")){
-    /* We've been given the name of the kernel source file. We change the
-       suffix to get the name of the compiled version. */
-    sprintf(ptr, ".aocx");
-  }
-  else if(!strstr(bname, ".aocx")){
-    fprintf(stderr,
-	    "ERROR: get_binary_kernel: supplied filename (%s) is not a c "
-	    "source (.c) file or a compiled (.aocx) file\n", bname);
-    exit(1);
-  }
-
   /* Open and read the file containing the pre-compiled kernel */  
-  fp = fopen(bname, "rb");
+  fp = fopen(filename, "rb");
   if (!fp) {
     fprintf(stderr,
 	    "ERROR: get_binary_kernel: Failed to load pre-compiled kernel file: "
@@ -362,10 +348,10 @@ cl_program get_binary_kernel(cl_context context,
   rewind(fp);
   fread(binary_buffers[0], binary_sizes[0], 1, fp);
   fclose(fp);
-  fprintf(stdout, "Read %d bytes for binary %s\n", binary_sizes[0], bname);
+  fprintf(stdout, "Read %d bytes for binary %s\n", (int)binary_sizes[0], filename);
 
   /* Create the program object from the loaded binary */
-  /*cl_program program = clCreateProgramWithBinary(context, (cl_uint)1,
+  cl_program program = clCreateProgramWithBinary(context, (cl_uint)1,
 						 device,
 						 binary_sizes,
 						 binary_buffers,
@@ -382,8 +368,7 @@ cl_program get_binary_kernel(cl_context context,
     free(binary_buffers[ibuf]);
   }
 
-  return program; */
-  return NULL;
+  return program;
 }
 
 /** Returns the duration of the supplied OpenCL event in nanoseconds.

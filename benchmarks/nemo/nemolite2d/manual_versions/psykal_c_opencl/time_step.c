@@ -173,17 +173,12 @@ void c_invoke_time_step(
         }
 
         /* Check to see whether we should get our kernels from a single image file */
-        char *env_string;
         char *image_file = NULL;
-        if( (env_string = getenv("NEMOLITE2D_SINGLE_IMAGE")) ){
-            /* the %ms below instructs sscanf to allocate memory as required */
-            if(sscanf(env_string, "%ms", &image_file) != 1){
-                fprintf(stderr, "Error parsing NEMOLITE2D_SINGLE_IMAGE environment "
-                        "variable (%s)\n", env_string);
-                exit(1);
-            }
+        if(image_file = getenv("NEMOLITE2D_SINGLE_IMAGE")){
+            printf("Using %s kernels image file.\n", image_file);
         }
         
+        char *env_string;
         int platform = 0; // By default choose platform number 0
         if( (env_string = getenv("OPENCL_PLATFORM")) ){
             platform = atoi(env_string); // If not valid conversion it also returns 0
@@ -203,21 +198,14 @@ void c_invoke_time_step(
         // Create our Program object (contains all of the individual kernels)
         if(image_file){
             /* We expect all kernels to have been compiled into a single image */
-            fprintf(stderr, " Single image version not supported at the moment.");
-            exit(1);
-            program = get_program(context, &device, version_str, image_file);
-        }else{
-            //fprintf(stderr, "Please set NEMOLITE2D_SINGLE_IMAGE to point to the "
-            //                ".aocx file containing the compiled kernels\n");
-            //exit(1);
+            program = get_program(context, &device, 0, image_file);
         }
         
         /* Create OpenCL Kernels and associated event objects (latter used
         to obtain detailed timing information). */
         for(int ikern=0; ikern<K_NUM_KERNELS; ikern++){
             if(!image_file){
-                program = get_program(context, &device, version_str,
-                    kernel_files[ikern]);
+                program = get_program(context, &device, 1, kernel_files[ikern]);
             }
             fprintf(stdout, "Creating kernel %s...\n", kernel_names[ikern]);
             clkernel[ikern] = clCreateKernel(program, kernel_names[ikern], &ret);

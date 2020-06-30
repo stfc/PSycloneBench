@@ -10,7 +10,7 @@
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
 
-.PHONY: nemolite2d
+.PHONY: nemolite2d xilinxoffline alteraoffline
 .DEFAULT_GOAL := nemolite2d
 
 include ../common.mk
@@ -45,15 +45,29 @@ time_step.o: opencl_utils.o
 %.o: %.c ../../kernels/c_family/*.c
 	gcc -g $(CFLAGS) $(OMPFLAGS) -c $< -o $@
 
+PLATFORM ?= xilinx_u200_xdma_201830_2
+EXECUTION_TARGET ?= hw # Options: sw_emu | hw_emu | hw
+xilinxoffline:
+	echo "// OpenCL Kernels" > allkernels.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/continuity_kern.c >> allkernels.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/momentum_u_kern.c >> allkernels.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/momentum_v_kern.c >> allkernels.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/boundary_conditions_kern.c >> allkernels.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/time_update_kern.c >> allkernels.cl
+	v++ --compile --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
+		allkernels.cl -o allkernels_xilinx.xo
+	v++ --link --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
+		allkernels_xilinx.xo -o allkernels_xilinx.xclbin
+
 clean: 
 	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~ *.dat
-	rm -f gnu_opt_report.txt *.optrpt
+	rm -f gnu_opt_report.txt *.optrpt *.log
 
 allclean: clean
 	rm -f ${KERNELS:.o=.f90}
-	rm -f *.exe fparser.log
-	rm -rf *_wpl_dir/
+	rm -f *.exe
+	rm -rf *_wpl_dir/ allkernels* _x/ .Xil/ .run/
 	${MAKE} -C ${COMMON_DIR} allclean
 	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${TIMER_DIR} allclean
