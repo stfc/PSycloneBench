@@ -5,6 +5,7 @@
 
 void set_args_continuity(cl_kernel cont_kernel,
 			 cl_int *nx,
+			 cl_int *xstop,
 			 cl_mem *ssha_device,
 			 cl_mem *sshn_device,
 			 cl_mem *sshn_u_device,
@@ -18,6 +19,8 @@ void set_args_continuity(cl_kernel cont_kernel,
   cl_int ret;
   int arg_idx = 0;
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)xstop);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
 		       (void *)ssha_device);
@@ -57,7 +60,7 @@ void set_args_continuity(cl_kernel cont_kernel,
 
 #ifdef __OPENCL_VERSION__  // If it is an OpenCL kernel
 /** Interface to OpenCL version of kernel */
-__kernel void continuity_code(int width,                     
+__kernel void continuity_code(int width, int xstop,
 			      __global double* restrict ssha,
 			      __global double* restrict sshn,
 			      __global double* restrict sshn_u,
@@ -70,7 +73,7 @@ __kernel void continuity_code(int width,
 			      __global double* restrict e12t){
     int ji = get_global_id(0);
     int jj = get_global_id(1);
-    //if(ji > width)return;
+    if(ji > xstop)return;
 #else
 
 /** Interface to standard C version of kernel */

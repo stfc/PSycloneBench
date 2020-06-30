@@ -335,10 +335,13 @@ void c_invoke_time_step(
         check_status("clCreateBuffer", ret);
 
         fprintf(stdout, "Created %d device buffers OK\n", num_buffers);
+        
+        int xstopm1 = internal_xstop - 1;
+        int xstopp1 = internal_xstop + 1;
 
         /* Set OpenCL Kernel Parameters for Continuity */
         set_args_continuity(clkernel[K_CONTINUITY],
-		    &width,
+		    &width, &internal_xstop,
 		    &ssha_device, &sshn_device,
 		    &sshn_u_device, &sshn_v_device,
 		    &hu_device, &hv_device,
@@ -346,7 +349,7 @@ void c_invoke_time_step(
 		    &rdt, &area_t_device); 
         /* Set OpenCL Kernel Parameters for Momentum-u */
         set_args_momu(clkernel[K_MOM_U],
-            &width,
+            &width, &xstopm1,
             &ua_device, &un_device, &vn_device,
             &hu_device, &hv_device, &ht_device,
             &ssha_u_device, &sshn_device,
@@ -361,7 +364,7 @@ void c_invoke_time_step(
 
         /* Set OpenCL Kernel Parameters for Momentum-v */
         set_args_momv(clkernel[K_MOM_V],
-            &width,
+            &width, &internal_xstop,
             &va_device, &un_device, &vn_device,
             &hu_device, &hv_device, &ht_device,
             &ssha_v_device, &sshn_device,
@@ -374,44 +377,38 @@ void c_invoke_time_step(
             &rdt, &cbfr, &visc,
             &omega, &d2r, &g);
 
-        /* Set OpenCL Kernel Parameters for bc_ssh */
-        set_args_bc_ssh(clkernel[K_BC_SSH],
-            &width,
-            &istep,
-            &ssha_device,
-            &tmask_device,
-            &rdt);
-
         /* Set OpenCL Kernel Parameters for bc_solid_v */
         set_args_bc_solid_u(clkernel[K_BC_SOLID_U],
             &width,
+            &internal_xstop,
             &ua_device,
             &tmask_device);
 
         /* Set OpenCL Kernel Parameters for bc_solid_v */
         set_args_bc_solid_v(clkernel[K_BC_SOLID_V],
             &width,
+            &xstopp1,
             &ua_device,
             &tmask_device);
 
         /* Set OpenCL Kernel Parameters for bc_flather_u */
         set_args_bc_flather_u(clkernel[K_BC_FLATHER_U],
-            &width, &ua_device, &hu_device,
+            &width, &internal_xstop, &ua_device, &hu_device,
             &sshn_u_device, &tmask_device, &g);
 
         /* Set OpenCL Kernel Parameters for bc_flather_v */
         set_args_bc_flather_v(clkernel[K_BC_FLATHER_V],
-            &width, &va_device, &hv_device,
+            &width, &xstopp1, &va_device, &hv_device,
             &sshn_v_device, &tmask_device, &g);
 
         /* Set OpenCL Kernel Parameters for next_sshu kernel */
         set_args_next_sshu(clkernel[K_NEXT_SSH_U],
-            &width, &sshn_u_device, &sshn_device, &tmask_device,
+            &width, &xstopm1, &sshn_u_device, &sshn_device, &tmask_device,
             &area_t_device, &area_u_device);
       
         /* Set OpenCL Kernel Parameters for next_sshv kernel */
         set_args_next_sshv(clkernel[K_NEXT_SSH_V],
-            &width, &sshn_v_device, &sshn_device, &tmask_device,
+            &width, &internal_xstop, &sshn_v_device, &sshn_device, &tmask_device,
             &area_t_device, &area_v_device);
 
         /* Create an array to store the event associated with each write
@@ -525,10 +522,6 @@ void c_invoke_time_step(
 
 
         printf("OpenCL initialization done\n");
-        printf("OpenCL ystart=%d\n",internal_ystart);
-        printf("OpenCL ystop=%d\n",internal_ystop);
-        printf("OpenCL xstart=%d\n",internal_xstart);
-        printf("OpenCL xstop=%d\n",internal_xstop);
         first_time = 0;
     }
 
@@ -557,7 +550,6 @@ void c_invoke_time_step(
 
     // Momentum_u kernel (internal domain)
     size_t momu_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
-    //size_t momu_size[2] = {(size_t)internal_xstop - 1, (size_t)internal_ystop};
     size_t momu_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop};
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_MOM_U], 2,
             momu_offset, momu_size, local_size, 0, NULL,
@@ -575,6 +567,7 @@ void c_invoke_time_step(
     /* Set bc_ssh_code again because the istep argument is different */
     set_args_bc_ssh(clkernel[K_BC_SSH],
         &width,
+        &internal_xstop,
         &istep,
         &ssha_device,
         &tmask_device,
@@ -614,6 +607,7 @@ void c_invoke_time_step(
     check_status("clEnqueueNDRangeKernel(bc-flather-u)", ret);
 
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
+    // TODO #48. flather_v kernel may have a race condition.
     size_t flatherv_offset[2] = {(size_t)internal_xstart - 1, (size_t)internal_ystart - 1};
     //size_t flatherv_size[2] = {(size_t)internal_xstop + 1, (size_t)internal_ystop}; 
     size_t flatherv_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop}; 

@@ -5,6 +5,7 @@
 #ifdef OPENCL_HOST // If it is OpenCL infrastructure
 void set_args_bc_ssh(cl_kernel bc_ssh_kernel,
 			 cl_int *nx,
+			 cl_int *xstop,
 			 cl_int *istep,
 			 cl_mem *ssha_device,
 			 cl_mem *tmask_device,
@@ -13,6 +14,9 @@ void set_args_bc_ssh(cl_kernel bc_ssh_kernel,
     int arg_idx = 0;
     ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_int),
                (void *)nx);
+    check_status("clSetKernelArg", ret);
+    ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_int),
+               (void *)xstop);
     check_status("clSetKernelArg", ret);
 
     // istep changes every iteration - do in time-stepping loop
@@ -39,12 +43,16 @@ void set_args_bc_ssh(cl_kernel bc_ssh_kernel,
 /* Set OpenCL Kernel Parameters for bc_solid_v kernel */
 void set_args_bc_solid_u(cl_kernel bc_solid_u,
 			 cl_int *width,
+			 cl_int *xstop,
 			 cl_mem *ua_device,
 			 cl_mem *tmask_device){
     cl_int ret;
     int arg_idx = 0;
     ret = clSetKernelArg(bc_solid_u, arg_idx++, sizeof(cl_int),
                (void *)width);
+    check_status("clSetKernelArg", ret);
+    ret = clSetKernelArg(bc_solid_u, arg_idx++, sizeof(cl_int),
+               (void *)xstop);
     check_status("clSetKernelArg", ret);
     ret = clSetKernelArg(bc_solid_u, arg_idx++, sizeof(cl_mem),
                (void *)ua_device);
@@ -53,19 +61,23 @@ void set_args_bc_solid_u(cl_kernel bc_solid_u,
                (void *)tmask_device);
     check_status("clSetKernelArg", ret);
 
-    // fprintf(stdout, "Set %d arguments for bc_solid_u kernel\n", arg_idx);
+    fprintf(stdout, "Set %d arguments for bc_solid_u kernel\n", arg_idx);
 
 }
  
 /* Set OpenCL Kernel Parameters for bc_solid_v kernel */
 void set_args_bc_solid_v(cl_kernel bc_solid_v,
 			 cl_int *width,
+			 cl_int *xstop,
 			 cl_mem *va_device,
 			 cl_mem *tmask_device){
     cl_int ret;
     int arg_idx = 0;
     ret = clSetKernelArg(bc_solid_v, arg_idx++, sizeof(cl_int),
                (void *)width);
+    check_status("clSetKernelArg", ret);
+    ret = clSetKernelArg(bc_solid_v, arg_idx++, sizeof(cl_int),
+               (void *)xstop);
     check_status("clSetKernelArg", ret);
     ret = clSetKernelArg(bc_solid_v, arg_idx++, sizeof(cl_mem),
                (void *)va_device);
@@ -74,12 +86,13 @@ void set_args_bc_solid_v(cl_kernel bc_solid_v,
                (void *)tmask_device);
     check_status("clSetKernelArg", ret);
 
-    // fprintf(stdout, "Set %d arguments for bc_solid_v kernel\n", arg_idx);
+    fprintf(stdout, "Set %d arguments for bc_solid_v kernel\n", arg_idx);
 }
  
 /* Set OpenCL Kernel Parameters for bc_flather_u kernel */
 void set_args_bc_flather_u(cl_kernel bc_flather_u,
 			 cl_int *width,
+			 cl_int *xstop,
 			 cl_mem *ua_device,
 			 cl_mem *hu_device,
 			 cl_mem *sshn_u_device,
@@ -89,6 +102,9 @@ void set_args_bc_flather_u(cl_kernel bc_flather_u,
     int arg_idx = 0;
     ret = clSetKernelArg(bc_flather_u, arg_idx++, sizeof(cl_int),
 		       (void *)width);
+    check_status("clSetKernelArg", ret);
+    ret = clSetKernelArg(bc_flather_u, arg_idx++, sizeof(cl_int),
+		       (void *)xstop);
     check_status("clSetKernelArg", ret);
     ret = clSetKernelArg(bc_flather_u, arg_idx++, sizeof(cl_mem),
 		       (void *)ua_device);
@@ -106,13 +122,14 @@ void set_args_bc_flather_u(cl_kernel bc_flather_u,
 		       (void *)g);
     check_status("clSetKernelArg", ret);
 
-    // fprintf(stdout, "Set %d arguments for bc_flather_u kernel\n", arg_idx);
+    fprintf(stdout, "Set %d arguments for bc_flather_u kernel\n", arg_idx);
 
 }
 
 /* Set OpenCL Kernel Parameters for bc_flather_v kernel */
 void set_args_bc_flather_v(cl_kernel bc_flather_v,
 			 cl_int *width,
+			 cl_int *xstop,
 			 cl_mem *va_device,
 			 cl_mem *hv_device,
 			 cl_mem *sshn_v_device,
@@ -122,6 +139,9 @@ void set_args_bc_flather_v(cl_kernel bc_flather_v,
     int arg_idx = 0;
     ret = clSetKernelArg(bc_flather_v, arg_idx++, sizeof(cl_int),
 		       (void *)width);
+    check_status("clSetKernelArg", ret);
+    ret = clSetKernelArg(bc_flather_v, arg_idx++, sizeof(cl_int),
+		       (void *)xstop);
     check_status("clSetKernelArg", ret);
     ret = clSetKernelArg(bc_flather_v, arg_idx++, sizeof(cl_mem),
 		       (void *)va_device);
@@ -139,7 +159,7 @@ void set_args_bc_flather_v(cl_kernel bc_flather_v,
 		       (void *)g);
     check_status("clSetKernelArg", ret);
 
-    // fprintf(stdout, "Set %d arguments for bc_flather_v kernel\n", arg_idx);
+    fprintf(stdout, "Set %d arguments for bc_flather_v kernel\n", arg_idx);
   
 }
 
@@ -147,16 +167,14 @@ void set_args_bc_flather_v(cl_kernel bc_flather_v,
 #endif
 
 #ifdef __OPENCL_VERSION__
-__kernel void bc_ssh_code(int width,
+__kernel void bc_ssh_code(int width, int xstop,
               int istep,
               __global double* restrict ssha,
               __global int* restrict tmask,
               double rdt){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
-  int nrow = (int)get_global_size(1);
-  if(ji==0 || ji > (width-2))return;
-  if(jj==0 || jj > (nrow-2))return;
+  if(ji > xstop)return;
 #else
 inline void bc_ssh_code(int ji, int jj, int width,
          int istep, double *ssha, int *tmask, double rdt){
@@ -188,12 +206,12 @@ inline void bc_ssh_code(int ji, int jj, int width,
 
     /** Kernel to apply solid boundary conditions for u-velocity */
 #ifdef __OPENCL_VERSION__
-__kernel void bc_solid_u_code(int width,
+__kernel void bc_solid_u_code(int width, int xstop,
                   __global double* restrict ua,
                   __global int* restrict tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
-  if(ji > (width-2))return;
+  if(ji > xstop)return;
 #else
 inline void bc_solid_u_code(int ji, int jj, int width, double *ua, int *tmask){
 #endif
@@ -207,13 +225,12 @@ inline void bc_solid_u_code(int ji, int jj, int width, double *ua, int *tmask){
   
   /** Kernel to apply solid boundary conditions for v-velocity */
 #ifdef __OPENCL_VERSION__
-__kernel void bc_solid_v_code(int width,
+__kernel void bc_solid_v_code(int width, int xstop,
                   __global double* restrict va,
                   __global int* restrict tmask){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
-  int nrow = (int)get_global_size(1);
-  if(jj > (nrow-2))return;
+  if(ji > xstop)return;
 #else
 inline void bc_solid_v_code(int ji, int jj, int width, double *va, int *tmask){
 #endif
@@ -227,7 +244,7 @@ inline void bc_solid_v_code(int ji, int jj, int width, double *va, int *tmask){
   
 /** Kernel to apply Flather condition to U */
 #ifdef __OPENCL_VERSION__
-__kernel void bc_flather_u_code(int width,
+__kernel void bc_flather_u_code(int width, int xstop,
                 __global double* restrict ua,
                 __global double* restrict hu,
                 __global double* restrict sshn_u,
@@ -235,7 +252,7 @@ __kernel void bc_flather_u_code(int width,
                 double g){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
-  if(ji > (width-2))return;
+  if(ji > xstop)return;
 #else
 inline void bc_flather_u_code(int ji, int jj, int width,
                double *ua, double *hu, double *sshn_u, int *tmask, double g){
@@ -264,7 +281,7 @@ inline void bc_flather_u_code(int ji, int jj, int width,
   /** Kernel to apply Flather boundary condition to v component
       of velocity */
 #ifdef __OPENCL_VERSION__
-__kernel void bc_flather_v_code(int width,
+__kernel void bc_flather_v_code(int width, int xstop,
                 __global double* restrict va,
                 __global double* restrict hv, 
                 __global double* restrict sshn_v, 
@@ -272,8 +289,7 @@ __kernel void bc_flather_v_code(int width,
                 double g){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
-  int nrow = (int)get_global_size(1);
-  if(jj > (nrow-2))return;
+  if(ji > xstop)return;
 #else
 inline void bc_flather_v_code(int ji, int jj, int width,
                double *va, double *hv, double *sshn_v, int *tmask, double g){

@@ -3,17 +3,9 @@
 
 #ifdef OPENCL_HOST // If it is OpenCL infrastructure
 
-/*
-#include "opencl_utils.h"
-#ifdef __APPLE__
-#include <OpenCL/opencl.h>
-#else
-#include <CL/cl.h>
-#endif
-*/
-
 void set_args_next_sshv(cl_kernel kern,
 			cl_int *nx,
+			cl_int *xstop,
 			cl_mem* sshn_v_device,
 			cl_mem* sshn_device,
 			cl_mem* tmask_device,
@@ -24,6 +16,9 @@ void set_args_next_sshv(cl_kernel kern,
 
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int),
 		       (void *)nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int),
+		       (void *)xstop);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
 		       (void *)sshn_v_device);
@@ -47,6 +42,7 @@ void set_args_next_sshv(cl_kernel kern,
 
 void set_args_next_sshu(cl_kernel kern,
 			cl_int *nx,
+			cl_int *xstop,
 			cl_mem *sshn_u_device,
 			cl_mem *sshn_device,
 			cl_mem *tmask_device,
@@ -55,6 +51,8 @@ void set_args_next_sshu(cl_kernel kern,
   cl_int ret;
   int arg_idx = 0;
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)xstop);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)sshn_u_device);
   check_status("clSetKernelArg", ret);
@@ -75,7 +73,7 @@ void set_args_next_sshu(cl_kernel kern,
 
 
 #ifdef __OPENCL_VERSION__
-__kernel void next_sshu_code(int width,
+__kernel void next_sshu_code(int width, int xstop,
 			     __global double* restrict sshn_u,
 			     __global double* restrict sshn,
 			     __global int* restrict tmask,
@@ -83,6 +81,7 @@ __kernel void next_sshu_code(int width,
 			     __global double* restrict e12u){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
+  if (ji > xstop) return;
 #else
 inline void next_sshu_code(int ji, int jj, int width,
 		      double* sshn_u,
@@ -111,7 +110,7 @@ inline void next_sshu_code(int ji, int jj, int width,
 }
 
 #ifdef __OPENCL_VERSION__
-__kernel void next_sshv_code(int width,
+__kernel void next_sshv_code(int width, int xstop,
 			     __global double* restrict sshn_v,
 			     __global double* restrict sshn,
 			     __global int* restrict tmask,
@@ -119,6 +118,7 @@ __kernel void next_sshv_code(int width,
 			     __global double* restrict e12v){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
+  if (ji > xstop) return;
 #else
 inline void next_sshv_code(int ji, int jj, int width,
 		    double* sshn_v,

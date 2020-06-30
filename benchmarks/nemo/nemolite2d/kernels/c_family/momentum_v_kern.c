@@ -4,17 +4,9 @@
 
 #ifdef OPENCL_HOST // If it is OpenCL infrastructure
 
-/*
-#include "opencl_utils.h"
-#ifdef __APPLE__
-#include <OpenCL/opencl.h>
-#else
-#include <CL/cl.h>
-#endif
-*/
-
 void set_args_momv(cl_kernel kern,
            cl_int *nx,
+           cl_int *xstop,
            cl_mem *va_device,
            cl_mem *un_device,
            cl_mem *vn_device,
@@ -36,6 +28,8 @@ void set_args_momv(cl_kernel kern,
   cl_int arg_idx = 0;
 
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)xstop);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)va_device);
   check_status("clSetKernelArg", ret);
@@ -96,7 +90,7 @@ void set_args_momv(cl_kernel kern,
 
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */
-__kernel void momentum_v_code(int width,
+__kernel void momentum_v_code(int width, int xstop,
                   __global double* restrict va,
                   const __global double* restrict un,
                   const __global double* restrict vn, 
@@ -119,6 +113,7 @@ __kernel void momentum_v_code(int width,
                   double omega, double d2r, double g){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
+  if(ji > xstop)return;
 #else
 /** Interface to standard C version of kernel */
 inline void momentum_v_code(int ji, int jj, int width,

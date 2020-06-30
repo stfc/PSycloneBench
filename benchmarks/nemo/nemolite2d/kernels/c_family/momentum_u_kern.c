@@ -7,6 +7,7 @@
 /** Set the arguments for the OpenCL kernel */
 void set_args_momu(cl_kernel kern,
            cl_int *nx,
+           cl_int *xstop,
            cl_mem *ua_device,
            cl_mem *un_device,
            cl_mem *vn_device,
@@ -27,6 +28,8 @@ void set_args_momu(cl_kernel kern,
   cl_int ret;
   cl_int arg_idx = 0;
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)xstop);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
                (void *)ua_device);
@@ -110,7 +113,7 @@ void set_args_momu(cl_kernel kern,
 
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */
-__kernel void momentum_u_code(int width,
+__kernel void momentum_u_code(int width, int xstop,
                   __global double* restrict ua,
                   const __global double* restrict un,
                   const __global double* restrict vn,
@@ -133,6 +136,7 @@ __kernel void momentum_u_code(int width,
                   double omega, double d2r, double g){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
+  if(ji > xstop)return;
 #else
 /** Interface to standard C version of kernel */
 inline void momentum_u_code(int ji, int jj, int width,
