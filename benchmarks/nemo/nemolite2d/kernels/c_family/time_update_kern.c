@@ -106,7 +106,12 @@ __kernel void next_sshu_code(int width,
   int ji = get_global_id(0);
   int jj = get_global_id(1);
 #else
-inline void next_sshu_code(int ji, int jj, int width,
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void next_sshu_code(int ji, int jj, int width,
 		      double* sshn_u,
 		      const double* sshn,
 		      const int* tmask,
@@ -170,7 +175,12 @@ __kernel void next_sshv_code(int width,
   int ji = get_global_id(0);
   int jj = get_global_id(1);
 #else
-inline void next_sshv_code(int ji, int jj, int width,
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void next_sshv_code(int ji, int jj, int width,
 		    double* sshn_v,
 		    double* sshn,
 		    int* tmask,

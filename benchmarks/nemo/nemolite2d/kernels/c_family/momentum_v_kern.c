@@ -151,7 +151,12 @@ __kernel void momentum_v_code(int width,
   int jj = get_global_id(1);
 #else
 /** Interface to standard C version of kernel */
-inline void momentum_v_code(int ji, int jj, int width,
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void momentum_v_code(int ji, int jj, int width,
              double *va, double *un, double *vn, 
              double *hu, double *hv, double *ht, double *ssha_v, 
              double *sshn, double *sshn_u, double *sshn_v, 

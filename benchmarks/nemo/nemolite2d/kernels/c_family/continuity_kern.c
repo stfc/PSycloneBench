@@ -109,8 +109,12 @@ __kernel void continuity_code(int width,
     if(jj == 0)return;
 #else
 
-/** Interface to standard C version of kernel */
-inline void continuity_code(int ji, int jj,
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void continuity_code(int ji, int jj,
 		     int width,                     
 		     double *ssha,
 		     double *sshn,
