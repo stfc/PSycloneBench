@@ -68,7 +68,7 @@ alteraoffline:
 	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/momentum_v_kern.c >> allkernels.cl
 	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/boundary_conditions_kern.c >> allkernels.cl
 	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/time_update_kern.c >> allkernels.cl
-	aoc ${AOC_FLAGS} allkernels.cl
+	aoc ${AOC_FLAGS} allkernels.cl -o allkernels_altera.aocx
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean

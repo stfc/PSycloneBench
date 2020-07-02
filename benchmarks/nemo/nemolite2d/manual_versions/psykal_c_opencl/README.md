@@ -1,94 +1,80 @@
-# OpenCL version of NEMOLite2D #
+# PSyKAl C OpenCL version of NEMOLite2D #
 
-This directory contains the C implementation of the OpenCL version
-of NEMOLite2D. It was originally developed to use the AMD dispatch
-library with an NVIDIA GPU as the compute device. It has subsequently
-been adapted to use the Intel OpenCL toolset to target an FPGA as
-the compute device.
+This directory contains an OpenCL implementation of NEMOLite2D that
+uses the PSyKAl form with a Fortran to C first PSy-layer and a pure
+C OpenCL second PSy-layer.
 
 ## Compiling ##
 
-Although the code is general-purpose OpenCL, the Makefile is currently
-configured to use the Altera (now Intel) Off-line Compiler. Therefore
-you will either need to install this or to edit the Makefile to match your
-configuration.
+This implementation supports both OpenCL models: JIT (e.g. Intel OpenAPI
+CPUs, NVidia OpenCL, AMD OpenCL, ... ) and ahead-of-time compilation (e.g.
+Xilinx OpenCL, Intel OneAPI FPGAs, ...).
 
-For FPGA *emulation* using the Intel (Altera) tools, INTELFPGA_PRO
-must be substituted with the location in which you've installed the
-Intel Quartus Pro toolkit and NALLATECH with the location of the Board
-Support Package:
+The host program is the same for both, and it is compiled with the default
+Makefile target:
 
-    # Settings needed to compile the FPGA OpenCL version of NEMOLite2D
-    export OPENCL_LIBS="-L<INTELFPGA_PRO>/17.1/hld/board/nalla_pcie/linux64/lib -L<INTELFPGA_PRO>/17.1/hld/host/linux64/lib -Wl,--no-as-needed -lalteracl -lnalla_pcie_mmd -lelf"
-    export OPENCL_INCLUDE="-I<INTELFPGA_PRO>/17.1/hld/host/include -I<NALLATECH>/common/inc"
-    export F90=gfortran
-    export CC=g++
-    export CFLAGS="-g -fpermissive -Wall"
+    make
 
-    export CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1
+this will generate a `nemlite2d.exe` file.
 
-Typing 'make nemolite2d_fpga' should then build the kernels and driver
-code.
+There are additional Makefile targets to perform the ahead-of-time/offline
+compilation of supported compiler tool-chains. These are:
 
-Of course, if you want to run on the FPGA for real then you need to
-(go to bed while the code compiles and) unset CL_CONTEXT_EMULATOR_DEVICE_ALTERA.
+ - A target for the Xilinx OpenCl `allkernels_xilinx.xclbin` binary.
 
-The following configuration uses the Gnu compiler and AMD's dispatch library,
-but the Makefile needs to be edited for this to work:
+    make xilinxoffline
 
-    export CC=gcc
-    export CFLAGS="-g -O0 -Wall"
-    export LDFLAGS=-lm
-    export OPENCL_LIBS="-L/opt/AMDAPPSDK-3.0/lib/x86_64 -lOpenCL"
-    export OPENCL_INCLUDE=-I/opt/AMDAPPSDK-3.0/include
+ - A target for the Intel Altera `allkernels_altera.aocx` binary.
+
+    make alteraoffline
+
+See the section below for instructions to provide the generated OpenCL
+kernels binaries to the host OpenCL application.
 
 ## Running ##
 
-The benchmark problem size, number of time-steps and whether or not to
-perform timing/profiling are also controlled via environment variables:
+Model parameters (size of domain [jpiglo,jpjglo], number of time-steps [nitend],
+whether or not and how often to do output [irecord]) may be configured by editing
+the namelist file.
 
-    export NEMOLITE2D_NSTEPS=10
-    export NEMOLITE2D_NY=255
-    export NEMOLITE2D_NX=255
-    export NEMOLITE2D_PROFILING=1
+Additionally there are some environment parameters to control the OpenCL
+execution, these are:
 
-OpenCL configuration is also performed by environment variables. For
-running in emulation mode you must set:
+- `NEMOLITE2D_SINGLE_IMAGE`: When using ahead-of-time compied kernels this can
+be provided to NemoLite2d as a single binary image in this environment variable.
 
-    export CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1
+- `OPENCL_PLATFORM`: Optional integer 0-base index number to specify in which OpenCL
+platform the kernels should be launched on. If not specified it launches them in
+platform 0. Use `clinfo` command to list the available platforms in the system.
 
-In an OpenCL application, the kernels are loaded at run-time rather
-than being linked into the executable. When using an FPGA, these
-kernels must be compiled into a single image (.aocx file) ahead of
-time. The location of this image is then supplied at runtime via
-another environment variable:
+- `NEMOLITE2D_PROFILING`: If this environment variable exist, it will set up the
+OpenCL queue with the `CL_QUEUE_PROFILING_ENABLE` property.
 
-    export NEMOLITE2D_SINGLE_IMAGE=${PWD}/nemolite2d_kernels.aocx
+Note that for running in each of the OpenCL devices the system should be properly
+configured with the OpenCL ICDs and JIT compilers necessary. For instance, in the
+Hartree Centre Wheatley workstation, the following set of commands can be executed
+to run the code in all available platforms:
 
-If profiling is enabled then the OpenCL profiling API is used to report
-the amount of time spent in each kernel. This information is printed
-to stdout at the end of a run.
+    module load NVidiaCuda
+    ./nemolite2d.exe # Will run on the GPU
+    module unload NVidiaCuda
 
-## OpenCL Device Selection ##
+    module load IntelOneAPI
+    ./nemolite2d.exe # Will run on the FPGA software emulator
+    OPENCL_PLATFORM=1 ./nemolite2d.exe # Will run on the multi-core Xeon CPU
+    module unload IntelOneAPI
 
-Currently the code queries some of the properties of all of the OpenCL
-devices it discovers and outputs this information to stdout.
-e.g. on a system containing two NVIDIA GPUs it produces:
+    module load XilinxVitis
+    NEMOLITE2D_SINGLE_IMAGE=allkernels_xilinx.xclbin ./nemolite2d.exe # Will run on the FPGA
+    module unload XilinxVitis
 
-    Have 1 platforms.
-    Platform 0 (id=36806128) is: NVIDIA CUDA
-    Have 2 devices
-    Device 0 is: Tesla K20c, type=4, version=OpenCL 1.2 CUDA
-                 double precision supported
-                 max work group size = 1024
-                 max size of each work item dimension: 1024 1024
-                 max compute units = 13
-    Device 1 is: Quadro K600, type=4, version=OpenCL 1.2 CUDA
-                 double precision supported
-                 max work group size = 1024
-                 max size of each work item dimension: 1024 1024
-                 max compute units = 1
+## Output ##
 
-The code is currently set-up to choose device 0 as the one upon which
-to execute the OpenCL kernels. This may need to be changed (in `nemolite.c`)
-depending on your system.
+If output is enabled (`irecord` < `nitend` in the `namelist` file) then
+field values are written to the ASCII file `go2d_<time-step>.dat`. This
+is formatted for use with gnuplot's `splot` command with data in columns:
+
+x-ordinate, y-ordinate, depth, sea-surface height, u, v
+
+where u and v are the x and y components of velocity, respectively.
+
