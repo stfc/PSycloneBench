@@ -1,8 +1,7 @@
-# Makefile for manual C++ version of PSyKAl'd NEMOLite2D.
+# Makefile for manual C OpenCL version of PSyKAl'd NEMOLite2D.
 #
 # This Makefile picks up the compiler to use any flags from
-# environment variables. e.g. to use gfortran:
-# 
+# environment variables. e.g.:
 # export F90=gfortran
 # export CXX=g++
 # export CFLAGS="-O3"
@@ -20,9 +19,10 @@ include ../common.mk
 LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
 COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${KERNELS} ${INF_LIB}
 
-# Normal targets
-nemolite2d: ${COMMON_LIB} timer_lib inf_lib opencl_utils.o time_step.o
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} opencl_utils.o time_step.o" nemolite2d.exe
+# Host targets
+nemolite2d: ${COMMON_LIB} timer_lib inf_lib opencl_utils.o timing.o time_step.o
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} opencl_utils.o timing.o time_step.o" \
+		nemolite2d.exe
 
 nemolite2d.o: $(COMMON_MODULES)
 
@@ -32,19 +32,17 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 
 time_step.o: opencl_utils.o
 
-# Linking the executable needs the -lstdc++ to link also the std lib functions
-# called from C++ code
+# Linking the executable. It need the -lOpenCL library
 %.exe: $(MODULE_LIST)
 	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) ${OMPFLAGS} -lstdc++ -lOpenCL
+		$(LDFLAGS) ${OMPFLAGS} -lOpenCL
 
-# C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
-# the imported ../common.mk)
-# Since kernels are included directly any modification in the kernel files
-# must trigger a recompilation.
+# C rules (since kernels are included directly any modification in the kernel
+# files must trigger a recompilation)
 %.o: %.c ../../kernels/c_family/*.c
-	gcc -g $(CFLAGS) $(OMPFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
 
+# Target for Offline compilation of Xilinx FPGA device kernels
 PLATFORM ?= xilinx_u200_xdma_201830_2
 EXECUTION_TARGET ?= hw # Options: sw_emu | hw_emu | hw
 xilinxoffline:
@@ -54,10 +52,23 @@ xilinxoffline:
 	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/momentum_v_kern.c >> allkernels.cl
 	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/boundary_conditions_kern.c >> allkernels.cl
 	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/time_update_kern.c >> allkernels.cl
-	v++ --compile --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
+	v++ --compile --jobs 4 -O3 --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
 		allkernels.cl -o allkernels_xilinx.xo
-	v++ --link --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
+	v++ --link --jobs 4 -O3 --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
 		allkernels_xilinx.xo -o allkernels_xilinx.xclbin
+
+# Target for Offline compilation of Intel Altera FPGA device kernels
+AOC_FLAGS = -v -board=p385a_sch_ax115 -D__OPENCL_VERSION__=100
+#AOC_FLAGS += -march=emulator -emulator-channel-depth-model=strict
+alteraoffline:
+	$(error "Not supported yet")
+	echo "// OpenCL Kernels" > allkernels.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/continuity_kern.c >> allkernels.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/momentum_u_kern.c >> allkernels.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/momentum_v_kern.c >> allkernels.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/boundary_conditions_kern.c >> allkernels.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/time_update_kern.c >> allkernels.cl
+	aoc ${AOC_FLAGS} allkernels.cl
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
@@ -73,7 +84,7 @@ allclean: clean
 	${MAKE} -C ${TIMER_DIR} allclean
 
 summary:
-	@echo -n "${CC}\t\tcpu\t"
+	@echo -n "${CC}\t\tJIT\t"
 	@./nemolite2d.exe | awk 'BEGIN {ORS="\t"} \
 		{if ($$2 == "checksum") {print $$4} } \
 		{if ($$1 == "Time-stepping") {print $$5} } \
