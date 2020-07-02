@@ -176,7 +176,12 @@ __kernel void bc_ssh_code(int width, int xstop,
   int jj = get_global_id(1);
   if(ji > xstop)return;
 #else
-inline void bc_ssh_code(int ji, int jj, int width,
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void bc_ssh_code(int ji, int jj, int width,
          int istep, double *ssha, int *tmask, double rdt){
 #endif
   int idx = jj*width + ji;
@@ -213,7 +218,12 @@ __kernel void bc_solid_u_code(int width, int xstop,
   int jj = get_global_id(1);
   if(ji > xstop)return;
 #else
-inline void bc_solid_u_code(int ji, int jj, int width, double *ua, int *tmask){
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void bc_solid_u_code(int ji, int jj, int width, double *ua, int *tmask){
 #endif
   int idx = jj*width + ji;
 
@@ -232,7 +242,12 @@ __kernel void bc_solid_v_code(int width, int xstop,
   int jj = get_global_id(1);
   if(ji > xstop)return;
 #else
-inline void bc_solid_v_code(int ji, int jj, int width, double *va, int *tmask){
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void bc_solid_v_code(int ji, int jj, int width, double *va, int *tmask){
 #endif
   int idx = jj*width + ji;
 
@@ -254,7 +269,12 @@ __kernel void bc_flather_u_code(int width, int xstop,
   int jj = get_global_id(1);
   if(ji > xstop)return;
 #else
-inline void bc_flather_u_code(int ji, int jj, int width,
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void bc_flather_u_code(int ji, int jj, int width,
                double *ua, double *hu, double *sshn_u, int *tmask, double g){
 #endif
   int idx = jj*width + ji;
@@ -291,7 +311,12 @@ __kernel void bc_flather_v_code(int width, int xstop,
   int jj = get_global_id(1);
   if(ji > xstop)return;
 #else
-inline void bc_flather_v_code(int ji, int jj, int width,
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void bc_flather_v_code(int ji, int jj, int width,
                double *va, double *hv, double *sshn_v, int *tmask, double g){
 #endif
   int idx = jj*width + ji;

@@ -139,7 +139,12 @@ __kernel void momentum_u_code(int width, int xstop,
   if(ji > xstop)return;
 #else
 /** Interface to standard C version of kernel */
-inline void momentum_u_code(int ji, int jj, int width,
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void momentum_u_code(int ji, int jj, int width,
              double *ua, double *un, double *vn,
              double *hu, double *hv, double *ht, double *ssha_u,
              double *sshn, double *sshn_u, double *sshn_v,

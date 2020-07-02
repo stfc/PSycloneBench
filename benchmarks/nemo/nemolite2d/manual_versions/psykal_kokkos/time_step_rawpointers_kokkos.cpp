@@ -56,16 +56,6 @@ extern "C" void c_invoke_time_step(
         double g
         ){
 
-    // Execution policy for a multi-dimensional (2D) iteration space.
-    typedef Kokkos::MDRangePolicy<Kokkos::Rank<2>, Kokkos::OpenMP> mdrange_policy;
-
-    // MDRangePolicy uses an open interval (does not include the end
-    // point), while the provided 'stop' represent closed ranges.
-    // Therefore we need to increase by 1 the 'stop' values (since they
-    // are passed by values this only affects this function).
-    internal_ystop = internal_ystop + 1;
-    internal_xstop = internal_xstop + 1;
-
     // Kokkos needs to be initialized. Since NemoLite2D just has a single
     // invoke, it is simple to do it here the first time the invoke is
     // executed. Note that this can not be done for `Kokkos::finalize();`
@@ -74,6 +64,25 @@ extern "C" void c_invoke_time_step(
         Kokkos::initialize();
         first_time = false;
     }
+
+
+    // The execution space is given as a preprocessor define when compiling
+    // this file. e.g. `g++ -DEXEC_SPACE=OpenMP time_step_kokkos.cpp -c`
+#if defined (EXEC_SPACE)
+    using execution_space = Kokkos::EXEC_SPACE;
+#else
+    using execution_space = Kokkos::DefaultExecutionSpace;
+#endif
+
+    // Execution policy for a multi-dimensional (2D) iteration space.
+    typedef Kokkos::MDRangePolicy<Kokkos::Rank<2>, execution_space> mdrange_policy;
+
+    // MDRangePolicy uses an open interval (does not include the end
+    // point), while the provided 'stop' represent closed ranges.
+    // Therefore we need to increase by 1 the 'stop' values (since they
+    // are passed by values this only affects this function).
+    internal_ystop = internal_ystop + 1;
+    internal_xstop = internal_xstop + 1;
 
     // Continuity kernel (internal domain)
     Kokkos::parallel_for("continuity",
