@@ -1,5 +1,10 @@
 #include "opencl_utils.h"
 
+//#define USE_TIMER
+#ifdef USE_TIMER
+#include "timing.h"
+#endif
+
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
@@ -18,7 +23,7 @@
 #define MAX_DEVICES 4
 
 /* Number of OpenCL command queues we will use */
-#define NUM_QUEUES 2
+#define NUM_QUEUES 1
 
 int first_time = 1;
 
@@ -161,6 +166,11 @@ void c_invoke_time_step(
 
     int ret;
     int buff_size = total_size * sizeof(cl_double);
+
+#ifdef USE_TIMER
+    TimerInit();
+    TimerStart("OpenCL SetUp");
+#endif
 
     if(first_time){
         printf("OpenCL initialization\n");
@@ -509,9 +519,13 @@ void c_invoke_time_step(
         check_status("clWaitForEvents", ret);
 
 
-        printf("OpenCL initialization done\n");
+        // printf("OpenCL initialization done\n");
         first_time = 0;
     }
+#ifdef USE_TIMER
+    TimerStop();
+    TimerStart("Continuity Kernel");
+#endif
 
     // To get good performance the first dimension of the local size need to be
     // {32, 1} or {64,1}. The current implementation expects the second
@@ -536,6 +550,12 @@ void c_invoke_time_step(
         &(clkernevt[K_CONTINUITY]));
     check_status("clEnqueueNDRangeKernel(Continuity)", ret);
 
+#ifdef USE_TIMER
+    ret = clWaitForEvents(1, &(clkernevt[K_CONTINUITY]));
+    check_status("clWaitForEvents", ret);
+    TimerStop();
+    TimerStart("Momentum Kernels");
+#endif
     // Momentum_u kernel (internal domain)
     size_t momu_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
     size_t momu_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop};
@@ -552,6 +572,12 @@ void c_invoke_time_step(
 			&(clkernevt[K_MOM_V]));
     check_status("clEnqueueNDRangeKernel(Mom-v)", ret);
 
+#ifdef USE_TIMER
+    ret = clWaitForEvents(1, &(clkernevt[K_MOM_V]));
+    check_status("clWaitForEvents", ret);
+    TimerStop();
+    TimerStart("Remaining Kernels");
+#endif
     /* Set bc_ssh_code again because the istep argument is different */
     set_args_bc_ssh(clkernel[K_BC_SSH],
         &width,
@@ -636,6 +662,11 @@ void c_invoke_time_step(
     ret = clWaitForEvents(1, &(clkernevt[K_NEXT_SSH_V]));
     check_status("clWaitForEvents", ret);
 
+#ifdef USE_TIMER
+    TimerStop();
+    TimerStart("Copy back");
+#endif
+
     // Read the data back
     cl_event read_events[3];
     int nread = 0;
@@ -654,5 +685,9 @@ void c_invoke_time_step(
 
     clWaitForEvents(nread, read_events);
     check_status("clWaitForEvents", ret);
+#ifdef USE_TIMER
+    TimerStop();
+    TimerReport();
+#endif
 
 }
