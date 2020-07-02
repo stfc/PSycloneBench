@@ -3,7 +3,7 @@
 !-----------------------------------------------------------------------
    jpiglo      =    1024               !  number of columns of model grid
    jpjglo      =    1024               !  number of rows of model grid
-   jphgr_msh   =       1               !  type of grid (0: read in a data file; 1: setup with following parameters)
+   jphgr_msh   =       3               !  type of grid (0: read in a data file; 1: southern boundary open; 2: eastern boundary open; 3: southern and eastern boundaries open)
    dx          =    1000.0             !  grid size in x direction (m)
    dy          =    1000.0             !  grid size in y direction (m)
    dep_const   =     100.0             !  constant depth (m)
