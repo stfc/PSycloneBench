@@ -23,7 +23,7 @@ These are:
     - `psykal_acc`: OpenACC version of the PSyKAl form of NEMOLite2D.
 
     - `psykal_opencl`: OpenCL version of the PSyKAl form of NEMOLite2D using
-    the a Fortran PSy-layer an the FortCL wrapper library.
+    the a Fortran PSy-layer and the FortCL wrapper library.
 
     - `psykal_c_opencl`: OpenCL version of the PSyKAl form of NEMOLite2D using
     a pure C OpenCL PSy-layer.

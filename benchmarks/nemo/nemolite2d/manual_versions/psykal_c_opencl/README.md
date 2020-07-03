@@ -15,7 +15,7 @@ Makefile target:
 
     make
 
-this will generate a `nemlite2d.exe` file.
+this will generate a `nemolite2d.exe` file.
 
 There are additional Makefile targets to perform the ahead-of-time/offline
 compilation of supported compiler tool-chains. These are:
@@ -40,11 +40,12 @@ the namelist file.
 Additionally there are some environment parameters to control the OpenCL
 execution, these are:
 
-- `NEMOLITE2D_SINGLE_IMAGE`: When using ahead-of-time compied kernels this can
-be provided to NemoLite2d as a single binary image in this environment variable.
+- `NEMOLITE2D_SINGLE_IMAGE`: When using ahead-of-time compiled kernels, these can
+be provided to NemoLite2d as a single binary image in the file specified in this
+environment variable.
 
-- `OPENCL_PLATFORM`: Optional integer 0-base index number to specify in which OpenCL
-platform the kernels should be launched on. If not specified it launches them in
+- `OPENCL_PLATFORM`: Optional integer 0-base index number to specify which OpenCL
+platform the kernels should be launched on. If not specified it launches them on
 platform 0. Use `clinfo` command to list the available platforms in the system.
 
 - `NEMOLITE2D_PROFILING`: If this environment variable exist, it will set up the
@@ -77,4 +78,3 @@ is formatted for use with gnuplot's `splot` command with data in columns:
 x-ordinate, y-ordinate, depth, sea-surface height, u, v
 
 where u and v are the x and y components of velocity, respectively.
-

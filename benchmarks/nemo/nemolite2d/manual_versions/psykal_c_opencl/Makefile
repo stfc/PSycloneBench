@@ -6,8 +6,10 @@
 # export CXX=g++
 # export CFLAGS="-O3"
 # export F90FLAGS="-O3"
-# export OMPFLAGS=" -fopenmp"
-# export AR=ar
+
+# Additionally the environment needs the 'gcc' compiler regardless of the compiler
+# selected, this is to perform some preprocessor-only commands when preparing the
+# single-file OpenCL kernels.
 
 .PHONY: nemolite2d xilinxoffline alteraoffline
 .DEFAULT_GOAL := nemolite2d
