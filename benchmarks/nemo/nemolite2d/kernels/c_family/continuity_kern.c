@@ -55,8 +55,8 @@ void set_args_continuity(cl_kernel cont_kernel,
   
   fprintf(stdout, "Set %d arguments for Continuity kernel\n", arg_idx);
 }
-#endif
-#endif
+#endif  // Closes ifdef OPENCL_HOST
+#endif  // Closes ifndef __OPENCL_VERSION__
 
 #ifdef __OPENCL_VERSION__  // If it is an OpenCL kernel
 /** Interface to OpenCL version of kernel */

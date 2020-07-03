@@ -103,12 +103,9 @@ void set_args_momu(cl_kernel kern,
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double),
                (void *)g);
   check_status("clSetKernelArg", ret);
-
-  fprintf(stdout, "Set %d arguments for Momentum-u kernel\n", arg_idx);
 }
-
-#endif
-#endif
+#endif  // Closes ifdef OPENCL_HOST
+#endif  // Closes ifndef __OPENCL_VERSION__
 
 
 #ifdef __OPENCL_VERSION__

@@ -35,8 +35,6 @@ void set_args_bc_ssh(cl_kernel bc_ssh_kernel,
     ret = clSetKernelArg(bc_ssh_kernel, arg_idx++, sizeof(cl_double),
                (void *)rdt);
     check_status("clSetKernelArg", ret);
-
-   // fprintf(stdout, "Set %d arguments for bc-ssh kernel\n", arg_idx);
 }
 
 
@@ -60,9 +58,6 @@ void set_args_bc_solid_u(cl_kernel bc_solid_u,
     ret = clSetKernelArg(bc_solid_u, arg_idx++, sizeof(cl_mem),
                (void *)tmask_device);
     check_status("clSetKernelArg", ret);
-
-    fprintf(stdout, "Set %d arguments for bc_solid_u kernel\n", arg_idx);
-
 }
  
 /* Set OpenCL Kernel Parameters for bc_solid_v kernel */
@@ -85,8 +80,6 @@ void set_args_bc_solid_v(cl_kernel bc_solid_v,
     ret = clSetKernelArg(bc_solid_v, arg_idx++, sizeof(cl_mem),
                (void *)tmask_device);
     check_status("clSetKernelArg", ret);
-
-    fprintf(stdout, "Set %d arguments for bc_solid_v kernel\n", arg_idx);
 }
  
 /* Set OpenCL Kernel Parameters for bc_flather_u kernel */
@@ -121,9 +114,6 @@ void set_args_bc_flather_u(cl_kernel bc_flather_u,
     ret = clSetKernelArg(bc_flather_u, arg_idx++, sizeof(cl_double),
 		       (void *)g);
     check_status("clSetKernelArg", ret);
-
-    fprintf(stdout, "Set %d arguments for bc_flather_u kernel\n", arg_idx);
-
 }
 
 /* Set OpenCL Kernel Parameters for bc_flather_v kernel */
@@ -158,13 +148,10 @@ void set_args_bc_flather_v(cl_kernel bc_flather_v,
     ret = clSetKernelArg(bc_flather_v, arg_idx++, sizeof(cl_double),
 		       (void *)g);
     check_status("clSetKernelArg", ret);
-
-    fprintf(stdout, "Set %d arguments for bc_flather_v kernel\n", arg_idx);
-  
 }
 
-#endif
-#endif
+#endif  // Closes ifdef OPENCL_HOST
+#endif  // Closes ifndef __OPENCL_VERSION__
 
 #ifdef __OPENCL_VERSION__
 __kernel void bc_ssh_code(int width, int xstop,

@@ -79,14 +79,9 @@ void set_args_momv(cl_kernel kern,
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double), (void *)g);
   check_status("clSetKernelArg", ret);
-
-  fprintf(stdout, "Set %d arguments for Momentum-v kernel\n", arg_idx);
-
 }
-
-#endif
-#endif
-
+#endif  // Closes ifdef OPENCL_HOST
+#endif  // Closes ifndef __OPENCL_VERSION__
 
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */

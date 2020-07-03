@@ -35,9 +35,6 @@ void set_args_next_sshv(cl_kernel kern,
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
 		       (void *)e12v_device);
   check_status("clSetKernelArg", ret);
-
-  fprintf(stdout, "Set %d arguments for next_sshv kernel\n", arg_idx);
-
 }
 
 void set_args_next_sshu(cl_kernel kern,
@@ -64,13 +61,9 @@ void set_args_next_sshu(cl_kernel kern,
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem), (void *)e12u_device);
   check_status("clSetKernelArg", ret);
-
-  fprintf(stdout, "Set %d arguments for next_sshu kernel\n", arg_idx);
 }
-
-#endif
-#endif
-
+#endif  // Closes ifdef OPENCL_HOST
+#endif  // Closes ifndef __OPENCL_VERSION__
 
 #ifdef __OPENCL_VERSION__
 __kernel void next_sshu_code(int width, int xstop,
