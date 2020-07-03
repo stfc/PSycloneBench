@@ -22,9 +22,6 @@ fspace grid_fields{
   gphi_v : double,
   xt : double,
   yt : double
--- gphi_f  : double  
---  dx_f : double -- Don't use f fields in this code
---  dy_f : double
 }
 
 fspace loop_conditions{
@@ -52,7 +49,9 @@ local TIDAL_MASK = -1
 --   |                    |
 -- (1, 1) --- --- -- -- (M, 1)
 
-task dump_tmask( tmask: region(ispace(int2d), grid_fields)) where reads(tmask.tmask) do
+task dump_tmask( tmask: region(ispace(int2d), grid_fields)) where 
+                 reads(tmask.tmask) 
+do
 
   var f = stdio.fopen("tmask_0.dat", 'w')
   var xlo = tmask.bounds.lo.x
@@ -69,7 +68,10 @@ task dump_tmask( tmask: region(ispace(int2d), grid_fields)) where reads(tmask.tm
 
 end
 
-task init_grid_coordinates( tmask_region : region(ispace(int2d), grid_fields) ) where writes(tmask_region.{xt, yt}), reads(tmask_region.{dx_t, dy_t}) do
+task init_grid_coordinates( tmask_region : region(ispace(int2d), grid_fields) ) where 
+                            writes(tmask_region.{xt, yt}), 
+                            reads(tmask_region.{dx_t, dy_t}) 
+do
 
   for point in tmask_region do
      var xloc = (point.x-1) * tmask_region[point].dx_t
@@ -80,7 +82,10 @@ task init_grid_coordinates( tmask_region : region(ispace(int2d), grid_fields) ) 
 
 end
 
-task init_grid_coordinates_launcher( tmask_full : region(ispace(int2d), grid_fields)) where writes(tmask_full.{xt, yt}), reads(tmask_full.{dx_t, dy_t}) do
+task init_grid_coordinates_launcher( tmask_full : region(ispace(int2d), grid_fields)) where 
+                                     writes(tmask_full.{xt, yt}), 
+                                     reads(tmask_full.{dx_t, dy_t}) 
+do
 
   var full_partition = partition(equal, tmask_full, ispace(int2d, {4,4}))
   __demand(__index_launch)
@@ -90,8 +95,10 @@ task init_grid_coordinates_launcher( tmask_full : region(ispace(int2d), grid_fie
 end
 
 
-task init_grid_areas( tmask_region : region(ispace(int2d), grid_fields) )  where writes(tmask_region.{area_t, area_u, area_v}),
-   reads(tmask_region.{dx_t, dy_t, dx_u, dy_u, dx_v, dy_v}) do
+task init_grid_areas( tmask_region : region(ispace(int2d), grid_fields) ) where 
+                      writes(tmask_region.{area_t, area_u, area_v}),
+                      reads(tmask_region.{dx_t, dy_t, dx_u, dy_u, dx_v, dy_v}) 
+do
 
   __demand(__vectorize)
   for point in tmask_region do
@@ -103,8 +110,10 @@ task init_grid_areas( tmask_region : region(ispace(int2d), grid_fields) )  where
 
 end
 
-task init_grid_areas_launcher( tmask_full : region(ispace(int2d), grid_fields)) where writes(tmask_full.{area_t, area_u, area_v}),
-   reads(tmask_full.{dx_t, dy_t, dx_u, dy_u, dx_v, dy_v}) do
+task init_grid_areas_launcher( tmask_full : region(ispace(int2d), grid_fields)) where 
+                               writes(tmask_full.{area_t, area_u, area_v}),
+                               reads(tmask_full.{dx_t, dy_t, dx_u, dy_u, dx_v, dy_v}) 
+do
 
   var full_partition = partition(equal, tmask_full, ispace(int2d, {4,4}))
   for point in ispace(int2d, {4,4}) do
@@ -112,14 +121,18 @@ task init_grid_areas_launcher( tmask_full : region(ispace(int2d), grid_fields)) 
   end
 end
 
-task init_centre( tmask_centre : region(ispace(int2d), grid_fields)) where writes( tmask_centre.tmask) do
+task init_centre( tmask_centre : region(ispace(int2d), grid_fields)) where 
+                  writes( tmask_centre.tmask) 
+do
 
   for point in tmask_centre do
     tmask_centre[point].tmask = WET
   end
 end
 
-task init_centre_launcher( tmask_centre: region(ispace(int2d), grid_fields)) where writes(tmask_centre.tmask) do
+task init_centre_launcher( tmask_centre: region(ispace(int2d), grid_fields)) where 
+                           writes(tmask_centre.tmask) 
+do
 
   var full_partition = partition(equal, tmask_centre, ispace(int2d, {4,4}))
   for point in ispace(int2d, {4,4}) do
@@ -129,7 +142,9 @@ task init_centre_launcher( tmask_centre: region(ispace(int2d), grid_fields)) whe
 end
 
 
-task init_west( tmask_west : region(ispace(int2d), grid_fields)) where writes(tmask_west.tmask) do
+task init_west( tmask_west : region(ispace(int2d), grid_fields)) where 
+                writes(tmask_west.tmask) 
+do
 
   for point in tmask_west do
     tmask_west[point].tmask = SOLID_BOUNDARY
@@ -137,14 +152,18 @@ task init_west( tmask_west : region(ispace(int2d), grid_fields)) where writes(tm
 
 end
 
-task init_east( tmask_east : region(ispace(int2d), grid_fields)) where writes(tmask_east.tmask) do
+task init_east( tmask_east : region(ispace(int2d), grid_fields)) where 
+                writes(tmask_east.tmask) 
+do
 
   for point in tmask_east do
     tmask_east[point].tmask = SOLID_BOUNDARY
   end
 end
 
-task init_north( tmask_north : region(ispace(int2d), grid_fields)) where writes(tmask_north.tmask) do
+task init_north( tmask_north : region(ispace(int2d), grid_fields)) where 
+                 writes(tmask_north.tmask) 
+do
 
   for point in tmask_north do
     tmask_north[point].tmask = SOLID_BOUNDARY
@@ -157,8 +176,11 @@ task init_south( tmask_south : region(ispace(int2d), grid_fields)) where writes(
   end
 end
 
-task loop_bound_compute_vel_ufield( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
-    writes( loop_conditions_data.compute_vel_ufield), reads(grid.tmask) do
+task loop_bound_compute_vel_ufield( grid : region(ispace(int2d), grid_fields), 
+                                    loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+                                    writes( loop_conditions_data.compute_vel_ufield), 
+                                    reads(grid.tmask) 
+do
 
     for point in loop_conditions_data do
       if( grid[point].tmask == int1d(1) and grid[point + {1,0}].tmask == int1d(1)) then
@@ -168,8 +190,11 @@ task loop_bound_compute_vel_ufield( grid : region(ispace(int2d), grid_fields), l
 
 end
 
-task loop_bound_compute_vel_vfield( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
-    writes( loop_conditions_data.compute_vel_vfield), reads(grid.tmask) do
+task loop_bound_compute_vel_vfield( grid : region(ispace(int2d), grid_fields),
+                                    loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+                                    writes( loop_conditions_data.compute_vel_vfield),
+                                    reads(grid.tmask) 
+do
 
     for point in loop_conditions_data do
       if( grid[point].tmask == int1d(1) and grid[point + {0,1}].tmask == int1d(1)) then
@@ -179,8 +204,11 @@ task loop_bound_compute_vel_vfield( grid : region(ispace(int2d), grid_fields), l
 
 end
 
-task loop_bound_update_sea_surface_t(  grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
-    writes( loop_conditions_data.update_sea_surface_t), reads(grid.tmask) do
+task loop_bound_update_sea_surface_t(  grid : region(ispace(int2d), grid_fields),
+                                       loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+                                       writes( loop_conditions_data.update_sea_surface_t),
+                                       reads(grid.tmask) 
+do
     
     for point in loop_conditions_data do
       if( grid[point].tmask == int1d(1) ) then
@@ -194,8 +222,11 @@ task loop_bound_update_sea_surface_t(  grid : region(ispace(int2d), grid_fields)
     end
 end
 
-task loop_bound_update_uvel_boundary(  grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
-    writes( loop_conditions_data.update_uvel_boundary), reads(grid.tmask) do
+task loop_bound_update_uvel_boundary(  grid : region(ispace(int2d), grid_fields),
+                                       loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+                                       writes( loop_conditions_data.update_uvel_boundary), 
+                                       reads(grid.tmask) 
+do
    
     for point in loop_conditions_data do
       if( grid[point].tmask == int1d(0) or grid[point + {1,0}].tmask == int1d(0)) then
@@ -205,8 +236,11 @@ task loop_bound_update_uvel_boundary(  grid : region(ispace(int2d), grid_fields)
 
 end
 
-task loop_bound_update_vvel_boundary( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
-    writes( loop_conditions_data.update_vvel_boundary), reads(grid.tmask) do
+task loop_bound_update_vvel_boundary( grid : region(ispace(int2d), grid_fields),
+                                      loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+                                      writes( loop_conditions_data.update_vvel_boundary),
+                                      reads(grid.tmask) 
+do
 
     for point in loop_conditions_data do
       if( grid[point].tmask == int1d(0) or grid[point + {0,1}].tmask == int1d(0)) then
@@ -216,8 +250,11 @@ task loop_bound_update_vvel_boundary( grid : region(ispace(int2d), grid_fields),
 
 end
 
-task loop_bound_bc_flather_v( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
-    writes( loop_conditions_data.bc_flather_v), reads(grid.tmask) do
+task loop_bound_bc_flather_v( grid : region(ispace(int2d), grid_fields),
+                              loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+                              writes( loop_conditions_data.bc_flather_v),
+                              reads(grid.tmask) 
+do
 
     for point in loop_conditions_data do
       if( grid[point].tmask + grid[point + {0,1}].tmask > int1d(-1)) then
@@ -227,8 +264,11 @@ task loop_bound_bc_flather_v( grid : region(ispace(int2d), grid_fields), loop_co
 
 end
 
-task loop_bound_bc_flather_u( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
-    writes( loop_conditions_data.bc_flather_u), reads(grid.tmask) do
+task loop_bound_bc_flather_u( grid : region(ispace(int2d), grid_fields),
+                              loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+                              writes( loop_conditions_data.bc_flather_u),
+                              reads(grid.tmask) 
+do
 
     for point in loop_conditions_data do
       if( grid[point].tmask + grid[point + {1,0}].tmask > int1d(-1)) then
@@ -238,8 +278,11 @@ task loop_bound_bc_flather_u( grid : region(ispace(int2d), grid_fields), loop_co
 
 end
 
-task loop_bound_update_u_height( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
-    writes( loop_conditions_data.update_u_height), reads(grid.tmask) do
+task loop_bound_update_u_height( grid : region(ispace(int2d), grid_fields),
+                                 loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+                                 writes( loop_conditions_data.update_u_height),
+                                 reads(grid.tmask) 
+do
 
     for point in loop_conditions_data do
       if( grid[point].tmask + grid[point + {1,0}].tmask > int1d(0)) then
@@ -249,8 +292,11 @@ task loop_bound_update_u_height( grid : region(ispace(int2d), grid_fields), loop
 
 end
 
-task loop_bound_update_v_height( grid : region(ispace(int2d), grid_fields), loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
-    writes( loop_conditions_data.update_v_height), reads(grid.tmask) do
+task loop_bound_update_v_height( grid : region(ispace(int2d), grid_fields),
+                                 loop_conditions_data : region(ispace(int2d), loop_conditions) ) where
+                                 writes( loop_conditions_data.update_v_height),
+                                 reads(grid.tmask) 
+do
 
     for point in loop_conditions_data do
       if( grid[point].tmask + grid[point + {0,1}].tmask > int1d(0)) then
@@ -260,7 +306,9 @@ task loop_bound_update_v_height( grid : region(ispace(int2d), grid_fields), loop
 
 end
 
-task print_tmask( tmask_centre : region(ispace(int2d), grid_fields) ) where reads( tmask_centre.tmask) do
+task print_tmask( tmask_centre : region(ispace(int2d), grid_fields) ) where
+                  reads( tmask_centre.tmask) 
+do
   var xlo = tmask_centre.bounds.lo.x
   var xhi = tmask_centre.bounds.hi.x
   var ylo = tmask_centre.bounds.lo.y
@@ -293,9 +341,13 @@ end
 
 
 --This initialises the fields in the model grid.
-task model_init( grid : region(ispace(int2d), grid_fields) , loop_conditions_data : region(ispace(int2d), loop_conditions)) where
-    writes(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_v, gphi_u, gphi_v, xt, yt, area_t, area_u, area_v}), reads(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_u, dy_v, gphi_u, gphi_v, xt, yt, area_t ,area_u, area_v}),
-    writes( loop_conditions_data.{compute_vel_ufield, compute_vel_vfield, update_sea_surface_t, update_uvel_boundary, update_vvel_boundary, bc_flather_v, bc_flather_u, update_u_height, update_v_height }) do
+task model_init( grid : region(ispace(int2d), grid_fields),
+                 loop_conditions_data : region(ispace(int2d), loop_conditions)) where
+                 writes(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_v, gphi_u, gphi_v, xt, yt, area_t, area_u, area_v}),
+                 reads(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_u, dy_v, gphi_u, gphi_v, xt, yt, area_t ,area_u, area_v}),
+                 writes( loop_conditions_data.{compute_vel_ufield, compute_vel_vfield, update_sea_surface_t, update_uvel_boundary,
+                         update_vvel_boundary, bc_flather_v, bc_flather_u, update_u_height, update_v_height }) 
+do
 
     var full_partition = partition(equal, grid, ispace(int2d, {1,1}))
   

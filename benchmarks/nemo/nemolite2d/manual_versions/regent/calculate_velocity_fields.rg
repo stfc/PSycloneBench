@@ -31,7 +31,7 @@ terra copysign( x : double, y: double) : double
   return int64_as_double(  ( double_as_int64(x) and not(1LL << 63)) ^ (double_as_int64(y) and (1LL << 63) ) )
 end
 
---This is the SECOND loop.
+--This is the SECOND loop. This is equivalent to the momentum kernel in the Fortran version.
 __demand(__leaf)
 task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
                             grid_region : region(ispace(int2d), grid_fields),
@@ -178,7 +178,7 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
 
 end
 
---This is the THIRD loop.
+--This is the THIRD loop. This is equivalent to the momentum kernel in the Fortran version.
 task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
                             grid_region : region(ispace(int2d), grid_fields),
                             velocity_full : region(ispace(int2d), uv_time_field),

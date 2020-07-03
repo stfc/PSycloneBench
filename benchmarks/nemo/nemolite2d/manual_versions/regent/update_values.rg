@@ -7,9 +7,11 @@ local c = regentlib.c
 
 -- This is the NINTH loop
 __demand(__leaf)
-task update_velocity_and_t_height( velocity : region(ispace(int2d), uv_time_field), sea_surface : region(ispace(int2d), uvt_time_field)) where 
+task update_velocity_and_t_height( velocity : region(ispace(int2d), uv_time_field),
+                                   sea_surface : region(ispace(int2d), uvt_time_field)) where 
                                    writes(velocity.{u_now,v_now}, sea_surface.t_now),
-                                   reads(velocity.{u_after,v_after}, sea_surface.t_after) do
+                                   reads(velocity.{u_after,v_after}, sea_surface.t_after) 
+do
 
   __demand(__vectorize)
   for point in velocity do
@@ -21,11 +23,14 @@ end
 
 --This is the TENTH loop
 __demand(__leaf)
-task update_u_height_launcher( sea_surface : region(ispace(int2d), uvt_time_field), grid_region : region(ispace(int2d), grid_fields), 
-                               sea_surface_halos : region(ispace(int2d), uvt_time_field) )
-                     where writes(sea_surface.u_now), reads(grid_region.area_u, grid_region.area_t, grid_region.tmask, sea_surface_halos.t_after) do
+task update_u_height_launcher( sea_surface : region(ispace(int2d), uvt_time_field),
+                               grid_region : region(ispace(int2d), grid_fields), 
+                               sea_surface_halos : region(ispace(int2d), uvt_time_field) ) where 
+                               writes(sea_surface.u_now), 
+                               reads(grid_region.area_u, grid_region.area_t, grid_region.tmask, sea_surface_halos.t_after) 
+do
 
---If statement prevents vectorisation at current
+--If statement currently prevents vectorisation
   for point in sea_surface do
     if( grid_region[point].tmask + grid_region[point+{1,0}].tmask > int1d(0)) then
         if(grid_region[point].tmask * grid_region[point + {1,0}].tmask > int1d(0)) then
@@ -46,12 +51,15 @@ end
 
 --This is the ELEVENTH loop
 __demand(__leaf)
-task update_v_height_launcher( sea_surface : region(ispace(int2d), uvt_time_field), grid_region : region(ispace(int2d), grid_fields),
-                               sea_surface_halos : region(ispace(int2d), uvt_time_field) )
-                     where writes(sea_surface.v_now), reads(grid_region.area_v, grid_region.area_t, grid_region.tmask, sea_surface_halos.t_after) do
+task update_v_height_launcher( sea_surface : region(ispace(int2d), uvt_time_field),
+                               grid_region : region(ispace(int2d), grid_fields),
+                               sea_surface_halos : region(ispace(int2d), uvt_time_field) ) where
+                               writes(sea_surface.v_now),
+                               reads(grid_region.area_v, grid_region.area_t, grid_region.tmask, sea_surface_halos.t_after) 
+do
 
 
---If statement prevents vectorisation at current
+--If statement currently prevents vectorisation
   for point in sea_surface do
     if( grid_region[point].tmask + grid_region[point+{0,1}].tmask > int1d(0)) then
          if(grid_region[point].tmask * grid_region[point + {0,1}].tmask > int1d(0)) then

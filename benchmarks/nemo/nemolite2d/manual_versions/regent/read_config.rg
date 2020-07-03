@@ -12,7 +12,7 @@ local config_fields_tiles = terralib.newlist({
 config = terralib.types.newstruct("config")
 config.entries:insertall(config_fields_tiles)
 
---Taken from pennant_common.rg
+--Taken from pennant_common.rg in the language/examples directory of the Legion runtime.
 --This loops through arguments to try to find them, and returns the value if present
 local terra get_optional_arg(key : rawstring)
   var args = c.legion_runtime_get_input_args()
@@ -40,7 +40,8 @@ terra read_config()
      return quote conf.[field.field] = [field.default_value] end
    end)]
 
-  --For each of the arguments in the config input, get the value using get_optional_arg and store it in the config structure
+  --For each of the arguments in the config input, get the value using get_optional_arg
+  -- and store it in the config structure
   [config_fields_tiles:map(function(field)
       return
       quote 

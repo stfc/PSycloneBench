@@ -54,7 +54,9 @@ end
  
 task print_setup_data(output: region(ispace(int1d), setup_type))
 where reads(output) do
- stdio.printf("%i %i %f %f %i %i %i %i %f %f %f %f\n", output[0].jpiglo, output[0].jpjglo, output[0].dx, output[0].dy, output[0].nit000, output[0].nitend, output[0].record, output[0].jphgr_msh, output[0].dep_const, output[0].rdt, output[0].cbfr, output[0].visc); 
+ stdio.printf("%i %i %f %f %i %i %i %i %f %f %f %f\n", output[0].jpiglo, output[0].jpjglo, output[0].dx,
+              output[0].dy, output[0].nit000, output[0].nitend, output[0].record, output[0].jphgr_msh,
+              output[0].dep_const, output[0].rdt, output[0].cbfr, output[0].visc); 
 end
 
 

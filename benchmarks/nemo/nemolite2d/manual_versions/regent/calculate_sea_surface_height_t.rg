@@ -6,7 +6,7 @@ require("model_init")
 
 local c = regentlib.c
 
---This is the FIRST loop.
+--This is the FIRST loop, and is equivalent to the continuity loop in the Fortran version.
 __demand(__leaf)
 task calculate_sea_surface_t(sea_surface : region(ispace(int2d), uvt_time_field),
                           sea_surface_halos : region(ispace(int2d), uvt_time_field),

@@ -1,3 +1,6 @@
+!This is equivalent to the ../../common/gocean2d_io_mod.f90 read_namelist
+!routine, however all other functions from that module are stripped away
+!to avoid dependencies on other modules.
 module gocean2d_io_mod
   use kind_params_mod
   !  use field_mod
