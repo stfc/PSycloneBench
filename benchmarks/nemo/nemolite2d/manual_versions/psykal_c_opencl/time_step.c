@@ -1,6 +1,8 @@
 #include "opencl_utils.h"
 
-//#define USE_TIMER
+// Uncomment line below to use TIMER
+// #define USE_TIMER
+
 #ifdef USE_TIMER
 #include "timing.h"
 #endif
@@ -518,8 +520,6 @@ void c_invoke_time_step(
         ret = clWaitForEvents(buf_idx, write_events);
         check_status("clWaitForEvents", ret);
 
-
-        // printf("OpenCL initialization done\n");
         first_time = 0;
     }
 #ifdef USE_TIMER
@@ -532,7 +532,7 @@ void c_invoke_time_step(
     // dimension to always be 1.
     size_t local_size[2] = {64, 1};
 
-    // The work_group_size[0] values below should always be evently divisible by
+    // The work_group_size[0] values below should always be evenly divisible by
     // the local_size[0]. For this reason, sometimes it is necessary to increase
     // the xstop value until it satisfies the condition. A new computed_xstop
     // value is computed here which adds between 1 and total_size[0] to xstop.
@@ -605,7 +605,6 @@ void c_invoke_time_step(
 
     // Boundary conditions bc_solid_v kernel (whole domain but top y boundary)
     size_t solidv_offset[2] = {(size_t)internal_xstart - 1, (size_t)internal_ystart - 1};
-    //size_t solidv_size[2] = {(size_t)internal_xstop + 1, (size_t)internal_ystop}; 
     size_t solidv_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_SOLID_V], 2,
             solidv_offset, solidv_size, local_size, 0, NULL,
@@ -623,7 +622,6 @@ void c_invoke_time_step(
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
     // TODO #48. flather_v kernel may have a race condition.
     size_t flatherv_offset[2] = {(size_t)internal_xstart - 1, (size_t)internal_ystart - 1};
-    //size_t flatherv_size[2] = {(size_t)internal_xstop + 1, (size_t)internal_ystop}; 
     size_t flatherv_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_BC_FLATHER_V], 2,
             flatherv_offset, flatherv_size, local_size, 0, NULL,
@@ -643,7 +641,6 @@ void c_invoke_time_step(
 
     // Time update kernel (internal domain u points)
     size_t nextu_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
-    //size_t nextu_size[2] = {(size_t)internal_xstop - 1, (size_t)internal_ystop}; 
     size_t nextu_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop}; 
     ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_NEXT_SSH_U], 2,
             nextu_offset, nextu_size, local_size, 0, NULL,

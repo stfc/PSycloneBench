@@ -24,7 +24,6 @@ void init_device(
 		cl_context *context)
 {
   /** The version of OpenCL supported by the selected device */
-  int cl_version;
   cl_device_id device_ids[MAX_DEVICES];
   cl_platform_id platform_ids[MAX_DEVICES];
   cl_uint ret_num_devices;
@@ -108,21 +107,6 @@ void init_device(
   /* Choose device 0 */
   idev = 0;
   *device = device_ids[idev];
-
-  /* Check what version of OpenCL is supported */
-  if(strstr(version_str, "OpenCL 1.0")){
-    cl_version = 100;
-  }
-  else if(strstr(version_str, "OpenCL 1.2")){
-    cl_version = 120;
-  }
-  else if(strstr(version_str, "OpenCL 2.0")){
-    cl_version = 200;
-  }
-  /*else{
-    fprintf(stderr, "Unsupported OpenCL version: %s\n", version_str);
-    exit(1);
-  }*/
 
   /* Create OpenCL context for just 1 device */
   cl_context_properties cl_props[3];
@@ -330,8 +314,6 @@ cl_program get_binary_kernel(cl_context context,
   char *ptr;
   /* Holds return value of calls to OpenCL API */
   cl_int ret;
-  /* Modify the name of the kernel to point to a pre-compiled .aocx file */
-  printf("Loading %s\n", filename); fflush(0);
   
   /* Open and read the file containing the pre-compiled kernel */  
   fp = fopen(filename, "rb");
@@ -344,7 +326,7 @@ cl_program get_binary_kernel(cl_context context,
   fseek(fp, 0, SEEK_END);
   binary_sizes[0] = ftell(fp);
   binary_buffers[0] = (unsigned char*)malloc(
-				  sizeof(unsigned char)*binary_sizes[0]);
+                        sizeof(unsigned char)*binary_sizes[0]);
   rewind(fp);
   fread(binary_buffers[0], binary_sizes[0], 1, fp);
   fclose(fp);
@@ -352,13 +334,10 @@ cl_program get_binary_kernel(cl_context context,
 
   /* Create the program object from the loaded binary */
   cl_program program = clCreateProgramWithBinary(context, (cl_uint)1,
-						 device,
-						 binary_sizes,
-						 binary_buffers,
-						 binary_status,
-                         &ret);
+      device, binary_sizes, binary_buffers, binary_status, &ret);
   check_status("clCreateProgramWithBinary", ret);
   check_status("Loading binary", binary_status[0]);
+
   // Build the program that was just created.
   ret = clBuildProgram(program, 0, NULL, "", NULL, NULL);
   check_status("clBuildProgram", ret);
