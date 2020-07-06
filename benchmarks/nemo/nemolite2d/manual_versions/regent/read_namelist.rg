@@ -51,25 +51,3 @@ task read_namelist(in1 : region(ispace(int1d), setup_type)) where writes(in1) do
   in1[0].cbfr = t_cbfr
   in1[0].visc = t_visc
 end
- 
-task print_setup_data(output: region(ispace(int1d), setup_type))
-where reads(output) do
- stdio.printf("%i %i %f %f %i %i %i %i %f %f %f %f\n", output[0].jpiglo, output[0].jpjglo, output[0].dx,
-              output[0].dy, output[0].nit000, output[0].nitend, output[0].record, output[0].jphgr_msh,
-              output[0].dep_const, output[0].rdt, output[0].cbfr, output[0].visc); 
-end
-
-
-task main()
-
-  var setup_data_is = ispace(int1d, 1)
-  var setup_data = region(setup_data_is, setup_type)
-  fill(setup_data.{jpiglo, jpjglo, nit000, nitend, record, jphgr_msh}, 0)
-  fill(setup_data.{dx, dy, dep_const, rdt, cbfr, visc}, 0)
---  init(setup_data)
-
---  print(setup_data)
-
-end
-
---regentlib.start(main)

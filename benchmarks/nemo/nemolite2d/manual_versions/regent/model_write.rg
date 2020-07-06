@@ -30,7 +30,9 @@ do
         var point : int2d = int2d({x,y})
         var rtmp1 = 0.5 * (velocity[point + {-1,0}].u_now + velocity[point].u_now) 
         var rtmp2 = 0.5 * (velocity[point + {0,-1}].v_now + velocity[point].v_now)
-        c.fprintf(f, "%16.6e %16.6e %16.6e %16.6e %16.6e %16.6e\n", grid[point].xt, grid[point].yt, sea_bed_to_mean_sea_level[point].t, sea_surface[point].t_now, rtmp1, rtmp2)
+        c.fprintf(f, "%16.6e %16.6e %16.6e %16.6e %16.6e %16.6e\n", 
+                  grid[point].xt, grid[point].yt, sea_bed_to_mean_sea_level[point].t,
+                  sea_surface[point].t_now, rtmp1, rtmp2)
       end
         c.fprintf(f, "\n")
     end

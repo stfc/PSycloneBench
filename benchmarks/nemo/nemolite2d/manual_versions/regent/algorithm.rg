@@ -263,7 +263,7 @@ task main()
                               rdt)
                              
     end
--- This is currently commented out as Regent cannot yet index launch two-level projection functors (#845)
+-- This is currently commented out as Regent cannot yet index launch two-level projection functors (github.com/StanfordLegion/legion #845)
 --     __demand(__index_launch)
     for part in partition_space_update_velocity do
       update_velocity_ufield(vel_ufield_partitions[part][0],
@@ -278,7 +278,7 @@ task main()
                              cbfr,
                              d2r)
     end
--- This is currently commented out as Regent cannot yet index launch two-level projection functors (#845)
+-- This is currently commented out as Regent cannot yet index launch two-level projection functors (github.com/StanfordLegion/legion #845)
 --     __demand(__trace, __index_launch)
     for part in partition_space_update_velocity do 
       update_velocity_vfield(vel_vfield_partitions[part][0],
@@ -294,7 +294,7 @@ task main()
                              d2r)
                               
     end
--- This is currently commented out as Regent cannot yet index launch two-level projection functors (#845)
+-- This is currently commented out as Regent cannot yet index launch two-level projection functors (github.com/StanfordLegion/legion #845)
 --    __demand(__trace , __index_launch)
     for part in partition_space_most_tasks do
     update_sea_surface_t(update_sst_partitions[part][0],

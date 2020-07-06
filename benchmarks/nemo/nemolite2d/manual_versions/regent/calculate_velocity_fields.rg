@@ -6,7 +6,7 @@ require("model_init")
 local c = regentlib.c
 local sin = regentlib.sin(double)
 
--- Regent's inbuilt copysign is currently significantly slower than our own implementation (#864)
+-- Regent's inbuilt copysign is currently significantly slower than our own implementation (github.com/StanfordLegion/legion #864)
 -- local copysign = regentlib.copysign(double)
 
 struct convert_struct{
@@ -50,7 +50,7 @@ task update_velocity_ufield(velocity: region(ispace(int2d), uv_time_field),
                                            velocity_full.{u_now,v_now},
                        sea_bed_to_mean_sea_level.{u,t,v}, sea_surface.{u_now,v_now,t_now},
                        sea_surface.u_after) do
---This loop cannot yet vectorize due to copysign implementation (#864) and some remaining if statements (#859)
+--This loop cannot yet vectorize due to copysign implementation (github.com/StanfordLegion/legion #864) and some remaining if statements (#859)
 --    __demand(__vectorize)
     for point in velocity do
 
@@ -198,7 +198,7 @@ task update_velocity_vfield(velocity: region(ispace(int2d), uv_time_field),
                        sea_surface.v_after
 ) do
 
---This loop cannot yet vectorize due to copysign implementation (#864) and some remaining if statements (#859)
+--This loop cannot yet vectorize due to copysign implementation (github.com/StanfordLegion/legion #864) and some remaining if statements (#859)
 --    __demand(__vectorize)
   for point in velocity do
 

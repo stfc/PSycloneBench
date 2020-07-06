@@ -1,6 +1,6 @@
 # Regent version of NEMOLite2D #
 
-This implementation of NEMOLite2D uses Regent (http://regent-lang.org/) to handle the dataflow parallemlism.
+This implementation of NEMOLite2D uses Regent (http://regent-lang.org/) to handle the dataflow parallelism.
 
 Requirements:
 LLVM 3.5-3.8 or 6
@@ -11,16 +11,17 @@ GASNet (for distributed memory, yet to be tested)
 CUDA 5.0 or later (for GPUs, yet to be implemented/tested)
 
 ## Building ##
-The Makefile picks up the compiler and associated flags from environment
-variables. See e.g. ../../../compiler_setup/gnu.sh for sample
-settings for the Gnu compiler suite.
-If you are using Bash and the Gnu compiler then:
+The Regent implementation of NEMOLite2D uses a pre-compiled libgocean library,
+which is built by the Makefile with gfortran, and that library will be located
+in this directory.
+To build the required library for the Regent implementation, you just need to do:
 
-    > . ../../../../../compiler_setup/gnu.sh
     > make
 
-should build the required library for the Regent example (libgocean2d_io_mod.so)
+which should build the required library for the Regent example (libgocean2d_io_mod.so).
 
+
+Before building Regent, libgfortran.so must be visible on the $LD_LIBRARY_PATH.
 To build a binary version of the Regent code (optional), run
 
     > export REGENT_SCRIPT=/patch/to/regent.py

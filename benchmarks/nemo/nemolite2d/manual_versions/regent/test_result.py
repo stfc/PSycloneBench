@@ -1,8 +1,8 @@
-#Takes a single argument which is the timestep to compare, e.g. to compare results after 3000 steps:
-# python3 test_result.py 3000
-#Also requires the psykal_omp version to have been run with the same parameters, and is used as comparison.
-#For accurate comparison it is recommended to compile the psykal_omp version with only -O2
-#The output of the script will be True if the results are identical, and False otherwise
+"""Takes a single argument which is the timestep to compare, e.g. to compare results after 3000 steps:
+   python3 test_result.py 3000
+   Also requires the psykal_omp version to have been run with the same parameters, and is used as comparison.
+   For accurate comparison it is recommended to compile the psykal_omp version with only -O2
+   The output of the script will be True if the results are identical, and False otherwise"""
 
 import numpy as np
 import pandas as pd

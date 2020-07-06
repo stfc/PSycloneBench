@@ -42,6 +42,10 @@ concerns. These are:
     NEMOLite2D. This is a C data-parallel implementation of the non-PSyKAl
     form.
 
+    - `regent` : Regent version of NEMOLite2D. This is a data-parallel
+    implementation using the Regent language, which sits on the Legion
+    runtime system.
+
 ## Makefile ##
 A top-level Makefile is provided to recurse down to the multiple
 implementations, compile them and execute them using a common set of

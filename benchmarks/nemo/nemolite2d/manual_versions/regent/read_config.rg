@@ -30,7 +30,6 @@ local terra get_optional_arg(key : rawstring)
   return nil
 end
 
-
 terra read_config()
 
   var conf: config
