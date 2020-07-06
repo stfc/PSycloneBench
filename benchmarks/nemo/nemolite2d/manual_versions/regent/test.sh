@@ -1,7 +1,8 @@
-#! This script will run the regent implementation of NEMOLite2D with 
-#! different numbers of threads, tilesizes etc. to enable easy benchmarking.
-#! The individual results will be output to files, and results/res.txt will
-#! contain a markdown compatible table of results. 
+#!/bin/bash
+#This script will run the regent implementation of NEMOLite2D with 
+#different numbers of threads, tilesizes etc. to enable easy benchmarking.
+#The individual results will be output to files, and results/res.txt will
+#contain a markdown compatible table of results. 
 echo "| cpu | util | runtime (s) |" >> results/res.txt
 echo "|-----|------|-------------|" >> results/res.txt
 
