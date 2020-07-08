@@ -53,7 +53,6 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 nemolite2d_ompss.exe: $(MODULE_LIST)
 	mcxx --ompss -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
               $(LDFLAGS) -lgfortran -lstdc++
-#              $(LDFLAGS) ${OMPFLAGS} -lgfortran -lstdc++
 
 %.exe: $(MODULE_LIST)
 	$(CXX) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
@@ -65,7 +64,6 @@ nemolite2d_ompss.exe: $(MODULE_LIST)
 
 time_step_ompss.o: time_step_ompss.cpp
 	mcxx --ompss $(MCXXFLAGS) -c $< -o $@
-#	mcxx --ompss $(OMPFLAGS) -c $< -o $@
 
 %.o: %.cpp
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
