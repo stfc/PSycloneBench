@@ -17,6 +17,8 @@ F90FLAGS+=$OPTFLAGS
 # limit the length of a line
 F90FLAGS+=" -ffree-line-length-none"
 
+MCXXFLAGS="--Wn,-O3,-mtune=native,-finline-limit=50000,-fopt-info-all=gnu_opt_report.txt"
+
 OMPFLAGS=""
 OMPFLAGS=" -fopenmp"
 

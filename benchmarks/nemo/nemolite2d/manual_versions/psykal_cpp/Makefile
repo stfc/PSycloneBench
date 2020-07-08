@@ -15,6 +15,8 @@
 
 include ../common.mk
 
+MCXXFLAGS?="--Wn,-O3,-mtune=native,-finline-limit=50000,-fopt-info-all=gnu_opt_report.txt"
+
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
 LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
@@ -50,7 +52,8 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 
 nemolite2d_ompss.exe: $(MODULE_LIST)
 	mcxx --ompss -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-              $(LDFLAGS) ${OMPFLAGS} -lgfortran -lstdc++
+              $(LDFLAGS) -lgfortran -lstdc++
+#              $(LDFLAGS) ${OMPFLAGS} -lgfortran -lstdc++
 
 %.exe: $(MODULE_LIST)
 	$(CXX) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
@@ -61,7 +64,8 @@ nemolite2d_ompss.exe: $(MODULE_LIST)
 # the imported ../common.mk)
 
 time_step_ompss.o: time_step_ompss.cpp
-	mcxx --ompss $(OMPFLAGS) -c $< -o $@
+	mcxx --ompss $(MCXXFLAGS) -c $< -o $@
+#	mcxx --ompss $(OMPFLAGS) -c $< -o $@
 
 %.o: %.cpp
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
