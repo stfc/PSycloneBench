@@ -12,11 +12,13 @@ it in C or C++ (if the function is marked as `extern 'C'`).
 ## Compiling ##
 
 The Makefile picks up the compiler and associated flags from environment
-variables. See e.g. ../../../compiler_setup/gnu.sh for sample
-settings for the Gnu compiler suite.
-If you are using Bash and the Gnu compiler then:
+variables. See e.g. ../../../compiler_setup/ompss.sh for sample
+settings for the OmpSs compiler suite. This version is untested without
+the OmpSs compiler (though in principle it could run with other OpenMP 
+compilers).
+If you are using Bash and the OmpSs compiler then:
 
-    > . ../../../../../compiler_setup/gnu.sh
+    > . ../../../../../compiler_setup/ompss.sh
     > make
 
 The available target is:
