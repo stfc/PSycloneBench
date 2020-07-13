@@ -6,6 +6,78 @@
 
 bool first_time = true;
 
+// The execution space is given as a preprocessor define when compiling
+// this file. e.g. `g++ -DEXEC_SPACE=OpenMP time_step_kokkos.cpp -c`
+#if defined (EXEC_SPACE)
+using execution_space = Kokkos::EXEC_SPACE;
+#else
+using execution_space = Kokkos::DefaultExecutionSpace;
+#endif
+
+// Execution policy for a multi-dimensional (2D) iteration space.
+typedef Kokkos::MDRangePolicy<Kokkos::Rank<2>, execution_space> mdrange_policy;
+
+// Create 2D View types for the Fields and Grid arrays
+typedef Kokkos::View<double**> double_2dview;
+typedef Kokkos::View<int**> int_2dview;
+
+// Declare Fields Views
+double_2dview ssha_t_view;
+double_2dview sshn_t_view;
+double_2dview sshn_u_view;
+double_2dview sshn_v_view;
+double_2dview hu_view;
+double_2dview hv_view;
+double_2dview un_view;
+double_2dview vn_view;
+double_2dview ua_view;
+double_2dview ht_view;
+double_2dview ssha_u_view;
+double_2dview va_view;
+double_2dview ssha_v_view;
+
+// Declare Grid Views
+int_2dview tmask_view;
+double_2dview area_t_view;
+double_2dview area_u_view;
+double_2dview area_v_view;
+double_2dview dx_u_view;
+double_2dview dx_v_view;
+double_2dview dx_t_view;
+double_2dview dy_u_view;
+double_2dview dy_v_view;
+double_2dview dy_t_view;
+double_2dview gphiu_view;
+double_2dview gphiv_view;
+
+// Declare Mirrors
+double_2dview::HostMirror h_ssha_t;
+double_2dview::HostMirror h_sshn_t;
+double_2dview::HostMirror h_sshn_u;
+double_2dview::HostMirror h_sshn_v;
+double_2dview::HostMirror h_hu;
+double_2dview::HostMirror h_hv;
+double_2dview::HostMirror h_un;
+double_2dview::HostMirror h_vn;
+double_2dview::HostMirror h_ua;
+double_2dview::HostMirror h_ht;
+double_2dview::HostMirror h_ssha_u;
+double_2dview::HostMirror h_va;
+double_2dview::HostMirror h_ssha_v;
+
+int_2dview::HostMirror h_tmask;
+double_2dview::HostMirror h_area_t;
+double_2dview::HostMirror h_area_u;
+double_2dview::HostMirror h_area_v;
+double_2dview::HostMirror h_dx_u;
+double_2dview::HostMirror h_dx_v;
+double_2dview::HostMirror h_dx_t;
+double_2dview::HostMirror h_dy_u;
+double_2dview::HostMirror h_dy_v;
+double_2dview::HostMirror h_dy_t;
+double_2dview::HostMirror h_gphiu;
+double_2dview::HostMirror h_gphiv;
+
 extern "C" void c_invoke_time_step(
         // Fields
         double * ssha_t,
@@ -62,147 +134,131 @@ extern "C" void c_invoke_time_step(
     // which is ignored in this implementation. 
     if(first_time){
         Kokkos::initialize();
+
+        // Fields
+        ssha_t_view = double_2dview("ssha_t", internal_xstop+1, internal_ystop+1);
+        sshn_t_view = double_2dview("sshn_t", internal_xstop+1, internal_ystop+1);
+        sshn_u_view = double_2dview("sshn_u", internal_xstop+1, internal_ystop+1);
+        sshn_v_view = double_2dview("sshn_v", internal_xstop+1, internal_ystop+1);
+        hu_view = double_2dview("hu", internal_xstop+1, internal_ystop+1);
+        hv_view = double_2dview("hv", internal_xstop+1, internal_ystop+1);
+        un_view = double_2dview("un", internal_xstop+1, internal_ystop+1);
+        vn_view = double_2dview("vn", internal_xstop+1, internal_ystop+1);
+        ua_view = double_2dview("ua", internal_xstop+1, internal_ystop+1);
+        ht_view = double_2dview("ht", internal_xstop+1, internal_ystop+1);
+        ssha_u_view = double_2dview("ssha_u", internal_xstop+1, internal_ystop+1);
+        va_view = double_2dview("va", internal_xstop+1, internal_ystop+1);
+        ssha_v_view = double_2dview("ssha_v", internal_xstop+1, internal_ystop+1);
+
+        // Grid
+        tmask_view = int_2dview("tmask_v", internal_xstop+1, internal_ystop+1);
+        area_t_view = double_2dview("area_t", internal_xstop+1, internal_ystop+1);
+        area_u_view = double_2dview("area_u", internal_xstop+1, internal_ystop+1);
+        area_v_view = double_2dview("area_v", internal_xstop+1, internal_ystop+1);
+        dx_u_view = double_2dview("dx_u", internal_xstop+1, internal_ystop+1);
+        dx_v_view = double_2dview("dx_v", internal_xstop+1, internal_ystop+1);
+        dx_t_view = double_2dview("dx_t", internal_xstop+1, internal_ystop+1);
+        dy_u_view = double_2dview("dy_u", internal_xstop+1, internal_ystop+1);
+        dy_v_view = double_2dview("dy_v", internal_xstop+1, internal_ystop+1);
+        dy_t_view = double_2dview("dy_t", internal_xstop+1, internal_ystop+1);
+        gphiu_view = double_2dview("gphiu", internal_xstop+1, internal_ystop+1);
+        gphiv_view = double_2dview("gphiv", internal_xstop+1, internal_ystop+1);
+
+        // Create Mirrors. These are needed when the execution devices do not
+        // share the same memory space as the host, the mirrors synchronise the
+        // data in both devices when requested by the deep_copy method. If the
+        // execution device has access to the host memory the Mirror overlaps
+        // with the View memory location (thus avoiding overheads).
+        h_ssha_t = Kokkos::create_mirror_view( ssha_t_view );
+        h_sshn_t = Kokkos::create_mirror_view( sshn_t_view );
+        h_sshn_u = Kokkos::create_mirror_view( sshn_u_view );
+        h_sshn_v = Kokkos::create_mirror_view( sshn_v_view );
+        h_hu = Kokkos::create_mirror_view( hu_view );
+        h_hv = Kokkos::create_mirror_view( hv_view );
+        h_un = Kokkos::create_mirror_view( un_view );
+        h_vn = Kokkos::create_mirror_view( vn_view );
+        h_ua = Kokkos::create_mirror_view( ua_view );
+        h_ht = Kokkos::create_mirror_view( ht_view );
+        h_ssha_u = Kokkos::create_mirror_view( ssha_u_view );
+        h_va = Kokkos::create_mirror_view( va_view );
+        h_ssha_v = Kokkos::create_mirror_view( ssha_v_view );
+
+        h_tmask = Kokkos::create_mirror_view( tmask_view );
+        h_area_t = Kokkos::create_mirror_view( area_t_view );
+        h_area_u = Kokkos::create_mirror_view( area_u_view );
+        h_area_v = Kokkos::create_mirror_view( area_v_view );
+        h_dx_u = Kokkos::create_mirror_view( dx_u_view );
+        h_dx_v = Kokkos::create_mirror_view( dx_v_view );
+        h_dx_t = Kokkos::create_mirror_view( dx_t_view );
+        h_dy_u = Kokkos::create_mirror_view( dy_u_view );
+        h_dy_v = Kokkos::create_mirror_view( dy_v_view );
+        h_dy_t = Kokkos::create_mirror_view( dy_t_view );
+        h_gphiu = Kokkos::create_mirror_view( gphiu_view );
+        h_gphiv = Kokkos::create_mirror_view( gphiv_view );
+
+        // Copy Fortran arrays into the Kokkos View Mirrors
+        for(int jj=0; jj < internal_ystop+1; jj++){
+            for(int ji=0; ji < internal_xstop+1; ji++){
+                int idx = jj*width + ji;
+                h_ssha_t(jj, ji) = ssha_t[idx];
+                h_sshn_t(jj, ji) = sshn_t[idx];
+                h_sshn_u(jj, ji) = sshn_u[idx];
+                h_sshn_v(jj, ji) = sshn_v[idx];
+                h_hu(jj, ji) = hu[idx];
+                h_hv(jj, ji) = hv[idx];
+                h_un(jj, ji) = un[idx];
+                h_vn(jj, ji) = vn[idx];
+                h_ua(jj, ji) = ua[idx];
+                h_ht(jj, ji) = ht[idx];
+                h_ssha_u(jj, ji) = ssha_u[idx];
+                h_va(jj, ji) = va[idx];
+                h_ssha_v(jj, ji) = ssha_v[idx];
+
+                h_tmask(jj, ji) = tmask[idx];
+                h_area_t(jj, ji) = area_t[idx];
+                h_area_u(jj, ji) = area_u[idx];
+                h_area_v(jj, ji) = area_v[idx];
+                h_dx_u(jj, ji) = dx_u[idx];
+                h_dx_v(jj, ji) = dx_v[idx];
+                h_dx_t(jj, ji) = dx_t[idx];
+                h_dy_u(jj, ji) = dy_u[idx];
+                h_dy_v(jj, ji) = dy_v[idx];
+                h_dy_t(jj, ji) = dy_t[idx];
+                h_gphiu(jj, ji) = gphiu[idx];
+                h_gphiv(jj, ji) = gphiv[idx];
+            }
+        }
+
+        // Update Views with mirror data (only copies if device is not the host)
+        Kokkos::deep_copy( ssha_t_view, h_ssha_t );
+        Kokkos::deep_copy( sshn_t_view, h_sshn_t );
+        Kokkos::deep_copy( sshn_u_view, h_sshn_u );
+        Kokkos::deep_copy( sshn_v_view, h_sshn_v );
+        Kokkos::deep_copy( hu_view, h_hu );
+        Kokkos::deep_copy( hv_view, h_hv );
+        Kokkos::deep_copy( un_view, h_un );
+        Kokkos::deep_copy( vn_view, h_vn );
+        Kokkos::deep_copy( ua_view, h_ua );
+        Kokkos::deep_copy( ht_view, h_ht );
+        Kokkos::deep_copy( ssha_u_view, h_ssha_u );
+        Kokkos::deep_copy( va_view, h_va );
+        Kokkos::deep_copy( ssha_v_view, h_ssha_v );
+
+        Kokkos::deep_copy( tmask_view, h_tmask );
+        Kokkos::deep_copy( area_t_view, h_area_t );
+        Kokkos::deep_copy( area_u_view, h_area_u );
+        Kokkos::deep_copy( area_v_view, h_area_v );
+        Kokkos::deep_copy( dx_u_view, h_dx_u );
+        Kokkos::deep_copy( dx_v_view, h_dx_v );
+        Kokkos::deep_copy( dx_t_view, h_dx_t );
+        Kokkos::deep_copy( dy_u_view, h_dy_u );
+        Kokkos::deep_copy( dy_v_view, h_dy_v );
+        Kokkos::deep_copy( dy_t_view, h_dy_t );
+        Kokkos::deep_copy( gphiu_view, h_gphiu );
+        Kokkos::deep_copy( gphiv_view, h_gphiv );
+
         first_time = false;
     }
-
-    // The execution space is given as a preprocessor define when compiling
-    // this file. e.g. `g++ -DEXEC_SPACE=OpenMP time_step_kokkos.cpp -c`
-#if defined (EXEC_SPACE)
-    using execution_space = Kokkos::EXEC_SPACE;
-#else
-    using execution_space = Kokkos::DefaultExecutionSpace;
-#endif
-
-    // Execution policy for a multi-dimensional (2D) iteration space.
-    typedef Kokkos::MDRangePolicy<Kokkos::Rank<2>, execution_space> mdrange_policy;
-
-    // Create 2D View types for the Fields and Grid arrays
-    typedef Kokkos::View<double**> double_2dview;
-    typedef Kokkos::View<int**> int_2dview;
-
-    // Fields
-    double_2dview ssha_t_view("ssha_t", internal_xstop+1, internal_ystop+1);
-    double_2dview sshn_t_view("sshn_t", internal_xstop+1, internal_ystop+1);
-    double_2dview sshn_u_view("sshn_u", internal_xstop+1, internal_ystop+1);
-    double_2dview sshn_v_view("sshn_v", internal_xstop+1, internal_ystop+1);
-    double_2dview hu_view("hu", internal_xstop+1, internal_ystop+1);
-    double_2dview hv_view("hv", internal_xstop+1, internal_ystop+1);
-    double_2dview un_view("un", internal_xstop+1, internal_ystop+1);
-    double_2dview vn_view("vn", internal_xstop+1, internal_ystop+1);
-    double_2dview ua_view("ua", internal_xstop+1, internal_ystop+1);
-    double_2dview ht_view("ht", internal_xstop+1, internal_ystop+1);
-    double_2dview ssha_u_view("ssha_u", internal_xstop+1, internal_ystop+1);
-    double_2dview va_view("va", internal_xstop+1, internal_ystop+1);
-    double_2dview ssha_v_view("ssha_v", internal_xstop+1, internal_ystop+1);
-
-    // Grid
-    int_2dview tmask_view("tmask_v", internal_xstop+1, internal_ystop+1);
-    double_2dview area_t_view("area_t", internal_xstop+1, internal_ystop+1);
-    double_2dview area_u_view("area_u", internal_xstop+1, internal_ystop+1);
-    double_2dview area_v_view("area_v", internal_xstop+1, internal_ystop+1);
-    double_2dview dx_u_view("dx_u", internal_xstop+1, internal_ystop+1);
-    double_2dview dx_v_view("dx_v", internal_xstop+1, internal_ystop+1);
-    double_2dview dx_t_view("dx_t", internal_xstop+1, internal_ystop+1);
-    double_2dview dy_u_view("dy_u", internal_xstop+1, internal_ystop+1);
-    double_2dview dy_v_view("dy_v", internal_xstop+1, internal_ystop+1);
-    double_2dview dy_t_view("dy_t", internal_xstop+1, internal_ystop+1);
-    double_2dview gphiu_view("gphiu", internal_xstop+1, internal_ystop+1);
-    double_2dview gphiv_view("gphiv", internal_xstop+1, internal_ystop+1);
-
-
-    // Create Mirrors. These are needed when the execution devices do not
-    // share the same memory space as the host, the mirrors synchronise the
-    // data in both devices when requested by the deep_copy method. If the
-    // execution device has access to the host memory the Mirror overlaps
-    // with the View memory location (thus avoiding overheads).
-    double_2dview::HostMirror h_ssha_t = Kokkos::create_mirror_view( ssha_t_view );
-    double_2dview::HostMirror h_sshn_t = Kokkos::create_mirror_view( sshn_t_view );
-    double_2dview::HostMirror h_sshn_u = Kokkos::create_mirror_view( sshn_u_view );
-    double_2dview::HostMirror h_sshn_v = Kokkos::create_mirror_view( sshn_v_view );
-    double_2dview::HostMirror h_hu = Kokkos::create_mirror_view( hu_view );
-    double_2dview::HostMirror h_hv = Kokkos::create_mirror_view( hv_view );
-    double_2dview::HostMirror h_un = Kokkos::create_mirror_view( un_view );
-    double_2dview::HostMirror h_vn = Kokkos::create_mirror_view( vn_view );
-    double_2dview::HostMirror h_ua = Kokkos::create_mirror_view( ua_view );
-    double_2dview::HostMirror h_ht = Kokkos::create_mirror_view( ht_view );
-    double_2dview::HostMirror h_ssha_u = Kokkos::create_mirror_view( ssha_u_view );
-    double_2dview::HostMirror h_va = Kokkos::create_mirror_view( va_view );
-    double_2dview::HostMirror h_ssha_v = Kokkos::create_mirror_view( ssha_v_view );
-
-    int_2dview::HostMirror h_tmask = Kokkos::create_mirror_view( tmask_view );
-    double_2dview::HostMirror h_area_t = Kokkos::create_mirror_view( area_t_view );
-    double_2dview::HostMirror h_area_u = Kokkos::create_mirror_view( area_u_view );
-    double_2dview::HostMirror h_area_v = Kokkos::create_mirror_view( area_v_view );
-    double_2dview::HostMirror h_dx_u = Kokkos::create_mirror_view( dx_u_view );
-    double_2dview::HostMirror h_dx_v = Kokkos::create_mirror_view( dx_v_view );
-    double_2dview::HostMirror h_dx_t = Kokkos::create_mirror_view( dx_t_view );
-    double_2dview::HostMirror h_dy_u = Kokkos::create_mirror_view( dy_u_view );
-    double_2dview::HostMirror h_dy_v = Kokkos::create_mirror_view( dy_v_view );
-    double_2dview::HostMirror h_dy_t = Kokkos::create_mirror_view( dy_t_view );
-    double_2dview::HostMirror h_gphiu = Kokkos::create_mirror_view( gphiu_view );
-    double_2dview::HostMirror h_gphiv = Kokkos::create_mirror_view( gphiv_view );
-
-
-    // Copy Fortran arrays into the Kokkos View Mirrors
-    for(int jj=0; jj < internal_ystop+1; jj++){
-        for(int ji=0; ji < internal_xstop+1; ji++){
-            int idx = jj*width + ji;
-            h_ssha_t(jj, ji) = ssha_t[idx];
-            h_sshn_t(jj, ji) = sshn_t[idx];
-            h_sshn_u(jj, ji) = sshn_u[idx];
-            h_sshn_v(jj, ji) = sshn_v[idx];
-            h_hu(jj, ji) = hu[idx];
-            h_hv(jj, ji) = hv[idx];
-            h_un(jj, ji) = un[idx];
-            h_vn(jj, ji) = vn[idx];
-            h_ua(jj, ji) = ua[idx];
-            h_ht(jj, ji) = ht[idx];
-            h_ssha_u(jj, ji) = ssha_u[idx];
-            h_va(jj, ji) = va[idx];
-            h_ssha_v(jj, ji) = ssha_v[idx];
-
-            h_tmask(jj, ji) = tmask[idx];
-            h_area_t(jj, ji) = area_t[idx];
-            h_area_u(jj, ji) = area_u[idx];
-            h_area_v(jj, ji) = area_v[idx];
-            h_dx_u(jj, ji) = dx_u[idx];
-            h_dx_v(jj, ji) = dx_v[idx];
-            h_dx_t(jj, ji) = dx_t[idx];
-            h_dy_u(jj, ji) = dy_u[idx];
-            h_dy_v(jj, ji) = dy_v[idx];
-            h_dy_t(jj, ji) = dy_t[idx];
-            h_gphiu(jj, ji) = gphiu[idx];
-            h_gphiv(jj, ji) = gphiv[idx];
-        }
-    }
-
-    // Update Views with mirror data (only copies if device is not the host)
-    Kokkos::deep_copy( ssha_t_view, h_ssha_t );
-    Kokkos::deep_copy( sshn_t_view, h_sshn_t );
-    Kokkos::deep_copy( sshn_u_view, h_sshn_u );
-    Kokkos::deep_copy( sshn_v_view, h_sshn_v );
-    Kokkos::deep_copy( hu_view, h_hu );
-    Kokkos::deep_copy( hv_view, h_hv );
-    Kokkos::deep_copy( un_view, h_un );
-    Kokkos::deep_copy( vn_view, h_vn );
-    Kokkos::deep_copy( ua_view, h_ua );
-    Kokkos::deep_copy( ht_view, h_ht );
-    Kokkos::deep_copy( ssha_u_view, h_ssha_u );
-    Kokkos::deep_copy( va_view, h_va );
-    Kokkos::deep_copy( ssha_v_view, h_ssha_v );
-
-    Kokkos::deep_copy( tmask_view, h_tmask );
-    Kokkos::deep_copy( area_t_view, h_area_t );
-    Kokkos::deep_copy( area_u_view, h_area_u );
-    Kokkos::deep_copy( area_v_view, h_area_v );
-    Kokkos::deep_copy( dx_u_view, h_dx_u );
-    Kokkos::deep_copy( dx_v_view, h_dx_v );
-    Kokkos::deep_copy( dx_t_view, h_dx_t );
-    Kokkos::deep_copy( dy_u_view, h_dy_u );
-    Kokkos::deep_copy( dy_v_view, h_dy_v );
-    Kokkos::deep_copy( dy_t_view, h_dy_t );
-    Kokkos::deep_copy( gphiu_view, h_gphiu );
-    Kokkos::deep_copy( gphiv_view, h_gphiv );
 
     // In this implementation the kernels are manually inlined because the
     // implementations in ../../kernels/c_family/ use 1D raw pointer syntax
