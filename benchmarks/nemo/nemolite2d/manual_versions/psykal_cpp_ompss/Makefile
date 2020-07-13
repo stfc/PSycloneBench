@@ -1,7 +1,8 @@
 # Makefile for manual C++ OmpSs version of PSyKAl'd NEMOLite2D.
 #
 # This Makefile picks up the compiler to use any flags from
-# environment variables. e.g. to use gfortran:
+# environment variables. The OmpSs appropriate variables can
+# be sourced from ../../../../../compiler_setup/ompss.sh
 # 
 
 .PHONY: all nemolite2d_ompss

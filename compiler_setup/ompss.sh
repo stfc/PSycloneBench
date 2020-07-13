@@ -11,10 +11,8 @@ CFLAGS=$OPTFLAGS
 F90FLAGS="-Wall -Wsurprising -Wuninitialized"
 #F90FLAGS += -O0
 #F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g
+F90FLAGS+=" -faggressive-function-elimination"
 F90FLAGS+=$OPTFLAGS
-# f2py does not break long lines so tell gfortran not to
-# limit the length of a line
-F90FLAGS+=" -ffree-line-length-none"
 
 MCXXFLAGS="--Wn,-O3,-mtune=native,-finline-limit=50000,-fopt-info-all=gnu_opt_report.txt"
 

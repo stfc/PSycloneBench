@@ -54,11 +54,11 @@ extern "C" void c_invoke_time_step(
 
 #define TASK_SIZE 32
 //Each double loop over jj then ji is divided into a new structure.
-//The outer loop, now loops over increments of 32 (initially chosen arbitrarily),
+//The outer loop, now loops over increments of TASK_SIZE (initially chosen arbitrarily),
 //and creates tasks of this size
 //For the dependencies supplied to OmpSs, as opposed to putting the full memory for now,
 //we compute the "task row"
-//For the nth task for each jj+=32 loop, this is n.
+//For the nth task for each jj+=TASK_SIZE loop, this is n.
 //Tasks read to the task_rows appropriately (always either task_row, task_row-1, or task_row+1)
 //Tasks only write to the task_row according to jj/TASK_SIZE
 //TASK_SIZE is controlled by the define above
@@ -69,7 +69,7 @@ extern "C" void c_invoke_time_step(
 //and could allow the dependence analysis to be easier, enabling the code to run faster
 
     // Continuity kernel (internal domain)
-    // Try dividing continuity code into 32 rows at a time
+    // Try dividing continuity code into TASK_SIZE rows at a time
     for(int jj = internal_ystart; jj <= internal_ystop; jj+=TASK_SIZE){
       int stop = std::min(jj+TASK_SIZE-1, internal_ystop);
       int task_row = jj/TASK_SIZE;
@@ -94,7 +94,7 @@ extern "C" void c_invoke_time_step(
     }
 
     // Momentum_u kernel (internal domain u points)
-    // Try dividing momentum_u_code into 32 rows at a time
+    // Try dividing momentum_u_code into TASK_SIZE rows at a time
     for(int jj = internal_ystart; jj <= internal_ystop; jj+=TASK_SIZE){
       int stop = std::min(jj+TASK_SIZE-1, internal_ystop);
       int task_row = jj/TASK_SIZE;
