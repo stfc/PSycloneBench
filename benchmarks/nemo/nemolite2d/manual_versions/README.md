@@ -34,14 +34,6 @@ concerns. These are:
     - `single_file_acc`: OpenACC version of the single source-file form of
     NEMOLite2D with different optimisations applied.
 
-    - `single_file_opencl_fortran`: OpenCL version of the single-file form of
-    NEMOLite2D. This is a Fortran (using clFortran) data-parallel
-    implementation of the non-PSyKAl form.
-
-    - `single_file_opencl_c`: OpenCL version of the single-file form of
-    NEMOLite2D. This is a C data-parallel implementation of the non-PSyKAl
-    form.
-
     - `regent` : Regent version of NEMOLite2D. This is a data-parallel
     implementation using the Regent language, which sits on the Legion
     runtime system.
