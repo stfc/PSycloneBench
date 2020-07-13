@@ -60,6 +60,7 @@ x-ordinate, y-ordinate, depth, sea-surface height, u, v
 where u and v are the x and y components of velocity, respectively.
 
 ## License Note##
-Most of this implementation is under the BSD 3-Clause license, unless otherwise
-noted. The Apache-2 License in this folder appliked to one of the functions in
-read_config.rg, and is commented appropriately.
+Most of this implementation is under the BSD 3-Clause license available in the 
+repository root directory, the exception is the 'get_optional_arg' function in 
+read_config.rg that has been copied from https://github.com/StanfordLegion/legion 
+and is distributed with the Apache-2 licence file available in this directory
