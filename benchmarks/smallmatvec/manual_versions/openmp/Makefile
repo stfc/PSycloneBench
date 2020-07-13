@@ -4,13 +4,12 @@ FFLAGS=-qopenmp -Ofast
 LDFLAGS=
 
 VERSIONS=original fuseinterleaved kinner nlayersf nlayersf2 nlayersf_split \
-		 vlen specialized specialized_save #dgemv dgemm libxsmm 
+		 vlen specialized specialized_save #dgemv dgemm
 
-# For the 'dgemv' 'dgemm' and 'libxsmm' the following parameters need to be
+# For the 'dgemv' and 'dgemm' versions the following parameters need to be
 # uncommented and pointing to the appropriate library installations.
 # MKLFLAGS="-L${MKLROOT}/lib/intel64 -mkl"
-# LIBXSMM="-I${HOME}/tools/libxsmm/include"
-# FFLAGS += ${MKLFLAGS} ${LIBXSMM}
+# LDFLAGS += ${MKLFLAGS}
 
 all : kdriver.avx2 kdriver.avx512 kdriver.novec
 
@@ -48,11 +47,7 @@ kdriver.novec: utils.o constants_mod.o argument_mod.o dino_mod.o kernel_mod.o ma
 run:
 	@for v in $(VERSIONS); do \
 		echo "Running $$v"; \
-		if [ $$v = "libxsmm" ]; then \
-		LIBXSMM_VERBOSE=1 ./kdriver.avx512.$$v; \
-		else \
 		./kdriver.avx512.$$v; \
-		fi \
 	done
 
 versions:

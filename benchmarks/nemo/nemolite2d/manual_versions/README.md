@@ -22,18 +22,26 @@ These are:
 
     - `psykal_acc`: OpenACC version of the PSyKAl form of NEMOLite2D.
 
-    - `psykal_opencl`: OpenCL version of the PSyKAl form of NEMOLite2D.
+    - `psykal_opencl`: OpenCL version of the PSyKAl form of NEMOLite2D using
+    the a Fortran PSy-layer and the FortCL wrapper library.
+
+    - `psykal_c_opencl`: OpenCL version of the PSyKAl form of NEMOLite2D using
+    a pure C OpenCL PSy-layer.
 
     - `psykal_ompss`: OmpSs version of the PSyKAl form of NEMOLite2D.
 
+    - `psykal_cpp`: PSyKAl form of NEMOLite2D with a C++ PSy-layer.
 
-2. The "single\_file" versions that due to either programming model limitations
-or code simplification/optimisation do not follow the PSyKAl separation of
+    - `psykal_kokkos`: PSyKAl form of NEMOLite2D with a C++ Kokkos PSy-layer.
+
+
+2. Other versions that due to either programming model limitations or code
+simplification/optimisation do not follow the PSyKAl separation of
 concerns. These are:
 
     - `single_file_acc`: OpenACC version of the single source-file form of
     NEMOLite2D with different optimisations applied.
-
+    
     - `regent` : Regent version of NEMOLite2D. This is a data-parallel
     implementation using the Regent language, which sits on the Legion
     runtime system.
