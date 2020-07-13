@@ -59,3 +59,7 @@ x-ordinate, y-ordinate, depth, sea-surface height, u, v
 
 where u and v are the x and y components of velocity, respectively.
 
+## License Note##
+Most of this implementation is under the BSD 3-Clause license, unless otherwise
+noted. The Apache-2 License in this folder appliked to one of the functions in
+read_config.rg, and is commented appropriately.
