@@ -1,3 +1,6 @@
+// This file contains the second PSy-layer with the C OpenCL
+// implementation of the c_invoke_time_step routine.
+
 #include "opencl_utils.h"
 
 // Uncomment line below to use TIMER
@@ -21,10 +24,10 @@
 #include "../../kernels/c_family/boundary_conditions_kern.c"
 #include "../../kernels/c_family/time_update_kern.c"
 
-/** Maximum number of OpenCL devices we will query */
+// Maximum number of OpenCL devices we will query
 #define MAX_DEVICES 4
 
-/* Number of OpenCL command queues we will use */
+// Number of OpenCL command queues we will use
 #define NUM_QUEUES 1
 
 int first_time = 1;

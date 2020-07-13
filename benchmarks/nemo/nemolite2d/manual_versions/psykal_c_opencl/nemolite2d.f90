@@ -1,3 +1,4 @@
+! NemoLite2D Algorithm implementation program
 program gocean2d
   use dl_timer, only: timer_start, timer_stop, timer_init, timer_report, i_def64
   use grid_mod
@@ -7,7 +8,6 @@ program gocean2d
   use gocean2d_io_mod, only: model_write
   use gocean_mod,      only: model_write_log, gocean_initialise, &
                              gocean_finalise
-  !use likwid
 
   !> A Horizontal 2D hydrodynamic ocean model which
   !!   1) using structured grid

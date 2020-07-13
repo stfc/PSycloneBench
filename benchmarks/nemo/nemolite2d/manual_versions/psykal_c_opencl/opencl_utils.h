@@ -1,6 +1,10 @@
 #ifndef _KERNEL_BUILDER_INCLUDE
 #define _KERNEL_BUILDER_INCLUDE
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else

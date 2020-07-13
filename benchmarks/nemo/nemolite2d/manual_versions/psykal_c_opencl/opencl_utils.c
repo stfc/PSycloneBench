@@ -1,13 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#ifdef __APPLE__
-#include <OpenCL/opencl.h>
-#else
-#include <CL/cl.h>
-#endif
-
 #include "opencl_utils.h"
 
 /** Maximum number of OpenCL devices we will query */
