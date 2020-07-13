@@ -22,33 +22,33 @@ typedef Kokkos::View<double**> double_2dview;
 typedef Kokkos::View<int**> int_2dview;
 
 // Declare Fields Views
-double_2dview ssha_t_view;
-double_2dview sshn_t_view;
-double_2dview sshn_u_view;
-double_2dview sshn_v_view;
-double_2dview hu_view;
-double_2dview hv_view;
-double_2dview un_view;
-double_2dview vn_view;
-double_2dview ua_view;
-double_2dview ht_view;
-double_2dview ssha_u_view;
-double_2dview va_view;
-double_2dview ssha_v_view;
+double_2dview * ssha_t_view_p = NULL;
+double_2dview * sshn_t_view_p = NULL;
+double_2dview * sshn_u_view_p = NULL;
+double_2dview * sshn_v_view_p = NULL;
+double_2dview * hu_view_p = NULL;
+double_2dview * hv_view_p = NULL;
+double_2dview * un_view_p = NULL;
+double_2dview * vn_view_p = NULL;
+double_2dview * ua_view_p = NULL;
+double_2dview * ht_view_p = NULL;
+double_2dview * ssha_u_view_p = NULL;
+double_2dview * va_view_p = NULL;
+double_2dview * ssha_v_view_p = NULL;
 
 // Declare Grid Views
-int_2dview tmask_view;
-double_2dview area_t_view;
-double_2dview area_u_view;
-double_2dview area_v_view;
-double_2dview dx_u_view;
-double_2dview dx_v_view;
-double_2dview dx_t_view;
-double_2dview dy_u_view;
-double_2dview dy_v_view;
-double_2dview dy_t_view;
-double_2dview gphiu_view;
-double_2dview gphiv_view;
+int_2dview * tmask_view_p = NULL;
+double_2dview * area_t_view_p = NULL;
+double_2dview * area_u_view_p = NULL;
+double_2dview * area_v_view_p = NULL;
+double_2dview * dx_u_view_p = NULL;
+double_2dview * dx_v_view_p = NULL;
+double_2dview * dx_t_view_p = NULL;
+double_2dview * dy_u_view_p = NULL;
+double_2dview * dy_v_view_p = NULL;
+double_2dview * dy_t_view_p = NULL;
+double_2dview * gphiu_view_p = NULL;
+double_2dview * gphiv_view_p = NULL;
 
 // Declare Mirrors
 double_2dview::HostMirror h_ssha_t;
@@ -135,35 +135,65 @@ extern "C" void c_invoke_time_step(
     if(first_time){
         Kokkos::initialize();
 
-        // Fields
-        ssha_t_view = double_2dview("ssha_t", internal_xstop+1, internal_ystop+1);
-        sshn_t_view = double_2dview("sshn_t", internal_xstop+1, internal_ystop+1);
-        sshn_u_view = double_2dview("sshn_u", internal_xstop+1, internal_ystop+1);
-        sshn_v_view = double_2dview("sshn_v", internal_xstop+1, internal_ystop+1);
-        hu_view = double_2dview("hu", internal_xstop+1, internal_ystop+1);
-        hv_view = double_2dview("hv", internal_xstop+1, internal_ystop+1);
-        un_view = double_2dview("un", internal_xstop+1, internal_ystop+1);
-        vn_view = double_2dview("vn", internal_xstop+1, internal_ystop+1);
-        ua_view = double_2dview("ua", internal_xstop+1, internal_ystop+1);
-        ht_view = double_2dview("ht", internal_xstop+1, internal_ystop+1);
-        ssha_u_view = double_2dview("ssha_u", internal_xstop+1, internal_ystop+1);
-        va_view = double_2dview("va", internal_xstop+1, internal_ystop+1);
-        ssha_v_view = double_2dview("ssha_v", internal_xstop+1, internal_ystop+1);
+        // Allocate Fields
+        ssha_t_view_p = new double_2dview("ssha_t", internal_xstop+1, internal_ystop+1);
+        sshn_t_view_p = new double_2dview("sshn_t", internal_xstop+1, internal_ystop+1);
+        sshn_u_view_p = new double_2dview("sshn_u", internal_xstop+1, internal_ystop+1);
+        sshn_v_view_p = new double_2dview("sshn_v", internal_xstop+1, internal_ystop+1);
+        hu_view_p = new double_2dview("hu", internal_xstop+1, internal_ystop+1);
+        hv_view_p = new double_2dview("hv", internal_xstop+1, internal_ystop+1);
+        un_view_p = new double_2dview("un", internal_xstop+1, internal_ystop+1);
+        vn_view_p = new double_2dview("vn", internal_xstop+1, internal_ystop+1);
+        ua_view_p = new double_2dview("ua", internal_xstop+1, internal_ystop+1);
+        ht_view_p = new double_2dview("ht", internal_xstop+1, internal_ystop+1);
+        ssha_u_view_p = new double_2dview("ssha_u", internal_xstop+1, internal_ystop+1);
+        va_view_p = new double_2dview("va", internal_xstop+1, internal_ystop+1);
+        ssha_v_view_p = new double_2dview("ssha_v", internal_xstop+1, internal_ystop+1);
 
-        // Grid
-        tmask_view = int_2dview("tmask_v", internal_xstop+1, internal_ystop+1);
-        area_t_view = double_2dview("area_t", internal_xstop+1, internal_ystop+1);
-        area_u_view = double_2dview("area_u", internal_xstop+1, internal_ystop+1);
-        area_v_view = double_2dview("area_v", internal_xstop+1, internal_ystop+1);
-        dx_u_view = double_2dview("dx_u", internal_xstop+1, internal_ystop+1);
-        dx_v_view = double_2dview("dx_v", internal_xstop+1, internal_ystop+1);
-        dx_t_view = double_2dview("dx_t", internal_xstop+1, internal_ystop+1);
-        dy_u_view = double_2dview("dy_u", internal_xstop+1, internal_ystop+1);
-        dy_v_view = double_2dview("dy_v", internal_xstop+1, internal_ystop+1);
-        dy_t_view = double_2dview("dy_t", internal_xstop+1, internal_ystop+1);
-        gphiu_view = double_2dview("gphiu", internal_xstop+1, internal_ystop+1);
-        gphiv_view = double_2dview("gphiv", internal_xstop+1, internal_ystop+1);
+        // Allocate Grid
+        tmask_view_p = new int_2dview("tmask_v", internal_xstop+1, internal_ystop+1);
+        area_t_view_p = new double_2dview("area_t", internal_xstop+1, internal_ystop+1);
+        area_u_view_p = new double_2dview("area_u", internal_xstop+1, internal_ystop+1);
+        area_v_view_p = new double_2dview("area_v", internal_xstop+1, internal_ystop+1);
+        dx_u_view_p = new double_2dview("dx_u", internal_xstop+1, internal_ystop+1);
+        dx_v_view_p = new double_2dview("dx_v", internal_xstop+1, internal_ystop+1);
+        dx_t_view_p = new double_2dview("dx_t", internal_xstop+1, internal_ystop+1);
+        dy_u_view_p = new double_2dview("dy_u", internal_xstop+1, internal_ystop+1);
+        dy_v_view_p = new double_2dview("dy_v", internal_xstop+1, internal_ystop+1);
+        dy_t_view_p = new double_2dview("dy_t", internal_xstop+1, internal_ystop+1);
+        gphiu_view_p = new double_2dview("gphiu", internal_xstop+1, internal_ystop+1);
+        gphiv_view_p = new double_2dview("gphiv", internal_xstop+1, internal_ystop+1);
 
+    }
+
+    auto& ssha_t_view = *ssha_t_view_p;
+    auto& sshn_t_view = *sshn_t_view_p;
+    auto& sshn_u_view = *sshn_u_view_p;
+    auto& sshn_v_view = *sshn_v_view_p;
+    auto& hu_view = *hu_view_p;
+    auto& hv_view = *hv_view_p;
+    auto& un_view = *un_view_p;
+    auto& vn_view = *vn_view_p;
+    auto& ua_view = *ua_view_p;
+    auto& ht_view = *ht_view_p;
+    auto& ssha_u_view = *ssha_u_view_p;
+    auto& va_view = *va_view_p;
+    auto& ssha_v_view = *ssha_v_view_p;
+
+    auto& tmask_view = *tmask_view_p;
+    auto& area_t_view = *area_t_view_p;
+    auto& area_u_view = *area_u_view_p;
+    auto& area_v_view = *area_v_view_p;
+    auto& dx_u_view = *dx_u_view_p;
+    auto& dx_v_view = *dx_v_view_p;
+    auto& dx_t_view = *dx_t_view_p;
+    auto& dy_u_view = *dy_u_view_p;
+    auto& dy_v_view = *dy_v_view_p;
+    auto& dy_t_view = *dy_t_view_p;
+    auto& gphiu_view = *gphiu_view_p;
+    auto& gphiv_view = *gphiv_view_p;
+
+    if(first_time){
         // Create Mirrors. These are needed when the execution devices do not
         // share the same memory space as the host, the mirrors synchronise the
         // data in both devices when requested by the deep_copy method. If the
@@ -195,7 +225,6 @@ extern "C" void c_invoke_time_step(
         h_dy_t = Kokkos::create_mirror_view( dy_t_view );
         h_gphiu = Kokkos::create_mirror_view( gphiu_view );
         h_gphiv = Kokkos::create_mirror_view( gphiv_view );
-
         // Copy Fortran arrays into the Kokkos View Mirrors
         for(int jj=0; jj < internal_ystop+1; jj++){
             for(int ji=0; ji < internal_xstop+1; ji++){
