@@ -192,7 +192,7 @@ CONTAINS
        if(subdomain%global%xstop == jpi)then
           ! Eastern global boundary may be open (tidally forced)
           ! Make the open boundary outside the computational domain
-          ! (i.e. xstart + 1)
+          ! (i.e. xstop + 1)
           if (jphgr_msh .eq. 2 .or. jphgr_msh .eq. 3) then
             tmask(subdomain%internal%xstop+1:, :) = -1
           else
