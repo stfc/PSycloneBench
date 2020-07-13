@@ -1,13 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#ifdef __APPLE__
-#include <OpenCL/opencl.h>
-#else
-#include <CL/cl.h>
-#endif
-
 #include "opencl_utils.h"
 
 /** Maximum number of OpenCL devices we will query */
@@ -17,12 +7,13 @@
 #define VERBOSE 0
 
 /** Query the available OpenCL devices and choose one */
-void init_device(cl_device_id *device,
-		 char *version_str,
-		 cl_context *context)
+void init_device(
+        int platform_selection,
+        cl_device_id *device,
+		char *version_str,
+		cl_context *context)
 {
   /** The version of OpenCL supported by the selected device */
-  int cl_version;
   cl_device_id device_ids[MAX_DEVICES];
   cl_platform_id platform_ids[MAX_DEVICES];
   cl_uint ret_num_devices;
@@ -46,8 +37,15 @@ void init_device(cl_device_id *device,
 	    idev, (long)(platform_ids[idev]), result_str);
   }
 
-  ret = clGetDeviceIDs(platform_ids[0], CL_DEVICE_TYPE_DEFAULT, MAX_DEVICES,
-		       device_ids, &ret_num_devices);
+  if (platform_selection < ret_num_platforms){
+    fprintf(stdout, "Selecting platform %d.\n", platform_selection);
+  }else{
+    fprintf(stderr, "Selected platform %d does not exist.\n", platform_selection);
+    exit(-1);
+  }
+
+  ret = clGetDeviceIDs(platform_ids[platform_selection], CL_DEVICE_TYPE_DEFAULT,
+                       MAX_DEVICES, device_ids, &ret_num_devices);
   check_status("clGetDeviceIDs", ret);
   fprintf(stdout, "Have %d devices\n", ret_num_devices);
   for (idev=0; idev<ret_num_devices; idev++){
@@ -100,26 +98,11 @@ void init_device(cl_device_id *device,
   idev = 0;
   *device = device_ids[idev];
 
-  /* Check what version of OpenCL is supported */
-  if(strstr(version_str, "OpenCL 1.0")){
-    cl_version = 100;
-  }
-  else if(strstr(version_str, "OpenCL 1.2")){
-    cl_version = 120;
-  }
-  else if(strstr(version_str, "OpenCL 2.0")){
-    cl_version = 200;
-  }
-  else{
-    fprintf(stderr, "Unsupported OpenCL version: %s\n", version_str);
-    exit(1);
-  }
-
   /* Create OpenCL context for just 1 device */
   cl_context_properties cl_props[3];
   /* The list of properties for this context is zero terminated */
   cl_props[0] = CL_CONTEXT_PLATFORM;
-  cl_props[1] = (cl_context_properties)(platform_ids[0]);
+  cl_props[1] = (cl_context_properties)(platform_ids[platform_selection]);
   cl_props[2] = 0;
 
   *context = clCreateContext(cl_props, 1, device, NULL, NULL, &ret);
@@ -244,11 +227,11 @@ void check_status(const char *text, cl_int err){
 
 cl_program get_program(cl_context context,
 		       const cl_device_id *device,
-		       const char *version_str,
+		       int is_source_file,
 		       const char *filename){
   cl_program program;
 
-  if( strstr(version_str, "FPGA SDK") ){
+  if(!is_source_file){
     program = get_binary_kernel(context, device, filename);
   }
   else{
@@ -315,31 +298,15 @@ cl_program get_binary_kernel(cl_context context,
   FILE *fp;
   const int num_binaries = 1;
   /** Array of pointers to buffers containing kernel binaries */
-  unsigned char *binary_buffers[num_binaries];
+  const unsigned char *binary_buffers[num_binaries];
   size_t binary_sizes[num_binaries];
   cl_int binary_status[num_binaries];
-  /* Modified filename of the kernel binary (as opposed to source) */
-  char bname[STD_STRING_LEN];
   char *ptr;
   /* Holds return value of calls to OpenCL API */
   cl_int ret;
-  /* Modify the name of the kernel to point to a pre-compiled .aocx file */
-  strcpy(bname, filename);
   
-  if(ptr = strstr(bname, ".c")){
-    /* We've been given the name of the kernel source file. We change the
-       suffix to get the name of the compiled version. */
-    sprintf(ptr, ".aocx");
-  }
-  else if(!strstr(bname, ".aocx")){
-    fprintf(stderr,
-	    "ERROR: get_binary_kernel: supplied filename (%s) is not a c "
-	    "source (.c) file or a compiled (.aocx) file\n", bname);
-    exit(1);
-  }
-
   /* Open and read the file containing the pre-compiled kernel */  
-  fp = fopen(bname, "rb");
+  fp = fopen(filename, "rb");
   if (!fp) {
     fprintf(stderr,
 	    "ERROR: get_binary_kernel: Failed to load pre-compiled kernel file: "
@@ -349,18 +316,15 @@ cl_program get_binary_kernel(cl_context context,
   fseek(fp, 0, SEEK_END);
   binary_sizes[0] = ftell(fp);
   binary_buffers[0] = (unsigned char*)malloc(
-				  sizeof(unsigned char)*binary_sizes[0]);
+                        sizeof(unsigned char)*binary_sizes[0]);
   rewind(fp);
   fread(binary_buffers[0], binary_sizes[0], 1, fp);
   fclose(fp);
-  fprintf(stdout, "Read %d bytes for binary %s\n", binary_sizes[0], bname);
+  fprintf(stdout, "Read %d bytes for binary %s\n", (int)binary_sizes[0], filename);
 
   /* Create the program object from the loaded binary */
   cl_program program = clCreateProgramWithBinary(context, (cl_uint)1,
-						 device,
-						 binary_sizes,
-						 binary_buffers,
-						 binary_status, &ret);
+      device, binary_sizes, binary_buffers, binary_status, &ret);
   check_status("clCreateProgramWithBinary", ret);
   check_status("Loading binary", binary_status[0]);
 
@@ -368,7 +332,7 @@ cl_program get_binary_kernel(cl_context context,
   ret = clBuildProgram(program, 0, NULL, "", NULL, NULL);
   check_status("clBuildProgram", ret);
 
-  /* Clean up */
+  // Clean up
   for(int ibuf=0; ibuf<num_binaries; ibuf++){
     free(binary_buffers[ibuf]);
   }

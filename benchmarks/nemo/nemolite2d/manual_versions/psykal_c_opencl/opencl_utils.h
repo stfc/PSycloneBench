@@ -1,6 +1,10 @@
 #ifndef _KERNEL_BUILDER_INCLUDE
 #define _KERNEL_BUILDER_INCLUDE
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
@@ -9,7 +13,9 @@
 
 #define STD_STRING_LEN 128
 
-void init_device(cl_device_id *device,
+void init_device(
+         int platform_selection,
+         cl_device_id *device,
 		 char *version_str,
 		 cl_context *context);
 
@@ -19,7 +25,7 @@ void check_status(const char *text, cl_int err);
 
 cl_program get_program(cl_context context,
 		       const cl_device_id *device,
-		       const char *version_str,
+		       int is_source_file,
 		       const char *filename);
 
 cl_program get_source_kernel(cl_context context,
