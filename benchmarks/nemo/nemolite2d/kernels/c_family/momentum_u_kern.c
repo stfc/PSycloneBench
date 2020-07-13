@@ -4,6 +4,12 @@
 
 #ifdef OPENCL_HOST // If it is OpenCL infrastructure
 
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
+
 /** Set the arguments for the OpenCL kernel */
 void set_args_momu(cl_kernel kern,
            cl_int *nx,

@@ -4,6 +4,12 @@
 
 #ifdef OPENCL_HOST // If it is OpenCL infrastructure
 
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
+
 void set_args_momv(cl_kernel kern,
            cl_int *nx,
            cl_int *xstop,

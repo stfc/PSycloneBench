@@ -3,6 +3,13 @@
 #include <math.h>
 
 #ifdef OPENCL_HOST // If it is OpenCL infrastructure
+
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
+
 void set_args_bc_ssh(cl_kernel bc_ssh_kernel,
 			 cl_int *nx,
 			 cl_int *xstop,
