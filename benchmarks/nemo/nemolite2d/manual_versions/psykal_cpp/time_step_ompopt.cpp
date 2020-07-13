@@ -102,7 +102,8 @@ extern "C" void c_invoke_time_step(
     }
 
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
-    #pragma omp parallel for
+    // We cannot execute this loop in (OpenMP) parallel because of the
+    // loop-carried dependency in j.
     for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             bc_flather_v_code(ji, jj, width, va, hv, sshn_v, tmask, g);
