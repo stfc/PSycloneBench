@@ -1,14 +1,8 @@
-# Makefile for manual C++ version of PSyKAl'd NEMOLite2D.
+# Makefile for manual C++ OmpSs version of PSyKAl'd NEMOLite2D.
 #
 # This Makefile picks up the compiler to use any flags from
 # environment variables. e.g. to use gfortran:
 # 
-# export F90=gfortran
-# export CXX=g++
-# export CFLAGS="-O3"
-# export F90FLAGS="-O3"
-# export OMPFLAGS=" -fopenmp"
-# export AR=ar
 
 .PHONY: all nemolite2d_ompss
 .DEFAULT_GOAL := nemolite2d_ompss
@@ -34,10 +28,6 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 
 # Linking the executable needs the -lstdc++ to link also the std lib functions
 # called from C++ code
-#%.exe: $(MODULE_LIST)
-#	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-#		$(LDFLAGS) ${OMPFLAGS} -lstdc++
-
 
 nemolite2d_ompss.exe: $(MODULE_LIST)
 	mcxx --ompss -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \

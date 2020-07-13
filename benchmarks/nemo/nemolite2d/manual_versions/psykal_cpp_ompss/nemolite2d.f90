@@ -7,7 +7,6 @@ program gocean2d
   use gocean2d_io_mod, only: model_write
   use gocean_mod,      only: model_write_log, gocean_initialise, &
                              gocean_finalise
-  !use likwid
 
   !> A Horizontal 2D hydrodynamic ocean model which
   !!   1) using structured grid
@@ -50,7 +49,6 @@ program gocean2d
 
   !! read in model parameters and configure the model grid 
   CALL model_init(model_grid)
-  !call likwid_markerInit()
 
   ! Create fields on this grid
 
@@ -122,7 +120,6 @@ program gocean2d
 
   !! finalise the model run
   call model_finalise()
-  !call likwid_markerClose()
 
   call model_write_log("((A))", 'Simulation finished!!')
 

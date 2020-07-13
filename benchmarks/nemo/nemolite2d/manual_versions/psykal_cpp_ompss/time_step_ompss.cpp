@@ -1,5 +1,4 @@
 #include <iostream>
-//#include <chrono>
 #include <vector>
 #include <cstdlib>
 
@@ -55,10 +54,19 @@ extern "C" void c_invoke_time_step(
 
 #define TASK_SIZE 32
 //Each double loop over jj then ji is divided into a new structure.
-//The outer loop, now loops over incrememnts of 32 (initially chosen arbitrarliy), and creates tasks of this size
-//For the dependencies supplied to OmpSs, as opposed to putting the full memory for now, we compute the "task row"
+//The outer loop, now loops over increments of 32 (initially chosen arbitrarily),
+//and creates tasks of this size
+//For the dependencies supplied to OmpSs, as opposed to putting the full memory for now,
+//we compute the "task row"
 //For the nth task for each jj+=32 loop, this is n.
-//Tasks read or write to the task_rows appropriately (always either task_row, task_row-1, or task_row+1)
+//Tasks read to the task_rows appropriately (always either task_row, task_row-1, or task_row+1)
+//Tasks only write to the task_row according to jj/TASK_SIZE
+//TASK_SIZE is controlled by the define above
+//We use the task_rows to control the dependencies between tasks.
+//OmpSs/OpenMP task dependencies don't need to cover the actual memory addresses used.
+//As long as all tasks use the same sized TASK_SIZE, the dependencies will be sound.
+//We could write this to use the memory addresses directly, but this is more readable
+//and could allow the dependence analysis to be easier, enabling the code to run faster
 
     // Continuity kernel (internal domain)
     // Try dividing continuity code into 32 rows at a time
@@ -215,6 +223,8 @@ extern "C" void c_invoke_time_step(
       }
     }
 
+//Since the following code is not in a task, we must wait for the previous work to complete
+//so we need this taskwait.
 #pragma omp taskwait
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
     // Can't be parallelised over j, so no task (messes up dependence analysis for following tasks
