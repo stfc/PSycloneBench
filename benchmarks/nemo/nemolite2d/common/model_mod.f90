@@ -167,30 +167,6 @@ CONTAINS
           end if
        end if
 
-       ! Eastern boundary
-       if(subdomain%global%xstop == jpi)then
-          ! Eastern global boundary may be open (tidally forced)
-          ! Make the open boundary outside the computational domain
-          ! (i.e. ystart - 1)
-          if (jphgr_msh .eq. 2 .or. jphgr_msh .eq. 3) then
-            tmask(subdomain%internal%xstop+1:, :) = -1
-          else
-            tmask(subdomain%internal%xstop+1:, :) = 0
-          endif
-       else
-          ! Subdomain is not at the easternmost extent of the global
-          ! domain so boundary is wet.
-          do jj = subdomain%internal%ystart, subdomain%internal%ystop
-             tmask(subdomain%internal%xstop+1:, jj) = 1
-          end do
-
-          if(subdomain%global%ystop /= jpj)then
-             ! NE corner of this sub-domain is internal so corner halo
-             ! points are all wet
-             tmask(subdomain%internal%xstop+1:,subdomain%internal%ystop+1:) = 1
-          end if
-       end if
-
        ! Northern boundary
        if(subdomain%global%ystop == jpj)then
           ! North solid boundary
@@ -208,6 +184,30 @@ CONTAINS
           end if
           if(subdomain%global%xstop /= jpi)then
              ! NE corner is internal and thus halo pts are wet
+             tmask(subdomain%internal%xstop+1:,subdomain%internal%ystop+1:) = 1
+          end if
+       end if
+
+       ! Eastern boundary
+       if(subdomain%global%xstop == jpi)then
+          ! Eastern global boundary may be open (tidally forced)
+          ! Make the open boundary outside the computational domain
+          ! (i.e. xstart + 1)
+          if (jphgr_msh .eq. 2 .or. jphgr_msh .eq. 3) then
+            tmask(subdomain%internal%xstop+1:, :) = -1
+          else
+            tmask(subdomain%internal%xstop+1:, :) = 0
+          endif
+       else
+          ! Subdomain is not at the easternmost extent of the global
+          ! domain so boundary is wet.
+          do jj = subdomain%internal%ystart, subdomain%internal%ystop
+             tmask(subdomain%internal%xstop+1:, jj) = 1
+          end do
+
+          if(subdomain%global%ystop /= jpj)then
+             ! NE corner of this sub-domain is internal so corner halo
+             ! points are all wet
              tmask(subdomain%internal%xstop+1:,subdomain%internal%ystop+1:) = 1
           end if
        end if
