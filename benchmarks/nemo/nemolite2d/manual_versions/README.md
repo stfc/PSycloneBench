@@ -41,6 +41,10 @@ concerns. These are:
 
     - `single_file_acc`: OpenACC version of the single source-file form of
     NEMOLite2D with different optimisations applied.
+    
+    - `regent` : Regent version of NEMOLite2D. This is a data-parallel
+    implementation using the Regent language, which sits on the Legion
+    runtime system.
 
 ## Makefile ##
 A top-level Makefile is provided to recurse down to the multiple
