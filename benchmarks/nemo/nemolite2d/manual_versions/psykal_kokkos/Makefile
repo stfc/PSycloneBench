@@ -11,7 +11,7 @@
 # export AR=ar
 
 # Additionally it needs the path to the Kokkos source code
-KOKKOS_PATH ?= $(HOME)/localtools/kokkos
+KOKKOS_PATH ?= $(HOME)/tools/kokkos
 KOKKOS_DEBUG ?= yes
 
 # If no KOKKOS_DEVICES is specified, by default use the OpenMP
@@ -76,7 +76,7 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 # called from C++ code
 %.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) 
 	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LINK_DEPENDS) \
+		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LINK_DEPENDS)  $(KOKKOS_LIBS)\
 		-L$(CUDA_LIB) -L. -lstdc++ -ldl
 
 # Kokkos files rules

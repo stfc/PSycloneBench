@@ -166,6 +166,7 @@ extern "C" void c_invoke_time_step(
 
     }
 
+    // Create references to avoid using the pointer notation for the views below.
     auto& ssha_t_view = *ssha_t_view_p;
     auto& sshn_t_view = *sshn_t_view_p;
     auto& sshn_u_view = *sshn_u_view_p;
@@ -225,6 +226,7 @@ extern "C" void c_invoke_time_step(
         h_dy_t = Kokkos::create_mirror_view( dy_t_view );
         h_gphiu = Kokkos::create_mirror_view( gphiu_view );
         h_gphiv = Kokkos::create_mirror_view( gphiv_view );
+
         // Copy Fortran arrays into the Kokkos View Mirrors
         for(int jj=0; jj < internal_ystop+1; jj++){
             for(int ji=0; ji < internal_xstop+1; ji++){
