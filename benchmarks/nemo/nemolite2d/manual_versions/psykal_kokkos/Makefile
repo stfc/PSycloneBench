@@ -74,15 +74,18 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 
 # Linking the executable needs the -lstdc++ to link also the std lib functions
 # called from C++ code
-%.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) 
+%.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) timing.o
 	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
 		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LINK_DEPENDS)  $(KOKKOS_LIBS)\
-		-L$(CUDA_LIB) -L. -lstdc++ -ldl
+		-L$(CUDA_LIB) timing.o -L. -lstdc++ -ldl
 
 # Kokkos files rules
 %_kokkos.o: %_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
 	$(CXX) -DEXEC_SPACE=$(KOKKOS_DEVICES) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) \
 		$(CFLAGS) $(OMPFLAGS) -c $<
+
+timing.o: timing.cpp
+	$(CXX) -c $<
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean

@@ -4,6 +4,13 @@
 #include <cstdlib>
 #include <Kokkos_Core.hpp>
 
+// Uncomment line below to use TIMER
+#define USE_TIMER
+
+#ifdef USE_TIMER
+#include "timing.h"
+#endif
+
 bool first_time = true;
 
 // The execution space is given as a preprocessor define when compiling
@@ -120,6 +127,11 @@ extern "C" void c_invoke_time_step(
         double d2r,
         double g
         ){
+
+#ifdef USE_TIMER
+    TimerInit();
+    TimerStart("Kokkos SetUp");
+#endif
 
     // MDRangePolicy uses an open interval (does not include the end
     // point), while the provided 'stop' represent closed ranges.
@@ -297,6 +309,11 @@ extern "C" void c_invoke_time_step(
     // can still be split to a different file using the Kokkos functor pattern
     // if needed for readability.
     
+#ifdef USE_TIMER
+    TimerStop();
+    TimerStart("Continuity Kernel");
+#endif
+
     // Continuity kernel (internal domain)
     Kokkos::parallel_for("continuity",
         mdrange_policy({internal_ystart, internal_xstart},
@@ -313,6 +330,11 @@ extern "C" void c_invoke_time_step(
                 rdt / area_t_view(jj, ji);
         }
     );
+
+#ifdef USE_TIMER
+    TimerStop();
+    TimerStart("Momentum Kernels");
+#endif
 
     // Momentum_u kernel (internal domain u points)
     Kokkos::parallel_for("momentum_u",
@@ -520,6 +542,11 @@ extern "C" void c_invoke_time_step(
             }
     );
     
+#ifdef USE_TIMER
+    TimerStop();
+    TimerStart("Remaining Kernels");
+#endif
+
     // Boundary conditions bc_ssh kernel (internal domain)
     Kokkos::parallel_for("bc_ssh",
         mdrange_policy({internal_ystart, internal_xstart},
@@ -669,6 +696,11 @@ extern "C" void c_invoke_time_step(
         }
     );
 
+#ifdef USE_TIMER
+    TimerStop();
+    TimerStart("Copy back");
+#endif
+
     // Update device data into the host mirror if necessary
     Kokkos::deep_copy( h_ssha_t, ssha_t_view );
     Kokkos::deep_copy( h_sshn_t, sshn_t_view);
@@ -704,4 +736,10 @@ extern "C" void c_invoke_time_step(
             ssha_v[idx] = h_ssha_v(jj, ji);
         }
     }
+
+#ifdef USE_TIMER
+    TimerStop();
+    TimerReport();
+#endif
+
 }
