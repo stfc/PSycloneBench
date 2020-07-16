@@ -2,10 +2,11 @@
 #
 # F90       - How to invoke the Fortran compiler
 # F90FLAGS  - Flags to pass to the Fortran compiler
-# OMPFLAGS  - Flags for compiling with OpenMP
+# OMPFLAGS  - Flags needed for linking dl_timer
 # AR        - Command to use when creating an archive (.a)
 
-.PHONY: all nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
+.PHONY: all nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv \
+	nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
 .DEFAULT_GOAL := nemolite2d
 
 include ../common.mk
@@ -15,7 +16,7 @@ include ../common.mk
 IMPLEMENTATIONS=nemolite2d nemolite2d_align nemolite2d_preload
 
 # The implementations commented out below don't produce the same results but
-# can still be compiled with 'make <IMPLEMENTATION>'
+# can still be compiled with 'make <IMPLEMENTATION>' or uncommenting them.
 #
 # Implementation that produce slightly different results:
 # IMPLEMENTATIONS += nemolite2d_alignall nemolite2d_nopeel

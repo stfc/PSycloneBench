@@ -43,36 +43,11 @@ contains
     ! end locals for momentum
     ! Locals for BCs
     real(go_wp) :: amp_tide, omega_tide, rtime
-    ! Locals for loop bounds
-    integer :: xstart, xstop, ystart, ystop, uxstop, vystop
-    integer :: whole_xstart, whole_xstop, whole_ystart, whole_ystop
-    integer :: uwhole_xstop, vwhole_ystop
-
-    ! In the general case we have to reason about whether or not the
-    ! domain has PBCs and what sort of offset convention the kernels
-    ! use. However, this is a middle layer specific to NEMOLite2D and
-    ! therefore we know that we have no periodic BCs and are using a
-    ! NE stagger
-    xstart = ssha%grid%subdomain%internal%xstart
-    ystart = ssha%grid%subdomain%internal%ystart
-    xstop = ssha%grid%subdomain%internal%xstop
-    ystop = ssha%grid%subdomain%internal%ystop
-
-    uxstop = xstop - 1
-    vystop = ystop - 1
-
-    whole_xstart = xstart - NBOUNDARY
-    whole_xstop  = xstop  + NBOUNDARY
-    whole_ystart = ystart - NBOUNDARY
-    whole_ystop  = ystop  + NBOUNDARY
-
-    uwhole_xstop = uxstop + NBOUNDARY
-    vwhole_ystop = vystop + NBOUNDARY
 
     call timer_start(cont_timer, label='Continuity')
 
-    do jj = ystart, ystop
-      do ji = xstart, xstop 
+    do jj = ssha%internal%ystart, ssha%internal%ystop, 1
+      do ji = ssha%internal%xstart, ssha%internal%xstop, 1
 
         ! call continuity_code(ji, jj,                             &
         !                      ssha%data, sshn_t%data,             &
@@ -94,10 +69,10 @@ contains
     call timer_start(mom_timer, label='Momentum')
 
     !dir$ safe_address
-    do jj = ystart, ystop
+    do jj = ua%internal%ystart, ua%internal%ystop
       ! SIMD
       !dir$ vector always
-      do ji = xstart, uxstop 
+      do ji = ua%internal%xstart, ua%internal%xstop
 
         ! call momentum_u_code(ji, jj, &
         !                      ua%data, un%data, vn%data, &
@@ -210,10 +185,10 @@ contains
     end do
  
     !dir$ safe_address
-    do jj = ystart, vystop
+    do jj = va%internal%ystart, va%internal%ystop
       ! SIMD
       !dir$ vector always
-      do ji = xstart, xstop
+      do ji = va%internal%xstart, va%internal%xstop
 
         ! call momentum_v_code(ji, jj, &
         !                      va%data, un%data, vn%data, &
@@ -336,9 +311,9 @@ contains
 
     call timer_start(bc_timer, label='BCs')
 
-    DO jj = ystart, ystop
+    DO jj = ssha%internal%ystart, ssha%internal%ystop
       ! SIMD
-      DO ji = xstart, xstop
+      DO ji = ssha%internal%xstart, ssha%internal%xstop
         ! call bc_ssh_code(ji, jj, istp, ssha%data, sshn_t%grid%tmask)
         amp_tide   = 0.2_go_wp
         omega_tide = 2.0_go_wp * 3.14159_go_wp / (12.42_go_wp * 3600._go_wp)
@@ -361,8 +336,8 @@ contains
 
 
     !dir$ safe_address
-    do jj = whole_ystart, whole_ystop
-       do ji = whole_xstart, uwhole_xstop
+    do jj = ua%whole%ystart, ua%whole%ystop
+       do ji = ua%whole%xstart, ua%whole%xstop
          ! call bc_solid_u_code(ji, jj, ua%data, va%grid%tmask)
 
          if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) == 0)then
@@ -372,8 +347,8 @@ contains
     end do
 
     !dir$ safe_address
-    do jj = whole_ystart, vwhole_ystop
-       do ji = whole_xstart, whole_xstop
+    DO jj = va%whole%ystart, va%whole%ystop
+       DO ji = va%whole%xstart, va%whole%xstop
          ! call bc_solid_v_code(ji,jj, va%data, ua%grid%tmask)
          if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) == 0)then
            va%data(ji,jj) = 0._go_wp
@@ -382,8 +357,8 @@ contains
     end do
 
     !dir$ safe_address
-    do jj = whole_ystart, whole_ystop
-       do ji = whole_xstart, uwhole_xstop
+    do jj = ua%whole%ystart, ua%whole%ystop
+       do ji = ua%whole%xstart, ua%whole%xstop
           ! call bc_flather_u_code(ji,jj, &
           !                        ua%data, hu%data, sshn_u%data, &
           !                        sshn_u%grid%tmask)
@@ -403,8 +378,8 @@ contains
     END DO
 
     !dir$ safe_address
-    do jj = whole_ystart, vwhole_ystop
-       do ji = whole_xstart, whole_xstop
+    DO jj = va%whole%ystart, va%whole%ystop
+       DO ji = va%whole%xstart, va%whole%xstop
           ! call bc_flather_v_code(ji,jj, &
           !                        va%data, hv%data, sshn_v%data, &
           !                        sshn_v%grid%tmask)
@@ -436,9 +411,9 @@ contains
     sshn_t%data = ssha%data
 
     !dir$ safe_address
-    do jj = ystart, ystop
+    do jj = sshn_u%internal%ystart, sshn_u%internal%ystop
       !dir$ vector always
-      do ji = xstart, uxstop
+      do ji = sshn_u%internal%xstart, sshn_u%internal%xstop
         ! call next_sshu_code(ji, jj, sshn_u%data, sshn_t%data, &
         !                     sshn_t%grid%tmask,                 &
         !                     sshn_t%grid%area_t, sshn_t%grid%area_u)
@@ -460,9 +435,9 @@ contains
     end do
 
     !dir$ safe_address
-    do jj = ystart, vystop
+    do jj = sshn_v%internal%ystart, sshn_v%internal%ystop
       !dir$ vector always
-      do ji = xstart, xstop
+      do ji = sshn_v%internal%xstart, sshn_v%internal%xstop
         ! call next_sshv_code(ji, jj,                   &
         !                     sshn_v%data, sshn_t%data, &
         !                     sshn_t%grid%tmask,        &
