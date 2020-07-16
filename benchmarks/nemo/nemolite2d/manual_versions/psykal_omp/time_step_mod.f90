@@ -520,7 +520,7 @@ contains
 ! We have to block here since sshn_t is used in the following loop.
 ! We could avoid this by altering the following two loop nests to read from
 ! ssha%data instead of sshn_t%data.
-!$OMP END DO
+!$OMP END DO NOWAIT
 
 !dir$ safe_address
 !$OMP DO SCHEDULE(RUNTIME)
@@ -536,13 +536,13 @@ contains
             sshn_t%grid%tmask(ji+1,jj) <= 0) cycle !jump over non-computational domain
 
          IF(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji+1,jj) > 0) THEN
-            rtmp1 = sshn_t%grid%area_t(ji,jj) * sshn_t%data(ji,jj) + &
-                 sshn_t%grid%area_t(ji+1,jj) * sshn_t%data(ji+1,jj)
+            rtmp1 = sshn_t%grid%area_t(ji,jj) * ssha%data(ji,jj) + &
+                 sshn_t%grid%area_t(ji+1,jj) * ssha%data(ji+1,jj)
             sshn_u%data(ji,jj) = 0.5_go_wp * rtmp1 / sshn_t%grid%area_u(ji,jj) 
          ELSE IF(sshn_t%grid%tmask(ji,jj) <= 0) THEN
-            sshn_u%data(ji,jj) = sshn_t%data(ji+1,jj)
+            sshn_u%data(ji,jj) = ssha%data(ji+1,jj)
          ELSE IF(sshn_t%grid%tmask(ji+1,jj) <= 0) THEN
-            sshn_u%data(ji,jj) = sshn_t%data(ji,jj)
+            sshn_u%data(ji,jj) = ssha%data(ji,jj)
          END IF
 
       end do
@@ -564,13 +564,13 @@ contains
          if(sshn_t%grid%tmask(ji,jj) + &
             sshn_t%grid%tmask(ji,jj+1) <= 0)  cycle !jump over non-computational domain
          if(sshn_t%grid%tmask(ji,jj) * sshn_t%grid%tmask(ji,jj+1) > 0) then
-            rtmp1 = sshn_t%grid%area_t(ji,jj)*sshn_t%data(ji,jj) + &
-                 sshn_t%grid%area_t(ji,jj+1) * sshn_t%data(ji,jj+1)
+            rtmp1 = sshn_t%grid%area_t(ji,jj)*ssha%data(ji,jj) + &
+                 sshn_t%grid%area_t(ji,jj+1) * ssha%data(ji,jj+1)
             sshn_v%data(ji,jj) = 0.5_go_wp * rtmp1 / sshn_t%grid%area_v(ji,jj) 
          else if(sshn_t%grid%tmask(ji,jj) <= 0) then
-            sshn_v%data(ji,jj) = sshn_t%data(ji,jj+1)
+            sshn_v%data(ji,jj) = ssha%data(ji,jj+1)
          else if(sshn_t%grid%tmask(ji,jj+1) <= 0) then
-            sshn_v%data(ji,jj) = sshn_t%data(ji,jj)
+            sshn_v%data(ji,jj) = ssha%data(ji,jj)
          end if
       end do
     end do

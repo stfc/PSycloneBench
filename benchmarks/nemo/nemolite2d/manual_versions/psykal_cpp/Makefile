@@ -10,7 +10,7 @@
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
 
-.PHONY: nemolite2d nemolite2d_omp
+.PHONY: all nemolite2d nemolite2d_omp nemolite2d_ompopt
 .DEFAULT_GOAL := nemolite2d
 
 include ../common.mk
@@ -21,6 +21,8 @@ LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
 COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${KERNELS} ${INF_LIB}
 
 # Normal targets
+all: nemolite2d nemolite2d_omp
+
 nemolite2d: ${COMMON_LIB} timer_lib inf_lib time_step.o
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step.o" nemolite2d.exe
 
@@ -44,7 +46,9 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 
 # C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
 # the imported ../common.mk)
-%.o: %.cpp
+# Since kernels are included directly any modification in the kernel files
+# must trigger a recompilation.
+%.o: %.cpp ../../kernels/c_family/*.c
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
 
 clean: 

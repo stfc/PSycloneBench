@@ -44,6 +44,7 @@ extern "C" void c_invoke_time_step(
         double * dy_v,
         double * dy_t,
         double * gphiu,
+        double * gphiv,
         // Scalars
         int istep,
         int internal_xstart,
@@ -71,7 +72,7 @@ extern "C" void c_invoke_time_step(
                 area_u, gphiu, rdt, cbfr, visc, omega, d2r, g);
             momentum_v_code(ji, jj, width, va, un, vn, hu, hv, ht, ssha_v, \
                 sshn_t, sshn_u, sshn_v, tmask, dx_v, dx_t, dy_u, dy_v, dy_t, \
-                area_v, gphiu, rdt, cbfr, visc, omega, d2r, g);
+                area_v, gphiv, rdt, cbfr, visc, omega, d2r, g);
         }
     }
 
@@ -101,7 +102,8 @@ extern "C" void c_invoke_time_step(
     }
 
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
-    #pragma omp parallel for
+    // We cannot execute this loop in (OpenMP) parallel because of the
+    // loop-carried dependency in j.
     for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             bc_flather_v_code(ji, jj, width, va, hv, sshn_v, tmask, g);

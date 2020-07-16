@@ -95,6 +95,9 @@ nemolite2d_8arrays: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel_8arr
 	${MAKE} MODULE_LIST="time_step_mod_alignall_preload_nopeel_8arrays.o nemolite2d.o ${COMMON_MODULES}" \
              LDFLAGS="${LDFLAGS} ${OMPFLAGS}" nemolite2d_8arrays.exe
 
+# Linking binary targets
+%.exe: $(MODULE_LIST)
+	$(F90) -o $@ $(MODULE_LIST) ${TIMER_LIB} $(LDFLAGS)
 
 clean: 
 	rm -f *.o *.mod *.MOD *~ go2d_* tmask_*

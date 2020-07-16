@@ -1,9 +1,8 @@
-#ifndef __OPENCL_VERSION__
-// This header isn't available/required in OpenCL
-#include <math.h>
+#ifndef __OPENCL_VERSION__  // If its not an OpenCL Kernel
 #include <stdio.h>
-#else
-#include "opencl_utils.h"
+#include <math.h>
+
+#ifdef OPENCL_HOST // If it is OpenCL infrastructure
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -14,6 +13,7 @@
 /** Set the arguments for the OpenCL kernel */
 void set_args_momu(cl_kernel kern,
            cl_int *nx,
+           cl_int *xstop,
            cl_mem *ua_device,
            cl_mem *un_device,
            cl_mem *vn_device,
@@ -29,10 +29,13 @@ void set_args_momu(cl_kernel kern,
            cl_mem *e1t_device, cl_mem *e2u_device,
            cl_mem *e2t_device, cl_mem *e12u_device,
            cl_mem *gphiu_device,
-           cl_double *rdt, cl_double *cbfr, cl_double *visc){
+           cl_double *rdt, cl_double *cbfr, cl_double *visc,
+           cl_double *omega, cl_double *d2r, cl_double *g){
   cl_int ret;
   cl_int arg_idx = 0;
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_int), (void *)xstop);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_mem),
                (void *)ua_device);
@@ -97,56 +100,23 @@ void set_args_momu(cl_kernel kern,
   ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double),
                (void *)visc);
   check_status("clSetKernelArg", ret);
-  fprintf(stdout, "Set %d arguments for Momentum-u kernel\n", arg_idx);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double),
+               (void *)omega);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double),
+               (void *)d2r);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(kern, arg_idx++, sizeof(cl_double),
+               (void *)g);
+  check_status("clSetKernelArg", ret);
 }
-
-#endif
-
-/*
-  type, extends(kernel_type) :: momentum_u
-     type(arg), dimension(18) :: meta_args =  &
-          (/ arg(READWRITE, CU, POINTWISE),  & ! ua
-             arg(READ,      CU, POINTWISE),  & ! un
-             arg(READ,      CV, POINTWISE),  & ! vn
-             arg(READ,      CU, POINTWISE),  & ! hu
-             arg(READ,      CV, POINTWISE),  & ! hv
-             arg(READ,      CT, POINTWISE),  & ! ht
-             arg(READ,      CU, POINTWISE),  & ! ssha_u
-             arg(READ,      CT, POINTWISE),  & ! sshn_t
-             arg(READ,      CU, POINTWISE),  & ! sshn_u
-             arg(READ,      CV, POINTWISE),  & ! sshn_v
-             arg(READ,      GRID_MASK_T),    &
-             arg(READ,      GRID_DX_U),      &
-             arg(READ,      GRID_DX_V),      &
-             arg(READ,      GRID_DX_T),      &
-             arg(READ,      GRID_DY_U),      &
-             arg(READ,      GRID_DY_T),      &
-             arg(READ,      GRID_AREA_U),    &
-             arg(READ,      GRID_LAT_U)      &
-           /)
-
-     !> We update only those points within the internal region
-     !! of the simulated domain.
-     integer :: ITERATES_OVER = INTERNAL_PTS
-
-     !> Although the staggering of variables used in an Arakawa
-     !! C grid is well defined, the way in which they are indexed is
-     !! an implementation choice. This can be thought of as choosing
-     !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel assumes that the U,V and F points that
-     !! share the same index as a given T point are those immediately
-     !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
-
-  contains
-    procedure, nopass :: code => momentum_u_code
-  end type momentum_u
-*/
+#endif  // Closes ifdef OPENCL_HOST
+#endif  // Closes ifndef __OPENCL_VERSION__
 
 
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */
-__kernel void momentum_u_code(int width,
+__kernel void momentum_u_code(int width, int xstop,
                   __global double* restrict ua,
                   const __global double* restrict un,
                   const __global double* restrict vn,
@@ -165,12 +135,19 @@ __kernel void momentum_u_code(int width,
                   const __global double* restrict e2t,
                   const __global double* restrict e12u,
                   const __global double* restrict gphiu,
-                  double rdt, double cbfr, double visc){
+                  double rdt, double cbfr, double visc,
+                  double omega, double d2r, double g){
   int ji = get_global_id(0);
   int jj = get_global_id(1);
+  if(ji > xstop)return;
 #else
 /** Interface to standard C version of kernel */
-inline void momentum_u_code(int ji, int jj, int width,
+#if defined(KOKKOS_INLINE_FUNCTION)
+KOKKOS_INLINE_FUNCTION
+#else
+inline
+#endif
+void momentum_u_code(int ji, int jj, int width,
              double *ua, double *un, double *vn,
              double *hu, double *hv, double *ht, double *ssha_u,
              double *sshn, double *sshn_u, double *sshn_v,
@@ -190,12 +167,6 @@ inline void momentum_u_code(int ji, int jj, int width,
   int idxim1, idxjm1, idxip1, idxjp1, idxip1jm1;
   int idx = jj*width + ji;
   
-#ifdef __OPENCL_VERSION__
-  //  int nrow = (int)get_global_size(1);
-  //if(ji==0 || ji > (width-2))return;
-  //if(jj==0 || jj > (nrow-2))return;
-#endif
-
 #ifdef SIMPLE_MOMENTUM
   ua[idx] = (un[idx] * (hu[idx] + sshn_u[idx]) + rdt * 
          (1.0) / e12u[idx]) / 
