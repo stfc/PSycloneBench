@@ -144,6 +144,9 @@ So, it looks like a compiler bug. I should let nvidia know.
 Checking performance as it looks like adding temporary vars slows the code down ...
 
 Yes ... adding a temporary variable for the reader map slows the code down alot!!!!
+
+-O 1.26s
+
 So ... remove this and let NVIDIA know.
 
 Timings with temporary cmap and writer map are ...
@@ -169,7 +172,16 @@ Timings with just temporary cmap are faster but don't always give the correct re
 
 -------------
 
-TODO: Parallelise over reader dofs as well (use collapse)
+Parallelising over reader dofs as well using collapse(2) just makes
+the code run more slowly (~1.45s) even when the matrix 2nd and 3rd
+dimensions are swapped. I presume this is to do with the sparse read
+to the rhs vector.
+
+I guess there might be a regime where we need more parallelism so this
+would be beneficial?
+
+-------------
+
 TODO: Check naive and NVIDIA versions
 TODO: Run with varying vertical
 TODO: Run with varying horizontal
@@ -187,7 +199,7 @@ Need to look at removing colouring.
 -------------
 
 
-Once I've done this I can run some plots and see how things change with different problem sizes.
-
-I'd like to be able to test with different mappings too as some are continuous in the vertical and some are not. Of course some are discontinuous in the horizontal too and this could make a big difference.
+I'd like to be able to test with different mappings too as some are
+continuous in the vertical and some are not. Of course some are
+discontinuous in the horizontal too and this could make a difference.
 

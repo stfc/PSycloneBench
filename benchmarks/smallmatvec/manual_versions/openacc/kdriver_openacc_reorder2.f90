@@ -212,6 +212,7 @@ program kdriver
                 map1_tmp = map_any_space_1_theta_adv_term(i,cmap_tmp)
                 do j = 1, ndf_any_space_2_x
                    !map2_tmp = map_any_space_2_x(j,cmap_tmp)
+                   !$acc loop vector independent
                    do k = 1, nlayers
                       !theta_adv_term_data(map1_tmp+k-1) = theta_adv_term_data(map1_tmp+k-1) + ptheta_2_local_stencil(ik+k,i,j) * x_data(map2_tmp+k-1)
                       theta_adv_term_data(map1_tmp+k-1) = theta_adv_term_data(map1_tmp+k-1) + ptheta_2_local_stencil(ik+k,i,j) * x_data(map_any_space_2_x(j,cmap_tmp)+k-1)
