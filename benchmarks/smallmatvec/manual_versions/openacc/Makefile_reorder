@@ -1,9 +1,12 @@
 FC=pgfortran
+#FFLAGS=-ta=host -Minfo -fast
 FFLAGS=-ta=tesla:managed -Minfo -O
 LDFLAGS=
 # FFLAGS=-ta=tesla:managed -Minfo -Mipa=inline:reshape
 # LDFLAGS=-Mipa=inline:reshape
 
+# reorder1 makes the kernel kinner and reorders the matrix
+# reorder2 does reorder1 but also inlines the code into the PSy-layer
 all : kdriver_openacc_reorder1 kdriver_openacc_reorder2
 
 %.o: %.f90

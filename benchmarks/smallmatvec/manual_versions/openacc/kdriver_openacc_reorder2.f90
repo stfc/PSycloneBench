@@ -78,10 +78,10 @@ program kdriver
   real(kind=r_def) :: start, end
 
   integer(kind=i_def), pointer :: map1(:)=>null(), map2(:)=>null()
-  integer(kind=i_def) :: colour, cell
+  integer(kind=i_def) :: colour, cell, cmap_tmp, map1_tmp, map2_tmp
   integer(kind=i_def) :: c1_index, c2_index, c3_index, c4_index
 
-  integer(kind=i_def) :: nsize, el, i1, i2, i
+  integer(kind=i_def) :: nsize, el, i1, i2
   character(len=32) :: arg
 
   integer :: i, j, k, ik
@@ -204,17 +204,21 @@ program kdriver
           !$acc parallel loop independent
           do cell = 1, ncp_colour(colour)
 
-            ! MANUAL INLINE
-            ik = (cmap(colour,cell)-1)*nlayers
+             ! MANUAL INLINE
+             cmap_tmp = cmap(colour,cell)
+             ik = (cmap_tmp-1)*nlayers
 
-  do i = 1, ndf_any_space_1_theta_adv_term
-     do j = 1, ndf_any_space_2_x
-        !$acc loop vector
-        do k = 1, nlayers
-           theta_adv_term_data(map_any_space_1_theta_adv_term(i,cmap(colour,cell))+k-1) = theta_adv_term_data(map_any_space_1_theta_adv_term(i,cmap(colour,cell))+k-1) + ptheta_2_local_stencil(ik+k,i,j) * x_data(map_any_space_2_x(j,cmap(colour,cell)+k-1))
-        end do
-     end do
-  end do
+             do i = 1, ndf_any_space_1_theta_adv_term
+                map1_tmp = map_any_space_1_theta_adv_term(i,cmap_tmp)
+                do j = 1, ndf_any_space_2_x
+                   !map2_tmp = map_any_space_2_x(j,cmap_tmp)
+                   do k = 1, nlayers
+                      !theta_adv_term_data(map1_tmp+k-1) = theta_adv_term_data(map1_tmp+k-1) + ptheta_2_local_stencil(ik+k,i,j) * x_data(map2_tmp+k-1)
+                      theta_adv_term_data(map1_tmp+k-1) = theta_adv_term_data(map1_tmp+k-1) + ptheta_2_local_stencil(ik+k,i,j) * x_data(map_any_space_2_x(j,cmap_tmp)+k-1)
+                      !theta_adv_term_data(map_any_space_1_theta_adv_term(i,cmap_tmp)+k-1) = theta_adv_term_data(map_any_space_1_theta_adv_term(i,cmap_tmp)+k-1) + ptheta_2_local_stencil(ik+k,i,j) * x_data(map_any_space_2_x(j,cmap_tmp)+k-1)
+                   end do
+                end do
+             end do
           end do
           !$acc end parallel loop
      end do
