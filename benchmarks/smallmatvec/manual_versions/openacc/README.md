@@ -166,7 +166,8 @@ For comparison 2 skylakes (not inlined) run in 0.83s.
 
 -------------
 
-Timings with just temporary cmap are faster but don't always give the correct reduction value ... pass to NVIDIA.
+Timings with just temporary cmap are faster but don't always give the
+correct reduction value ... pass to NVIDIA.
 
 -O 0.63s - but sometimes different results.
 
@@ -182,9 +183,23 @@ would be beneficial?
 
 -------------
 
+Ran reorder and inlined reorder with varying vertical
+Ran reorder and inlined with varying horizontal
+Results are in results/*
+
+-------------
+
+Manually made matrix the original (bad) way round i.e. we now have
+kinner and kinner inlined without re-order.
+Results are in results/*
+
+-------------
+
+UP TO HERE
+
+-------------
+
 TODO: Check naive and NVIDIA versions
-TODO: Run with varying vertical
-TODO: Run with varying horizontal
 TODO: Check inline version on Skylake
 
 

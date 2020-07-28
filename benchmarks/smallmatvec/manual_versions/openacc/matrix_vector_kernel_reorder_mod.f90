@@ -84,7 +84,7 @@ subroutine matrix_vector_kernel_code(cell,              &
      do df2 = 1, ndf2
         !$acc loop vector
         do k = 1, nlayers
-           lhs(map1(df1)+k-1) = lhs(map1(df1)+k-1) + matrix(df1,df2,ik+k) * x(map2(df2)+k-1)
+           lhs(map1(df1)+k-1) = lhs(map1(df1)+k-1) + matrix(ik+k,df1,df2) * x(map2(df2)+k-1)
         end do
      end do
   end do

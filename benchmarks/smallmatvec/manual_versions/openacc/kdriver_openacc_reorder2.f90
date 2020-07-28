@@ -205,12 +205,15 @@ program kdriver
           do cell = 1, ncp_colour(colour)
 
              ! MANUAL INLINE
+             ! without using cmap_tmp we get incorrect results
              cmap_tmp = cmap(colour,cell)
              ik = (cmap_tmp-1)*nlayers
 
              do i = 1, ndf_any_space_1_theta_adv_term
+                ! without using map1_tmp we sometimes get incorrect results
                 map1_tmp = map_any_space_1_theta_adv_term(i,cmap_tmp)
                 do j = 1, ndf_any_space_2_x
+                   ! Adding map2_tmp makes the code run much more slowly
                    !map2_tmp = map_any_space_2_x(j,cmap_tmp)
                    !$acc loop vector independent
                    do k = 1, nlayers
