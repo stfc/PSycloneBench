@@ -22,7 +22,7 @@ echo "v100 openacc reorder timing results"
 
 for ps in 32; do
     output=v100_reorder_vertical_h32.txt
-    for vertical in 32 40 60 80 100 120 128 140; do
+    for vertical in 10 20 32 40 60 80 100 120 128 140; do
 	echo $vertical
 	echo -n $vertical >> $output
 	for version in reorder1 reorder2; do

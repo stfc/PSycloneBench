@@ -195,11 +195,56 @@ Results are in results/*
 
 -------------
 
+Looking at naive and nvidia versions
+
+naive version needs atomic as we are writing to a field that is
+continuous in the vertical. If it were not we would not need
+atomic. We also need to privatise the two arrays gather arrays.
+
+time                checksum
+64.76465797424316s  1.2213850309400101E+020
+
+nvidia1
+3.580666065216064   1.3805756942507162E+020
+
+nvidia2
+3.909955978393555   1.3805756942507160E+020
+
+nvidia3 - core dump
+
+nvidia4 - core dump
+
+-------------
+
+Running naive and nvidia versions serially on cpu with -O0 to check for
+correct coding
+
+naive version: 1.2271898522039376E+020 same as original code
+
+
 UP TO HERE
 
 -------------
 
+naive version does not need colouring as it has atomic so I should
+remove colouring.
+
+Colouring
+Inlined
+No-colouring inlined
+
+
+
+-------------
+
+-------------
+
 TODO: Check naive and NVIDIA versions
+
+
+-------------
+
+
 TODO: Check inline version on Skylake
 
 
