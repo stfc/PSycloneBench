@@ -7,6 +7,7 @@ program gocean2d
   use gocean2d_io_mod, only: model_write
   use gocean_mod,      only: model_write_log, gocean_initialise, &
                              gocean_finalise
+  use parallel_mod, only: get_rank
 
   !> A Horizontal 2D hydrodynamic ocean model which
   !!   1) using structured grid
@@ -27,6 +28,9 @@ program gocean2d
   type(r2d_field), target :: un_fld, vn_fld
   !> 'After' velocity components
   type(r2d_field), target :: ua_fld, va_fld
+
+  !> Checksums
+  real(go_wp) :: ua_csum, va_csum, ssh_t_csum
 
   ! time stepping index
   integer :: istp 
@@ -80,7 +84,9 @@ program gocean2d
 
   ! Start timer for time-stepping section
   nrepeat = nitend - nit000 + 1
-  call model_write_log("((A))", '=== Start Time-stepping ===')
+  if (get_rank() == 1) then
+    call model_write_log("((A))", '=== Start Time-stepping ===')
+  endif
   CALL timer_start(itimer0, label='Time-stepping', num_repeats=nrepeat)
 
   !! time stepping 
@@ -99,28 +105,25 @@ program gocean2d
 
   ! Stop the timer for the time-stepping section
   call timer_stop(itimer0)
-  call model_write_log("((A))", '=== Time-stepping finished ===')
+  ssh_t_csum = field_checksum(sshn_t_fld)
+  ua_csum = field_checksum(ua_fld)
+  va_csum = field_checksum(va_fld)
 
-  ! Compute and output some checksums for error checking
-  call model_write_log("('u checksum = ',E16.8)", &
-                       field_checksum(un_fld))
-  call model_write_log("('v checksum = ',E16.8)", &
-                       field_checksum(vn_fld))
-  call model_write_log("('ua checksum = ',E16.8)", &
-                       field_checksum(ua_fld))
-  call model_write_log("('va checksum = ',E16.8)", &
-                       field_checksum(va_fld))
-  call model_write_log("('ssh_u checksum = ',E16.8)", &
-                       field_checksum(sshn_u_fld))
-  call model_write_log("('ssh_v checksum = ',E16.8)", &
-                       field_checksum(sshn_v_fld))
-  call model_write_log("('ssh_t checksum = ',E16.8)", &
-                       field_checksum(sshn_t_fld))
+  if (get_rank() == 1) then
+      call model_write_log("((A))", '=== Time-stepping finished ===')
+
+      ! Compute and output some checksums for error checking
+      call model_write_log("('ua checksum = ',E16.8)", ua_csum)
+      call model_write_log("('va checksum = ',E16.8)", va_csum)
+      call model_write_log("('ssh_t checksum = ',E16.8)", ssh_t_csum)
+  endif
 
   !! finalise the model run
   call model_finalise()
   
-  call model_write_log("((A))", 'Simulation finished!!')
+  if (get_rank() == 1) then
+    call model_write_log("((A))", 'Simulation finished!!')
+  endif
 
   call gocean_finalise()
 
