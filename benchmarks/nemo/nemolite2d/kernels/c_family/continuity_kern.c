@@ -1,7 +1,7 @@
-#ifndef __OPENCL_VERSION__
+#ifndef __OPENCL_VERSION__  // If its not an OpenCL Kernel
 #include <stdio.h>
-#else
-#include "opencl_utils.h"
+
+#ifdef OPENCL_HOST // If it is OpenCL infrastructure
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -11,6 +11,7 @@
 
 void set_args_continuity(cl_kernel cont_kernel,
 			 cl_int *nx,
+			 cl_int *xstop,
 			 cl_mem *ssha_device,
 			 cl_mem *sshn_device,
 			 cl_mem *sshn_u_device,
@@ -24,6 +25,8 @@ void set_args_continuity(cl_kernel cont_kernel,
   cl_int ret;
   int arg_idx = 0;
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)nx);
+  check_status("clSetKernelArg", ret);
+  ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_int), (void *)xstop);
   check_status("clSetKernelArg", ret);
   ret = clSetKernelArg(cont_kernel, arg_idx++, sizeof(cl_mem),
 		       (void *)ssha_device);
@@ -58,42 +61,12 @@ void set_args_continuity(cl_kernel cont_kernel,
   
   fprintf(stdout, "Set %d arguments for Continuity kernel\n", arg_idx);
 }
-#endif
-/*
-  type, extends(kernel_type) :: continuity
-     type(arg), dimension(10) :: meta_args =    &
-          (/ arg(WRITE, CT, POINTWISE),        & ! ssha
-             arg(READ,  CT, POINTWISE),        & ! sshn
-             arg(READ,  CU, POINTWISE),        & ! sshn_u
-             arg(READ,  CV, POINTWISE),        & ! sshn_v
-             arg(READ,  CU, POINTWISE),        & ! hu
-             arg(READ,  CV, POINTWISE),        & ! hv
-             arg(READ,  CU, POINTWISE),        & ! un
-             arg(READ,  CV, POINTWISE),        & ! vn
-             arg(READ,  TIME_STEP),            &
-             arg(READ,  GRID_AREA_T)           &
-           /)
-     !> We only have one value per grid point and that means
-     !! we have a single DOF per grid point.
-     integer :: ITERATES_OVER = DOFS
+#endif  // Closes ifdef OPENCL_HOST
+#endif  // Closes ifndef __OPENCL_VERSION__
 
-     !> Although the staggering of variables used in an Arakawa
-     !! C grid is well defined, the way in which they are indexed is
-     !! an implementation choice. This can be thought of as choosing
-     !! which grid-point types have the same (i,j) index as a T
-     !! point. This kernel assumes that the U,V and F points that
-     !! share the same index as a given T point are those immediately
-     !! to the North and East of it.
-     integer :: index_offset = OFFSET_NE
-
-  contains
-    procedure, nopass :: code => continuity_code
-  end type continuity
-*/
-
-#ifdef __OPENCL_VERSION__
+#ifdef __OPENCL_VERSION__  // If it is an OpenCL kernel
 /** Interface to OpenCL version of kernel */
-__kernel void continuity_code(int width,                     
+__kernel void continuity_code(int width, int xstop,
 			      __global double* restrict ssha,
 			      __global double* restrict sshn,
 			      __global double* restrict sshn_u,
@@ -106,7 +79,7 @@ __kernel void continuity_code(int width,
 			      __global double* restrict e12t){
     int ji = get_global_id(0);
     int jj = get_global_id(1);
-    if(jj == 0)return;
+    if(ji > xstop)return;
 #else
 
 #if defined(KOKKOS_INLINE_FUNCTION)

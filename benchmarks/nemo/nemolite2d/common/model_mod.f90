@@ -133,10 +133,13 @@ CONTAINS
        ! xt(jpi,jpj), yt(jpi,jpj)
        ! ht(jpi,jpj), hu(jpi,jpj), hv(jpi,jpj)
 
-    case(1)
+    case(1:3)
 
        ! A manually defined T mask
        ! Define Model solid/open Boundaries via the properties of t-cells
+       ! If jphgr_msh is 1, the southern boundary is open
+       ! If jphgr_msh is 2, the eastern boundary is open
+       ! If jphgr_msh is 3, the southern and eastern boundaries are open
 
        tmask(:,:) = 0 ! Default all cells to being dry/outside the domain
 
@@ -164,24 +167,6 @@ CONTAINS
           end if
        end if
 
-       ! Eastern boundary
-       if(subdomain%global%xstop == jpi)then
-          ! Eastern boundary of global domain is solid
-          tmask(subdomain%internal%xstop+1:, :) = 0
-       else
-          ! Subdomain is not at the easternmost extent of the global
-          ! domain so boundary is wet.
-          do jj = subdomain%internal%ystart, subdomain%internal%ystop
-             tmask(subdomain%internal%xstop+1:, jj) = 1
-          end do
-
-          if(subdomain%global%ystop /= jpj)then
-             ! NE corner of this sub-domain is internal so corner halo
-             ! points are all wet
-             tmask(subdomain%internal%xstop+1:,subdomain%internal%ystop+1:) = 1
-          end if
-       end if
-
        ! Northern boundary
        if(subdomain%global%ystop == jpj)then
           ! North solid boundary
@@ -203,12 +188,40 @@ CONTAINS
           end if
        end if
 
+       ! Eastern boundary
+       if(subdomain%global%xstop == jpi)then
+          ! Eastern global boundary may be open (tidally forced)
+          ! Make the open boundary outside the computational domain
+          ! (i.e. xstop + 1)
+          if (jphgr_msh .eq. 2 .or. jphgr_msh .eq. 3) then
+            tmask(subdomain%internal%xstop+1:, :) = -1
+          else
+            tmask(subdomain%internal%xstop+1:, :) = 0
+          endif
+       else
+          ! Subdomain is not at the easternmost extent of the global
+          ! domain so boundary is wet.
+          do jj = subdomain%internal%ystart, subdomain%internal%ystop
+             tmask(subdomain%internal%xstop+1:, jj) = 1
+          end do
+
+          if(subdomain%global%ystop /= jpj)then
+             ! NE corner of this sub-domain is internal so corner halo
+             ! points are all wet
+             tmask(subdomain%internal%xstop+1:,subdomain%internal%ystop+1:) = 1
+          end if
+       end if
+
        ! Southern boundary
        if(subdomain%global%ystart == 1)then
-          ! Southern global boundary is open (tidally forced)
+          ! Southern global boundary may be open (tidally forced)
           ! Make the open boundary outside the computational domain
           ! (i.e. ystart - 1)
-          tmask(:, :subdomain%internal%ystart-1) = -1
+          if (jphgr_msh .eq. 1 .or. jphgr_msh .eq. 3) then
+            tmask(:, :subdomain%internal%ystart-1) = -1
+          else
+            tmask(:, :subdomain%internal%ystart-1) = 0
+          endif
        else
           ! Subdomain is not at the southernmost extent of the domain so
           ! does not have an open boundary
@@ -229,8 +242,8 @@ CONTAINS
     case DEFAULT
        ! undefined jphgr_msh value
        ! add interrupt here
-       call gocean_stop("Wrong grid definition type (jphgr_msh must be 0 "// &
-                        "or 1), check your namelist file.")
+       call gocean_stop("Wrong grid definition type (jphgr_msh must be 0"// &
+                        ", 1, 2 or 3), check your namelist file.")
     end select
 
   end subroutine setup_tpoints_mask
