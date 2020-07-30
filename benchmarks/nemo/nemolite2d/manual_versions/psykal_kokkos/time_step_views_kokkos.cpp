@@ -701,39 +701,41 @@ extern "C" void c_invoke_time_step(
     TimerStart("Copy back");
 #endif
 
-    // Update device data into the host mirror if necessary
-    Kokkos::deep_copy( h_ssha_t, ssha_t_view );
-    Kokkos::deep_copy( h_sshn_t, sshn_t_view);
-    Kokkos::deep_copy( h_sshn_u, sshn_u_view);
-    Kokkos::deep_copy( h_sshn_v, sshn_v_view);
-    Kokkos::deep_copy( h_hu, hu_view);
-    Kokkos::deep_copy( h_hv, hv_view);
-    Kokkos::deep_copy( h_un, un_view);
-    Kokkos::deep_copy( h_vn, vn_view);
-    Kokkos::deep_copy( h_ua, ua_view);
-    Kokkos::deep_copy( h_ht, ht_view);
-    Kokkos::deep_copy( h_ssha_u, ssha_u_view);
-    Kokkos::deep_copy( h_va, va_view);
-    Kokkos::deep_copy( h_ssha_v, ssha_v_view);
+    if(true){
+        // Update device data into the host mirror if necessary
+        Kokkos::deep_copy( h_ssha_t, ssha_t_view );
+        //Kokkos::deep_copy( h_sshn_t, sshn_t_view);
+        //Kokkos::deep_copy( h_sshn_u, sshn_u_view);
+        //Kokkos::deep_copy( h_sshn_v, sshn_v_view);
+        //Kokkos::deep_copy( h_hu, hu_view);
+        //Kokkos::deep_copy( h_hv, hv_view);
+        //Kokkos::deep_copy( h_un, un_view);
+        //Kokkos::deep_copy( h_vn, vn_view);
+        Kokkos::deep_copy( h_ua, ua_view);
+        //Kokkos::deep_copy( h_ht, ht_view);
+        //Kokkos::deep_copy( h_ssha_u, ssha_u_view);
+        Kokkos::deep_copy( h_va, va_view);
+        //Kokkos::deep_copy( h_ssha_v, ssha_v_view);
 
 
-    // Copy data back to original location
-    for(int jj=0; jj < internal_ystop+1; jj++){
-        for(int ji=0; ji < internal_xstop+1; ji++){
-            int idx = jj*width + ji;
-            ssha_t[idx] = h_ssha_t(jj, ji);
-            sshn_t[idx] = h_sshn_t(jj, ji);
-            sshn_u[idx] = h_sshn_u(jj, ji);
-            sshn_v[idx] = h_sshn_v(jj, ji);
-            hu[idx] = h_hu(jj, ji);
-            hv[idx] = h_hv(jj, ji);
-            un[idx] = h_un(jj, ji);
-            vn[idx] = h_vn(jj, ji);
-            ua[idx] = h_ua(jj, ji);
-            ht[idx] = h_ht(jj, ji);
-            ssha_u[idx] = h_ssha_u(jj, ji);
-            va[idx] = h_va(jj, ji);
-            ssha_v[idx] = h_ssha_v(jj, ji);
+        // Copy data back to original location
+        for(int jj=0; jj < internal_ystop+1; jj++){
+            for(int ji=0; ji < internal_xstop+1; ji++){
+                int idx = jj*width + ji;
+                ssha_t[idx] = h_ssha_t(jj, ji);
+                //sshn_t[idx] = h_sshn_t(jj, ji);
+                //sshn_u[idx] = h_sshn_u(jj, ji);
+                //sshn_v[idx] = h_sshn_v(jj, ji);
+                //hu[idx] = h_hu(jj, ji);
+                //hv[idx] = h_hv(jj, ji);
+                //un[idx] = h_un(jj, ji);
+                //vn[idx] = h_vn(jj, ji);
+                ua[idx] = h_ua(jj, ji);
+                //ht[idx] = h_ht(jj, ji);
+                //ssha_u[idx] = h_ssha_u(jj, ji);
+                va[idx] = h_va(jj, ji);
+                //ssha_v[idx] = h_ssha_v(jj, ji);
+            }
         }
     }
 

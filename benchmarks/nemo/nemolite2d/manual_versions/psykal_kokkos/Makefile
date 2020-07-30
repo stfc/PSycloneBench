@@ -76,7 +76,7 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 # called from C++ code
 %.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) timing.o
 	$(F90) -o $@ timing.o $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LINK_DEPENDS)  $(KOKKOS_LIBS)\
+		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LINK_DEPENDS)  \
 		-L$(CUDA_LIB) -L. -lstdc++ -ldl
 
 # Kokkos files rules
