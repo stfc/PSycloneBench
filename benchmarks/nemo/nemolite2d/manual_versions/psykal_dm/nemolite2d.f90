@@ -1,6 +1,5 @@
 program gocean2d
   use dl_timer
-  use parallel_utils_mod, only: get_rank, parallel_abort !ARPDBG
   use grid_mod
   use field_mod
   use initialisation_mod, only: initialisation
@@ -78,6 +77,7 @@ program gocean2d
 
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
 
+  call model_write_log("((A))", 'Simulation started!!')
   ! Start timer for time-stepping section
   CALL timer_start(itimer0, label='Time-stepping', &
                    num_repeats=INT((nitend-nit000+1),8) )
@@ -110,9 +110,7 @@ program gocean2d
   !! finalise the model run
   call model_finalise()
   
-  if (get_rank() == 1) then
-    call model_write_log("((A))", 'Simulation finished!!')
-  endif
+  call model_write_log("((A))", 'Simulation finished!!')
 
   call gocean_finalise()
 

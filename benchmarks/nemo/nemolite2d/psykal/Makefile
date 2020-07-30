@@ -76,7 +76,7 @@ nemolite2d_omp: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 omp_trans
 
 
 # MPI PSyclone code-generation of NemoLite2D
-nemolite2d_mpi: common_lib timer_lib_parallel mpi_inf_lib nemolite2d_alg.f90
+nemolite2d_mpi: timer_lib_parallel mpi_inf_lib common_lib_mpi nemolite2d_alg.f90
 	@echo "Generating NemoLite2D with MPI"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -dm -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
@@ -86,7 +86,7 @@ nemolite2d_mpi: common_lib timer_lib_parallel mpi_inf_lib nemolite2d_alg.f90
 	@echo "MPI version prepared."
 
 # Hybrid PSyclone code-generation of NemoLite2D
-nemolite2d_hybrid: common_lib timer_lib_parallel mpi_inf_lib nemolite2d_alg.f90 omp_transform.py
+nemolite2d_hybrid: common_lib_mpi timer_lib_parallel mpi_inf_lib nemolite2d_alg.f90 omp_transform.py
 	@echo "Generating NemoLite2D with hybrid MPI+OpenMP using omp_transform.py"
 	rm -rf $@; mkdir -p $@
 	${PSYCLONE} -dm -s ./omp_transform.py -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
@@ -147,6 +147,8 @@ ocl_inf_lib:
 common_lib:
 	${MAKE} -C ${COMMON_DIR}
 
+common_lib_mpi:
+	${MAKE} -C ${COMMON_DIR} MPI=yes
 
 clean: 
 	rm -rf nemolite2d_serial nemolite2d_omp nemolite2d_mpi
