@@ -12,34 +12,6 @@
 #endif
 
 bool first_time = true;
-// Declare Fields Views
-void * ssha_t_view_p = NULL;
-void * sshn_t_view_p = NULL;
-void * sshn_u_view_p = NULL;
-void * sshn_v_view_p = NULL;
-void * hu_view_p = NULL;
-void * hv_view_p = NULL;
-void * un_view_p = NULL;
-void * vn_view_p = NULL;
-void * ua_view_p = NULL;
-void * ht_view_p = NULL;
-void * ssha_u_view_p = NULL;
-void * va_view_p = NULL;
-void * ssha_v_view_p = NULL;
-
-// Declare Grid Views
-void * tmask_view_p = NULL;
-void * area_t_view_p = NULL;
-void * area_u_view_p = NULL;
-void * area_v_view_p = NULL;
-void * dx_u_view_p = NULL;
-void * dx_v_view_p = NULL;
-void * dx_t_view_p = NULL;
-void * dy_u_view_p = NULL;
-void * dy_v_view_p = NULL;
-void * dy_t_view_p = NULL;
-void * gphiu_view_p = NULL;
-void * gphiv_view_p = NULL;
 
 extern "C" void c_invoke_time_step(
         // Fields
@@ -69,6 +41,33 @@ extern "C" void c_invoke_time_step(
         double * dy_t,
         double * gphiu,
         double * gphiv,
+        // Device Pointers are passed as void* and the invoke will cast them
+        // to the desired type, and by reference as the value has to be stored.
+        void * &ssha_t_view_p,
+        void * &sshn_t_view_p,
+        void * &sshn_u_view_p,
+        void * &sshn_v_view_p,
+        void * &hu_view_p,
+        void * &hv_view_p,
+        void * &un_view_p,
+        void * &vn_view_p,
+        void * &ua_view_p,
+        void * &ht_view_p,
+        void * &ssha_u_view_p,
+        void * &va_view_p,
+        void * &ssha_v_view_p,
+        void * &tmask_view_p,
+        void * &area_t_view_p,
+        void * &area_u_view_p,
+        void * &area_v_view_p,
+        void * &dx_u_view_p,
+        void * &dx_v_view_p,
+        void * &dx_t_view_p,
+        void * &dy_u_view_p,
+        void * &dy_v_view_p,
+        void * &dy_t_view_p,
+        void * &gphiu_view_p,
+        void * &gphiv_view_p,
         // Scalars
         int istep,
         int internal_xstart,

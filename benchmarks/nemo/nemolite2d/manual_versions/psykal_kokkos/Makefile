@@ -31,7 +31,7 @@ else ifeq ($(KOKKOS_DEVICES),Cuda)
 $(info "Using CUDA device")
 KOKKOS_ARCH = Pascal61
 # nvcc doesn't support all compiler flags, overwrite CFLAGS to just O3
-CFLAGS := "-O3"
+CFLAGS := -O3
 # Still use the selected compiler but using the Kokkos nvcc_wrapper
 NVCC_WRAPPER_DEFAULT_COMPILER = $(CXX)
 CXX := $(KOKKOS_PATH)/bin/nvcc_wrapper
