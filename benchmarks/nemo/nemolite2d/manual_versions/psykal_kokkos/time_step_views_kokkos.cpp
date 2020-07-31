@@ -679,53 +679,26 @@ extern "C" void c_invoke_time_step(
 #endif
 
 
+    // Copy the selected Views back to the host, this requires the allocation
+    // of a Mirror and up to 2 copies. It is done every single time-step
+    // because at the moment there is no way to know what the Algorithm layer
+    // will use. 
     if(true){
         // Update device data into the host mirror if necessary
         auto h_ssha_t = Kokkos::create_mirror_view( ssha_t_view );
-        //auto h_sshn_t = Kokkos::create_mirror_view( sshn_t_view );
-        //auto h_sshn_u = Kokkos::create_mirror_view( sshn_u_view );
-        //auto h_sshn_v = Kokkos::create_mirror_view( sshn_v_view );
-        //auto h_hu = Kokkos::create_mirror_view( hu_view );
-        //auto h_hv = Kokkos::create_mirror_view( hv_view );
-        //auto h_un = Kokkos::create_mirror_view( un_view );
-        //auto h_vn = Kokkos::create_mirror_view( vn_view );
         auto h_ua = Kokkos::create_mirror_view( ua_view );
-       // auto h_ht = Kokkos::create_mirror_view( ht_view );
-       // auto h_ssha_u = Kokkos::create_mirror_view( ssha_u_view );
         auto h_va = Kokkos::create_mirror_view( va_view );
-        //auto h_ssha_v = Kokkos::create_mirror_view( ssha_v_view );
         Kokkos::deep_copy( h_ssha_t, ssha_t_view );
-        //Kokkos::deep_copy( h_sshn_t, sshn_t_view);
-        //Kokkos::deep_copy( h_sshn_u, sshn_u_view);
-        //Kokkos::deep_copy( h_sshn_v, sshn_v_view);
-        //Kokkos::deep_copy( h_hu, hu_view);
-        //Kokkos::deep_copy( h_hv, hv_view);
-        //Kokkos::deep_copy( h_un, un_view);
-        //Kokkos::deep_copy( h_vn, vn_view);
         Kokkos::deep_copy( h_ua, ua_view);
-        //Kokkos::deep_copy( h_ht, ht_view);
-        //Kokkos::deep_copy( h_ssha_u, ssha_u_view);
         Kokkos::deep_copy( h_va, va_view);
-        //Kokkos::deep_copy( h_ssha_v, ssha_v_view);
-
 
         // Copy data back to original location
         for(int jj=0; jj < internal_ystop+1; jj++){
             for(int ji=0; ji < internal_xstop+1; ji++){
                 int idx = jj*width + ji;
                 ssha_t[idx] = h_ssha_t(jj, ji);
-                //sshn_t[idx] = h_sshn_t(jj, ji);
-                //sshn_u[idx] = h_sshn_u(jj, ji);
-                //sshn_v[idx] = h_sshn_v(jj, ji);
-                //hu[idx] = h_hu(jj, ji);
-                //hv[idx] = h_hv(jj, ji);
-                //un[idx] = h_un(jj, ji);
-                //vn[idx] = h_vn(jj, ji);
                 ua[idx] = h_ua(jj, ji);
-                //ht[idx] = h_ht(jj, ji);
-                //ssha_u[idx] = h_ssha_u(jj, ji);
                 va[idx] = h_va(jj, ji);
-                //ssha_v[idx] = h_ssha_v(jj, ji);
             }
         }
     }
