@@ -186,6 +186,7 @@ would be beneficial?
 Ran reorder and inlined reorder with varying vertical
 Ran reorder and inlined with varying horizontal
 Results are in results/*
+Comparison results with CPU are in ../results/*
 
 -------------
 
@@ -217,49 +218,92 @@ nvidia4 - core dump
 -------------
 
 Running naive and nvidia versions serially on cpu with -O0 to check for
-correct coding
+correct coding and fixing any bugs ...
 
 naive version: 1.2271898522039376E+020 same as original code
+nvidia1 version: 1.2271898522039376E+020 same as original code
+nvidia2 version: 1.2271898522039376E+020 same as original code
+nvidia3 version: 1.2271898522039376E+020 same as original code
+nvidia4 version: 1.2271898522039376E+020 same as original code
+
+Whoop!
+
+Now running on GPU ...
+
+naive version:
+-O0 64.90566587448120 1.2213850309400101E+020
+-O1 64.89450097084045 1.2213850309400101E+020
+-O 64.77101993560791 1.2213850309400101E+020
+-O2 64.77753400802612 1.2213850309400125E+020
+-O3 64.93016695976257 1.2213850309400125E+020
+-O4 64.91746497154236 1.2213850309400125E+020
+-fast 64.76277613639832 1.2213850309400125E+020
+-fastsse 64.78245496749878 1.2213850309400125E+020
+
+*** Naive checksum looks dodgy but can't see problem unless it is private arrays?
+
+nvidia1
+-O0 3.501081943511963 1.2271898522039380E+020
+-O1 3.455302953720093 1.2271898522039380E+020
+-O 3.269083023071289 1.2271898522039380E+020
+-O2 3.306182861328125 1.2271898522039262E+020
+-O3 3.783846855163574 1.2271898522039262E+020
+-O4 3.792832136154175 1.2271898522039262E+020
+-fast 3.264442920684814 1.2271898522039262E+020
+-fastsse 3.256054878234863 1.2271898522039262E+020
+
+nvidia2
+-O0 4.415854930877686 1.2271898522039376E+020
+-O1 4.449892044067383 1.2271898522039376E+020
+-O 3.573765993118286 1.2271898522039376E+020
+-O2 3.570590972900391 1.2271898522039262E+020
+-O3 4.251459121704102 1.2271898522039262E+020
+-O4 4.239311933517456 1.2271898522039262E+020
+-fast 3.563273906707764 1.2271898522039262E+020
+-fastsse 3.559406995773315 1.2271898522039262E+020
+
+nvidia3
+-O0 1.735004901885986 1.2271898522039376E+020
+-O1 1.714452028274536 1.2271898522039376E+020
+-O 1.440443992614746 1.2271898522039376E+020
+-O2 1.448733091354370 1.2271898522039262E+020
+-O3 1.470628976821899 1.2271898522039262E+020
+-O4 1.459609985351563 1.2271898522039262E+020
+-fast 1.448508024215698 1.2271898522039262E+020
+-fastsse 1.456532955169678 1.2271898522039262E+020
+
+nvidia4
+-O0 1.082563161849976 1.2271898522039376E+020
+-O1 1.081111907958984 1.2271898522039380E+020
+-O 0.9792480468750000 1.2271898522039380E+020
+-O2 0.9680049419403076 1.2271898522039262E+020
+-O3 0.9599709510803223 1.2271898522039262E+020
+-O4 0.9638509750366211 1.2271898522039262E+020
+-fast 0.9689779281616211 1.2271898522039262E+020
+-fastsse 0.9708011150360107 1.2271898522039262E+020
+
+
+So naive results look dodgy but are slow so we don't really care.
+
+nvidia4 gives good performance and is the fastest
+So let's run with this version and get results to plot ...
+Using -O
 
 
 UP TO HERE
 
 -------------
 
-naive version does not need colouring as it has atomic so I should
-remove colouring.
-
-Colouring
-Inlined
-No-colouring inlined
-
-
+TODO: atomic GPU version with matrix reorder and collapse colour loops
+TODO: inline version on Skylake
+TODO: MPI + OpenMP on Skylake
+TODO: remove colouring and run GPU results again
+TODO: revisit locking with skylake
 
 -------------
 
--------------
-
-TODO: Check naive and NVIDIA versions
-
-
--------------
-
-
-TODO: Check inline version on Skylake
-
-
-naive gpu implementation and nvidia versions - I think they all need atomic
-
-naive is around 51s
-
-best nvidia is around 1.38s
-All results differ and in all/most cases are not reproducible due to atomic operation.
-Need to look at removing colouring.
-
--------------
-
-
-I'd like to be able to test with different mappings too as some are
-continuous in the vertical and some are not. Of course some are
-discontinuous in the horizontal too and this could make a difference.
+I'd like to be able to test with different mappings as some are
+continuous in the vertical and some are not. Also, some are
+discontinuous in the horizontal too and this could make a difference
+(no locking or colouring required).
 

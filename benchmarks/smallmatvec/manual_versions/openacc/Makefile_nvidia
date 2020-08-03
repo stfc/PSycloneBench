@@ -1,6 +1,7 @@
 # -Mipa=inline:reshape (compile and link) + -Minfo without the =accel
 FC=pgfortran
 FFLAGS=-ta=tesla:managed -Minfo -O
+#FFLAGS=-ta=host -Minfo -O0
 LDFLAGS=
 # FFLAGS=-ta=tesla:managed -Minfo -Mipa=inline:reshape
 # LDFLAGS=-Mipa=inline:reshape

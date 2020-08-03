@@ -18,14 +18,17 @@
 # echo "Don't forget to set the parameters to the required values"
 # exit
 
-echo "v100 openacc reorder timing results"
+#echo "v100 openacc reorder timing results"
+echo "v100 openacc nvidia timing results"
 
 for ps in 32; do
-    output=v100_reorder_vertical_h32.txt
+    #output=v100_reorder_vertical_h32.txt
+    output=v100_nvidia_vertical_h32.txt
     for vertical in 10 20 32 40 60 80 100 120 128 140; do
 	echo $vertical
 	echo -n $vertical >> $output
-	for version in reorder1 reorder2; do
+	#for version in reorder1 reorder2; do
+	for version in nvidia4; do
             ./kdriver_openacc_${version} ${ps} ${vertical}> output
 	    t=$(cat output | grep "Loop time" | awk '{print $5}')
 	    check=$(cat output | grep "Reduction value" | awk '{print $3}')

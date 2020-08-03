@@ -33,15 +33,15 @@ subroutine matrix_vector_kernel_code(cell,              &
   real(kind=r_def), dimension(ndf1) :: lhs_e
   integer :: i, j
 
-  !$acc loop vector independent
+  !$acc loop vector independent private(x_e, lhs_e)
   do k = 0, nlayers-1
     do df = 1, ndf2
       x_e(df) = x(map2(df)+k)
     end do
     ik = (cell-1)*nlayers + k + 1
 
-    do i = 1, ndf1, 1
-      lhs_e(i)=0.0
+    do i = 1, ndf1
+      lhs_e(i)=0.0_r_def
       do j = 1, ndf2, 1
         lhs_e(i)=lhs_e(i) + matrix(i,j,ik) * x_e(j)
       enddo

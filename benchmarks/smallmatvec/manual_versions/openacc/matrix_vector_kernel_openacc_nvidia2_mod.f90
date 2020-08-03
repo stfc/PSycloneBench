@@ -30,16 +30,16 @@ subroutine matrix_vector_kernel_code(cell,              &
   ! Internal variables
   integer(kind=i_def)               :: df, k, ik
   real(kind=r_def), dimension(ndf2) :: x_e
-  real(kind=r_def)  :: lhs_e
+  real(kind=r_def) :: lhs_e
   integer :: i, j
 
   ik = (cell-1)*nlayers + 1
 
   !$acc loop vector collapse(2)
   do k = 0, nlayers-1
-    do i = 0, ndf1, 1
-      lhs_e=0.0
-      do j = 1, ndf2, 1
+    do i = 1, ndf1
+      lhs_e=0.0_r_def
+      do j = 1, ndf2
         lhs_e=lhs_e + matrix(i,j,ik + k) * x(map2(j)+k)
       enddo
       !$acc atomic update
