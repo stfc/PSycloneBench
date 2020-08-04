@@ -7,7 +7,7 @@ LDFLAGS=
 
 # reorder1 makes the kernel kinner and reorders the matrix
 # reorder2 does reorder1 but also inlines the code into the PSy-layer
-all : kdriver_openacc_reorder1 kdriver_openacc_reorder2
+all : kdriver_openacc_reorder1 kdriver_openacc_reorder2 kdriver_openacc_reorder3
 
 %.o: %.f90
 	$(FC) $(FFLAGS) -c $<
@@ -17,10 +17,15 @@ matrix_vector_kernel_reorder_mod.o: constants_mod.o
 
 kdriver_openacc_reorder2.o: constants_mod.o
 
+kdriver_openacc_reorder3.o: constants_mod.o
+
 kdriver_openacc_reorder1: kdriver_openacc_basic.o matrix_vector_kernel_reorder_mod.o constants_mod.o
 	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
 
 kdriver_openacc_reorder2: kdriver_openacc_reorder2.o constants_mod.o
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
+
+kdriver_openacc_reorder3: kdriver_openacc_reorder3.o constants_mod.o
 	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:

@@ -289,13 +289,35 @@ nvidia4 gives good performance and is the fastest
 So let's run with this version and get results to plot ...
 Using -O
 
+-------------
 
-UP TO HERE
+Created an atomic GPU version with matrix reorder and collapse colour loops
+
+reorder3 results are:
+-O0 0.6700620651245117 1.2226489429879602E+020
+-O1 0.6696147918701172 1.2226489429879602E+020
+-O 0.6656098365783691 1.2226489429879603E+020
+-O2 0.6654019355773926 1.2226489429879536E+020
+-O3 0.6650259494781494 1.2226489429879536E+020
+-O4 0.6659181118011475 1.2226489429879536E+020
+-fast 0.6659500598907471 1.2226489429879536E+020
+-fastsse 0.6659710407257080 1.2226489429879536E+020
+
+Notice the results are always the same. This problem must be
+discontinuous in the horizontal.
+
+Running with this version to get results to plot ...
+Using -O
 
 -------------
 
-TODO: atomic GPU version with matrix reorder and collapse colour loops
+UP TO HERE
+
+After this I will try to get this onto master and leave other changes for future PRs
+
+TODO: is colouring really needed in this example? - seems not.
 TODO: inline version on Skylake
+TODO: restructure setup code
 TODO: MPI + OpenMP on Skylake
 TODO: remove colouring and run GPU results again
 TODO: revisit locking with skylake
