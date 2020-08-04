@@ -26,13 +26,17 @@ nemolite2d: ${COMMON_LIB} timer_lib inf_lib opencl_utils.o timing.o time_step.o
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} opencl_utils.o timing.o time_step.o" \
 		nemolite2d.exe
 
+nemolite2d_tasks: ${COMMON_LIB} timer_lib inf_lib opencl_utils.o timing.o time_step_tasks.o
+	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} opencl_utils.o timing.o time_step_tasks.o" \
+		nemolite2d_tasks.exe
+
 nemolite2d.o: $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
 time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
                  time_update_mod.o boundary_conditions_mod.o
 
-time_step.o: opencl_utils.o
+time_step.o time_step_tasks.o: opencl_utils.o
 
 # Linking the executable. It need the -lOpenCL library
 %.exe: $(MODULE_LIST)
