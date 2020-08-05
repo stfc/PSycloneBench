@@ -88,19 +88,16 @@ __kernel void continuity_code(
         double rdt,
         __global double* restrict e12t
 ){
-    /* Locals */
-    double rtmp1, rtmp2, rtmp3, rtmp4;
-
     for(int jj = ystart; jj <= ystop; jj++){
         for(int ji = xstart; ji <= xstop; ji++){
             int idx = jj * width + ji;
             int idxim1 = idx - 1;
             int idxjm1 = idx - width;
 
-            rtmp1 = (sshn_u[idx] + hu[idx]) * un[idx];
-            rtmp2 = (sshn_u[idxim1] + hu[idxim1]) * un[idxim1];
-            rtmp3 = (sshn_v[idx] + hv[idx]) * vn[idx];
-            rtmp4 = (sshn_v[idxjm1] + hv[idxjm1]) * vn[idxjm1];
+            const double rtmp1 = (sshn_u[idx] + hu[idx]) * un[idx];
+            const double rtmp2 = (sshn_u[idxim1] + hu[idxim1]) * un[idxim1];
+            const double rtmp3 = (sshn_v[idx] + hv[idx]) * vn[idx];
+            const double rtmp4 = (sshn_v[idxjm1] + hv[idxjm1]) * vn[idxjm1];
 
             ssha[idx] = sshn[idx] + (rtmp2 - rtmp1 + rtmp4 - rtmp3) *
               rdt / e12t[idx];

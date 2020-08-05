@@ -19,7 +19,7 @@
 // Kernels
 #define OPENCL_HOST
 #include "../../kernels/c_family/continuity_kern_task.c"
-#include "../../kernels/c_family/momentum_u_kern.c"
+#include "../../kernels/c_family/momentum_u_kern_task.c"
 #include "../../kernels/c_family/momentum_v_kern.c"
 #include "../../kernels/c_family/boundary_conditions_kern.c"
 #include "../../kernels/c_family/time_update_kern.c"
@@ -66,7 +66,7 @@ static const char* kernel_names[K_NUM_KERNELS] =
 static const char* kernel_files[K_NUM_KERNELS] =
 {
   "../../kernels/c_family/continuity_kern_task.c",
-  "../../kernels/c_family/momentum_u_kern.c",
+  "../../kernels/c_family/momentum_u_kern_task.c",
   "../../kernels/c_family/momentum_v_kern.c",
   "../../kernels/c_family/boundary_conditions_kern.c",
   "../../kernels/c_family/boundary_conditions_kern.c",
@@ -352,9 +352,12 @@ void c_invoke_time_step(
 		    &hu_device, &hv_device,
 		    &un_device, &vn_device,
 		    &rdt, &area_t_device); 
+
         /* Set OpenCL Kernel Parameters for Momentum-u */
         set_args_momu(clkernel[K_MOM_U],
-            &width, &xstopm1,
+            &width,
+            &internal_xstart, &xstopm1,
+            &internal_ystart, &internal_ystop,
             &ua_device, &un_device, &vn_device,
             &hu_device, &hv_device, &ht_device,
             &ssha_u_device, &sshn_device,
@@ -551,13 +554,6 @@ void c_invoke_time_step(
     ret = clEnqueueTask(command_queue[0], clkernel[K_CONTINUITY],
         0, NULL,&(clkernevt[K_CONTINUITY]));
     check_status("clEnqueueTask(Continuity)", ret);
-    //size_t continuity_local_size[1] = {(size_t) 1};
-    //size_t continuity_size[1] = {(size_t) 1}; 
-    //ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_CONTINUITY], 1,
-    //    NULL, continuity_size, continuity_local_size, 0, NULL,
-    //    &(clkernevt[K_CONTINUITY]));
-    //check_status("clEnqueueNDRangeKernel(Continuity)", ret);
-
 
 #ifdef USE_TIMER
     ret = clWaitForEvents(1, &(clkernevt[K_CONTINUITY]));
@@ -566,12 +562,9 @@ void c_invoke_time_step(
     TimerStart("Momentum Kernels");
 #endif
     // Momentum_u kernel (internal domain)
-    size_t momu_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
-    size_t momu_size[2] = {(size_t)computed_xstop, (size_t)internal_ystop};
-    ret = clEnqueueNDRangeKernel(command_queue[0], clkernel[K_MOM_U], 2,
-            momu_offset, momu_size, local_size, 0, NULL,
-			&(clkernevt[K_MOM_U]));
-    check_status("clEnqueueNDRangeKernel(Mom-u)", ret);
+    ret = clEnqueueTask(command_queue[0], clkernel[K_MOM_U],
+         0, NULL, &(clkernevt[K_MOM_U]));
+    check_status("clEnqueueTask(Mom-u)", ret);
 
     // Momentum_v kernel (internal domain)
     size_t momv_offset[2] = {(size_t)internal_xstart, (size_t)internal_ystart};
