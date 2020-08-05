@@ -63,6 +63,18 @@ xilinxoffline:
 	v++ --link --jobs 4 -O3 --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
 		allkernels_xilinx.xo -o allkernels_xilinx.xclbin
 
+xilinxoffline_tasks:
+	echo "// OpenCL Kernels" > allkernels_tasks.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/continuity_kern_task.c >> allkernels_tasks.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/momentum_u_kern_task.c >> allkernels_tasks.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/momentum_v_kern.c >> allkernels_tasks.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/boundary_conditions_kern.c >> allkernels_tasks.cl
+	gcc -E -P -D__OPENCL_VERSION__ ../../kernels/c_family/time_update_kern.c >> allkernels_tasks.cl
+	v++ --compile --jobs 4 -O3 --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
+		allkernels_tasks.cl -o allkernels_xilinx_tasks.xo
+	v++ --link --jobs 4 -O3 --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
+		allkernels_xilinx_tasks.xo -o allkernels_xilinx_tasks.xclbin
+
 # Target for Offline compilation of Intel Altera FPGA device kernels
 AOC_FLAGS = -v -board=p385a_sch_ax115 -D__OPENCL_VERSION__=100
 #AOC_FLAGS += -march=emulator -emulator-channel-depth-model=strict
