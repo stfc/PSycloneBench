@@ -123,7 +123,8 @@ void set_args_momu(cl_kernel kern,
 
 #ifdef __OPENCL_VERSION__
 /** Interface to OpenCL version of kernel */
-__kernel void momentum_u_code(int width,
+__kernel __attribute__((reqd_work_group_size(1, 1, 1))) void momentum_u_code(
+        int width,
         int xstart, int xstop,
         int ystart, int ystop,
         __global double* restrict ua,

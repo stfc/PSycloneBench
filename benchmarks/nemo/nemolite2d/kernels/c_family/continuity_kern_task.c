@@ -73,20 +73,20 @@ void set_args_continuity(cl_kernel cont_kernel,
 
 // OpenCL Kernel definition
 #ifdef __OPENCL_VERSION__
-__kernel void continuity_code(
+__kernel __attribute__((reqd_work_group_size(1, 1, 1))) void continuity_code(
         int width,
         int xstart, int xstop,
         int ystart, int ystop,
         __global double* restrict ssha,
-        __global double* restrict sshn,
-        __global double* restrict sshn_u,
-        __global double* restrict sshn_v,
-        __global double* restrict hu,
-        __global double* restrict hv,
-        __global double* restrict un,
-        __global double* restrict vn,
-        double rdt,
-        __global double* restrict e12t
+        const __global double* restrict sshn,
+        const __global double* restrict sshn_u,
+        const __global double* restrict sshn_v,
+        const __global double* restrict hu,
+        const __global double* restrict hv,
+        const __global double* restrict un,
+        const __global double* restrict vn,
+        const double rdt,
+        const __global double* restrict e12t
 ){
     for(int jj = ystart; jj <= ystop; jj++){
         for(int ji = xstart; ji <= xstop; ji++){
