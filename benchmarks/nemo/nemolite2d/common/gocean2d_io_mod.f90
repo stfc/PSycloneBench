@@ -22,6 +22,7 @@ contains
   SUBROUTINE read_namelist(jpiglo, jpjglo, dx, dy,   &
                            nit000, nitend, irecord,  &
                            jphgr_msh, dep_const, rdt, cbfr, visc)
+    use parallel_mod, only: on_master
     implicit none
     !> Extent of the mask that describes the area that
     !! contains the simulation domain
@@ -70,7 +71,9 @@ contains
     REWIND(input_unit)
     READ(input_unit, NML=namctl, IOSTAT = ios)
     IF(ios /= 0) STOP "err found in reading namelist file"
-    WRITE(*,NML=namctl)
+    if (on_master()) then
+        WRITE(*,NML=namctl)
+    endif
     
     CLOSE(unit=input_unit)
 
