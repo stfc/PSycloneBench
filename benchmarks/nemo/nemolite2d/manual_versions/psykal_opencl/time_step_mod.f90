@@ -4,7 +4,6 @@ module time_step_mod
     implicit none
     private
     public invoke_time_step
-    !external :: read_fortcl
 contains
 
     ! This is a manual version of the OpenCL PSy-layer (initially auto-

@@ -58,9 +58,28 @@ contains
     hv%data_on_device     = .TRUE.
     ht%data_on_device     = .TRUE.
 
+    ! Specify device data retrieving methods
+    ssha%read_from_device_f => read_openacc
+    sshn_t%read_from_device_f => read_openacc
+    sshn_u%read_from_device_f => read_openacc
+    sshn_v%read_from_device_f => read_openacc
+    un%read_from_device_f => read_openacc
+    vn%read_from_device_f => read_openacc
+    ua%read_from_device_f => read_openacc
+    va%read_from_device_f => read_openacc
+
   end subroutine invoke_time_step
 
   !===============================================
+
+  subroutine read_openacc(from, to, nx, ny, width)
+    use FortCL, only: read_buffer
+    use iso_c_binding, only: c_intptr_t, c_int
+    integer(c_intptr_t), intent(in) :: from
+    real(go_wp), dimension(:,:), intent(inout) :: to
+    integer, intent(in) :: nx, ny, width
+    !$acc update host(to)
+  end subroutine read_openacc
 
   subroutine invoke_time_step_arrays(istp, nx, ny, M, N,         &
                                      area_t, area_u, area_v,     &
@@ -427,14 +446,14 @@ contains
 !$acc loop collapse(2)
     do jj = 1, N+1, 1
        do ji = 1, M, 1
-          call bc_solid_u_code(ji, jj, &
-                               ua, tmaskptr)
+          !call bc_solid_u_code(ji, jj, &
+          !                     ua, tmaskptr)
 
 !> \todo It's more compiler-friendly to separately compare these two
 !! integer masks with zero but that's a kernel-level optimisation.
-!          if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
-!             ua(ji,jj) = 0._go_wp
-!          end if
+          if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
+             ua(ji,jj) = 0._go_wp
+          end if
 
        end do
     end do
