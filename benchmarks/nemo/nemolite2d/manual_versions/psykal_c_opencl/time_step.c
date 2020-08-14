@@ -153,6 +153,33 @@ void c_invoke_time_step(
         double * dy_t,
         double * gphiu,
         double * gphiv,
+        // Device pointers
+        void ** ssha_t_dp,
+        void ** sshn_t_dp,
+        void ** sshn_u_dp,
+        void ** sshn_v_dp,
+        void ** hu_dp,
+        void ** hv_dp,
+        void ** un_dp,
+        void ** vn_dp,
+        void ** ua_dp,
+        void ** ht_dp,
+        void ** ssha_u_dp,
+        void ** va_dp,
+        void ** ssha_v_dp,
+        // Grid
+        void ** tmask_dp,
+        void ** area_t_dp,
+        void ** area_u_dp,
+        void ** area_v_dp,
+        void ** dx_u_dp,
+        void ** dx_v_dp,
+        void ** dx_t_dp,
+        void ** dy_u_dp,
+        void ** dy_v_dp,
+        void ** dy_t_dp,
+        void ** gphiu_dp,
+        void ** gphiv_dp,
         // Scalars
         int istep,
         int internal_xstart,
@@ -232,108 +259,133 @@ void c_invoke_time_step(
         fprintf(stdout, "Creating buffers of size %d ...\n", total_size);
         ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			                         NULL, &ret);
+        *ssha_t_dp = &ssha_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         ssha_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                                        NULL, &ret);
+        *ssha_u_dp = &ssha_u_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         ssha_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                                        NULL, &ret);
+        *ssha_v_dp = &ssha_v_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         sshn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
                                      NULL, &ret);
+        *sshn_t_dp = &sshn_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         sshn_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 				                       NULL, &ret);
+        *sshn_u_dp = &sshn_u_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         sshn_v_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 				                       NULL, &ret);
+        *sshn_v_dp = &sshn_v_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         hu_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			                       NULL, &ret);
+        *hu_dp = &hu_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         hv_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			                       NULL, &ret);
+        *hv_dp = &hv_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         ht_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			                       NULL, &ret);
+        *ht_dp = &ht_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
   
         /* Velocity fields */
         un_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			                       NULL, &ret);
+        *un_dp = &un_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         vn_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			                       NULL, &ret);
+        *vn_dp = &vn_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         ua_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			                       NULL, &ret);
+        *ua_dp = &ua_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         va_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			                       NULL, &ret);
+        *va_dp = &va_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
 
         /* Mesh scale factors */
         area_t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
+        *area_t_dp = &area_t_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         area_u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
+        *area_u_dp = &area_u_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         area_v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
+        *area_v_dp = &area_v_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         dx_u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
+        *dx_u_dp = &dx_u_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         dx_v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
+        *dx_v_dp = &dx_v_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         dx_t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 			                        NULL, &ret);
+        *dx_t_dp = &dx_t_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         dy_u_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
                                      NULL, &ret);
+        *dy_u_dp = &dy_u_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         dy_v_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
                                      NULL, &ret);
+        *dy_v_dp = &dy_v_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         dy_t_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
                                      NULL, &ret);
+        *dy_t_dp = &dy_t_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         tmask_device = clCreateBuffer(context, CL_MEM_READ_ONLY,
 				        (size_t)(total_size*sizeof(cl_int)), NULL, &ret);
+        *tmask_dp = &tmask_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
 
         /* Coriolis parameters */
         gphiu_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 				                      NULL, &ret);
+        *gphiu_dp = &gphiu_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
         gphiv_device = clCreateBuffer(context, CL_MEM_READ_ONLY, buff_size,
 				                      NULL, &ret);
+        *gphiv_dp = &gphiv_device;
         num_buffers++;
         check_status("clCreateBuffer", ret);
 
@@ -664,30 +716,16 @@ void c_invoke_time_step(
 
 #ifdef USE_TIMER
     TimerStop();
-    TimerStart("Copy back");
-#endif
-
-    // Read the data back
-    cl_event read_events[3];
-    int nread = 0;
-    ret = clEnqueueReadBuffer(command_queue[0], ssha_device, CL_TRUE, 0,
-			    (size_t)buff_size, (void *)ssha_t, 0, NULL, &(read_events[0]));
-    nread++;
-    check_status("clEnqueueReadBuffer", ret);
-    ret = clEnqueueReadBuffer(command_queue[0], ua_device, CL_TRUE, 0,
-			    (size_t)buff_size, (void *)ua, 0, NULL, &(read_events[1]));
-    nread++;
-    check_status("clEnqueueReadBuffer", ret);
-    ret = clEnqueueReadBuffer(command_queue[0], va_device, CL_TRUE, 0,
-			    (size_t)buff_size, (void *)va, 0, NULL, &(read_events[2]));
-    nread++;
-    check_status("clEnqueueReadBuffer", ret);
-
-    clWaitForEvents(nread, read_events);
-    check_status("clWaitForEvents", ret);
-#ifdef USE_TIMER
-    TimerStop();
     TimerReport();
 #endif
 
+}
+
+void c_read_from_device(cl_mem* from, double * to, int nx, int ny, int width){
+    cl_event read_events[1];
+    // Use width instead of nx in case there are padding elements
+    int ret = clEnqueueReadBuffer(command_queue[0], *from, CL_TRUE, 0,
+			    width*ny, to, 0, NULL, &(read_events[0]));
+    check_status("clEnqueueReadBuffer", ret);
+    clWaitForEvents(1, read_events);
 }

@@ -19,7 +19,7 @@ include ../common.mk
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
 LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
-COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${KERNELS} ${INF_LIB}
+COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${INF_LIB}
 
 # Host targets
 nemolite2d: ${COMMON_LIB} timer_lib inf_lib opencl_utils.o timing.o time_step.o
@@ -29,8 +29,7 @@ nemolite2d: ${COMMON_LIB} timer_lib inf_lib opencl_utils.o timing.o time_step.o
 nemolite2d.o: $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
-time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
-                 time_update_mod.o boundary_conditions_mod.o
+time_step_mod.o: ${COMMON_LIB} inf_lib
 
 time_step.o: opencl_utils.o
 
@@ -78,7 +77,6 @@ clean:
 	rm -f gnu_opt_report.txt *.optrpt *.log
 
 allclean: clean
-	rm -f ${KERNELS:.o=.f90}
 	rm -f *.exe
 	rm -rf *_wpl_dir/ allkernels* _x/ .Xil/ .run/
 	${MAKE} -C ${COMMON_DIR} allclean
