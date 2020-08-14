@@ -41,6 +41,16 @@ module time_step_mod
         end subroutine wrapper_c_invoke_time_step
     end interface    
 
+    interface
+        subroutine wrapper_read_from_device(from, to, nx, ny, width) &
+                bind(C, name="kokkos_read_from_device")
+            use iso_c_binding, only: c_intptr_t, c_int, c_double
+            use kind_params_mod, only: go_wp
+            integer(c_intptr_t), intent(in), value :: from
+            integer(c_intptr_t), intent(in), value :: to
+            integer(c_int), intent(in), value :: nx, ny, width
+        end subroutine wrapper_read_from_device
+    end interface
 contains
 
     ! This invoke_time_step needs to fetch all necessary arrays, global
@@ -128,6 +138,32 @@ contains
             d2r, &
             g &
         )
+
+
+        ! Mark data_on_device flags
+        ssha_t%data_on_device = .true.
+        sshn_t%data_on_device = .true.
+        sshn_u%data_on_device = .true.
+        sshn_v%data_on_device = .true.
+        hu%data_on_device = .true.
+        hv%data_on_device = .true.
+        un%data_on_device = .true.
+        vn%data_on_device = .true.
+        ua%data_on_device = .true.
+        ht%data_on_device = .true.
+        ssha_u%data_on_device = .true.
+        va%data_on_device = .true.
+        ssha_v%data_on_device = .true.
+
+        ! Specify device data retrieving methods
+        ssha_t%read_from_device_c => wrapper_read_from_device
+        sshn_t%read_from_device_c => wrapper_read_from_device
+        sshn_u%read_from_device_c => wrapper_read_from_device
+        sshn_v%read_from_device_c => wrapper_read_from_device
+        un%read_from_device_c => wrapper_read_from_device
+        vn%read_from_device_c => wrapper_read_from_device
+        ua%read_from_device_c => wrapper_read_from_device
+        va%read_from_device_c => wrapper_read_from_device
 
     END SUBROUTINE invoke_time_step
 end module time_step_mod

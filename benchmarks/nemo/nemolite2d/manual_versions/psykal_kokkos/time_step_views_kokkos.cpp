@@ -11,6 +11,10 @@
 #include "timing.h"
 #endif
 
+// Create 2D View types for the Fields and Grid arrays
+typedef Kokkos::View<double**> double_2dview;
+typedef Kokkos::View<int**> int_2dview;
+
 bool first_time = true;
 
 extern "C" void c_invoke_time_step(
@@ -111,10 +115,6 @@ extern "C" void c_invoke_time_step(
 #else
     using execution_space = Kokkos::DefaultExecutionSpace;
 #endif
-
-    // Create 2D View types for the Fields and Grid arrays
-    typedef Kokkos::View<double**> double_2dview;
-    typedef Kokkos::View<int**> int_2dview;
 
     if(first_time){
         std::cout << typeid(execution_space).name() << std::endl;
@@ -675,37 +675,24 @@ extern "C" void c_invoke_time_step(
 
 #ifdef USE_TIMER
     TimerStop();
-    TimerStart("Copy back");
-#endif
-
-
-    // Copy the selected Views back to the host, this requires the allocation
-    // of a Mirror and up to 2 copies. It is done every single time-step
-    // because at the moment there is no way to know what the Algorithm layer
-    // will use. 
-    if(true){
-        // Update device data into the host mirror if necessary
-        auto h_ssha_t = Kokkos::create_mirror_view( ssha_t_view );
-        auto h_ua = Kokkos::create_mirror_view( ua_view );
-        auto h_va = Kokkos::create_mirror_view( va_view );
-        Kokkos::deep_copy( h_ssha_t, ssha_t_view );
-        Kokkos::deep_copy( h_ua, ua_view);
-        Kokkos::deep_copy( h_va, va_view);
-
-        // Copy data back to original location
-        for(int jj=0; jj < internal_ystop+1; jj++){
-            for(int ji=0; ji < internal_xstop+1; ji++){
-                int idx = jj*width + ji;
-                ssha_t[idx] = h_ssha_t(jj, ji);
-                ua[idx] = h_ua(jj, ji);
-                va[idx] = h_va(jj, ji);
-            }
-        }
-    }
-
-#ifdef USE_TIMER
-    TimerStop();
     TimerReport();
 #endif
 
+}
+
+extern "C" void kokkos_read_from_device(double_2dview from, double* to,
+                                        int nx, int ny, int width){
+
+    // Copy data to a host mirror, it requires and allocation
+    auto mirror = Kokkos::create_mirror_view( from );
+    Kokkos::deep_copy( mirror, from );
+
+    // The kokkos layout is not guaranteed, so make explicit copies
+    // of each element to its location.
+    for(int jj=0; jj < ny; jj++){
+        for(int ji=0; ji < nx; ji++){
+            int idx = jj*width + ji;
+            to[idx] = mirror(jj, ji);
+        }
+    }
 }

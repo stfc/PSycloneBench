@@ -67,8 +67,7 @@ nemolite2d_rawpointers_kokkos: ${COMMON_LIB} timer_lib inf_lib time_step_rawpoin
 nemolite2d.o: $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
-time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
-                 time_update_mod.o boundary_conditions_mod.o
+time_step_mod.o: ${COMMON_LIB} inf_lib
 
 # Import needed kokkos environment variables
 include $(KOKKOS_PATH)/Makefile.kokkos
@@ -93,7 +92,6 @@ clean:
 	rm -rf KokkosCore_* Makefile.kokkos.f90
 
 allclean: clean
-	rm -f ${KERNELS:.o=.f90}
 	rm -f *.exe fparser.log *.a
 	rm -rf *_wpl_dir/
 	${MAKE} -C ${COMMON_DIR} allclean
