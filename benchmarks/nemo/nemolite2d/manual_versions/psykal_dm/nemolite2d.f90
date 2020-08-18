@@ -110,9 +110,7 @@ program gocean2d
   !! finalise the model run
   call model_finalise()
   
-  if (get_rank() == 1) then
-    call model_write_log("((A))", 'Simulation finished!!')
-  endif
+  call model_write_log("((A))", 'Simulation finished!!')
 
   call gocean_finalise()
 
