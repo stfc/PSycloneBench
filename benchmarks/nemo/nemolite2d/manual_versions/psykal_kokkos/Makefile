@@ -11,8 +11,9 @@
 # export AR=ar
 
 # Additionally it needs the path to the Kokkos source code
-KOKKOS_PATH ?= $(HOME)/localtools/kokkos
-KOKKOS_DEBUG ?= yes
+KOKKOS_PATH ?= $(HOME)/tools/kokkos
+KOKKOS_DEBUG ?= no  # Careful, 10x performance penalty in kernels.
+CXXFLAGS = $(CFLAGS)  # Use same CFLAGS to compile Kokkos library.
 
 # If no KOKKOS_DEVICES is specified, by default use the OpenMP
 KOKKOS_DEVICES ?= OpenMP
@@ -20,17 +21,17 @@ KOKKOS_DEVICES ?= OpenMP
 # Configuration specific to the selected Kokkos device 
 ifeq ($(KOKKOS_DEVICES),OpenMP)
 $(info "Using OpenMP device")
-# KOKKOS_OPTIONS := "aggresive_vectorization"
+KOKKOS_OPTIONS := "aggresive_vectorization"
 else ifeq ($(KOKKOS_DEVICES),Serial)
 $(info "Using Serial device")
-# KOKKOS_OPTIONS := "aggresive_vectorization"
+KOKKOS_OPTIONS := "aggresive_vectorization"
 else ifeq ($(KOKKOS_DEVICES),Pthreads)
 $(error "Pthreads device is currently not supported")
 else ifeq ($(KOKKOS_DEVICES),Cuda)
 $(info "Using CUDA device")
 KOKKOS_ARCH = Pascal61
 # nvcc doesn't support all compiler flags, overwrite CFLAGS to just O3
-CFLAGS := "-O3"
+CFLAGS := -O3
 # Still use the selected compiler but using the Kokkos nvcc_wrapper
 NVCC_WRAPPER_DEFAULT_COMPILER = $(CXX)
 CXX := $(KOKKOS_PATH)/bin/nvcc_wrapper
@@ -52,7 +53,7 @@ all: nemolite2d_views_kokkos nemolite2d_rawpointers_kokkos
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
 LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
-COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${KERNELS} ${INF_LIB}
+COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${INF_LIB}
 
 # Normal targets
 nemolite2d_views_kokkos: ${COMMON_LIB} timer_lib inf_lib time_step_views_kokkos.o
@@ -74,15 +75,16 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 
 # Linking the executable needs the -lstdc++ to link also the std lib functions
 # called from C++ code
-%.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) 
-	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LINK_DEPENDS) \
-		-L$(CUDA_LIB) -L. -lstdc++ -ldl
+%.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) timing.o
+	$(CXX) -o $@ timing.o $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
+		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LDFLAGS) $(KOKKOS_LIBS) -lgfortran
 
 # Kokkos files rules
 %_kokkos.o: %_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
-	$(CXX) -DEXEC_SPACE=$(KOKKOS_DEVICES) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) \
-		$(CFLAGS) $(OMPFLAGS) -c $<
+	$(CXX) -DEXEC_SPACE=$(KOKKOS_DEVICES) $(KOKKOS_CXXFLAGS) $(CFLAGS) -c $<
+
+timing.o: timing.cpp
+	$(CXX) -c $<
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
