@@ -32,6 +32,7 @@ EXECUTION_TARGET = sw_emu # Options: sw_emu | hw_emu | hw
 .PHONY: nemolite2d nemolite2docl nemolite2dxilinx
 
 all: nemolite2d
+.DEFAULT_GOAL := nemolite2d
 
 # Build NemoLite2D
 nemolite2d: ${KERNELS} psy.o alg.o

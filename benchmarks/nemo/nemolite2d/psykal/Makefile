@@ -61,8 +61,8 @@ nemolite2d_serial: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
+	cd $@ && make nemolite2d
 	@echo "Serial version prepared."
-	@echo "Run 'make nemolite2d' inside the $@ folder."
 
 # OpenMP PSyclone code-generation of NemoLite2D
 nemolite2d_omp: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 omp_transform.py
@@ -71,22 +71,22 @@ nemolite2d_omp: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 omp_trans
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
+	cd $@ && make nemolite2d
 	@echo "OpenMP version prepared."
-	@echo "Run 'make nemolite2d' inside the $@ folder."
 
 
 # MPI PSyclone code-generation of NemoLite2D
-nemolite2d_mpi: common_lib timer_lib mpi_inf_lib nemolite2d_alg.f90
+nemolite2d_mpi: timer_lib_parallel mpi_inf_lib common_lib_mpi nemolite2d_alg.f90
 	@echo "Generating NemoLite2D with MPI"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -dm -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
+	cd $@ && make nemolite2d
 	@echo "MPI version prepared."
-	@echo "Run 'make nemolite2d' inside the $@ folder."
 
 # Hybrid PSyclone code-generation of NemoLite2D
-nemolite2d_hybrid: common_lib timer_lib mpi_inf_lib nemolite2d_alg.f90 omp_transform.py
+nemolite2d_hybrid: common_lib_mpi timer_lib_parallel mpi_inf_lib nemolite2d_alg.f90 omp_transform.py
 	@echo "Generating NemoLite2D with hybrid MPI+OpenMP using omp_transform.py"
 	rm -rf $@; mkdir -p $@
 	${PSYCLONE} -dm -s ./omp_transform.py -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
@@ -129,6 +129,9 @@ nemolite2d_ocl: common_lib timer_lib ocl_inf_lib nemolite2d_alg.f90 ocl_transfor
 timer_lib:
 	${MAKE} -C ${TIMER_DIR} sm_lib
 
+timer_lib_parallel:
+	${MAKE} -C ${TIMER_DIR} MPIF90="${F90}" dm_lib
+
 serial_inf_lib:
 	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${INF_DIR} fd_lib
@@ -144,6 +147,8 @@ ocl_inf_lib:
 common_lib:
 	${MAKE} -C ${COMMON_DIR}
 
+common_lib_mpi:
+	${MAKE} -C ${COMMON_DIR} MPI=yes
 
 clean: 
 	rm -rf nemolite2d_serial nemolite2d_omp nemolite2d_mpi

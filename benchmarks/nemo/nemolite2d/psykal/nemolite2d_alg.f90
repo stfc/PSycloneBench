@@ -99,28 +99,18 @@ program gocean2d
 
   ! Stop the timer for the time-stepping section
   call timer_stop(itimer0)
+
   call model_write_log("((A))", '=== Time-stepping finished ===')
 
   ! Compute and output some checksums for error checking
-  call model_write_log("('u checksum = ',E16.8)", &
-                       field_checksum(un_fld))
-  call model_write_log("('v checksum = ',E16.8)", &
-                       field_checksum(vn_fld))
-  call model_write_log("('ua checksum = ',E16.8)", &
-                       field_checksum(ua_fld))
-  call model_write_log("('va checksum = ',E16.8)", &
-                       field_checksum(va_fld))
-  call model_write_log("('ssh_u checksum = ',E16.8)", &
-                       field_checksum(sshn_u_fld))
-  call model_write_log("('ssh_v checksum = ',E16.8)", &
-                       field_checksum(sshn_v_fld))
-  call model_write_log("('ssh_t checksum = ',E16.8)", &
-                       field_checksum(sshn_t_fld))
+  call model_write_log("('ua checksum = ',E16.8)", field_checksum(ua_fld))
+  call model_write_log("('va checksum = ',E16.8)", field_checksum(va_fld))
+  call model_write_log("('ssh_t checksum = ',E16.8)", field_checksum(sshn_t_fld))
 
   !! finalise the model run
   call model_finalise()
   
-  call model_write_log("((A))", 'Simulation finished!!')
+  !call model_write_log("((A))", 'Simulation finished!!')
 
   call gocean_finalise()
 
