@@ -7,9 +7,13 @@ def trans(psy):
     tinfo = TransInfo()
     ltrans = tinfo.get_trans_name('GOceanOMPLoopTrans')
     rtrans = tinfo.get_trans_name('OMPParallelTrans')
+    itrans = tinfo.get_trans_name('KernelModuleInline')
 
     schedule = psy.invokes.get('invoke_0').schedule
-    # schedule.view()
+
+    # Inline all kernels in this Schedule
+    for kernel in schedule.kernels():
+        itrans.apply(kernel)
 
     # Apply the OpenMP Loop transformation to *every* loop
     # in the schedule
@@ -21,5 +25,4 @@ def trans(psy):
     # PARALLEL region
     newschedule, _ = rtrans.apply(schedule.children)
 
-    psy.invokes.get('invoke_0').schedule = newschedule
     return psy
