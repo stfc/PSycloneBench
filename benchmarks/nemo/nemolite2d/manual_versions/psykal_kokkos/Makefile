@@ -73,8 +73,8 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 # Import needed kokkos environment variables
 include $(KOKKOS_PATH)/Makefile.kokkos
 
-# Linking the executable needs the -lstdc++ to link also the std lib functions
-# called from C++ code
+# Linking the executable needs the libgfortran runtime library installed in the system
+# and available in the library path.
 %.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) timing.o
 	$(CXX) -o $@ timing.o $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
 		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LDFLAGS) $(KOKKOS_LIBS) -lgfortran
