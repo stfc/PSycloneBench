@@ -4,6 +4,13 @@
 #include <cstdlib>
 #include <Kokkos_Core.hpp>
 
+// Uncomment line below to use TIMER
+// #define USE_TIMER
+
+#ifdef USE_TIMER
+#include "timing.h"
+#endif
+
 // Kernels
 #include "../../kernels/c_family/continuity_kern.c"
 #include "../../kernels/c_family/momentum_u_kern.c"
@@ -41,6 +48,32 @@ extern "C" void c_invoke_time_step(
         double * dy_t,
         double * gphiu,
         double * gphiv,
+        // Device Pointers. Not used in this implementation.
+        void * &ssha_t_view_p,
+        void * &sshn_t_view_p,
+        void * &sshn_u_view_p,
+        void * &sshn_v_view_p,
+        void * &hu_view_p,
+        void * &hv_view_p,
+        void * &un_view_p,
+        void * &vn_view_p,
+        void * &ua_view_p,
+        void * &ht_view_p,
+        void * &ssha_u_view_p,
+        void * &va_view_p,
+        void * &ssha_v_view_p,
+        void * &tmask_view_p,
+        void * &area_t_view_p,
+        void * &area_u_view_p,
+        void * &area_v_view_p,
+        void * &dx_u_view_p,
+        void * &dx_v_view_p,
+        void * &dx_t_view_p,
+        void * &dy_u_view_p,
+        void * &dy_v_view_p,
+        void * &dy_t_view_p,
+        void * &gphiu_view_p,
+        void * &gphiv_view_p,
         // Scalars
         int istep,
         int internal_xstart,
@@ -55,6 +88,11 @@ extern "C" void c_invoke_time_step(
         double d2r,
         double g
         ){
+
+#ifdef USE_TIMER
+    TimerInit();
+    TimerStart("Kokkos SetUp");
+#endif
 
     // Kokkos needs to be initialized. Since NemoLite2D just has a single
     // invoke, it is simple to do it here the first time the invoke is
@@ -84,6 +122,11 @@ extern "C" void c_invoke_time_step(
     internal_ystop = internal_ystop + 1;
     internal_xstop = internal_xstop + 1;
 
+#ifdef USE_TIMER
+    TimerStop();
+    TimerStart("Continuity Kernel");
+#endif
+
     // Continuity kernel (internal domain)
     Kokkos::parallel_for("continuity",
         mdrange_policy({internal_ystart, internal_xstart},
@@ -93,6 +136,11 @@ extern "C" void c_invoke_time_step(
                 hu, hv, un, vn, rdt, area_t);
         }
     );
+
+#ifdef USE_TIMER
+    TimerStop();
+    TimerStart("Momentum Kernels");
+#endif
 
     // Momentum_u kernel (internal domain u points)
     Kokkos::parallel_for("momentum_u",
@@ -118,6 +166,11 @@ extern "C" void c_invoke_time_step(
         }
     );
     
+#ifdef USE_TIMER
+    TimerStop();
+    TimerStart("Remaining Kernels");
+#endif
+
     // Boundary conditions bc_ssh kernel (internal domain)
     Kokkos::parallel_for("bc_ssh",
         mdrange_policy({internal_ystart, internal_xstart},
@@ -192,5 +245,10 @@ extern "C" void c_invoke_time_step(
             next_sshv_code(ji, jj, width, sshn_v, sshn_t, tmask, area_t, area_v);
         }
     );
+
+#ifdef USE_TIMER
+    TimerStop();
+    TimerReport();
+#endif
 
 }
