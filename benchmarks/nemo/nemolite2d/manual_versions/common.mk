@@ -14,7 +14,7 @@ INF_LIB = ${INF_DIR}/src/lib_fd.a
 COMMON_DIR = ../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 # FortCL (provides OpenCL functionality in Fortran)
-FCL_DIR = ${SHARED_DIR}/dl_esm_inf/external/FortCL/
+FCL_DIR = ${SHARED_DIR}/FortCL/
 FCL_INC = ${FCL_DIR}/src
 FCL_LIB = ${FCL_INC}/libFortCL.a
 

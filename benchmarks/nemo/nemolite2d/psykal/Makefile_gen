@@ -9,8 +9,8 @@ TIMER_INC = ${TIMER_DIR}/src
 TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
-FORTCL_INC = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/
-FORTCL_LIB = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/libFortCL.a
+FORTCL_INC = ${SHARED_DIR}/FortCL/src/
+FORTCL_LIB = ${SHARED_DIR}/FortCL/src/libFortCL.a
 COMMON_DIR = ../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
@@ -42,7 +42,7 @@ nemolite2d: ${KERNELS} psy.o alg.o
 # Build NemoLite2D for OpenCL (with JIT'ed kernels)
 nemolite2docl: ${KERNELS} psy.o alg.o
 	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
-		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} -lOpenCL
+		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} ${FORTCL_LIB} -lOpenCL
 
 
 # Build NemoLite2D for OpenCL with Xilinx SDK pre-compiled kernels
@@ -81,7 +81,7 @@ clean:
 
 # Execution helpers
 run_xilinx_sw_emu:
-	PSYCLONE_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=sw_emu ./nemolite2dxilinx.exe
+	FORTCL_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=sw_emu ./nemolite2dxilinx.exe
 
 run_xilinx_hw_emu:
-	PSYCLONE_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=hw_emu ./nemolite2dxilinx.exe
+	FORTCL_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=hw_emu ./nemolite2dxilinx.exe
