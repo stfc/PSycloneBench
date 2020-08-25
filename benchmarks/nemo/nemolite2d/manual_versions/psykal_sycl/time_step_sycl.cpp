@@ -13,13 +13,11 @@ using namespace cl::sycl;
 #include "timing.h"
 #endif
 
-queue * workqueue;
-bool first_time = true;
-
 #include "../../kernels/c_family/momentum_u_kern.c"
 #include "../../kernels/c_family/momentum_v_kern.c"
-#include "../../kernels/c_family/boundary_conditions_kern.c"
-#include "../../kernels/c_family/time_update_kern.c"
+
+queue * workqueue;
+bool first_time = true;
 
 extern "C" void c_invoke_time_step(
         // Fields
@@ -99,12 +97,20 @@ extern "C" void c_invoke_time_step(
     if(first_time){
         std::cout << "List of SYCL devices:" << std::endl;
         auto devices = device::get_devices();
+        int index = 0;
         for(auto dev : devices){
             auto platform_name = dev.get_platform().get_info<info::platform::name>();
             auto dev_name = dev.get_info<info::device::name>();
-            std::cout << " - " << platform_name << " : " << dev_name << std::endl;
+            std::cout <<  " " << index++ << " ) " << platform_name << " : " <<
+                dev_name << std::endl;
         }
-        workqueue = new queue(devices[3]);
+
+        if(const char* env_p = std::getenv("SYCL_PLATFORM")){
+            std::exit(-1);
+        } else {
+            // Use default device
+            workqueue = new queue(devices[3]);
+        }
         first_time = false;
     }
 
@@ -119,7 +125,7 @@ extern "C" void c_invoke_time_step(
 
     int height = width;
 
-    buffer<double, 2> ssha_t_buffer(ssha_t, range<2>(width,height));
+    buffer<double, 2> ssha_t_buffer(ssha_t, range<2>(width, height));
     buffer<double, 2> sshn_t_buffer(sshn_t, range<2>(width, height));
     buffer<double, 2> sshn_u_buffer(sshn_u, range<2>(width, height));
     buffer<double, 2> sshn_v_buffer(sshn_v, range<2>(width, height));
@@ -147,32 +153,17 @@ extern "C" void c_invoke_time_step(
     buffer<double, 2> gphiv_buffer(gphiv, range<2>(width, height));
 
     myqueue.submit([&](handler &cgh){
-        auto ssha_t_accessor = ssha_t_buffer.get_access<access::mode::read_write>(cgh);
-        auto sshn_u_accessor = sshn_u_buffer.get_access<access::mode::read_write>(cgh);
-        auto sshn_v_accessor = sshn_v_buffer.get_access<access::mode::read_write>(cgh);
+        auto ssha_t_accessor = ssha_t_buffer.get_access<access::mode::write>(cgh);
+
+        auto sshn_u_accessor = sshn_u_buffer.get_access<access::mode::read>(cgh);
+        auto sshn_v_accessor = sshn_v_buffer.get_access<access::mode::read>(cgh);
         auto sshn_t_accessor = sshn_t_buffer.get_access<access::mode::read_write>(cgh);
         auto hu_accessor = hu_buffer.get_access<access::mode::read>(cgh);
         auto hv_accessor = hv_buffer.get_access<access::mode::read>(cgh);
-        auto un_accessor = un_buffer.get_access<access::mode::read_write>(cgh);
-        auto vn_accessor = vn_buffer.get_access<access::mode::read_write>(cgh);
-        auto ua_accessor = ua_buffer.get_access<access::mode::read_write>(cgh);
-        auto ht_accessor = ht_buffer.get_access<access::mode::read>(cgh);
-        auto ssha_u_accessor = ssha_u_buffer.get_access<access::mode::read_write>(cgh);
-        auto va_accessor = va_buffer.get_access<access::mode::read_write>(cgh);
-        auto ssha_v_accessor = ssha_v_buffer.get_access<access::mode::read_write>(cgh);
+        auto un_accessor = un_buffer.get_access<access::mode::read>(cgh);
+        auto vn_accessor = vn_buffer.get_access<access::mode::read>(cgh);
 
-        auto tmask_accessor = tmask_buffer.get_access<access::mode::read>(cgh);
         auto area_t_accessor = area_t_buffer.get_access<access::mode::read>(cgh);
-        auto area_u_accessor = area_u_buffer.get_access<access::mode::read>(cgh);
-        auto area_v_accessor = area_v_buffer.get_access<access::mode::read>(cgh);
-        auto dx_u_accessor = dx_u_buffer.get_access<access::mode::read>(cgh);
-        auto dx_v_accessor = dx_v_buffer.get_access<access::mode::read>(cgh);
-        auto dx_t_accessor = dx_t_buffer.get_access<access::mode::read>(cgh);
-        auto dy_u_accessor = dy_u_buffer.get_access<access::mode::read>(cgh);
-        auto dy_v_accessor = dy_v_buffer.get_access<access::mode::read>(cgh);
-        auto dy_t_accessor = dy_t_buffer.get_access<access::mode::read>(cgh);
-        auto gphiu_accessor = gphiu_buffer.get_access<access::mode::read>(cgh);
-        auto gphiv_accessor = gphiv_buffer.get_access<access::mode::read>(cgh);
 
         // Continuity kernel
         cgh.parallel_for(range<2>(internal_ystop, internal_xstop), [=](id<2> idx){
@@ -190,9 +181,31 @@ extern "C" void c_invoke_time_step(
             ssha_t_accessor[idx] = sshn_t_accessor[idx] + (rtmp2 - rtmp1 + rtmp4 - rtmp3) *
                 rdt / area_t_accessor[idx];
         });
+    });
             
-        // Momentum kernel
-        /*
+    // Momentum_u kernel (internal domain u points)
+    myqueue.submit([&](handler &cgh){
+        auto ua_accessor = ua_buffer.get_access<access::mode::write>(cgh);
+
+        auto sshn_u_accessor = sshn_u_buffer.get_access<access::mode::read>(cgh);
+        auto sshn_v_accessor = sshn_v_buffer.get_access<access::mode::read>(cgh);
+        auto sshn_t_accessor = sshn_t_buffer.get_access<access::mode::read>(cgh);
+        auto hu_accessor = hu_buffer.get_access<access::mode::read>(cgh);
+        auto hv_accessor = hv_buffer.get_access<access::mode::read>(cgh);
+        auto un_accessor = un_buffer.get_access<access::mode::read>(cgh);
+        auto vn_accessor = vn_buffer.get_access<access::mode::read>(cgh);
+        auto ht_accessor = ht_buffer.get_access<access::mode::read>(cgh);
+        auto ssha_u_accessor = ssha_u_buffer.get_access<access::mode::read>(cgh);
+
+        auto tmask_accessor = tmask_buffer.get_access<access::mode::read>(cgh);
+        auto area_u_accessor = area_u_buffer.get_access<access::mode::read>(cgh);
+        auto dx_u_accessor = dx_u_buffer.get_access<access::mode::read>(cgh);
+        auto dx_v_accessor = dx_v_buffer.get_access<access::mode::read>(cgh);
+        auto dx_t_accessor = dx_t_buffer.get_access<access::mode::read>(cgh);
+        auto dy_u_accessor = dy_u_buffer.get_access<access::mode::read>(cgh);
+        auto dy_t_accessor = dy_t_buffer.get_access<access::mode::read>(cgh);
+        auto gphiu_accessor = gphiu_buffer.get_access<access::mode::read>(cgh);
+
         cgh.parallel_for(range<2>(internal_ystop, internal_xstop - 1), [=](id<2> idx){
             double u_e, u_w, v_n, v_s;
             double v_nc, v_sc;
@@ -233,23 +246,23 @@ extern "C" void c_invoke_time_step(
                 hv_accessor[{jj, ji + 1}] + sshn_v_accessor[{jj, ji + 1}]);
 
             // -advection (currently first order upwind)
-            uu_w = (0.5 - copysign(0.5, u_w)) * un_accessor[{jj, ji}] +
-                (0.5 + copysign(0.5, u_w)) * un_accessor[{jj, ji - 1}] ;
-            uu_e = (0.5 + copysign(0.5, u_e)) * un_accessor[{jj, ji}] +
-                (0.5 - copysign(0.5, u_e)) * un_accessor[{jj, ji + 1}] ;
+            uu_w = (0.5 - cl::sycl::copysign(0.5, u_w)) * un_accessor[{jj, ji}] +
+                (0.5 + cl::sycl::copysign(0.5, u_w)) * un_accessor[{jj, ji - 1}] ;
+            uu_e = (0.5 + cl::sycl::copysign(0.5, u_e)) * un_accessor[{jj, ji}] +
+                (0.5 - cl::sycl::copysign(0.5, u_e)) * un_accessor[{jj, ji + 1}] ;
 
             if(tmask_accessor[{jj - 1, ji}] <=0 || tmask_accessor[{jj - 1, ji + 1}] <= 0){
-                uu_s = (0.5 - copysign(0.5, v_s)) * un_accessor[{jj, ji}];
+                uu_s = (0.5 - cl::sycl::copysign(0.5, v_s)) * un_accessor[{jj, ji}];
             }else{
-                uu_s = (0.5 - copysign(0.5, v_s)) * un_accessor[{jj, ji}] +
-                    (0.5 + copysign(0.5, v_s)) * un_accessor[{jj - 1, ji}] ;
+                uu_s = (0.5 - cl::sycl::copysign(0.5, v_s)) * un_accessor[{jj, ji}] +
+                    (0.5 + cl::sycl::copysign(0.5, v_s)) * un_accessor[{jj - 1, ji}] ;
             }
 
             if(tmask_accessor[{jj + 1, ji}] <=0 || tmask_accessor[{jj + 1 + 1, ji}] <= 0){
-                uu_n = (0.5 + copysign(0.5, v_n)) * un_accessor[{jj, ji}];
+                uu_n = (0.5 + cl::sycl::copysign(0.5, v_n)) * un_accessor[{jj, ji}];
             }else{
-                uu_n = (0.5 + copysign(0.5, v_n)) * un_accessor[{jj, ji}] +
-                    (0.5 - copysign(0.5, v_n)) * un_accessor[{jj + 1, ji}];
+                uu_n = (0.5 + cl::sycl::copysign(0.5, v_n)) * un_accessor[{jj, ji}] +
+                    (0.5 - cl::sycl::copysign(0.5, v_n)) * un_accessor[{jj + 1, ji}];
             }
 
             adv = uu_w * u_w * depw - uu_e * u_e * depe +
@@ -296,292 +309,7 @@ extern "C" void c_invoke_time_step(
                 ssha_u_accessor[{jj, ji}]) / (1.0 + cbfr * rdt) ;
 
         });
-        */
-
     });
-
-    myqueue.wait();
-
-
-    /*
-    // Momentum_u kernel (internal domain u points)
-    Kokkos::parallel_for("momentum_u",
-        mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop, internal_xstop - 1}),
-        KOKKOS_LAMBDA (const int jj, const int ji) {
-                    }
-    );
-
-    // Momentum_v kernel (internal domain v points)
-    Kokkos::parallel_for("momentum_v",
-        mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop - 1, internal_xstop}),
-        KOKKOS_LAMBDA (const int jj, const int ji) {
-
-            double u_e, u_w, v_n, v_s;
-            double u_ec, u_wc, vv_e, vv_n, vv_s, vv_w;
-            double depe, depw, deps, depn;
-            double hpg, adv, cor, vis;
-            double dvdx_e, dvdx_w, dvdy_n, dvdy_s;
-            if(tmask_view(jj, ji) + tmask_view(jj, ji + 1) <= 0){
-                return; // jump over non-computatinal domain
-            }
-            if(tmask_view(jj, ji) <= 0 || tmask_view(jj + 1, ji) <= 0){
-                return; // jump over v boundary cells
-            }
-
-            // kernel v adv 
-            v_n = 0.5 * (vn_view(jj, ji) + vn_view(jj + 1, ji)) *
-                dx_t_view(jj + 1, ji); // add length scale.
-            depn = ht_view(jj + 1, ji) + sshn_t_view(jj + 1, ji);
-
-            v_s = 0.5 * (vn_view(jj, ji) + vn_view(jj - 1, ji)) *
-                dx_t_view(jj, ji); // add length scale
-            deps = ht_view(jj, ji) + sshn_t_view(jj, ji);
-
-            u_wc = 0.5 * (un_view(jj, ji - 1) + un_view(jj + 1, ji - 1));
-            u_w  = 0.5 * u_wc * (dy_u_view(jj, ji - 1) + dy_u_view(jj + 1, ji - 1));
-            depw = 0.50 * (hu_view(jj, ji - 1) + sshn_u_view(jj, ji - 1) + 
-                hu_view(jj + 1, ji - 1) + sshn_u_view(jj + 1, ji - 1));
-
-            u_ec = 0.5 * (un_view(jj, ji) + un_view(jj + 1, ji));
-            u_e  = 0.5 * u_ec * (dy_u_view(jj, ji) + dy_u_view(jj + 1, ji));
-            depe = 0.50 * (hu_view(jj, ji) + sshn_u_view(jj, ji) + 
-            hu_view(jj + 1, ji) + sshn_u_view(jj + 1, ji));
-
-            // -advection (currently first order upwind)
-            vv_s = (0.5 - copysign(0.5, v_s)) * vn_view(jj, ji) +  
-                (0.5 + copysign(0.5, v_s)) * vn_view(jj - 1, ji) ;
-            vv_n = (0.5 + copysign(0.5, v_n)) * vn_view(jj, ji) +  
-                (0.5 - copysign(0.5, v_n)) * vn_view(jj + 1, ji) ;
-
-            if(tmask_view(jj, ji - 1) <= 0 || tmask_view(jj + 1, ji - 1) <= 0){
-                vv_w = (0.5 - copysign(0.5, u_w)) * vn_view(jj, ji);
-            }else{
-                vv_w = (0.5 - copysign(0.5, u_w)) * vn_view(jj, ji) +  
-                    (0.5 + copysign(0.5, u_w)) * vn_view(jj, ji - 1) ;
-            }
-
-            if(tmask_view(jj, ji + 1) <= 0 || tmask_view(jj + 1 + 1, ji) <= 0){
-                vv_e = (0.5 + copysign(0.5, u_e)) * vn_view(jj, ji);
-            }else{
-                vv_e = (0.5 + copysign(0.5, u_e)) * vn_view(jj, ji) +
-                    (0.5 - copysign(0.5, u_e)) * vn_view(jj, ji + 1);
-            }
-
-            adv = vv_w * u_w * depw - vv_e * u_e * depe + 
-                vv_s * v_s * deps - vv_n * v_n * depn;
-
-            // -viscosity
-            dvdy_n = (vn_view(jj + 1, ji) - vn_view(jj, ji)) / dy_t_view(jj + 1, ji) * 
-                (ht_view(jj + 1, ji) + sshn_t_view(jj + 1, ji));
-            dvdy_s = (vn_view(jj, ji) - vn_view(jj - 1, ji)) / dy_t_view(jj, ji) * 
-                (ht_view(jj, ji) + sshn_t_view(jj, ji));
-
-            if(tmask_view(jj, ji - 1) <= 0 || tmask_view(jj + 1, ji - 1) <= 0){
-                dvdx_w = 0.0; // slip boundary
-            }else{
-                dvdx_w = (vn_view(jj, ji) - vn_view(jj, ji - 1)) / (dx_v_view(jj, ji) +
-                    dx_v_view(jj, ji - 1)) * (hv_view(jj, ji) + sshn_v_view(jj, ji) +
-                    hv_view(jj, ji - 1) + sshn_v_view(jj, ji - 1));
-            }
-
-            if(tmask_view(jj, ji + 1) <= 0 || tmask_view(jj + 1 + 1, ji) <= 0){
-                dvdx_e = 0.0; // slip boundary
-            }else{
-                dvdx_e = (vn_view(jj, ji + 1) - vn_view(jj, ji)) / (dx_v_view(jj, ji) +
-                    dx_v_view(jj, ji + 1)) * (hv_view(jj, ji) + sshn_v_view(jj, ji) +
-                    hv_view(jj, ji + 1) + sshn_v_view(jj, ji + 1));
-            }
-
-            vis = (dvdy_n - dvdy_s ) * dx_v_view(jj, ji)  + 
-                (dvdx_e - dvdx_w ) * dy_v_view(jj, ji) * 0.5  ;
-
-            vis = visc * vis;   // visc will be a array visc(1:jpijglou) 
-                                // for variable viscosity, such as turbulent viscosity
-
-            // -Coriolis' force (can be implemented implicitly)
-            cor = -0.5*(2. * omega * sin(gphiv_view(jj, ji) * d2r) * (u_ec + u_wc)) * 
-                area_v_view(jj, ji) * (hv_view(jj, ji) + sshn_v_view(jj, ji));
-
-            // -pressure gradient
-            hpg = -g * (hv_view(jj, ji) + sshn_v_view(jj, ji)) * dx_v_view(jj, ji) * 
-                (sshn_t_view(jj + 1, ji) - sshn_t_view(jj, ji));
-
-            // -linear bottom friction (implemented implicitly.
-            va_view(jj, ji) = (vn_view(jj, ji) * (hv_view(jj, ji) + sshn_v_view(jj, ji)) + 
-                rdt * (adv + vis + cor + hpg) / area_v_view(jj, ji) ) / 
-                ((hv_view(jj, ji) + ssha_v_view(jj, ji))) / (1.0 + cbfr * rdt) ;
-            }
-    );
-    
-#ifdef USE_TIMER
-    TimerStop();
-    TimerStart("Remaining Kernels");
-#endif
-
-    // Boundary conditions bc_ssh kernel (internal domain)
-    Kokkos::parallel_for("bc_ssh",
-        mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop, internal_xstop}),
-        KOKKOS_LAMBDA (const int jj, const int ji) {
-
-            double amp_tide, omega_tide, rtime;
-
-            amp_tide = 0.2;
-            omega_tide = 2.0 * 3.14159 / (12.42 * 3600.0);
-            rtime = istep * rdt;
-  
-            if(tmask_view(jj, ji) <= 0) return;
-  
-            if(tmask_view(jj-1, ji) < 0){
-                ssha_t_view(jj, ji) = amp_tide * sin(omega_tide * rtime);
-            }else if(tmask_view(jj+1, ji) < 0){
-                ssha_t_view(jj, ji) = amp_tide * sin(omega_tide * rtime);
-            }else if(tmask_view(jj, ji+1) < 0){
-                ssha_t_view(jj, ji) = amp_tide * sin(omega_tide * rtime);
-            }else if(tmask_view(jj, ji-1) < 0){
-                ssha_t_view(jj, ji) = amp_tide * sin(omega_tide * rtime);
-            }
-        }
-    );
-    
-    // Boundary conditions bc_solid_u kernel (whole domain but top x boundary)
-    Kokkos::parallel_for("bc_solid_u",
-        mdrange_policy({internal_ystart - 1, internal_xstart - 1},
-                       {internal_ystop + 1, internal_xstop}),
-        KOKKOS_LAMBDA (const int jj, const int ji) {
-            if(tmask_view(jj, ji) * tmask_view(jj, ji+1) == 0){
-                ua_view(jj, ji) = 0.0;
-            }
-        }
-    );
-
-    // Boundary conditions bc_solid_v kernel (whole domain but top y boundary)
-    Kokkos::parallel_for("bc_solid_v",
-        mdrange_policy({internal_ystart - 1, internal_xstart - 1},
-                       {internal_ystop, internal_xstop + 1}),
-        KOKKOS_LAMBDA (const int jj, const int ji) {
-            if(tmask_view(jj, ji) * tmask_view(jj+1, ji) == 0){
-                va_view(jj, ji) = 0.0;
-            }
-        }
-    );
-
-    // Boundary conditions bc_flather_u kernel (whole domain but top x boundary)
-    Kokkos::parallel_for("bc_flather_u",
-        mdrange_policy({internal_ystart - 1, internal_xstart - 1},
-                       {internal_ystop + 1, internal_xstop}),
-        KOKKOS_LAMBDA (const int jj, const int ji) {
-            //                                   Du                 Dssh
-            // Flather open boundary condition [---- = sqrt(g/H) * ------]
-            //                                   Dn                 Dn
-            // ua and va in du/dn should be the specified tidal forcing
-
-            // Check whether this point lies within the domain
-            if(tmask_view(jj, ji) + tmask_view(jj, ji+1) <= -1) return;
-
-            if(tmask_view(jj, ji) < 0){
-                ua_view(jj, ji) = ua_view(jj, ji+1) + sqrt(g/hu_view(jj, ji)) *
-                    (sshn_u_view(jj, ji) - sshn_u_view(jj, ji+1));
-            }else if(tmask_view(jj, ji+1) < 0){
-                ua_view(jj, ji) = ua_view(jj, ji-1) + sqrt(g/hu_view(jj, ji)) *
-                    (sshn_u_view(jj, ji) - sshn_u_view(jj, ji-1));
-            }
-        }
-    );
-
-    // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
-    Kokkos::parallel_for("bc_flather_v",
-        mdrange_policy({internal_ystart - 1, internal_xstart - 1},
-                       {internal_ystop, internal_xstop + 1}),
-        KOKKOS_LAMBDA (const int jj, const int ji) {
-
-            // Check whether this point is inside the simulated domain
-            // \todo I could set-up a V-mask using exactly the same code structure
-            // as below. Could then apply the BC and multiply by V-mask and thus
-            // remove conditionals => get vectorisation.
-            if(tmask_view(jj, ji) + tmask_view(jj+1, ji) <= -1) return;
-    
-            if(tmask_view(jj, ji) < 0){
-                va_view(jj, ji) = va_view(jj+1, ji) + sqrt(g/hv_view(jj, ji)) *
-                    (sshn_v_view(jj, ji) - sshn_v_view(jj+1, ji));
-            }else if(tmask_view(jj+1, ji) < 0){
-                va_view(jj, ji) = va_view(jj-1, ji) + sqrt(g/hv_view(jj, ji)) *
-                    (sshn_v_view(jj, ji) - sshn_v_view(jj-1, ji));
-            }
-        }
-    );
-
-    // Copy 'next' fields to 'current' fields (whole domain)
-    Kokkos::parallel_for("copy_fields",
-        mdrange_policy({internal_ystart - 1, internal_xstart - 1},
-                       {internal_ystop + 1, internal_xstop + 1}),
-        KOKKOS_LAMBDA (const int jj, const int ji) {
-            un_view(jj, ji) = ua_view(jj, ji);
-            vn_view(jj, ji) = va_view (jj, ji);
-            sshn_t_view(jj, ji) = ssha_t_view(jj, ji);
-        }
-    );
-
-    // Time update kernel (internal domain u points)
-    Kokkos::parallel_for("next_sshu",
-        mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop, internal_xstop - 1}),
-        KOKKOS_LAMBDA (const int jj, const int ji) {
-
-            double rtmp1;
-
-            if(tmask_view(jj, ji) + tmask_view(jj, ji + 1) <= 0){
-                return; // jump over non-computational domain
-            }
-
-            if(tmask_view(jj, ji) * tmask_view(jj, ji + 1) > 0){
-                rtmp1 = area_t_view(jj, ji) * sshn_t_view(jj, ji) +
-                    area_t_view(jj, ji + 1) * sshn_t_view(jj, ji + 1);
-                sshn_u_view(jj, ji) = 0.5 * rtmp1 / area_u_view(jj, ji) ;
-            }else if(tmask_view(jj, ji) <= 0){
-                sshn_u_view(jj, ji) = sshn_t_view(jj, ji + 1);
-            }else if(tmask_view(jj, ji + 1) <= 0){
-                sshn_u_view(jj, ji) = sshn_t_view(jj, ji);
-            }
-        }
-    );
-
-    // Time update kernel (internal domain v points)
-    Kokkos::parallel_for("next_sshv",
-        mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop - 1, internal_xstop}),
-        KOKKOS_LAMBDA (const int jj, const int ji) {
-            double rtmp1;
-            if((tmask_view(jj, ji) + tmask_view(jj + 1, ji)) <= 0){
-                return; //jump over non-computational domain
-            }
-            if((tmask_view(jj, ji) * tmask_view(jj + 1, ji)) > 0){
-                rtmp1 = area_t_view(jj, ji) * sshn_t_view(jj, ji) +
-                    area_t_view(jj + 1, ji) * sshn_t_view(jj + 1, ji);
-                sshn_v_view(jj, ji) = 0.5 * rtmp1 / area_v_view(jj, ji) ;
-            }else if(tmask_view(jj, ji) <= 0){
-                sshn_v_view(jj, ji) = sshn_t_view(jj + 1, ji);
-            }else if(tmask_view(jj + 1, ji) <= 0){
-                sshn_v_view(jj, ji) = sshn_t_view(jj, ji);
-            }
-        }
-    );
-*/
-#ifdef USE_TIMER
-    TimerStop();
-    TimerReport();
-#endif
-
-    // Momentum_u kernel (internal domain u points)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop - 1; ji++){
-            momentum_u_code(ji, jj, width, ua, un, vn, hu, hv, ht, ssha_u, \
-                sshn_t, sshn_u, sshn_v, tmask, dx_u, dx_v, dx_t, dy_u, dy_t, \
-                area_u, gphiu, rdt, cbfr, visc, omega, d2r, g);
-        }
-    }
 
     // Momentum_v kernel (internal domain v points)
     for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
@@ -592,64 +320,254 @@ extern "C" void c_invoke_time_step(
         }
     }
 
+    // Momentum_v kernel (internal domain v points)
+    myqueue.submit([&](handler &cgh){
+        auto va_accessor = va_buffer.get_access<access::mode::read_write>(cgh);
+
+        auto sshn_u_accessor = sshn_u_buffer.get_access<access::mode::read_write>(cgh);
+        auto sshn_v_accessor = sshn_v_buffer.get_access<access::mode::read_write>(cgh);
+        auto sshn_t_accessor = sshn_t_buffer.get_access<access::mode::read_write>(cgh);
+        auto hu_accessor = hu_buffer.get_access<access::mode::read>(cgh);
+        auto hv_accessor = hv_buffer.get_access<access::mode::read>(cgh);
+        auto un_accessor = un_buffer.get_access<access::mode::read_write>(cgh);
+        auto vn_accessor = vn_buffer.get_access<access::mode::read_write>(cgh);
+        auto ht_accessor = ht_buffer.get_access<access::mode::read>(cgh);
+        auto ssha_v_accessor = ssha_v_buffer.get_access<access::mode::read>(cgh);
+
+        auto tmask_accessor = tmask_buffer.get_access<access::mode::read>(cgh);
+        auto area_v_accessor = area_v_buffer.get_access<access::mode::read>(cgh);
+        auto dx_v_accessor = dx_v_buffer.get_access<access::mode::read>(cgh);
+        auto dx_t_accessor = dx_t_buffer.get_access<access::mode::read>(cgh);
+        auto dy_u_accessor = dy_u_buffer.get_access<access::mode::read>(cgh);
+        auto dy_v_accessor = dy_v_buffer.get_access<access::mode::read>(cgh);
+        auto dy_t_accessor = dy_t_buffer.get_access<access::mode::read>(cgh);
+        auto gphiv_accessor = gphiv_buffer.get_access<access::mode::read>(cgh);
+
+        cgh.parallel_for(range<2>(internal_ystop - 1, internal_xstop), [=](id<2> idx){
+
+            double u_e, u_w, v_n, v_s;
+            double u_ec, u_wc, vv_e, vv_n, vv_s, vv_w;
+            double depe, depw, deps, depn;
+            double hpg, adv, cor, vis;
+            double dvdx_e, dvdx_w, dvdy_n, dvdy_s;
+            auto ji = idx[0];
+            auto jj = idx[1];
+            if (ji < internal_xstart) return;
+            if (jj < internal_ystart) return;
+
+        });
+    });
+    myqueue.wait();
+
+#ifdef USE_TIMER
+    TimerStop();
+    TimerReport();
+#endif
+
+
     // Boundary conditions bc_ssh kernel (internal domain)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop; ji++){
-            bc_ssh_code(ji, jj, width, istep, ssha_t, tmask, rdt);
-        }
-    }
+    myqueue.submit([&](handler &cgh){
+        auto ssha_t_accessor = ssha_t_buffer.get_access<access::mode::read_write>(cgh);
+        auto tmask_accessor = tmask_buffer.get_access<access::mode::read>(cgh);
+
+        cgh.parallel_for(range<2>(internal_ystop, internal_xstop), [=](id<2> idx){
+            auto jj = idx[0];
+            auto ji = idx[1];
+            if (ji < internal_xstart) return;
+            if (jj < internal_ystart) return;
+
+            double amp_tide, omega_tide, rtime;
+
+            amp_tide = 0.2;
+            omega_tide = 2.0 * 3.14159 / (12.42 * 3600.0);
+            rtime = istep * rdt;
+  
+            if(tmask_accessor[{jj, ji}] <= 0) return;
+  
+            if(tmask_accessor[{jj-1, ji}] < 0){
+                ssha_t_accessor[{jj, ji}] = amp_tide * sin(omega_tide * rtime);
+            }else if(tmask_accessor[{jj+1, ji}] < 0){
+                ssha_t_accessor[{jj, ji}] = amp_tide * sin(omega_tide * rtime);
+            }else if(tmask_accessor[{jj, ji+1}] < 0){
+                ssha_t_accessor[{jj, ji}] = amp_tide * sin(omega_tide * rtime);
+            }else if(tmask_accessor[{jj, ji-1}] < 0){
+                ssha_t_accessor[{jj, ji}] = amp_tide * sin(omega_tide * rtime);
+            }
+        });
+    });
 
     // Boundary conditions bc_solid_u kernel (whole domain but top x boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
-        for(int ji = internal_xstart - 1; ji <= internal_xstop; ji++){
-            bc_solid_u_code(ji, jj, width, ua, tmask);
-        }
-    }
+    myqueue.submit([&](handler &cgh){
+        auto ua_accessor = ua_buffer.get_access<access::mode::read_write>(cgh);
+        auto tmask_accessor = tmask_buffer.get_access<access::mode::read>(cgh);
+
+        cgh.parallel_for(range<2>(internal_ystop + 1, internal_xstop), [=](id<2> idx){
+            double rtmp1;
+
+            auto jj = idx[0];
+            auto ji = idx[1];
+            if (ji < internal_xstart - 1) return;
+            if (jj < internal_ystart - 1) return;
+
+            if(tmask_accessor[{jj, ji}] * tmask_accessor[{jj, ji+1}] == 0){
+                ua_accessor[{jj, ji}] = 0.0;
+            }
+        });
+    });
+
 
     // Boundary conditions bc_solid_v kernel (whole domain but top y boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
-            bc_solid_v_code(ji, jj, width, va, tmask);
-        }
-    }
+    myqueue.submit([&](handler &cgh){
+        auto va_accessor = va_buffer.get_access<access::mode::read_write>(cgh);
+        auto tmask_accessor = tmask_buffer.get_access<access::mode::read>(cgh);
+
+        cgh.parallel_for(range<2>(internal_ystop, internal_xstop + 1), [=](id<2> idx){
+            double rtmp1;
+
+            auto jj = idx[0];
+            auto ji = idx[1];
+            if (ji < internal_xstart - 1) return;
+            if (jj < internal_ystart - 1) return;
+
+            if(tmask_accessor[{jj, ji}] * tmask_accessor[{jj+1, ji}] == 0){
+                va_accessor[{jj, ji}] = 0.0;
+            }
+        });
+    });
 
     // Boundary conditions bc_flather_u kernel (whole domain but top x boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
-        for(int ji = internal_xstart - 1; ji <= internal_xstop; ji++){
-            bc_flather_u_code(ji, jj, width, ua, hu, sshn_u, tmask, g);
-        }
-    }
+    myqueue.submit([&](handler &cgh){
+        auto ua_accessor = ua_buffer.get_access<access::mode::read_write>(cgh);
+        auto sshn_u_accessor = sshn_u_buffer.get_access<access::mode::read>(cgh);
+        auto hu_accessor = hu_buffer.get_access<access::mode::read>(cgh);
+        auto tmask_accessor = tmask_buffer.get_access<access::mode::read>(cgh);
+
+        cgh.parallel_for(range<2>(internal_ystop + 1, internal_xstop), [=](id<2> idx){
+            double rtmp1;
+
+            auto jj = idx[0];
+            auto ji = idx[1];
+            if (ji < internal_xstart - 1) return;
+            if (jj < internal_ystart - 1) return;
+
+            if(tmask_accessor[{jj, ji}] + tmask_accessor[{jj, ji+1}] <= -1) return;
+
+            if(tmask_accessor[{jj, ji}] < 0){
+                ua_accessor[{jj, ji}] = ua_accessor[{jj, ji+1}] + sqrt(g/hu_accessor[{jj, ji}]) *
+                    (sshn_u_accessor[{jj, ji}] - sshn_u_accessor[{jj, ji+1}]);
+            }else if(tmask_accessor[{jj, ji+1}] < 0){
+                ua_accessor[{jj, ji}] = ua_accessor[{jj, ji-1}] + sqrt(g/hu_accessor[{jj, ji}]) *
+                    (sshn_u_accessor[{jj, ji}] - sshn_u_accessor[{jj, ji-1}]);
+            }
+        });
+    });
 
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
-    for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
-            bc_flather_v_code(ji, jj, width, va, hv, sshn_v, tmask, g);
-        }
-    }
+    myqueue.submit([&](handler &cgh){
+        auto va_accessor = va_buffer.get_access<access::mode::read_write>(cgh);
+        auto sshn_v_accessor = sshn_v_buffer.get_access<access::mode::read>(cgh);
+        auto hv_accessor = hv_buffer.get_access<access::mode::read>(cgh);
+        auto tmask_accessor = tmask_buffer.get_access<access::mode::read>(cgh);
+
+        cgh.parallel_for(range<2>(internal_ystop, internal_xstop + 1), [=](id<2> idx){
+            double rtmp1;
+
+            auto jj = idx[0];
+            auto ji = idx[1];
+            if (ji < internal_xstart - 1) return;
+            if (jj < internal_ystart - 1) return;
+
+            if(tmask_accessor[{jj, ji}] + tmask_accessor[{jj+1, ji}] <= -1) return;
+    
+            if(tmask_accessor[{jj, ji}] < 0){
+                va_accessor[{jj, ji}] = va_accessor[{jj+1, ji}] + sqrt(g/hv_accessor[{jj, ji}]) *
+                    (sshn_v_accessor[{jj, ji}] - sshn_v_accessor[{jj+1, ji}]);
+            }else if(tmask_accessor[{jj+1, ji}] < 0){
+                va_accessor[{jj, ji}] = va_accessor[{jj-1, ji}] + sqrt(g/hv_accessor[{jj, ji}]) *
+                    (sshn_v_accessor[{jj, ji}] - sshn_v_accessor[{jj-1, ji}]);
+            }
+        });
+    });
 
     // Copy 'next' fields to 'current' fields (whole domain)
-    for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj++){
-        for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
-            int idx = jj * width + ji;
-            un[idx] = ua[idx];
-            vn[idx] = va[idx];
-            sshn_t[idx] = ssha_t[idx];
-        }
-    }
+    myqueue.submit([&](handler &cgh){
+        auto un_accessor = un_buffer.get_access<access::mode::write>(cgh);
+        auto ua_accessor = ua_buffer.get_access<access::mode::read>(cgh);
+        cgh.copy(ua_accessor, un_accessor);
+    });
+    myqueue.submit([&](handler &cgh){
+        auto vn_accessor = vn_buffer.get_access<access::mode::write>(cgh);
+        auto va_accessor = va_buffer.get_access<access::mode::read>(cgh);
+        cgh.copy(va_accessor, vn_accessor);
+    });
+    myqueue.submit([&](handler &cgh){
+        auto sshn_t_accessor = sshn_t_buffer.get_access<access::mode::write>(cgh);
+        auto ssha_t_accessor = ssha_t_buffer.get_access<access::mode::read>(cgh);
+        cgh.copy(ssha_t_accessor, sshn_t_accessor);
+    });
 
     // Time update kernel (internal domain u points)
-    for(int jj = internal_ystart; jj <= internal_ystop; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop - 1; ji++){
-            next_sshu_code(ji, jj, width, sshn_u, sshn_t, tmask, area_t, area_u);
-        }
-    }
+    myqueue.submit([&](handler &cgh){
+        auto sshn_u_accessor = sshn_u_buffer.get_access<access::mode::read_write>(cgh);
+        auto sshn_t_accessor = sshn_t_buffer.get_access<access::mode::read>(cgh);
+        auto tmask_accessor = tmask_buffer.get_access<access::mode::read>(cgh);
+        auto area_t_accessor = area_t_buffer.get_access<access::mode::read>(cgh);
+        auto area_u_accessor = area_u_buffer.get_access<access::mode::read>(cgh);
+
+        cgh.parallel_for(range<2>(internal_ystop, internal_xstop - 1), [=](id<2> idx){
+            double rtmp1;
+
+            auto jj = idx[0];
+            auto ji = idx[1];
+            if (ji < internal_xstart) return;
+            if (jj < internal_ystart) return;
+
+            if(tmask_accessor[{jj, ji}] + tmask_accessor[{jj, ji + 1}] <= 0){
+                return; // jump over non-computational domain
+            }
+
+            if(tmask_accessor[{jj, ji}] * tmask_accessor[{jj, ji + 1}] > 0){
+                rtmp1 = area_t_accessor[{jj, ji}] * sshn_t_accessor[{jj, ji}] +
+                    area_t_accessor[{jj, ji + 1}] * sshn_t_accessor[{jj, ji + 1}];
+                sshn_u_accessor[{jj, ji}] = 0.5 * rtmp1 / area_u_accessor[{jj, ji}];
+            }else if(tmask_accessor[{jj, ji}] <= 0){
+                sshn_u_accessor[{jj, ji}] = sshn_t_accessor[{jj, ji + 1}];
+            }else if(tmask_accessor[{jj, ji + 1}] <= 0){
+                sshn_u_accessor[{jj, ji}] = sshn_t_accessor[{jj, ji}];
+            }
+        });
+    });
 
     // Time update kernel (internal domain v points)
-    for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
-        for(int ji = internal_xstart; ji <= internal_xstop; ji++){
-            next_sshv_code(ji, jj, width, sshn_v, sshn_t, tmask, area_t, area_v);
-        }
-    }
+    myqueue.submit([&](handler &cgh){
+        auto sshn_v_accessor = sshn_v_buffer.get_access<access::mode::read_write>(cgh);
+        auto sshn_t_accessor = sshn_t_buffer.get_access<access::mode::read>(cgh);
+        auto tmask_accessor = tmask_buffer.get_access<access::mode::read>(cgh);
+        auto area_t_accessor = area_t_buffer.get_access<access::mode::read>(cgh);
+        auto area_v_accessor = area_v_buffer.get_access<access::mode::read>(cgh);
+
+        cgh.parallel_for(range<2>(internal_ystop - 1, internal_xstop), [=](id<2> idx){
+            double rtmp1;
+            auto jj = idx[0];
+            auto ji = idx[1];
+            if (ji < internal_xstart) return;
+            if (jj < internal_ystart) return;
+
+            if((tmask_accessor[{jj, ji}] + tmask_accessor[{jj + 1, ji}]) <= 0){
+                return; //jump over non-computational domain
+            }
+            if((tmask_accessor[{jj, ji}] * tmask_accessor[{jj + 1, ji}]) > 0){
+                rtmp1 = area_t_accessor[{jj, ji}] * sshn_t_accessor[{jj, ji}] +
+                    area_t_accessor[{jj + 1, ji}] * sshn_t_accessor[{jj + 1, ji}];
+                sshn_v_accessor[{jj, ji}] = 0.5 * rtmp1 / area_v_accessor[{jj, ji}];
+            }else if(tmask_accessor[{jj, ji}] <= 0){
+                sshn_v_accessor[{jj, ji}] = sshn_t_accessor[{jj + 1, ji}];
+            }else if(tmask_accessor[{jj + 1, ji}] <= 0){
+                sshn_v_accessor[{jj, ji}] = sshn_t_accessor[{jj, ji}];
+            }
+        });
+    });
+    myqueue.wait();
 }
 
 extern "C" void kokkos_read_from_device(void* from, double* to,
