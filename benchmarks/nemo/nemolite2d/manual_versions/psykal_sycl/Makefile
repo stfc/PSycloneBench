@@ -35,9 +35,9 @@ time_step_mod.o: ${COMMON_LIB} inf_lib
 
 # Linking the executable needs the -lstdc++ to link also the std lib functions
 # called from C++ code
-%.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) ${OMPFLAGS} -lstdc++ -lsycl
+%.exe: $(MODULE_LIST) timing.o
+	$(F90) -o $@ timing.o $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
+		$(LDFLAGS) ${OMPFLAGS}  -lstdc++ -lsycl
 
 # C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
 # the imported ../common.mk)
@@ -45,6 +45,9 @@ time_step_mod.o: ${COMMON_LIB} inf_lib
 # must trigger a recompilation.
 %.o: %.cpp ../../kernels/c_family/*.c
 	$(SYCL_COMP) $(SYCLFLAGS)  -fPIC -c $< -o $@
+
+timing.o: timing.cpp
+	$(CXX) -c $<
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
