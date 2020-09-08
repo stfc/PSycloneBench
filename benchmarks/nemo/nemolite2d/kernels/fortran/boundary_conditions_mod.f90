@@ -1,7 +1,8 @@
 module boundary_conditions_mod
   use kind_params_mod
   use argument_mod, only: GO_READ, GO_READWRITE, GO_I_SCALAR, &
-       GO_ARG, GO_R_SCALAR, GO_CU, GO_CV, GO_CT, GO_GRID_MASK_T
+       GO_ARG, GO_R_SCALAR, GO_CU, GO_CV, GO_CT, GO_GRID_MASK_T, &
+       GO_STENCIL
   use kernel_mod, only: kernel_type, GO_POINTWISE, GO_DOFS, &
       GO_ALL_PTS, GO_INTERNAL_PTS
   use physical_params_mod
@@ -100,7 +101,7 @@ module boundary_conditions_mod
 
   type, extends(kernel_type) :: bc_flather_u
      type(go_arg), dimension(4) :: meta_args =  &
-          (/ go_arg(GO_READWRITE, GO_CU, GO_POINTWISE),  & ! ua
+          (/ go_arg(GO_READWRITE, GO_CU, GO_STENCIL(000,111,000)),  & ! ua
              go_arg(GO_READ,      GO_CU, GO_POINTWISE),  & ! hu
              go_arg(GO_READ,      GO_CU, GO_POINTWISE),  & ! sshn_u
              go_arg(GO_READ,      GO_GRID_MASK_T)     &
@@ -128,7 +129,7 @@ module boundary_conditions_mod
 
   type, extends(kernel_type) :: bc_flather_v
      type(go_arg), dimension(4) :: meta_args =  &
-          (/ go_arg(GO_READWRITE, GO_CV, GO_POINTWISE),  & ! va
+          (/ go_arg(GO_READWRITE, GO_CV, GO_STENCIL(010,010,010)),  & ! va
              go_arg(GO_READ,      GO_CV, GO_POINTWISE),  & ! hv
              go_arg(GO_READ,      GO_CV, GO_POINTWISE),  & ! sshn_v
              go_arg(GO_READ,      GO_GRID_MASK_T)     &
