@@ -6,41 +6,25 @@ funcation via the -s option. Performs OpenACC transformations. '''
 def trans(psy):
     ''' Take the supplied psy object, apply OpenACC transformations
     to the schedule of invoke_0 and return the new psy object '''
-    from transformations import OpenACCParallelTrans, \
-        OpenACCDataTrans
-    atrans = OpenACCParallelTrans()
-    dtrans = OpenACCDataTrans()
+    from psyclone.psyGen import TransInfo
+    tinfo = TransInfo()
+    atrans = tinfo.get_trans_name('ACCParallelTrans')
+    dtrans = tinfo.get_trans_name('ACCDataTrans')
+    itrans = tinfo.get_trans_name('KernelModuleInline')
 
     invoke = psy.invokes.get('invoke_0')
     schedule = invoke.schedule
     # schedule.view()
 
-    # Apply the OpenMP Loop transformation to *every* loop
+    # Apply the OpenACC Loop transformation to *every* loop
     # in the schedule
-    from psyGen import Loop
+    from psyclone.psyir.nodes import Loop
     for child in schedule.children:
         if isinstance(child, Loop):
             newschedule, _ = atrans.apply(child)
             schedule = newschedule
 
-    newschedule, _ = dtrans.apply(schedule)
+    dtrans.apply(schedule)
 
-    invoke.schedule = newschedule
-    newschedule.view()
+    schedule.view()
     return psy
-
-
-if __name__ == "__main__":
-    from parse import parse
-    from psyGen import PSyFactory
-    API = "gocean1.0"
-    FILENAME = "nemolite2d_alg.f90"
-    _, INVOKEINFO = parse(FILENAME,
-                          api=API,
-                          invoke_name="invoke")
-    PSY = PSyFactory(API).create(INVOKEINFO)
-    # print PSY.invokes.names
-
-    NEW_PSY = trans(PSY)
-
-    print NEW_PSY.gen
