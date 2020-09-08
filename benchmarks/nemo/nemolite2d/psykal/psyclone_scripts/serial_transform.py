@@ -1,8 +1,11 @@
-def trans(psy):
-    ''' Python script intended to be passed to PSyclone's generate()
-    function via the -s option. '''
+''' Python script intended to be passed to PSyclone's generate()
+function via the -s option. '''
 
-    from psyclone.psyGen import TransInfo
+from psyclone.psyGen import TransInfo
+
+def trans(psy):
+    ''' Transformation script entry function '''
+
     tinfo = TransInfo()
     itrans = tinfo.get_trans_name('KernelModuleInline')
 

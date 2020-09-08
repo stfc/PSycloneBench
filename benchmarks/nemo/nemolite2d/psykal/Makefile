@@ -52,7 +52,7 @@ all: nemolite2d_serial
 KERNEL_DIR = ../kernels/fortran
 
 # Shorthand for invoking PSyclone
-PSYCLONE = psyclone -api gocean1.0 -d ${KERNEL_DIR} -l
+PSYCLONE = psyclone -api gocean1.0 -d ${KERNEL_DIR}
 
 # Serial PSyclone code-generation of NemoLite2D
 nemolite2d_serial: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 psyclone_scripts/serial_transform.py
