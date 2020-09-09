@@ -21,10 +21,11 @@ IMPLEMENTATIONS += psykal_opencl psykal_c_opencl
 all: compile
 
 # Compile all enabled implementations (some targets need to start with an
-# allclean)
+# allclean) (the `|| exit` is needed for the Makefile to end with an error
+# if any of the foreach statements fail to complete)
 compile:
 	$(foreach var, $(IMPLEMENTATIONS), \
-		cd $(var) && $(MAKE) allclean && $(MAKE); cd ..;)
+		cd $(var) && $(MAKE) allclean && $(MAKE) || exit; cd ..;)
 
 # Execute all enabled implementations with their best full node performance and
 # report their ua and uv final checksums and the time-stepping time.
