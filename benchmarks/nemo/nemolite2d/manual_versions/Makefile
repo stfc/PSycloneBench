@@ -11,7 +11,7 @@ IMPLEMENTATIONS += psykal_omp
 # Uncomment IMPLEMENTATIONS below if your environment has the Kokkos libraries
 IMPLEMENTATIONS += psykal_kokkos
 # Uncomment IMPLEMENTATIONS below if your environment has OpenCL compilers
-IMPLEMENTATIONS += psykal_ocl
+IMPLEMENTATIONS += psykal_opencl psykal_c_opencl
 # Uncomment IMPLEMENTATIONS below if your environment has the mcxx OmpSs compiler.
 # IMPLEMENTATIONS += psykal_cpp_ompss
 # psykal_ompss and psykal_acc have not been adapted to this Makefile format
