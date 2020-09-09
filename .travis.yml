@@ -32,10 +32,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
 
+dist: focal
 language: c
 sudo: required
 before_install:
-  - sudo apt-get install gfortran
+  - sudo apt-get install build-essential gfortran libpocl2
 
 script:
   - . compiler_setup/gnu.sh

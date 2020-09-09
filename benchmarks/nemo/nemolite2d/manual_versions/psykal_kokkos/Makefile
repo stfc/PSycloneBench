@@ -11,7 +11,8 @@
 # export AR=ar
 
 # Additionally it needs the path to the Kokkos source code
-KOKKOS_PATH ?= $(HOME)/tools/kokkos
+SHARED_DIR = ../../../../../shared
+KOKKOS_PATH ?= $(SHARED_DIR)/kokkos
 KOKKOS_DEBUG ?= no  # Careful, 10x performance penalty in kernels.
 CXXFLAGS = $(CFLAGS)  # Use same CFLAGS to compile Kokkos library.
 
