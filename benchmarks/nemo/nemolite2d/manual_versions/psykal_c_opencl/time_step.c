@@ -721,6 +721,9 @@ void c_invoke_time_step(
 
 }
 
+// Function that specify how to retrieve the device data 'from' to a host
+// location 'to', this function will be called by the infrastructure whenever
+// the data is needed on the host.
 void c_read_from_device(cl_mem* from, double * to, int nx, int ny, int width){
     cl_event read_events[1];
     // Use width instead of nx in case there are padding elements
