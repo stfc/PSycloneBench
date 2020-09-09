@@ -36,7 +36,7 @@ dist: focal
 language: c
 sudo: required
 before_install:
-  - sudo apt-get install build-essential gfortran libpocl2
+  - sudo apt-get install build-essential gfortran pocl-opencl-icd
 
 script:
   - . compiler_setup/gnu.sh
