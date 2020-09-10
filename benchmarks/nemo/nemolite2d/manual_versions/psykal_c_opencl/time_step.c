@@ -91,7 +91,7 @@ cl_command_queue_properties queue_properties = 0;
 cl_bool profiling_enabled = 0;
 
 /* Buffers on the device */
-cl_mem ssha_device = NULL;
+//cl_mem ssha_device = NULL;
 cl_mem ssha_u_device = NULL;
 cl_mem ssha_v_device = NULL;
 cl_mem sshn_device = NULL;
@@ -154,7 +154,7 @@ void c_invoke_time_step(
         double * gphiu,
         double * gphiv,
         // Device pointers
-        void ** ssha_t_dp,
+        cl_mem * ssha_t_device,
         void ** sshn_t_dp,
         void ** sshn_u_dp,
         void ** sshn_v_dp,
@@ -254,12 +254,27 @@ void c_invoke_time_step(
             check_status("clCreateKernel", ret);
         } 
   
-        /* Create Device Memory Buffers*/
+        /* Create Device Memory Buffers, to make them permanent after the function
+           we need to:
+            - Create a memory object (shallow handler object) with clCreateBuffer.
+            - Allocate space for the memory object in the heap.
+            - Make the function argument pointer point to the newly allocated space.
+            - Copy to memory object to the newly allocated space.
+               
+            Note, the memory object is reference counted, and there is a
+            `clRetainMemObject(*tmp_ssha_t);` to increase the reference count. Intel
+            OpenCL works without it, but this may be OpenCL implementation dependant?
+        */
+        
         int num_buffers = 0;
         fprintf(stdout, "Creating buffers of size %d ...\n", total_size);
-        ssha_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
+
+        cl_mem ssha_t_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
 			                         NULL, &ret);
-        *ssha_t_dp = &ssha_device;
+        cl_mem * heap_ssha_t = (cl_mem *)malloc(sizeof(cl_mem));
+        *ssha_t_device = *heap_ssha_t;
+        memcpy(ssha_t_device, &ssha_t_buffer, sizeof(cl_mem));
+
         num_buffers++;
         check_status("clCreateBuffer", ret);
         ssha_u_device = clCreateBuffer(context, CL_MEM_READ_WRITE, buff_size,
@@ -397,7 +412,7 @@ void c_invoke_time_step(
         /* Set OpenCL Kernel Parameters for Continuity */
         set_args_continuity(clkernel[K_CONTINUITY],
 		    &width, &internal_xstop,
-		    &ssha_device, &sshn_device,
+		    ssha_t_device, &sshn_device,
 		    &sshn_u_device, &sshn_v_device,
 		    &hu_device, &hv_device,
 		    &un_device, &vn_device,
@@ -471,7 +486,7 @@ void c_invoke_time_step(
         cl_event *write_events = (cl_event*)malloc(num_buffers*sizeof(cl_event));
         int buf_idx = 0;
         // Fields
-        ret = clEnqueueWriteBuffer(command_queue[0], ssha_device, 1, 0,
+        ret = clEnqueueWriteBuffer(command_queue[0], *ssha_t_device, 1, 0,
 			     (size_t)buff_size, (void *)ssha_t, 0,
 			     NULL, &(write_events[buf_idx++]));
         check_status("clEnqueueWriteBuffer", ret);
@@ -638,7 +653,7 @@ void c_invoke_time_step(
         &width,
         &internal_xstop,
         &istep,
-        &ssha_device,
+        ssha_t_device,
         &tmask_device,
         &rdt);
 
@@ -690,7 +705,7 @@ void c_invoke_time_step(
     ret = clEnqueueCopyBuffer(command_queue[0], va_device, vn_device, 0, 0,
 			      buff_size,0, NULL, NULL);
     check_status("clEnqueueCopyBuffer", ret);
-    ret = clEnqueueCopyBuffer(command_queue[0], ssha_device, sshn_device, 0, 0,
+    ret = clEnqueueCopyBuffer(command_queue[0], *ssha_t_device, sshn_device, 0, 0,
 			      buff_size,0, NULL, NULL);
     check_status("clEnqueueCopyBuffer", ret);
 
