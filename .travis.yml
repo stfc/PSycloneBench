@@ -36,7 +36,8 @@ dist: focal
 language: c
 sudo: required
 before_install:
-  - sudo apt-get install build-essential gfortran opencl-headers pocl-opencl-icd
+  - sudo apt-get install build-essential gfortran opencl-headers
+  - sudo apt-get install ocl-icd-opencl-dev pocl-opencl-icd 
 
 script:
   - . compiler_setup/gnu.sh
