@@ -200,9 +200,8 @@ void c_invoke_time_step(
         init_device(platform, &device, version_str, &context);
 
         for(int ji=0; ji<NUM_QUEUES; ji++){
-            /* The Intel/Altera OpenCL SDK is only version 1.0 */
-            /* NVIDIA only support OpenCL 1.2 so we get a seg. fault if we attempt
-            to call the ...WithProperties version of this routine */
+	     /* The Intel/Altera OpenCL SDK is only version 1.0  and the queue may
+	        need to be initialized with clCreateCommandQueue.*/
             command_queue[ji] = clCreateCommandQueueWithProperties(
                     context, device, &queue_properties, &ret);
             check_status("clCreateCommandQueue", ret);
