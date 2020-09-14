@@ -144,6 +144,7 @@ contains
         )
 
         if (first_time) then
+            first_time = .false.
             ! Mark data_on_device flags
             ssha_t%data_on_device = .true.
             sshn_t%data_on_device = .true.
@@ -168,7 +169,6 @@ contains
             vn%read_from_device_c => wrapper_read_from_device
             ua%read_from_device_c => wrapper_read_from_device
             va%read_from_device_c => wrapper_read_from_device
-            first_time = .false.
         endif
 
     END SUBROUTINE invoke_time_step

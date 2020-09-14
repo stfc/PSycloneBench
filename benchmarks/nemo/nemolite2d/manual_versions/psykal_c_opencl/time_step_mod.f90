@@ -145,6 +145,7 @@ contains
         )
 
         if (first_time) then
+            first_time = .false.
             ! Mark data_on_device flags
             ssha_t%data_on_device = .true.
             sshn_t%data_on_device = .true.
