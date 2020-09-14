@@ -35,8 +35,9 @@ TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/lib_fd.a
-FORTCL_INC = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/
-FORTCL_LIB = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/libFortCL.a
+FORTCL_DIR = ${SHARED_DIR}/FortCL/
+FORTCL_INC = ${SHARED_DIR}/FortCL/src/
+FORTCL_LIB = ${SHARED_DIR}/FortCL/src/libFortCL.a
 COMMON_DIR = ../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
@@ -113,7 +114,7 @@ nemolite2d_acc: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 psyclone_
 	@echo "Run 'make <target>' inside the $@ folder."
 
 # OpenCL PSyclone code-generation of NemoLite2D
-nemolite2d_ocl: common_lib timer_lib ocl_inf_lib nemolite2d_alg.f90 psyclone_scripts/ocl_transform.py
+nemolite2d_ocl: common_lib timer_lib serial_inf_lib fortcl_lib nemolite2d_alg.f90 psyclone_scripts/ocl_transform.py
 	@echo "Generating NemoLite2D with OpenCL"; rm -rf $@; mkdir -p $@
 	# This PSyclone invokation will need to resolve some Fortran modules which need
 	# to be found in the path provided by the -I parameter.
@@ -145,9 +146,8 @@ mpi_inf_lib:
 	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${INF_DIR} dm_fd_lib
 
-ocl_inf_lib:
-	${MAKE} -C ${INF_DIR} distclean
-	${MAKE} -C ${INF_DIR} cl_fd_lib
+fortcl_lib:
+	${MAKE} -C ${FORTCL_DIR}
 
 common_lib:
 	${MAKE} -C ${COMMON_DIR}
@@ -161,6 +161,7 @@ clean:
 
 libclean:
 	${MAKE} -C ${INF_DIR} distclean
+	${MAKE} -C ${FORTCL_DIR} allclean
 	${MAKE} -C ${TIMER_DIR} allclean
 	${MAKE} -C ${COMMON_DIR} allclean
 

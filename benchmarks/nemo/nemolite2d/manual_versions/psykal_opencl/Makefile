@@ -24,13 +24,13 @@ nemolite2d.exe: ${COMMON_LIB} inf_lib timer_lib fcl_lib ${COMMON_MODULES}
 # offline-compile the kernels into a device binary object. This is
 # the common workflow for FPGA devices.
 # The generated device file can be used with:
-# > PSYCLONE_KERNELS_FILE=device_binary ./nemolite2d.exe
+# > FORTCL_KERNELS_FILE=device_binary ./nemolite2d.exe
 device_binary: %.cl
 	${OCL_COMPILER} $< -o $<.xo
 	${OCL_LINKER} $<.xo -o $@
 
 run_jit:
-	PSYCLONE_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
+	FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
 
 clean:
 	rm -f *.o *.mod *~ gnu_opt_report.txt *.optrpt *.dat
@@ -44,7 +44,7 @@ allclean: clean
 
 summary:
 	@echo -n "${CC}\t\tundef\t"
-	PSYCLONE_KERNELS_FILE=allkernels.cl ./nemolite2d.exe | awk \
+	FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe | awk \
 		'BEGIN {ORS="\t"} \
 		{if ($$2 == "checksum") {print $$4} } \
 		{if ($$1 == "Time-stepping") {print $$5} } \

@@ -11,7 +11,7 @@
 all: shallow_cpu nemolite_cpu
 
 # All targets using PSyclone for code generation
-all_gen: shallow_gen nemolite_gen
+all_gen: shallow_gen nemolite_gen nemolite_cpu
 
 # All manual targets for CPU versions of Shallow
 shallow_cpu:
@@ -25,9 +25,7 @@ shallow_gen:
 
 # All manual targets for CPU versions of NEMOLite2D
 nemolite_cpu:
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/psykal_serial
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/psykal_omp
-	${MAKE} -C ./benchmarks/nemo/nemolite2d/original
+	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions
 
 # Requires PSyclone be installed
 nemolite_gen:

@@ -23,12 +23,12 @@ Model parameters (size of domain [jpiglo,jpjglo], number of time-steps
 configured by editing the `namelist` file.
 
 Additionally the OpenCL execution requires that the environment variable
-PSYCLONE_KERNELS_FILE is set up to reference the target device binary
+FORTCL_KERNELS_FILE is set up to reference the target device binary
 or the target source code. If the source code is given, the OpenCL
 runtime system will JIT compile the necessary device objects at runtime.
 The following command shows an example of a JIT compiled execution:
 
-    > PSYCLONE_KERNELS_FILE=allkernels.cl ./nemolite2d.exe 
+    > FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe 
 
 ## Output ##
 
