@@ -29,7 +29,7 @@ else ifeq ($(KOKKOS_DEVICES),Pthreads)
 $(error "Pthreads device is currently not supported")
 else ifeq ($(KOKKOS_DEVICES),Cuda)
 $(info "Using CUDA device")
-KOKKOS_ARCH = Pascal61
+KOKKOS_ARCH = Volta70 # Pascal64
 # nvcc doesn't support all compiler flags, overwrite CFLAGS to just O3
 CFLAGS := -O3
 # Still use the selected compiler but using the Kokkos nvcc_wrapper
