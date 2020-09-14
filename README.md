@@ -10,7 +10,7 @@ The benchmark codes contained in this project use the
 timing and the [dl_esm_inf](https://github.com/stfc/dl_esm_inf)
 infrastructure. Some implementation also have
 [FortCL](https://github.com/stfc/FortCL) or
-[Kokkos](https://github.com/kokkos/kokkos) as a dependencies.
+[Kokkos](https://github.com/kokkos/kokkos) as dependencies.
 All these packages are included within the PSycloneBench
 repository as git submodules.  As such, when cloning the repository
 you need to use the `--recursive` flag in order to get the source code

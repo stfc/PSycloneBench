@@ -225,12 +225,19 @@ void c_invoke_time_step(
             check_status("clCreateKernel", ret);
         } 
   
-        /* Create Device Memory Buffers, to make them permanent after the function
-           we need to:
+        /* Create Device Memory Buffers:
+           The clCreateBuffer creates a buffer in the OpenCL device and returns
+           a host object with metadata about the buffer location and some
+           properties. To make them permanent after the end of the current
+           function socpe, we allocate and copy this metadata object to the heap.
+           Finally we make the function argument point to the new metadata
+           location in order to re-use the buffer in the next iteration.
+
+           Therefore, to create each buffer the following 4 steps are needed:
             - Create a memory object (shallow handler object) with clCreateBuffer.
-            - Allocate space for the memory object in the heap.
+            - Allocate space for the memory handler object in the heap.
             - Make the function argument pointer point to the newly allocated space.
-            - Copy to memory object to the newly allocated space.
+            - Copy the memory handler object to the newly allocated space.
                
             Note, the memory object is reference counted, and there is a
             `clRetainMemObject(*tmp_ssha_t);` to increase the reference count. Intel
