@@ -77,8 +77,10 @@ contains
   !===============================================
 
   subroutine read_openacc(from, to, nx, ny, width)
-    use FortCL, only: read_buffer
-    use iso_c_binding, only: c_intptr_t, c_int
+    ! Function that specify how to retrieve the device data 'from' to a host
+    ! location 'to', this function will be called by the infrastructure
+    ! whenever the data is needed on the host.
+    use iso_c_binding, only: c_intptr_t
     integer(c_intptr_t), intent(in) :: from
     real(go_wp), dimension(:,:), intent(inout) :: to
     integer, intent(in) :: nx, ny, width
@@ -98,8 +100,6 @@ contains
     use model_mod,           only: rdt, cbfr, visc
     use physical_params_mod, only: g, omega, d2r
     use grid_mod
-!    use continuity_mod,      only: continuity_code
-!    use boundary_conditions_mod
     implicit none
     !> The current time step
     integer,         intent(in) :: istp
@@ -155,18 +155,18 @@ contains
     do jj = 2, N, 1
       do ji = 2, M, 1
 
-        call continuity_code(ji, jj,                   &
-                             ssha, sshn_t,             &
-                             sshn_u, sshn_v,           &
-                             hu, hv, un, vn,           &
-                             rdt, area_t)
-!!$         rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
-!!$         rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
-!!$         rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
-!!$         rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
-!!$
-!!$         ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
-!!$                       rdt / area_t(ji,jj)
+        !call continuity_code(ji, jj,                   &
+        !                     ssha, sshn_t,             &
+        !                     sshn_u, sshn_v,           &
+        !                     hu, hv, un, vn,           &
+        !                     rdt, area_t)
+        rtmp1 = (sshn_u(ji  ,jj ) + hu(ji  ,jj  ))*un(ji  ,jj)
+        rtmp2 = (sshn_u(ji-1,jj ) + hu(ji-1,jj  ))*un(ji-1,jj)
+        rtmp3 = (sshn_v(ji ,jj )  + hv(ji  ,jj  ))*vn(ji ,jj)
+        rtmp4 = (sshn_v(ji ,jj-1) + hv(ji  ,jj-1))*vn(ji,jj-1)
+
+        ssha(ji,jj) = sshn_t(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
+                      rdt / area_t(ji,jj)
       end do
     end do
 !$acc end parallel
@@ -453,8 +453,8 @@ contains
           !call bc_solid_u_code(ji, jj, &
           !                     ua, tmaskptr)
 
-!> \todo It's more compiler-friendly to separately compare these two
-!! integer masks with zero but that's a kernel-level optimisation.
+          !> \todo It's more compiler-friendly to separately compare these two
+          !! integer masks with zero but that's a kernel-level optimisation.
           if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
              ua(ji,jj) = 0._go_wp
           end if
@@ -471,9 +471,9 @@ contains
        do ji = 1, M+1, 1
 !          call bc_solid_v_code(ji,jj, &
 !                               va, ua%grid%tmask)
-    if(tmask(ji,jj) * tmask(ji,jj+1) == 0)then
-       va(ji,jj) = 0._go_wp
-    end if
+          if(tmask(ji,jj) * tmask(ji,jj+1) == 0)then
+             va(ji,jj) = 0._go_wp
+          end if
 
       end do
     end do
@@ -616,47 +616,5 @@ contains
 !    call timer_stop(idxt)
 
   end subroutine invoke_time_step_arrays
-
-  !===================================================
-
-  ! This routine has been 'module in-lined' to check that PGI compiler
-  ! can cope with a !$acc routine so long as it's within the same
-  ! module as the call site.
-  subroutine continuity_code(ji, jj,                     &
-                             ssha, sshn, sshn_u, sshn_v, &
-                             hu, hv, un, vn, rdt, e12t)
-    implicit none
-!$acc routine seq
-    integer,                  intent(in)  :: ji, jj
-    real(go_wp),                 intent(in)  :: rdt
-    real(go_wp), dimension(:,:), intent(in)  :: e12t
-    real(go_wp), dimension(:,:), intent(out) :: ssha
-    real(go_wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, &
-                                             hu, hv, un, vn
-    ! Locals
-    real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
-
-    rtmp1 = (sshn_u(ji  ,jj  ) + hu(ji  ,jj  )) * un(ji  ,jj  )
-    rtmp2 = (sshn_u(ji-1,jj  ) + hu(ji-1,jj  )) * un(ji-1,jj  )
-    rtmp3 = (sshn_v(ji  ,jj  ) + hv(ji  ,jj  )) * vn(ji  ,jj  )
-    rtmp4 = (sshn_v(ji  ,jj-1) + hv(ji  ,jj-1)) * vn(ji  ,jj-1)
-
-    ssha(ji,jj) = sshn(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
-                    rdt / e12t(ji,jj)
-
-  end subroutine continuity_code
-
-  subroutine bc_solid_u_code(ji, jj, ua, tmask)
-    implicit none
-!$acc routine seq
-    integer,                  intent(in)    :: ji, jj
-    integer,  dimension(:,:), intent(in)    :: tmask
-    real(go_wp), dimension(:,:), intent(inout) :: ua
-
-    if(tmask(ji,jj) * tmask(ji+1,jj) == 0)then
-       ua(ji,jj) = 0._go_wp
-    end if
-
-  end subroutine bc_solid_u_code
 
 end module time_step_mod
