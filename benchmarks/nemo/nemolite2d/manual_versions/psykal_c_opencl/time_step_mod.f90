@@ -6,7 +6,8 @@ module time_step_mod
     implicit none
     public invoke_time_step
 
-    ! Fortran to C wrapper interface using iso_c_bindings.
+    ! Fortran to C wrapper interface using iso_c_bindings for the main invoke
+    ! function.
     interface
         subroutine wrapper_c_invoke_time_step( &
             ! Fields
@@ -42,6 +43,8 @@ module time_step_mod
         end subroutine wrapper_c_invoke_time_step
     end interface    
 
+    ! Fortran to C wrapper interface using iso_c_bindings for the function to
+    ! read data from the device location 'from' to the host location 'to'
     interface
         subroutine wrapper_read_from_device(from, to, nx, ny, width) &
                 bind(C, name="c_read_from_device")
@@ -67,6 +70,7 @@ contains
         TYPE(r2d_field), intent(inout) :: ssha_t, sshn_t, sshn_u, &
             sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v
         INTEGER, intent(in) :: istp
+        LOGICAL, save :: first_time=.true.
 
         ! TODO: issue #35 - Should this use %get_data() instead?
         call wrapper_c_invoke_time_step( &
@@ -140,30 +144,33 @@ contains
             g &
         )
 
-        ! Mark data_on_device flags
-        ssha_t%data_on_device = .true.
-        sshn_t%data_on_device = .true.
-        sshn_u%data_on_device = .true.
-        sshn_v%data_on_device = .true.
-        hu%data_on_device = .true.
-        hv%data_on_device = .true.
-        un%data_on_device = .true.
-        vn%data_on_device = .true.
-        ua%data_on_device = .true.
-        ht%data_on_device = .true.
-        ssha_u%data_on_device = .true.
-        va%data_on_device = .true.
-        ssha_v%data_on_device = .true.
+        if (first_time) then
+            first_time = .false.
+            ! Mark data_on_device flags
+            ssha_t%data_on_device = .true.
+            sshn_t%data_on_device = .true.
+            sshn_u%data_on_device = .true.
+            sshn_v%data_on_device = .true.
+            hu%data_on_device = .true.
+            hv%data_on_device = .true.
+            un%data_on_device = .true.
+            vn%data_on_device = .true.
+            ua%data_on_device = .true.
+            ht%data_on_device = .true.
+            ssha_u%data_on_device = .true.
+            va%data_on_device = .true.
+            ssha_v%data_on_device = .true.
 
-        ! Specify device data retrieving methods
-        ssha_t%read_from_device_c => wrapper_read_from_device
-        sshn_t%read_from_device_c => wrapper_read_from_device
-        sshn_u%read_from_device_c => wrapper_read_from_device
-        sshn_v%read_from_device_c => wrapper_read_from_device
-        un%read_from_device_c => wrapper_read_from_device
-        vn%read_from_device_c => wrapper_read_from_device
-        ua%read_from_device_c => wrapper_read_from_device
-        va%read_from_device_c => wrapper_read_from_device
+            ! Specify device data retrieving methods
+            ssha_t%read_from_device_c => wrapper_read_from_device
+            sshn_t%read_from_device_c => wrapper_read_from_device
+            sshn_u%read_from_device_c => wrapper_read_from_device
+            sshn_v%read_from_device_c => wrapper_read_from_device
+            un%read_from_device_c => wrapper_read_from_device
+            vn%read_from_device_c => wrapper_read_from_device
+            ua%read_from_device_c => wrapper_read_from_device
+            va%read_from_device_c => wrapper_read_from_device
+        endif
 
     END SUBROUTINE invoke_time_step
 end module time_step_mod

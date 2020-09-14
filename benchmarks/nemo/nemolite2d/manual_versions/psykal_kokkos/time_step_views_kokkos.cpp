@@ -685,12 +685,15 @@ extern "C" void c_invoke_time_step(
 extern "C" void kokkos_read_from_device(double_2dview from, double* to,
                                         int nx, int ny, int width){
 
-    // Copy data to a host mirror, it requires and allocation
+    // First, we need to copy data from the device into a host mirror ( which
+    // has the same data-layout as the device copy), it requires to allocate
+    // space for the mirror with `create_mirror_view`
     auto mirror = Kokkos::create_mirror_view( from );
     Kokkos::deep_copy( mirror, from );
 
-    // The kokkos layout is not guaranteed, so make explicit copies
-    // of each element to its location.
+    // Then, we copy the data from the mirror to the original location.
+    // Since the mirror data layout is decided by kokkos, we make explicit
+    // copies of each element to its location.
     for(int jj=0; jj < ny; jj++){
         for(int ji=0; ji < nx; ji++){
             int idx = jj*width + ji;

@@ -22,6 +22,7 @@ contains
     type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
     type(r2d_field), intent(inout) :: ua, va, ssha, ssha_u, ssha_v
     type(r2d_field), intent(inout) :: hu, hv, ht
+    LOGICAL, save :: first_time=.true.
                      
     call invoke_time_step_arrays(istp,                                  &
                                  ua%grid%nx, ua%grid%ny,                &
@@ -44,29 +45,32 @@ contains
                                  hu%data, hv%data, ht%data,             &
                                  ua%data, va%data, un%data, vn%data, un%grid)
 
-    ua%data_on_device     = .TRUE.
-    va%data_on_device     = .TRUE.
-    un%data_on_device     = .TRUE.
-    vn%data_on_device     = .TRUE.
-    ssha%data_on_device   = .TRUE.
-    ssha_u%data_on_device = .TRUE.
-    ssha_v%data_on_device = .TRUE.
-    sshn_t%data_on_device = .TRUE.
-    sshn_u%data_on_device = .TRUE.
-    sshn_v%data_on_device = .TRUE.
-    hu%data_on_device     = .TRUE.
-    hv%data_on_device     = .TRUE.
-    ht%data_on_device     = .TRUE.
+    if (first_time) then
+        first_time = .false.
+        ua%data_on_device     = .TRUE.
+        va%data_on_device     = .TRUE.
+        un%data_on_device     = .TRUE.
+        vn%data_on_device     = .TRUE.
+        ssha%data_on_device   = .TRUE.
+        ssha_u%data_on_device = .TRUE.
+        ssha_v%data_on_device = .TRUE.
+        sshn_t%data_on_device = .TRUE.
+        sshn_u%data_on_device = .TRUE.
+        sshn_v%data_on_device = .TRUE.
+        hu%data_on_device     = .TRUE.
+        hv%data_on_device     = .TRUE.
+        ht%data_on_device     = .TRUE.
 
-    ! Specify device data retrieving methods
-    ssha%read_from_device_f => read_openacc
-    sshn_t%read_from_device_f => read_openacc
-    sshn_u%read_from_device_f => read_openacc
-    sshn_v%read_from_device_f => read_openacc
-    un%read_from_device_f => read_openacc
-    vn%read_from_device_f => read_openacc
-    ua%read_from_device_f => read_openacc
-    va%read_from_device_f => read_openacc
+        ! Specify device data retrieving methods
+        ssha%read_from_device_f => read_openacc
+        sshn_t%read_from_device_f => read_openacc
+        sshn_u%read_from_device_f => read_openacc
+        sshn_v%read_from_device_f => read_openacc
+        un%read_from_device_f => read_openacc
+        vn%read_from_device_f => read_openacc
+        ua%read_from_device_f => read_openacc
+        va%read_from_device_f => read_openacc
+    endif
 
   end subroutine invoke_time_step
 
