@@ -11,7 +11,8 @@
 # export AR=ar
 
 # Additionally it needs the path to the Kokkos source code
-KOKKOS_PATH ?= $(HOME)/tools/kokkos
+SHARED_DIR = ../../../../../shared
+KOKKOS_PATH ?= $(SHARED_DIR)/kokkos
 KOKKOS_DEBUG ?= no  # Careful, 10x performance penalty in kernels.
 CXXFLAGS = $(CFLAGS)  # Use same CFLAGS to compile Kokkos library.
 
@@ -29,7 +30,7 @@ else ifeq ($(KOKKOS_DEVICES),Pthreads)
 $(error "Pthreads device is currently not supported")
 else ifeq ($(KOKKOS_DEVICES),Cuda)
 $(info "Using CUDA device")
-KOKKOS_ARCH = Pascal61
+KOKKOS_ARCH = Volta70 # Pascal64
 # nvcc doesn't support all compiler flags, overwrite CFLAGS to just O3
 CFLAGS := -O3
 # Still use the selected compiler but using the Kokkos nvcc_wrapper
@@ -67,8 +68,7 @@ nemolite2d_rawpointers_kokkos: ${COMMON_LIB} timer_lib inf_lib time_step_rawpoin
 nemolite2d.o: $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
-time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
-                 time_update_mod.o boundary_conditions_mod.o
+time_step_mod.o: ${COMMON_LIB} inf_lib
 
 # Import needed kokkos environment variables
 include $(KOKKOS_PATH)/Makefile.kokkos
@@ -93,7 +93,6 @@ clean:
 	rm -rf KokkosCore_* Makefile.kokkos.f90
 
 allclean: clean
-	rm -f ${KERNELS:.o=.f90}
 	rm -f *.exe fparser.log *.a
 	rm -rf *_wpl_dir/
 	${MAKE} -C ${COMMON_DIR} allclean

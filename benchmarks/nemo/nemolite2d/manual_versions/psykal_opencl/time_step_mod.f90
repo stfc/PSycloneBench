@@ -575,7 +575,29 @@ contains
 
         ! Block until all kernels have finished
         ierr = clFinish(cmd_queues(1))
+
+        ! Specify device data retrieving methods
+        ssha_t%read_from_device_f => read_fortcl
+        sshn_t%read_from_device_f => read_fortcl
+        sshn_u%read_from_device_f => read_fortcl
+        sshn_v%read_from_device_f => read_fortcl
+        un%read_from_device_f => read_fortcl
+        vn%read_from_device_f => read_fortcl
+        ua%read_from_device_f => read_fortcl
+        va%read_from_device_f => read_fortcl
+
+
     END SUBROUTINE invoke_time_step
+
+    subroutine read_fortcl(from, to, nx, ny, width)
+        use FortCL, only: read_buffer
+        use iso_c_binding, only: c_intptr_t, c_int
+        integer(c_intptr_t), intent(in) :: from
+        real(go_wp), dimension(:,:), intent(inout) :: to
+        integer, intent(in) :: nx, ny, width
+        ! Use width instead of nx in case there is padding elements
+        call read_buffer(from, to, int(width*ny, kind=8))
+    end subroutine read_fortcl
 
     SUBROUTINE continuity_code_set_args(kernel_obj, ssha_t, sshn_t, &
             sshn_u, sshn_v, hu, hv, un, vn, area_t, rdt)
@@ -924,7 +946,7 @@ contains
             kernel_names(10) = "next_sshu_code"
             kernel_names(11) = "next_sshv_code"
             ! Create the OpenCL kernel objects. Expects to find all of the compiled
-            ! kernels in PSYCLONE_KERNELS_FILE.
+            ! kernels in FORTCL_KERNELS_FILE.
             CALL add_kernels(11, kernel_names)
         END IF
     END SUBROUTINE psy_init
