@@ -106,7 +106,8 @@ nemolite2d_hybrid: common_lib_mpi timer_lib_parallel mpi_inf_lib nemolite2d_alg.
 nemolite2d_acc: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 psyclone_scripts/acc_transform.py
 	@echo "Generating NemoLite2D with OpenACC"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -nodm -s psyclone_scripts/acc_transform.py \
-		-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
+		-I ${COMMON_DIR} \
+		-okern $@ -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile

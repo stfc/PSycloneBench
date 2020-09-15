@@ -11,7 +11,9 @@ def trans(psy):
     parallel_trans = tinfo.get_trans_name('ACCParallelTrans')
     loop_trans = tinfo.get_trans_name('ACCLoopTrans')
     enter_data_trans = tinfo.get_trans_name('ACCEnterDataTrans')
-    itrans = tinfo.get_trans_name('KernelModuleInline')
+    routine_trans = tinfo.get_trans_name('ACCRoutineTrans')
+    glo2arg_trans = tinfo.get_trans_name('KernelGlobalsToArguments')
+    inline_trans = tinfo.get_trans_name('KernelModuleInline')
 
     invoke = psy.invokes.get('invoke_0')
     schedule = invoke.schedule
@@ -30,10 +32,12 @@ def trans(psy):
     # Add an enter-data directive
     enter_data_trans.apply(schedule)
 
-    # Module-inline each kernel (alternatively it would need a to
-    # apply ACCRoutineTrans to each kernel)
+    # Apply ACCRoutineTrans to each kernel, which it requires to remove
+    # any global variables first.
     for kern in schedule.coded_kernels():
-        itrans.apply(kern)
+        glo2arg_trans.apply(kern)
+        routine_trans.apply(kern)
+        inline_trans.apply(kern)
 
     # schedule.view()
     return psy
