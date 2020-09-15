@@ -11,8 +11,8 @@ def trans(psy):
 
     schedule = psy.invokes.get('invoke_0').schedule
 
-    # Inline all kernels in this Schedule
-    for kernel in schedule.kernels():
+    # Module-Inline all coded kernels in this Schedule
+    for kernel in schedule.coded_kernels():
         itrans.apply(kernel)
 
     return psy
