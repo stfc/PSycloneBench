@@ -2,11 +2,12 @@
 '''Python script intended to be passed to PSyclone's generate()
 funcation via the -s option. Performs OpenACC transformations. '''
 
+from psyclone.psyGen import TransInfo
+from psyclone.psyir.nodes import Loop
 
 def trans(psy):
     ''' Take the supplied psy object, apply OpenACC transformations
     to the schedule of invoke_0 and return the new psy object '''
-    from psyclone.psyGen import TransInfo
     tinfo = TransInfo()
     parallel_trans = tinfo.get_trans_name('ACCParallelTrans')
     loop_trans = tinfo.get_trans_name('ACCLoopTrans')
@@ -20,7 +21,6 @@ def trans(psy):
 
     # Apply the OpenACC Loop transformation to *every* loop
     # in the schedule
-    from psyclone.psyir.nodes import Loop
     for child in schedule.children:
         if isinstance(child, Loop):
             newschedule, _ = loop_trans.apply(child, {"collapse": 2})
@@ -39,5 +39,4 @@ def trans(psy):
         routine_trans.apply(kern)
         inline_trans.apply(kern)
 
-    # schedule.view()
     return psy
