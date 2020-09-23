@@ -1,11 +1,9 @@
 
 
-
 if [ "$#" -lt 1 ] || [ ! -x "$1" ]; then
     echo "Wrong arguments. Usage: ../../problemsize.sh ./executable"
     exit
 fi
-
 
 echo "Running problem size in $PWD with $@" 
 echo "N time/step Gb/s time/step/problemsize" 
@@ -21,8 +19,6 @@ for power in $(seq 4 12); do
     sed -i --follow-symlinks "${line_j}s/.*/jpjglo = ${size}/" namelist
 
     time=$($@  | awk '{if ($1 == "Time-stepping") {print $5} }')
-
-
 
     echo $size $time
 done
