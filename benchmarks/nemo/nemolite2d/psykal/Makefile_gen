@@ -54,11 +54,11 @@ nemolite2dxilinx: ${KERNELS} allkernels.xclbin psy.o alg.o
 
 # Generic rules
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} \
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} \
 		-I${FORTCL_INC} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
 
 %.o: %.mod
 
