@@ -78,7 +78,7 @@ contains
 
         ! Set up local and global sizes (for memory blocking)
         globalsize = (/sshn_t%grid%nx, sshn_t%grid%ny/)
-        localsize = (/1, 1/)
+        localsize = (/64, 1/)
 
         ! Ensure field data is on device
         IF (.NOT. ssha_t%data_on_device) THEN

@@ -39,6 +39,25 @@ nemolite2d: ${KERNELS} psy.o alg.o
 	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
 		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS}
 
+# Build NemoLite2D
+KERNELS_ACC = boundary_conditions_0_mod.o \
+          boundary_conditions_1_mod.o \
+          boundary_conditions_2_mod.o \
+          boundary_conditions_3_mod.o \
+          boundary_conditions_4_mod.o \
+          continuity_0_mod.o \
+          infrastructure_0_mod.o \
+          infrastructure_1_mod.o \
+          infrastructure_2_mod.o \
+          momentum_0_mod.o \
+          momentum_1_mod.o \
+          time_update_0_mod.o \
+          time_update_1_mod.o
+nemolite2dacc: ${KERNELS_ACC} psy.o alg.o
+	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
+		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS}
+
+
 
 # Build NemoLite2D for OpenCL (with JIT'ed kernels)
 nemolite2docl: ${KERNELS} psy.o alg.o
