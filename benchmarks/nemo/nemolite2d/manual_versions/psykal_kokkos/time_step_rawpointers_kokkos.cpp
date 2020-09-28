@@ -252,3 +252,8 @@ extern "C" void c_invoke_time_step(
 #endif
 
 }
+
+extern "C" void kokkos_read_from_device(void * from, double* to,
+                                        int nx, int ny, int width){
+    // This implementation does not work with accelerator devices
+}
