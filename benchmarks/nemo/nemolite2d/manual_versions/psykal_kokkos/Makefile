@@ -81,7 +81,7 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 
 # Kokkos files rules
 %_kokkos.o: %_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
-	$(CXX) -DEXEC_SPACE=$(KOKKOS_DEVICES) $(KOKKOS_CXXFLAGS) $(CFLAGS) -c $<
+	$(CXX) -DEXECUTION_SPACE=$(KOKKOS_DEVICES) $(KOKKOS_CXXFLAGS) $(CFLAGS) -c $<
 
 timing.o: timing.cpp
 	$(CXX) -c $<

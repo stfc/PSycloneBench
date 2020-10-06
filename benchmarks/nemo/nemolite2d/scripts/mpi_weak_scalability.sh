@@ -1,12 +1,15 @@
+#!/bin/env bash
 
+# Bash script to execute an MPI version of NemoLite2D with increasing number of
+# MPI ranks and problem size in order to generate weak scalability results.
 
 if [ "$#" -lt 1 ] || [ ! -x "$1" ]; then
     echo "Wrong arguments. Usage: ../../mpi_weak_scalability.sh ./executable"
     exit
 fi
 
-echo "Running problem size in $PWD with $@" 
-echo "N time/step Gb/s time/step/problemsize" 
+echo "Running MPI weak scalability in $PWD with $@" 
+echo "#ranks Size_i Size_j time/step" 
 
 line_i=4
 line_j=5 
@@ -37,5 +40,5 @@ for power in $(seq 0 8); do
     export I_MPI_PIN_DOMAIN=omp
     time=$(mpirun -n ${nprocs} -ppn ${ranks_per_node} $@  | awk '{if ($1 == "Time-stepping") {print $5} }')
 
-    echo $nprocs $size_i $size_j $total_size $time
+    echo $nprocs $size_i $size_j $time
 done

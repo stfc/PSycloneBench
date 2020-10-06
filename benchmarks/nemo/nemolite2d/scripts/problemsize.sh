@@ -1,4 +1,6 @@
+#!/bin/env bash
 
+# Bash script to execute NemoLite2D with increasingly larger problem sizes.
 
 if [ "$#" -lt 1 ] || [ ! -x "$1" ]; then
     echo "Wrong arguments. Usage: ../../problemsize.sh ./executable"
@@ -6,7 +8,7 @@ if [ "$#" -lt 1 ] || [ ! -x "$1" ]; then
 fi
 
 echo "Running problem size in $PWD with $@" 
-echo "N time/step Gb/s time/step/problemsize" 
+echo "N time/step" 
 
 line_i=4
 line_j=5 

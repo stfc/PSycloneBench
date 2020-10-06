@@ -105,12 +105,17 @@ program gocean2d
   ! Compute and output some checksums for error checking
   call model_write_log("('ua checksum = ',E16.8)", field_checksum(ua_fld))
   call model_write_log("('va checksum = ',E16.8)", field_checksum(va_fld))
-  call model_write_log("('ssh_t checksum = ',E16.8)", field_checksum(sshn_t_fld))
+  ! call model_write_log("('ssh_u checksum = ',E16.8)", &
+  !                      field_checksum(sshn_u_fld))
+  ! call model_write_log("('ssh_v checksum = ',E16.8)", &
+  !                      field_checksum(sshn_v_fld))
+  ! call model_write_log("('ssh_t checksum = ',E16.8)", &
+  !                      field_checksum(sshn_t_fld))
 
   !! finalise the model run
   call model_finalise()
   
-  !call model_write_log("((A))", 'Simulation finished!!')
+  call model_write_log("((A))", 'Simulation finished!!')
 
   call gocean_finalise()
 
