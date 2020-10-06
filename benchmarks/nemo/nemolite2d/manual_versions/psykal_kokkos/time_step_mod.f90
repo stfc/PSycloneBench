@@ -56,6 +56,22 @@ module time_step_mod
     end interface
 contains
 
+    ! Intel compiler doesn't allow to call 'wrapper_read_from_device' directly
+    ! as the Fortran procedure pointer that dl_esm_inf uses. So we create a
+    ! dummy subroutine that can be targeted by Fortran and simply calls the C
+    ! version of the desired function. Alternatively C_ISO_BINDING provides
+    ! the C_F_PROCPOINTER() method to transform C to Fortran funcptr, but then
+    ! the C psy-layer should expose the funcptr (which won't be easy to code-
+    ! generate with PSyclone).
+    ! See https://gcc.gnu.org/onlinedocs/gfortran/C_005fF_005fPROCPOINTER.html
+    subroutine call_wrapper_read_from_device(from, to, nx, ny, width)
+        use iso_c_binding, only: c_intptr_t, c_int
+        integer(c_intptr_t), intent(in), value :: from
+        integer(c_intptr_t), intent(in), value :: to
+        integer(c_int), intent(in), value :: nx, ny, width
+        call wrapper_read_from_device(from, to, nx, ny, width)
+    end subroutine call_wrapper_read_from_device
+
     ! This invoke_time_step needs to fetch all necessary arrays, global
     ! variables, and the additional scalar values needed during the PSy-layer
     ! implementation, and pass them all to the wrapper interface.
@@ -161,14 +177,14 @@ contains
             ssha_v%data_on_device = .true.
 
             ! Specify device data retrieving methods
-            ssha_t%read_from_device_c => wrapper_read_from_device
-            sshn_t%read_from_device_c => wrapper_read_from_device
-            sshn_u%read_from_device_c => wrapper_read_from_device
-            sshn_v%read_from_device_c => wrapper_read_from_device
-            un%read_from_device_c => wrapper_read_from_device
-            vn%read_from_device_c => wrapper_read_from_device
-            ua%read_from_device_c => wrapper_read_from_device
-            va%read_from_device_c => wrapper_read_from_device
+            ssha_t%read_from_device_c => call_wrapper_read_from_device
+            sshn_t%read_from_device_c => call_wrapper_read_from_device
+            sshn_u%read_from_device_c => call_wrapper_read_from_device
+            sshn_v%read_from_device_c => call_wrapper_read_from_device
+            un%read_from_device_c => call_wrapper_read_from_device
+            vn%read_from_device_c => call_wrapper_read_from_device
+            ua%read_from_device_c => call_wrapper_read_from_device
+            va%read_from_device_c => call_wrapper_read_from_device
         endif
 
     END SUBROUTINE invoke_time_step
