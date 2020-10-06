@@ -10,6 +10,8 @@
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
 
+F90FLAGS += $(F90MIXLANGUAGUES)
+
 # Additionally it needs the path to the Kokkos source code
 SHARED_DIR = ../../../../../shared
 KOKKOS_PATH ?= $(SHARED_DIR)/kokkos
@@ -77,7 +79,7 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 # and available in the library path.
 %.exe: $(MODULE_LIST) $(KOKKOS_LINK_DEPENDS) timing.o
 	$(CXX) -o $@ timing.o $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LDFLAGS) $(KOKKOS_LIBS) -lgfortran
+		$(LDFLAGS) ${OMPFLAGS} $(KOKKOS_LDFLAGS) $(KOKKOS_LIBS) $(CFORTRANLIBS)
 
 # Kokkos files rules
 %_kokkos.o: %_kokkos.cpp $(KOKKOS_CPP_DEPENDS)

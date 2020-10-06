@@ -1,8 +1,12 @@
 # Build settings for the Intel compiler
 F90=ifort
 CC=icc
+CXX=icpc
 
 CFLAGS="-O3 -xHost -qopt-report"
+CFORTRANLIBS="-lifcore -lifcoremt"
+
+F90MIXLANGUAGES=" -nofor-main"
 
 F90FLAGS=
 # -fp-model strict

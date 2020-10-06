@@ -7,6 +7,7 @@ CXX=g++
 OPTFLAGS=" -Ofast -mtune=native -finline-limit=50000 -fopt-info-all=gnu_opt_report.txt"
 
 CFLAGS=$OPTFLAGS
+CFORTRANLIBS=" -lgfortran"
 F90FLAGS="-Wall -Wsurprising -Wuninitialized"
 #F90FLAGS += -O0
 #F90FLAGS += -fcheck=all -fbacktrace -ffpe-trap=invalid -g
