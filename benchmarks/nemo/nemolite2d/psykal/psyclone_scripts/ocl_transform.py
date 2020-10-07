@@ -13,10 +13,12 @@ def trans(psy):
     # Get the invoke
     schedule = psy.invokes.get('invoke_0').schedule
 
-    # Remove the globals from inside each kernel
+    # Remove global variables from inside each kernel and set the OpenCL
+    # work size to 64, which is required for performance (currently
+    # this can cause memory issues with arbitrary problem sizes).
     for kern in schedule.kernels():
         globaltrans.apply(kern)
-        kern.set_opencl_options({"queue_number": 1, 'local_size': 64})
+        kern.set_opencl_options({'local_size': 64})
 
     # Transform invoke to OpenCL
     cltrans.apply(schedule)

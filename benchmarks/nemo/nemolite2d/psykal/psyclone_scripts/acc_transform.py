@@ -1,6 +1,5 @@
-
 '''Python script intended to be passed to PSyclone's generate()
-funcation via the -s option. Performs OpenACC transformations. '''
+function via the -s option. Performs OpenACC transformations. '''
 
 from psyclone.psyGen import TransInfo
 from psyclone.psyir.nodes import Loop
@@ -32,8 +31,8 @@ def trans(psy):
     # Add an enter-data directive
     enter_data_trans.apply(schedule)
 
-    # Apply ACCRoutineTrans to each kernel, which it requires to remove
-    # any global variables first.
+    # Apply ACCRoutineTrans to each kernel, which also requires that any
+    # any global variables must be removed first.
     for kern in schedule.coded_kernels():
         glo2arg_trans.apply(kern)
         routine_trans.apply(kern)

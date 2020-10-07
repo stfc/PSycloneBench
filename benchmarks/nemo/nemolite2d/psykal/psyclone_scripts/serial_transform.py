@@ -1,5 +1,5 @@
-''' Python script intended to be passed to PSyclone's generate()
-function via the -s option. '''
+''' Python script intended to be passed to PSyclone's generate() function
+via the -s option. This script module-inline all kernels in the PSy-layer.'''
 
 from psyclone.psyGen import TransInfo
 

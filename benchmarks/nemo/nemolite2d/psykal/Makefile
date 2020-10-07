@@ -101,7 +101,8 @@ nemolite2d_hybrid: parallel_libs nemolite2d_alg.f90 psyclone_scripts/omp_transfo
 	cd $@ && make nemolite2d
 	@echo "Hybrid: MPI+OpenMP version prepared."
 
-# OpenACC PSyclone code-generation of NemoLite2D
+# OpenACC PSyclone code-generation of NemoLite2D (current PSyclone 1.9 will fail
+# to generate the OpenACC for the GOcean API)
 nemolite2d_acc: serial_libs nemolite2d_alg.f90 psyclone_scripts/acc_transform.py
 	@echo "Generating NemoLite2D with OpenACC"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -nodm -s psyclone_scripts/acc_transform.py \
@@ -130,7 +131,8 @@ nemolite2d_ocl: serial_libs fortcl_lib nemolite2d_alg.f90 psyclone_scripts/ocl_t
 	@echo "OpenCL version prepared. There are additional optional targets inside"
 	@echo "the $@ folder to compile ahead-of-time the OpenCL kernels."
 
-# MPI+OpenCL PSyclone code-generation of NemoLite2D
+# MPI+OpenCL PSyclone code-generation of NemoLite2D (currently PSyclone 1.9 will not
+# generate distributed memory OpenCL code)
 nemolite2d_mpiocl: parallel_libs fortcl_lib nemolite2d_alg.f90 psyclone_scripts/ocl_transform.py
 	@echo "Generating NemoLite2D with MPI and OpenCL"; rm -rf $@; mkdir -p $@
 	# This PSyclone invokation will need to resolve some Fortran modules which need
