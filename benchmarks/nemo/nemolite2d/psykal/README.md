@@ -17,7 +17,7 @@ variable should be changed to the desired MPI compiler wrappers, for example:
 
     > export F90=mpif90
 
-Note that the MPI compiler wrapper should call the same compiler family as the
+Note that the MPI compiler wrapper should call the same compiler family as that
 loaded by the compiler setup script, otherwise the build system compiler flags
 will be unrecognised. It is also advisable to perform a `make allclean` action
 when requesting a new `F90` compiler in order to compile all dependencies with
@@ -37,7 +37,7 @@ The Makefile supports many targets:
 - nemolite2_mpiocl - MPI and OpenCL combined version (Not working - Psyclone
 will generate a OpenCL-only version)
 
-Executing `make <target>` will generate a folder with the same name of the
+Executing `make <target>` will generate a folder with the same name as the
 target, containing at least a `alg.f90` and a `psy.f90` for the
 PSyclone-generated Algorithm and PSy-layer components respectively.
 It will also generate kernel source files when necessary. Finally, it will
@@ -50,7 +50,7 @@ Model parameters (size of domain [jpiglo,jpjglo], number of time-steps
 [nitend], whether or not and how often to do output [irecord]) may be
 configured by editing the `namelist` file.
 
-There are differences on how to execute the generated `nemolite2d_gen.exe`,
+There are differences in how to execute the generated `nemolite2d.exe`,
 notably:
 
 - For the OpenMP version, you will need to set `OMP_NUM_THREADS` to the
@@ -65,8 +65,10 @@ implementation with `mpirun -h`.
 - For the OpenCL version, you will need to specify which kernels file to use
 with the `FORTCL_KERNELS_FILE` environment variable, it can be a source file
 for JITed OpenCL or a ahead-of-time compiled binary object. Optionally you can
-select with OpenCL platform to use with the `FORTCL_PLATFORM` environment
-variable. The target folder makefile also contains some execution helpers like:
+select which OpenCL platform to use with the `FORTCL_PLATFORM` environment
+variable. For more information about the FortCL environment variables read
+the [FortCL README](https://github.com/stfc/FortCL).
+The target folder makefile also contains some execution helpers like:
 `run_opencl_jit`, `run_xilinx_sw_emu` and `run_xilinx_sw_emu` to aid in the
 execution of the OpenCL binary.
 

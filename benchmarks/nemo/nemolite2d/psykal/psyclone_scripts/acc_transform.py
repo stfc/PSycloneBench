@@ -31,7 +31,7 @@ def trans(psy):
     # Add an enter-data directive
     enter_data_trans.apply(schedule)
 
-    # Apply ACCRoutineTrans to each kernel, which also requires that any
+    # Apply ACCRoutineTrans to each kernel, which also requires that
     # any global variables must be removed first.
     for kern in schedule.coded_kernels():
         glo2arg_trans.apply(kern)
