@@ -105,7 +105,7 @@ extern "C" void c_invoke_time_step(
 
         int selected_device = 0;
         if(const char* env_p = std::getenv("SYCL_PLATFORM")){
-            std::exit(-1);
+            selected_device = std::stoi(env_p);
         } else {
             // Use default device
             selected_device = 3;

@@ -10,7 +10,7 @@
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
 SYCL_COMP := dpcpp
-SYCLFLAGS := -O3 -mtune=native
+SYCLFLAGS := -fsycl -O3 -mtune=native
 
 .PHONY: all nemolite2d_sycl
 .DEFAULT_GOAL := nemolite2d_sycl
