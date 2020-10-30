@@ -11,7 +11,7 @@ module time_update_mod
   type, extends(kernel_type) :: next_sshu
      type(go_arg), dimension(5) :: meta_args =  &
           (/ go_arg(GO_READWRITE, GO_CU, GO_POINTWISE),  &
-             go_arg(GO_READ,      GO_CU, GO_POINTWISE),  &
+             go_arg(GO_READ,      GO_CU, GO_STENCIL(000,011,000)),  &
              go_arg(GO_READ,      GO_GRID_MASK_T),    &
              go_arg(GO_READ,      GO_GRID_AREA_T),    &
              go_arg(GO_READ,      GO_GRID_AREA_U)     &
@@ -39,7 +39,7 @@ module time_update_mod
   type, extends(kernel_type) :: next_sshv
      type(go_arg), dimension(5) :: meta_args =  &
           (/ go_arg(GO_READWRITE, GO_CV, GO_POINTWISE),  &
-             go_arg(GO_READ,      GO_CV, GO_POINTWISE),  &
+             go_arg(GO_READ,      GO_CV, GO_STENCIL(010,010,000)),  &
              go_arg(GO_READ,      GO_GRID_MASK_T),    &
              go_arg(GO_READ,      GO_GRID_AREA_T),    &
              go_arg(GO_READ,      GO_GRID_AREA_V)     &

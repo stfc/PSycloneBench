@@ -11,7 +11,8 @@
 # export AR=ar
 
 # Additionally it needs the path to the Kokkos source code
-KOKKOS_PATH ?= $(HOME)/tools/kokkos
+SHARED_DIR = ../../../../../shared
+KOKKOS_PATH ?= $(SHARED_DIR)/kokkos
 KOKKOS_DEBUG ?= no  # Careful, 10x performance penalty in kernels.
 CXXFLAGS = $(CFLAGS)  # Use same CFLAGS to compile Kokkos library.
 
@@ -29,7 +30,7 @@ else ifeq ($(KOKKOS_DEVICES),Pthreads)
 $(error "Pthreads device is currently not supported")
 else ifeq ($(KOKKOS_DEVICES),Cuda)
 $(info "Using CUDA device")
-KOKKOS_ARCH = Pascal61
+KOKKOS_ARCH = Volta70 # Pascal64
 # nvcc doesn't support all compiler flags, overwrite CFLAGS to just O3
 CFLAGS := -O3
 # Still use the selected compiler but using the Kokkos nvcc_wrapper
@@ -80,7 +81,7 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 
 # Kokkos files rules
 %_kokkos.o: %_kokkos.cpp $(KOKKOS_CPP_DEPENDS)
-	$(CXX) -DEXEC_SPACE=$(KOKKOS_DEVICES) $(KOKKOS_CXXFLAGS) $(CFLAGS) -c $<
+	$(CXX) -DEXECUTION_SPACE=$(KOKKOS_DEVICES) $(KOKKOS_CXXFLAGS) $(CFLAGS) -c $<
 
 timing.o: timing.cpp
 	$(CXX) -c $<

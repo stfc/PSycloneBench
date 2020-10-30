@@ -39,7 +39,6 @@ contains
 !!$    if(sshn_v%is_dirty(depth=idepth))then
        call sshn_v%halo_exchange(depth=idepth)
 !!$    end if
-       call sshn_t%halo_exchange(depth=idepth)
 !!$    if(un%is_dirty(depth=idepth))then
        call un%halo_exchange(depth=idepth)
 !!$    end if
@@ -57,8 +56,6 @@ contains
                              sshn_t%grid%area_t)
       end do
     end do
-
-    !call ssha%set_dirty(from_depth=1)
 
     do jj = ua%internal%ystart, ua%internal%ystop, 1
       do ji = ua%internal%xstart, ua%internal%xstop, 1
@@ -99,8 +96,6 @@ contains
     end do
 
     ! Apply open and solid boundary conditions
-
-    call ssha%halo_exchange(depth=1)
 
     DO jj = ssha%internal%ystart, ssha%internal%ystop 
        DO ji = ssha%internal%xstart, ssha%internal%xstop 

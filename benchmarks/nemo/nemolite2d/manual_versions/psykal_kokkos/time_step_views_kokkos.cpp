@@ -11,6 +11,8 @@
 #include "timing.h"
 #endif
 
+#define TILE {64,4}
+
 // Create 2D View types for the Fields and Grid arrays
 typedef Kokkos::View<double**> double_2dview;
 typedef Kokkos::View<int**> int_2dview;
@@ -110,8 +112,8 @@ extern "C" void c_invoke_time_step(
 
     // The execution space is given as a preprocessor define when compiling
     // this file. e.g. `g++ -DEXEC_SPACE=OpenMP time_step_kokkos.cpp -c`
-#if defined (EXEC_SPACE)
-    using execution_space = Kokkos::EXEC_SPACE;
+#if defined (EXECUTION_SPACE)
+    using execution_space = Kokkos::EXECUTION_SPACE;
 #else
     using execution_space = Kokkos::DefaultExecutionSpace;
 #endif
@@ -293,7 +295,7 @@ extern "C" void c_invoke_time_step(
     // Continuity kernel (internal domain)
     Kokkos::parallel_for("continuity",
         mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop, internal_xstop}),
+                       {internal_ystop, internal_xstop}, TILE),
         KOKKOS_LAMBDA (const int jj, const int ji) {
             double rtmp1, rtmp2, rtmp3, rtmp4;
 
@@ -316,7 +318,7 @@ extern "C" void c_invoke_time_step(
     // Momentum_u kernel (internal domain u points)
     Kokkos::parallel_for("momentum_u",
         mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop, internal_xstop - 1}),
+                       {internal_ystop, internal_xstop - 1}, TILE),
         KOKKOS_LAMBDA (const int jj, const int ji) {
             double u_e, u_w, v_n, v_s;
             double v_nc, v_sc;
@@ -419,7 +421,7 @@ extern "C" void c_invoke_time_step(
     // Momentum_v kernel (internal domain v points)
     Kokkos::parallel_for("momentum_v",
         mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop - 1, internal_xstop}),
+                       {internal_ystop - 1, internal_xstop}, TILE),
         KOKKOS_LAMBDA (const int jj, const int ji) {
 
             double u_e, u_w, v_n, v_s;
@@ -527,7 +529,7 @@ extern "C" void c_invoke_time_step(
     // Boundary conditions bc_ssh kernel (internal domain)
     Kokkos::parallel_for("bc_ssh",
         mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop, internal_xstop}),
+                       {internal_ystop, internal_xstop}, TILE),
         KOKKOS_LAMBDA (const int jj, const int ji) {
 
             double amp_tide, omega_tide, rtime;
@@ -553,7 +555,7 @@ extern "C" void c_invoke_time_step(
     // Boundary conditions bc_solid_u kernel (whole domain but top x boundary)
     Kokkos::parallel_for("bc_solid_u",
         mdrange_policy({internal_ystart - 1, internal_xstart - 1},
-                       {internal_ystop + 1, internal_xstop}),
+                       {internal_ystop + 1, internal_xstop}, TILE),
         KOKKOS_LAMBDA (const int jj, const int ji) {
             if(tmask_view(jj, ji) * tmask_view(jj, ji+1) == 0){
                 ua_view(jj, ji) = 0.0;
@@ -564,7 +566,7 @@ extern "C" void c_invoke_time_step(
     // Boundary conditions bc_solid_v kernel (whole domain but top y boundary)
     Kokkos::parallel_for("bc_solid_v",
         mdrange_policy({internal_ystart - 1, internal_xstart - 1},
-                       {internal_ystop, internal_xstop + 1}),
+                       {internal_ystop, internal_xstop + 1}, TILE),
         KOKKOS_LAMBDA (const int jj, const int ji) {
             if(tmask_view(jj, ji) * tmask_view(jj+1, ji) == 0){
                 va_view(jj, ji) = 0.0;
@@ -575,7 +577,7 @@ extern "C" void c_invoke_time_step(
     // Boundary conditions bc_flather_u kernel (whole domain but top x boundary)
     Kokkos::parallel_for("bc_flather_u",
         mdrange_policy({internal_ystart - 1, internal_xstart - 1},
-                       {internal_ystop + 1, internal_xstop}),
+                       {internal_ystop + 1, internal_xstop}, TILE),
         KOKKOS_LAMBDA (const int jj, const int ji) {
             //                                   Du                 Dssh
             // Flather open boundary condition [---- = sqrt(g/H) * ------]
@@ -598,7 +600,7 @@ extern "C" void c_invoke_time_step(
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
     Kokkos::parallel_for("bc_flather_v",
         mdrange_policy({internal_ystart - 1, internal_xstart - 1},
-                       {internal_ystop, internal_xstop + 1}),
+                       {internal_ystop, internal_xstop + 1}, TILE),
         KOKKOS_LAMBDA (const int jj, const int ji) {
 
             // Check whether this point is inside the simulated domain
@@ -620,7 +622,7 @@ extern "C" void c_invoke_time_step(
     // Copy 'next' fields to 'current' fields (whole domain)
     Kokkos::parallel_for("copy_fields",
         mdrange_policy({internal_ystart - 1, internal_xstart - 1},
-                       {internal_ystop + 1, internal_xstop + 1}),
+                       {internal_ystop + 1, internal_xstop + 1}, TILE),
         KOKKOS_LAMBDA (const int jj, const int ji) {
             un_view(jj, ji) = ua_view(jj, ji);
             vn_view(jj, ji) = va_view (jj, ji);
@@ -631,7 +633,7 @@ extern "C" void c_invoke_time_step(
     // Time update kernel (internal domain u points)
     Kokkos::parallel_for("next_sshu",
         mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop, internal_xstop - 1}),
+                       {internal_ystop, internal_xstop - 1}, TILE),
         KOKKOS_LAMBDA (const int jj, const int ji) {
 
             double rtmp1;
@@ -655,7 +657,7 @@ extern "C" void c_invoke_time_step(
     // Time update kernel (internal domain v points)
     Kokkos::parallel_for("next_sshv",
         mdrange_policy({internal_ystart, internal_xstart},
-                       {internal_ystop - 1, internal_xstop}),
+                       {internal_ystop - 1, internal_xstop}, TILE),
         KOKKOS_LAMBDA (const int jj, const int ji) {
             double rtmp1;
             if((tmask_view(jj, ji) + tmask_view(jj + 1, ji)) <= 0){
@@ -683,12 +685,15 @@ extern "C" void c_invoke_time_step(
 extern "C" void kokkos_read_from_device(double_2dview from, double* to,
                                         int nx, int ny, int width){
 
-    // Copy data to a host mirror, it requires and allocation
+    // First, we need to copy data from the device into a host mirror ( which
+    // has the same data-layout as the device copy), it requires to allocate
+    // space for the mirror with `create_mirror_view`
     auto mirror = Kokkos::create_mirror_view( from );
     Kokkos::deep_copy( mirror, from );
 
-    // The kokkos layout is not guaranteed, so make explicit copies
-    // of each element to its location.
+    // Then, we copy the data from the mirror to the original location.
+    // Since the mirror data layout is decided by kokkos, we make explicit
+    // copies of each element to its location.
     for(int jj=0; jj < ny; jj++){
         for(int ji=0; ji < nx; ji++){
             int idx = jj*width + ji;

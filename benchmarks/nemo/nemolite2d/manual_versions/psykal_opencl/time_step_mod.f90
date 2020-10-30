@@ -78,7 +78,7 @@ contains
 
         ! Set up local and global sizes (for memory blocking)
         globalsize = (/sshn_t%grid%nx, sshn_t%grid%ny/)
-        localsize = (/1, 1/)
+        localsize = (/64, 1/)
 
         ! Ensure field data is on device
         IF (.NOT. ssha_t%data_on_device) THEN
@@ -946,7 +946,7 @@ contains
             kernel_names(10) = "next_sshu_code"
             kernel_names(11) = "next_sshv_code"
             ! Create the OpenCL kernel objects. Expects to find all of the compiled
-            ! kernels in PSYCLONE_KERNELS_FILE.
+            ! kernels in FORTCL_KERNELS_FILE.
             CALL add_kernels(11, kernel_names)
         END IF
     END SUBROUTINE psy_init
