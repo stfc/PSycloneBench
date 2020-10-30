@@ -670,8 +670,6 @@ extern "C" void c_invoke_time_step(
         });
     });
 
-    // Synchronization (is it really needed?)
-    myqueue.wait();
 
 #ifdef USE_TIMER
     TimerStop();
@@ -680,7 +678,8 @@ extern "C" void c_invoke_time_step(
 
 }
 
-extern "C" void kokkos_read_from_device(void* from, double* to,
+extern "C" void sycl_read_from_device(void* from, double* to,
                                         int nx, int ny, int width){
+    // Just add a wait for now (it may not work in accelerators yet)
     workqueue->wait();
 }

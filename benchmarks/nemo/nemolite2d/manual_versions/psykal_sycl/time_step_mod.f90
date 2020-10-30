@@ -43,7 +43,7 @@ module time_step_mod
 
     interface
         subroutine wrapper_read_from_device(from, to, nx, ny, width) &
-                bind(C, name="kokkos_read_from_device")
+                bind(C, name="sycl_read_from_device")
             use iso_c_binding, only: c_intptr_t, c_int, c_double
             use kind_params_mod, only: go_wp
             integer(c_intptr_t), intent(in), value :: from
