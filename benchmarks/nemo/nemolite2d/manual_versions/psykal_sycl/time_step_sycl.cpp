@@ -106,15 +106,16 @@ extern "C" void c_invoke_time_step(
         int selected_device = 0;
         if(const char* env_p = std::getenv("SYCL_PLATFORM")){
             selected_device = std::stoi(env_p);
+            auto selected_platform_name = devices[selected_device].get_platform().get_info<info::platform::name>();
+            auto selected_dev_name = devices[selected_device].get_info<info::device::name>();
+            std::cout <<  "Selected device: " << selected_device << " - " <<
+                selected_platform_name << " : " << selected_dev_name << std::endl;
+            workqueue = new queue(devices[selected_device]);
         } else {
             // Use default device
-            selected_device = 3;
+            std::cout <<  "Selecting default host platform." << std::endl;
+            workqueue = new queue(host_selector{});
         }
-        auto selected_platform_name = devices[selected_device].get_platform().get_info<info::platform::name>();
-        auto selected_dev_name = devices[selected_device].get_info<info::device::name>();
-        std::cout <<  "Selected device: " << selected_device << " - " << selected_platform_name <<
-            " : " << selected_dev_name << std::endl;
-        workqueue = new queue(devices[selected_device]);
         first_time = false;
     }
 
