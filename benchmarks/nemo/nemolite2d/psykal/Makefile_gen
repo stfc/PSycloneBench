@@ -6,7 +6,6 @@
 SHARED_DIR = ../../../../../shared
 TIMER_DIR = ${SHARED_DIR}/dl_timer
 TIMER_INC = ${TIMER_DIR}/src
-TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 FORTCL_INC = ${SHARED_DIR}/FortCL/src/
@@ -14,8 +13,9 @@ FORTCL_LIB = ${SHARED_DIR}/FortCL/src/libFortCL.a
 COMMON_DIR = ../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
-# It uses its own copy of INF_LIB
-INF_LIB=lib_fd.a
+# It uses its own copy of INF_LIB and TIMER_LIB
+INF_LIB = lib_fd.a
+TIMER_LIB = libdl_timer.a
 
 # The kernels used by this application and their location
 KERNEL_DIR = ../kernels/fortran

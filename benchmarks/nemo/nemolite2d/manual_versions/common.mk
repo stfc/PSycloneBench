@@ -5,7 +5,8 @@ SHARED_DIR = ../../../../../shared
 # dl_timer
 TIMER_DIR = ${SHARED_DIR}/dl_timer
 TIMER_INC = ${TIMER_DIR}/src
-TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
+TIMER_LIB = ${TIMER_DIR}/libdl_timer_omp.a
+TIMER_LIB_DM = ${TIMER_DIR}/libdl_timer_dm.a
 # dl_esm_inf
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src

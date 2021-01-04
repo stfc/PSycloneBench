@@ -31,7 +31,8 @@
 SHARED_DIR = ../../../../shared
 TIMER_DIR = ${SHARED_DIR}/dl_timer
 TIMER_INC = ${TIMER_DIR}/src
-TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
+TIMER_LIB = ${TIMER_DIR}/libdl_timer_omp.a
+TIMER_LIB_DM = ${TIMER_DIR}/libdl_timer_dm.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/lib_fd.a
@@ -62,6 +63,7 @@ nemolite2d_serial: serial_libs nemolite2d_alg.f90 psyclone_scripts/serial_transf
 	${PSYCLONE} -nodm -s psyclone_scripts/serial_transform.py \
 		-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	cp ${TIMER_LIB} $@/. # Each generated folder needs its purposely built timer_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	cd $@ && make nemolite2d
@@ -73,6 +75,7 @@ nemolite2d_omp: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_transform.py
 	${PSYCLONE} -nodm -s psyclone_scripts/omp_transform.py \
 		-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	cp ${TIMER_LIB} $@/. # Each generated folder needs its purposely built timer_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	cd $@ && make nemolite2d
@@ -84,6 +87,7 @@ nemolite2d_mpi: parallel_libs nemolite2d_alg.f90 psyclone_scripts/serial_transfo
 	${PSYCLONE} -dm -s psyclone_scripts/serial_transform.py \
 	   	-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	cp ${TIMER_LIB_DM} $@/. # Each generated folder needs its purposely built timer_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	cd $@ && make nemolite2d
@@ -96,6 +100,7 @@ nemolite2d_hybrid: parallel_libs nemolite2d_alg.f90 psyclone_scripts/omp_transfo
 	${PSYCLONE} -dm -s psyclone_scripts/omp_transform.py \
 		-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	cp ${TIMER_LIB_DM} $@/. # Each generated folder needs its purposely built timer_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	cd $@ && make nemolite2d
@@ -109,6 +114,7 @@ nemolite2d_acc: serial_libs nemolite2d_alg.f90 psyclone_scripts/acc_transform.py
 		-I ${COMMON_DIR} \
 		-okern $@ -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	cp ${TIMER_LIB} $@/. # Each generated folder needs its purposely built timer_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	cd $@ && make nemolite2d
@@ -123,6 +129,7 @@ nemolite2d_ocl: serial_libs fortcl_lib nemolite2d_alg.f90 psyclone_scripts/ocl_t
 		-I ${COMMON_DIR} \
 	   	-okern $@ -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	cp ${TIMER_LIB} $@/. # Each generated folder needs its purposely built timer_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	# Currently we need all kernels in a single OpenCL file
@@ -141,6 +148,7 @@ nemolite2d_mpiocl: parallel_libs fortcl_lib nemolite2d_alg.f90 psyclone_scripts/
 		-I ${COMMON_DIR} \
 		-okern $@ -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	cp ${TIMER_LIB_DM} $@/. # Each generated folder needs its purposely built timer_lib
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	# Currently we need all kernels in a single OpenCL file
