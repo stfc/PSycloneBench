@@ -15,7 +15,7 @@ module boundary_conditions_mod
   public bc_ssh, bc_solid_u, bc_solid_v, bc_flather_u, bc_flather_v
   public invoke_bc_solid_u,   invoke_bc_solid_v
   public invoke_bc_flather_u, invoke_bc_flather_v
-  public invoke_bc_ssh
+  public invoke_bc_ssh, setup_vmask_code
   public bc_ssh_code, bc_solid_u_code, bc_solid_v_code
   public bc_flather_u_code, bc_flather_v_code
 
@@ -386,19 +386,16 @@ contains
     integer, intent(in) :: ji, jj
     integer,  dimension(:,:), intent(inout) :: vmask
     integer,  dimension(:,:), intent(in) :: tmask
-    integer :: jiv
 
     vmask(ji,jj) = 0
 
     IF(tmask(ji,jj) + tmask(ji,jj+1) <= -1) return
     
     IF(tmask(ji,jj) < 0) THEN
-       jiv = jj + 1
+       vmask(ji, jj + 1) = 1
     ELSE IF(tmask(ji,jj+1) < 0) THEN
-       jiv = jj - 1 
+       vmask(ji, jj - 1) = 1
     END IF
-
-    vmask(ji,jiv) = 1
 
   end subroutine setup_vmask_code
 

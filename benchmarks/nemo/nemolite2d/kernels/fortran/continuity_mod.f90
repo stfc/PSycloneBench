@@ -79,7 +79,6 @@ contains
     real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     !> For timing
     integer, save :: idxt
-    integer :: ic
     integer(i_def64) :: nrepeat
     integer, parameter :: ALIGNMENT = 4
 !DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
