@@ -784,11 +784,15 @@ void c_invoke_time_step(
 // Function that specify how to retrieve the device data 'from' to a host
 // location 'to', this function will be called by the infrastructure whenever
 // the data is needed on the host.
-void c_read_from_device(cl_mem from, double * to, int nx, int ny, int width){
-    cl_event read_events[1];
-    // Use width instead of nx in case there are padding elements
-    int ret = clEnqueueReadBuffer(command_queue[0], from, CL_TRUE, 0,
-			    width*ny, to, 0, NULL, &(read_events[0]));
-    check_status("clEnqueueReadBuffer", ret);
-    clWaitForEvents(1, read_events);
+void c_read_from_device(void * from, void * to, int offset, int nx, int ny, int gap){
+    int size_in_bytes = (nx+gap) * ny * 8;
+    check_status("clEnqueueReadBuffer", clEnqueueReadBuffer(
+        command_queue[0], (cl_mem)from, CL_TRUE, offset,
+		size_in_bytes, to, 0, NULL, NULL));
+}
+void c_write_to_device(void * from, void * to, int offset, int nx, int ny, int gap){
+    int size_in_bytes = (nx+gap) * ny * 8;
+    check_status("clEnqueueReadBuffer", clEnqueueReadBuffer(
+        command_queue[0], (cl_mem)from, CL_TRUE, offset,
+		size_in_bytes, to, 0, NULL, NULL));
 }
