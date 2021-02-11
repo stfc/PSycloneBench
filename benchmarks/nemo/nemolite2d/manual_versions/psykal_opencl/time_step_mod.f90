@@ -24,6 +24,7 @@ contains
         USE fortcl, ONLY: get_num_cmd_queues, get_cmd_queues, &
                           get_kernel_by_name
         USE clfortran
+        USE ocl_utils_mod, ONLY: check_status
         USE iso_c_binding
         USE physical_params_mod, ONLY: omega, d2r, g
         USE model_mod, ONLY: rdt, cbfr, visc
@@ -78,132 +79,41 @@ contains
             kernel_next_sshu_code = get_kernel_by_name("next_sshu_code")
             kernel_next_sshv_code = get_kernel_by_name("next_sshv_code")
 
-            ! 
+            ! Initialise device buffers if they don't already exist
+            call initialise_device_buffer(ssha_t)
+            call initialise_device_buffer(sshn_t)
+            call initialise_device_buffer(sshn_u)
+            call initialise_device_buffer(sshn_v)
+            call initialise_device_buffer(hu)
+            call initialise_device_buffer(hv)
+            call initialise_device_buffer(un)
+            call initialise_device_buffer(vn)
+            call initialise_device_buffer(ua)
+            call initialise_device_buffer(ht)
+            call initialise_device_buffer(ssha_u)
+            call initialise_device_buffer(va)
+            call initialise_device_buffer(ssha_v)
 
+            ! Write initial data to device
+            call ssha_t%write_to_device()
+            call sshn_t%write_to_device()
+            call sshn_u%write_to_device()
+            call sshn_v%write_to_device()
+            call hu%write_to_device()
+            call hv%write_to_device()
+            call un%write_to_device()
+            call vn%write_to_device()
+            call ua%write_to_device()
+            call ht%write_to_device()
+            call ssha_u%write_to_device()
+            call va%write_to_device()
+            call ssha_v%write_to_device()
         END IF
+
 
         ! Set up local and global sizes (for memory blocking)
         globalsize = (/sshn_t%grid%nx, sshn_t%grid%ny/)
         localsize = (/64, 1/)
-
-        ! Ensure field data is on device
-        IF (.NOT. ssha_t%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
-                            c_sizeof(ssha_t%data(1,1))
-            ! Create buffer on device
-            ssha_t%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                         ssha_t%device_ptr)
-            ssha_t%data_on_device = .true.
-            call ssha_t%write_to_device()
-        END IF
-        IF (.NOT. sshn_t%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
-                            c_sizeof(sshn_t%data(1,1))
-            ! Create buffer on device
-            sshn_t%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                         sshn_t%device_ptr)
-            sshn_t%data_on_device = .true.
-            call sshn_t%write_to_device()
-        END IF
-        IF (.NOT. sshn_u%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
-                c_sizeof(sshn_u%data(1,1))
-            ! Create buffer on device
-            sshn_u%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                         sshn_u%device_ptr)
-            sshn_u%data_on_device = .true.
-            call sshn_u%write_to_device()
-        END IF
-        IF (.NOT. sshn_v%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
-                            c_sizeof(sshn_v%data(1,1))
-            ! Create buffer on device
-            sshn_v%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                         sshn_v%device_ptr)
-            sshn_v%data_on_device = .true.
-            call sshn_v%write_to_device()
-        END IF
-        IF (.NOT. hu%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
-                            c_sizeof(hu%data(1,1))
-            ! Create buffer on device
-            hu%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                     hu%device_ptr)
-            hu%data_on_device = .true.
-            call hu%write_to_device()
-        END IF
-        IF (.NOT. hv%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
-                            c_sizeof(hv%data(1,1))
-            ! Create buffer on device
-            hv%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                     hv%device_ptr)
-            hv%data_on_device = .true.
-            call hv%write_to_device()
-        END IF
-        IF (.NOT. un%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
-                            c_sizeof(un%data(1,1))
-            ! Create buffer on device
-            un%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                     un%device_ptr)
-            un%data_on_device = .true.
-            call un%write_to_device()
-        END IF
-        IF (.NOT. vn%data_on_device) THEN
-            size_in_bytes = int(sshn_t%grid%nx*sshn_t%grid%ny, 8) * &
-                            c_sizeof(vn%data(1,1))
-            ! Create buffer on device
-            vn%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                     vn%device_ptr)
-            vn%data_on_device = .true.
-            call vn%write_to_device()
-        END IF
-        IF (.NOT. ua%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
-                            c_sizeof(ua%data(1,1))
-            ! Create buffer on device
-            ua%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                     ua%device_ptr)
-            ua%data_on_device = .true.
-            call ua%write_to_device()
-        END IF
-        IF (.NOT. ht%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
-                            c_sizeof(ht%data(1,1))
-            ! Create buffer on device
-            ht%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                     ht%device_ptr)
-            ht%data_on_device = .true.
-            call ht%write_to_device()
-        END IF
-        IF (.NOT. ssha_u%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
-                            c_sizeof(ssha_u%data(1,1))
-            ! Create buffer on device
-            ssha_u%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                         ssha_u%device_ptr)
-            ssha_u%data_on_device = .true.
-            call ssha_u%write_to_device()
-        END IF
-        IF (.NOT. va%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
-                            c_sizeof(va%data(1,1))
-            ! Create buffer on device
-            va%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                     va%device_ptr)
-            va%data_on_device = .true.
-            call va%write_to_device()
-        END IF
-        IF (.NOT. ssha_v%data_on_device) THEN
-            size_in_bytes = int(un%grid%nx*un%grid%ny, 8) * &
-                            c_sizeof(ssha_v%data(1,1))
-            ! Create buffer on device
-            ssha_v%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
-                                         ssha_v%device_ptr)
-            ssha_v%data_on_device = .true.
-            call va%write_to_device()
-        END IF
 
         ! Ensure scalar data is on the device
         IF (sshn_t%grid%area_t_device == 0) THEN
@@ -442,8 +352,12 @@ contains
         va_device = transfer(va%device_ptr, va_device)
         ssha_v_device = transfer(ssha_v%device_ptr, ssha_v_device)
 
+        ! ierr = clFinish(cmd_queues(1))
+        ! CALL check_status('Before kernels', ierr)
+
         CALL continuity_code_set_args(&
-            kernel_continuity_code, ssha_t_device, sshn_t_device, &
+            kernel_continuity_code,  ssha_t%internal%xstart - 1, ssha_t%internal%xstop - 1, &
+           ssha_t%internal%ystart - 1, ssha_t%internal%ystop - 1,  ssha_t_device, sshn_t_device, &
             sshn_u_device, sshn_v_device, hu_device, &
             hv_device, un_device, vn_device, &
             sshn_t%grid%area_t_device, rdt)
@@ -453,7 +367,8 @@ contains
             C_NULL_PTR, C_NULL_PTR)
 
         CALL momentum_u_code_set_args(&
-            kernel_momentum_u_code, ua_device, un_device, &
+            kernel_momentum_u_code,  ua%internal%xstart - 1, ua%internal%xstop - 1, ua%internal%ystart - 1, &
+            ua%internal%ystop - 1, ua_device, un_device, &
             vn_device, hu_device, hv_device, ht_device, &
             ssha_u_device, sshn_t_device, sshn_u_device, &
             sshn_v_device, un%grid%tmask_device, un%grid%dx_u_device, &
@@ -466,7 +381,8 @@ contains
             C_NULL_PTR, C_NULL_PTR)
 
         CALL momentum_v_code_set_args(&
-            kernel_momentum_v_code, va_device, &
+            kernel_momentum_v_code,  va%internal%xstart - 1, va%internal%xstop - 1, va%internal%ystart - 1, &
+            va%internal%ystop - 1, va_device, &
             un_device, vn_device, hu_device, hv_device, &
             ht_device, ssha_v_device, sshn_t_device, &
             sshn_u_device, sshn_v_device, un%grid%tmask_device, &
@@ -478,8 +394,10 @@ contains
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
 
+        ! Needs to be done every time because of changing istp
         CALL bc_ssh_code_set_args(&
-            kernel_bc_ssh_code, istp, ssha_t_device, &
+            kernel_bc_ssh_code,  ssha_t%internal%xstart - 1, ssha_t%internal%xstop - 1, &
+            ssha_t%internal%ystart - 1, ssha_t%internal%ystop - 1, istp, ssha_t_device, &
             ssha_t%grid%tmask_device, rdt)
         ! Launch the kernel
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_ssh_code, &
@@ -487,21 +405,24 @@ contains
             C_NULL_PTR, C_NULL_PTR)
 
         CALL bc_solid_u_code_set_args( &
-            kernel_bc_solid_u_code, ua_device, ua%grid%tmask_device)
+            kernel_bc_solid_u_code,  ua%whole%xstart - 1, ua%whole%xstop - 1, ua%whole%ystart - 1, &
+            ua%whole%ystop - 1, ua_device, ua%grid%tmask_device)
         ! Launch the kernel
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_solid_u_code, 2, &
             C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
 
         CALL bc_solid_v_code_set_args( &
-            kernel_bc_solid_v_code, va_device, va%grid%tmask_device)
+            kernel_bc_solid_v_code,  va%whole%xstart - 1, va%whole%xstop - 1, va%whole%ystart - 1, &
+            va%whole%ystop - 1, va_device, va%grid%tmask_device)
         ! Launch the kernel
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_solid_v_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
 
         CALL bc_flather_u_code_set_args( &
-            kernel_bc_flather_u_code, ua_device, hu_device, &
+            kernel_bc_flather_u_code,  ua%whole%xstart - 1, ua%whole%xstop - 1, ua%whole%ystart - 1, &
+            ua%whole%ystop - 1, ua_device, hu_device, &
             sshn_u_device, hu%grid%tmask_device, g)
         ! Launch the kernel
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_flather_u_code, &
@@ -509,7 +430,8 @@ contains
             0, C_NULL_PTR, C_NULL_PTR)
 
         CALL bc_flather_v_code_set_args( &
-            kernel_bc_flather_v_code, va_device, hv_device, &
+            kernel_bc_flather_v_code, va%whole%xstart - 1, va%whole%xstop - 1, va%whole%ystart - 1, &
+            va%whole%ystop - 1, va_device, hv_device, &
             sshn_v_device, hv%grid%tmask_device, g)
         ! Launch the kernel
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_flather_v_code, &
@@ -517,28 +439,29 @@ contains
             0, C_NULL_PTR, C_NULL_PTR)
 
         CALL field_copy_code_set_args( &
-            kernel_field_copy_code, un_device, ua_device)
+            kernel_field_copy_code,  0, SIZE(un%data, 1) - 1, 0, SIZE(un%data, 2) - 1, un_device, ua_device)
         ! Launch the kernel
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
 
         CALL field_copy_code_set_args( &
-            kernel_field_copy_code, vn_device, va_device)
+            kernel_field_copy_code,  0, SIZE(vn%data, 1) - 1, 0, SIZE(vn%data, 2) - 1,  vn_device, va_device)
         ! Launch the kernel
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
 
         CALL field_copy_code_set_args( &
-            kernel_field_copy_code, sshn_t_device, ssha_t_device)
+            kernel_field_copy_code,  0, SIZE(sshn_t%data, 1) - 1, 0, SIZE(sshn_t%data, 2) - 1, sshn_t_device, ssha_t_device)
         ! Launch the kernel
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
 
         CALL next_sshu_code_set_args( &
-            kernel_next_sshu_code, sshn_u_device, sshn_t_device, &
+            kernel_next_sshu_code,  sshn_u%internal%xstart - 1, sshn_u%internal%xstop - 1, &
+            sshn_u%internal%ystart - 1, sshn_u%internal%ystop - 1, sshn_u_device, sshn_t_device, &
             sshn_t%grid%tmask_device, sshn_t%grid%area_t_device, &
             sshn_t%grid%area_u_device)
         ! Launch the kernel
@@ -547,7 +470,8 @@ contains
             C_NULL_PTR, C_NULL_PTR)
 
         CALL next_sshv_code_set_args( &
-            kernel_next_sshv_code, sshn_v_device, sshn_t_device, &
+            kernel_next_sshv_code,  sshn_v%internal%xstart - 1, sshn_v%internal%xstop - 1, &
+            sshn_v%internal%ystart - 1, sshn_v%internal%ystop - 1, sshn_v_device, sshn_t_device, &
             sshn_t%grid%tmask_device, sshn_t%grid%area_t_device, &
             sshn_t%grid%area_v_device)
         ! Launch the kernel
@@ -557,14 +481,14 @@ contains
 
         ! Block until all kernels have finished
         ierr = clFinish(cmd_queues(1))
-
+        CALL check_status('Barrier end of iteration', ierr)
 
     END SUBROUTINE invoke_time_step
 
     subroutine initialise_device_buffer(field)
+        USE fortcl, ONLY: create_rw_buffer
         type(r2d_field), intent(inout), target :: field
         integer(kind=c_size_t) size_in_bytes
-        USE fortcl, ONLY: create_rw_buffer
         IF (.NOT. field%data_on_device) THEN
             size_in_bytes = int(field%grid%nx*field%grid%ny, 8) * &
                             c_sizeof(field%data(1,1))
@@ -579,17 +503,31 @@ contains
 
 
     subroutine read_opencl(from, to, offset, nx, ny, gap)
-        use iso_c_binding, only: c_ptr
+        use iso_c_binding, only: c_ptr, c_intptr_t, c_size_t, c_sizeof
+        USE ocl_utils_mod, ONLY: check_status
         use kind_params_mod, only: go_wp
+        USE clfortran
+        USE fortcl, ONLY: get_cmd_queues
         type(c_ptr), intent(in) :: from
-        real(go_wp), dimension(:,:), intent(inout) :: to
+        real(go_wp), dimension(:,:), intent(inout), target :: to
         integer, intent(in) :: offset, nx, ny, gap
-        write(*,*) "Read"
-
+        INTEGER(c_size_t) :: size_in_bytes
+        integer(c_intptr_t) :: cl_mem
+        INTEGER(c_intptr_t), pointer :: cmd_queues(:)
+        integer :: ierr
+        size_in_bytes = int((nx+gap)*ny, 8) * c_sizeof(to(1,1))
+        cl_mem = transfer(from, cl_mem)
+        cmd_queues => get_cmd_queues()
+        ierr = clEnqueueReadBuffer(cmd_queues(1), cl_mem, &
+            CL_TRUE, 0_8, size_in_bytes, C_LOC(to), 0, &
+            C_NULL_PTR, C_NULL_PTR)
+        ierr = clFinish(cmd_queues(1))
+        CALL check_status('clEnqueueReadBuffer', ierr)
     end subroutine read_opencl
 
     subroutine write_opencl(from, to, offset, nx, ny, gap)
-        use iso_c_binding, only: c_ptr, c_intptr_t, c_sizeof
+        use iso_c_binding, only: c_ptr, c_intptr_t, c_size_t, c_sizeof
+        USE ocl_utils_mod, ONLY: check_status
         use kind_params_mod, only: go_wp
         USE clfortran
         USE fortcl, ONLY: get_cmd_queues
@@ -597,343 +535,415 @@ contains
         type(c_ptr), intent(in) :: to
         integer, intent(in) :: offset, nx, ny, gap
         integer(c_intptr_t) :: cl_mem
+        INTEGER(c_size_t) :: size_in_bytes
+        INTEGER(c_intptr_t), pointer :: cmd_queues(:)
         integer :: ierr
-        INTEGER(KIND=c_size_t) size_in_bytes
-        INTEGER(KIND=c_intptr_t), pointer :: cmd_queues(:)
-        write(*,*) "write"
         size_in_bytes = int((nx+gap)*ny, 8) * c_sizeof(from(1,1))
         cl_mem = transfer(to, cl_mem)
         cmd_queues => get_cmd_queues()
         ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(from), 0, &
             C_NULL_PTR, C_NULL_PTR)
+        ierr = clFinish(cmd_queues(1))
         CALL check_status('clEnqueueWriteBuffer', ierr)
     end subroutine write_opencl
-
-    SUBROUTINE continuity_code_set_args(kernel_obj, ssha_t, sshn_t, &
-            sshn_u, sshn_v, hu, hv, un, vn, area_t, rdt)
-        USE clfortran, ONLY: clSetKernelArg
-        USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
-        USE ocl_utils_mod, ONLY: check_status
-        INTEGER(KIND=c_intptr_t), intent(in), target :: ssha_t, sshn_t, &
-            sshn_u, sshn_v, hu, hv, un, vn, area_t
-        REAL(KIND=go_wp), intent(in), target :: rdt
-        INTEGER ierr
-        INTEGER(KIND=c_intptr_t), target :: kernel_obj
-
-        ! Set the arguments for the continuity_code OpenCL Kernel
-        ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(ssha_t), C_LOC(ssha_t))
-        CALL check_status('clSetKernelArg: arg 0 of continuity_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(sshn_t), C_LOC(sshn_t))
-        CALL check_status('clSetKernelArg: arg 1 of continuity_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(sshn_u), C_LOC(sshn_u))
-        CALL check_status('clSetKernelArg: arg 2 of continuity_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(sshn_v), C_LOC(sshn_v))
-        CALL check_status('clSetKernelArg: arg 3 of continuity_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(hu), C_LOC(hu))
-        CALL check_status('clSetKernelArg: arg 4 of continuity_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(hv), C_LOC(hv))
-        CALL check_status('clSetKernelArg: arg 5 of continuity_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 6, C_SIZEOF(un), C_LOC(un))
-        CALL check_status('clSetKernelArg: arg 6 of continuity_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 7, C_SIZEOF(vn), C_LOC(vn))
-        CALL check_status('clSetKernelArg: arg 7 of continuity_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 8, C_SIZEOF(area_t), C_LOC(area_t))
-        CALL check_status('clSetKernelArg: arg 8 of continuity_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 9, C_SIZEOF(rdt), C_LOC(rdt))
-        CALL check_status('clSetKernelArg: arg 9 of continuity_code', ierr)
+    SUBROUTINE continuity_code_set_args(kernel_obj, xstart, xstop, ystart, ystop, ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, &
+&area_t, rdt)
+      USE clfortran, ONLY: clSetKernelArg
+      USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
+      USE ocl_utils_mod, ONLY: check_status
+      INTEGER, intent(in), target :: xstart, xstop, ystart, ystop
+      INTEGER(KIND=c_intptr_t), intent(in), target :: ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, vn, area_t
+      REAL(KIND=go_wp), intent(in), target :: rdt
+      INTEGER ierr
+      INTEGER(KIND=c_intptr_t), target :: kernel_obj
+      ! Set the arguments for the continuity_code OpenCL Kernel
+      ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(xstart), C_LOC(xstart))
+      CALL check_status('clSetKernelArg: arg 0 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(xstop), C_LOC(xstop))
+      CALL check_status('clSetKernelArg: arg 1 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(ystart), C_LOC(ystart))
+      CALL check_status('clSetKernelArg: arg 2 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(ystop), C_LOC(ystop))
+      CALL check_status('clSetKernelArg: arg 3 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(ssha_t), C_LOC(ssha_t))
+      CALL check_status('clSetKernelArg: arg 4 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(sshn_t), C_LOC(sshn_t))
+      CALL check_status('clSetKernelArg: arg 5 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 6, C_SIZEOF(sshn_u), C_LOC(sshn_u))
+      CALL check_status('clSetKernelArg: arg 6 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 7, C_SIZEOF(sshn_v), C_LOC(sshn_v))
+      CALL check_status('clSetKernelArg: arg 7 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 8, C_SIZEOF(hu), C_LOC(hu))
+      CALL check_status('clSetKernelArg: arg 8 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 9, C_SIZEOF(hv), C_LOC(hv))
+      CALL check_status('clSetKernelArg: arg 9 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 10, C_SIZEOF(un), C_LOC(un))
+      CALL check_status('clSetKernelArg: arg 10 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 11, C_SIZEOF(vn), C_LOC(vn))
+      CALL check_status('clSetKernelArg: arg 11 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 12, C_SIZEOF(area_t), C_LOC(area_t))
+      CALL check_status('clSetKernelArg: arg 12 of continuity_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 13, C_SIZEOF(rdt), C_LOC(rdt))
+      CALL check_status('clSetKernelArg: arg 13 of continuity_code', ierr)
     END SUBROUTINE continuity_code_set_args
-
-    SUBROUTINE momentum_u_code_set_args(kernel_obj, ua, un, vn, hu, hv, ht, &
-            ssha_u, sshn_t, sshn_u, sshn_v, tmask, dx_u, dx_v, &
-            dx_t, dy_u, dy_t, area_u, gphiu, omega, d2r, g, rdt, cbfr, visc)
-        USE clfortran, ONLY: clSetKernelArg
-        USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
-        USE ocl_utils_mod, ONLY: check_status
-        INTEGER(KIND=c_intptr_t), intent(in), target :: ua, un, vn, hu, hv, &
-            ht, ssha_u, sshn_t, sshn_u, sshn_v, tmask, dx_u, dx_v, &
-            dx_t, dy_u, dy_t, area_u, gphiu
-        REAL(KIND=go_wp), intent(in), target :: omega
-        REAL(KIND=go_wp), intent(in), target :: d2r
-        REAL(KIND=go_wp), intent(in), target :: g
-        REAL(KIND=go_wp), intent(in), target :: rdt
-        REAL(KIND=go_wp), intent(in), target :: cbfr
-        REAL(KIND=go_wp), intent(in), target :: visc
-        INTEGER ierr
-        INTEGER(KIND=c_intptr_t), target :: kernel_obj
-
-        ! Set the arguments for the momentum_u_code OpenCL Kernel
-        ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(ua), C_LOC(ua))
-        CALL check_status('clSetKernelArg: arg 0 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(un), C_LOC(un))
-        CALL check_status('clSetKernelArg: arg 1 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(vn), C_LOC(vn))
-        CALL check_status('clSetKernelArg: arg 2 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(hu), C_LOC(hu))
-        CALL check_status('clSetKernelArg: arg 3 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(hv), C_LOC(hv))
-        CALL check_status('clSetKernelArg: arg 4 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(ht), C_LOC(ht))
-        CALL check_status('clSetKernelArg: arg 5 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 6, C_SIZEOF(ssha_u), C_LOC(ssha_u))
-        CALL check_status('clSetKernelArg: arg 6 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 7, C_SIZEOF(sshn_t), C_LOC(sshn_t))
-        CALL check_status('clSetKernelArg: arg 7 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 8, C_SIZEOF(sshn_u), C_LOC(sshn_u))
-        CALL check_status('clSetKernelArg: arg 8 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 9, C_SIZEOF(sshn_v), C_LOC(sshn_v))
-        CALL check_status('clSetKernelArg: arg 9 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 10, C_SIZEOF(tmask), C_LOC(tmask))
-        CALL check_status('clSetKernelArg: arg 10 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 11, C_SIZEOF(dx_u), C_LOC(dx_u))
-        CALL check_status('clSetKernelArg: arg 11 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 12, C_SIZEOF(dx_v), C_LOC(dx_v))
-        CALL check_status('clSetKernelArg: arg 12 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 13, C_SIZEOF(dx_t), C_LOC(dx_t))
-        CALL check_status('clSetKernelArg: arg 13 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 14, C_SIZEOF(dy_u), C_LOC(dy_u))
-        CALL check_status('clSetKernelArg: arg 14 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 15, C_SIZEOF(dy_t), C_LOC(dy_t))
-        CALL check_status('clSetKernelArg: arg 15 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 16, C_SIZEOF(area_u), C_LOC(area_u))
-        CALL check_status('clSetKernelArg: arg 16 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 17, C_SIZEOF(gphiu), C_LOC(gphiu))
-        CALL check_status('clSetKernelArg: arg 17 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 18, C_SIZEOF(omega), C_LOC(omega))
-        CALL check_status('clSetKernelArg: arg 18 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 19, C_SIZEOF(d2r), C_LOC(d2r))
-        CALL check_status('clSetKernelArg: arg 19 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 20, C_SIZEOF(g), C_LOC(g))
-        CALL check_status('clSetKernelArg: arg 20 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 21, C_SIZEOF(rdt), C_LOC(rdt))
-        CALL check_status('clSetKernelArg: arg 21 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 22, C_SIZEOF(cbfr), C_LOC(cbfr))
-        CALL check_status('clSetKernelArg: arg 22 of momentum_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 23, C_SIZEOF(visc), C_LOC(visc))
-        CALL check_status('clSetKernelArg: arg 23 of momentum_u_code', ierr)
+    SUBROUTINE momentum_u_code_set_args(kernel_obj, xstart, xstop, ystart, ystop, ua, un, vn, hu, hv, ht, ssha_u, sshn_t, sshn_u, &
+&sshn_v, tmask, dx_u, dx_v, dx_t, dy_u, dy_t, area_u, gphiu, omega, d2r, g, rdt, cbfr, visc)
+      USE clfortran, ONLY: clSetKernelArg
+      USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
+      USE ocl_utils_mod, ONLY: check_status
+      INTEGER, intent(in), target :: xstart, xstop, ystart, ystop
+      INTEGER(KIND=c_intptr_t), intent(in), target :: ua, un, vn, hu, hv, ht, ssha_u, sshn_t, sshn_u, sshn_v, tmask, dx_u, dx_v, &
+&dx_t, dy_u, dy_t, area_u, gphiu
+      REAL(KIND=go_wp), intent(in), target :: omega
+      REAL(KIND=go_wp), intent(in), target :: d2r
+      REAL(KIND=go_wp), intent(in), target :: g
+      REAL(KIND=go_wp), intent(in), target :: rdt
+      REAL(KIND=go_wp), intent(in), target :: cbfr
+      REAL(KIND=go_wp), intent(in), target :: visc
+      INTEGER ierr
+      INTEGER(KIND=c_intptr_t), target :: kernel_obj
+      ! Set the arguments for the momentum_u_code OpenCL Kernel
+      ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(xstart), C_LOC(xstart))
+      CALL check_status('clSetKernelArg: arg 0 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(xstop), C_LOC(xstop))
+      CALL check_status('clSetKernelArg: arg 1 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(ystart), C_LOC(ystart))
+      CALL check_status('clSetKernelArg: arg 2 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(ystop), C_LOC(ystop))
+      CALL check_status('clSetKernelArg: arg 3 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(ua), C_LOC(ua))
+      CALL check_status('clSetKernelArg: arg 4 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(un), C_LOC(un))
+      CALL check_status('clSetKernelArg: arg 5 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 6, C_SIZEOF(vn), C_LOC(vn))
+      CALL check_status('clSetKernelArg: arg 6 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 7, C_SIZEOF(hu), C_LOC(hu))
+      CALL check_status('clSetKernelArg: arg 7 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 8, C_SIZEOF(hv), C_LOC(hv))
+      CALL check_status('clSetKernelArg: arg 8 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 9, C_SIZEOF(ht), C_LOC(ht))
+      CALL check_status('clSetKernelArg: arg 9 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 10, C_SIZEOF(ssha_u), C_LOC(ssha_u))
+      CALL check_status('clSetKernelArg: arg 10 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 11, C_SIZEOF(sshn_t), C_LOC(sshn_t))
+      CALL check_status('clSetKernelArg: arg 11 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 12, C_SIZEOF(sshn_u), C_LOC(sshn_u))
+      CALL check_status('clSetKernelArg: arg 12 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 13, C_SIZEOF(sshn_v), C_LOC(sshn_v))
+      CALL check_status('clSetKernelArg: arg 13 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 14, C_SIZEOF(tmask), C_LOC(tmask))
+      CALL check_status('clSetKernelArg: arg 14 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 15, C_SIZEOF(dx_u), C_LOC(dx_u))
+      CALL check_status('clSetKernelArg: arg 15 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 16, C_SIZEOF(dx_v), C_LOC(dx_v))
+      CALL check_status('clSetKernelArg: arg 16 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 17, C_SIZEOF(dx_t), C_LOC(dx_t))
+      CALL check_status('clSetKernelArg: arg 17 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 18, C_SIZEOF(dy_u), C_LOC(dy_u))
+      CALL check_status('clSetKernelArg: arg 18 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 19, C_SIZEOF(dy_t), C_LOC(dy_t))
+      CALL check_status('clSetKernelArg: arg 19 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 20, C_SIZEOF(area_u), C_LOC(area_u))
+      CALL check_status('clSetKernelArg: arg 20 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 21, C_SIZEOF(gphiu), C_LOC(gphiu))
+      CALL check_status('clSetKernelArg: arg 21 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 22, C_SIZEOF(omega), C_LOC(omega))
+      CALL check_status('clSetKernelArg: arg 22 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 23, C_SIZEOF(d2r), C_LOC(d2r))
+      CALL check_status('clSetKernelArg: arg 23 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 24, C_SIZEOF(g), C_LOC(g))
+      CALL check_status('clSetKernelArg: arg 24 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 25, C_SIZEOF(rdt), C_LOC(rdt))
+      CALL check_status('clSetKernelArg: arg 25 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 26, C_SIZEOF(cbfr), C_LOC(cbfr))
+      CALL check_status('clSetKernelArg: arg 26 of momentum_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 27, C_SIZEOF(visc), C_LOC(visc))
+      CALL check_status('clSetKernelArg: arg 27 of momentum_u_code', ierr)
     END SUBROUTINE momentum_u_code_set_args
-
-    SUBROUTINE momentum_v_code_set_args(kernel_obj, va, un, vn, hu, hv, ht, &
-            ssha_v, sshn_t, sshn_u, sshn_v, tmask, dx_v, dx_t, &
-            dy_u, dy_v, dy_t, area_v, gphiv, omega, d2r, g, rdt, cbfr, visc)
-        USE clfortran, ONLY: clSetKernelArg
-        USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
-        USE ocl_utils_mod, ONLY: check_status
-        INTEGER(KIND=c_intptr_t), intent(in), target :: va, un, vn, hu, hv, &
-            ht, ssha_v, sshn_t, sshn_u, sshn_v, tmask, dx_v, dx_t, &
-            dy_u, dy_v, dy_t, area_v, gphiv
-        REAL(KIND=go_wp), intent(in), target :: omega
-        REAL(KIND=go_wp), intent(in), target :: d2r
-        REAL(KIND=go_wp), intent(in), target :: g
-        REAL(KIND=go_wp), intent(in), target :: rdt
-        REAL(KIND=go_wp), intent(in), target :: cbfr
-        REAL(KIND=go_wp), intent(in), target :: visc
-        INTEGER ierr
-        INTEGER(KIND=c_intptr_t), target :: kernel_obj
-
-        ! Set the arguments for the momentum_v_code OpenCL Kernel
-        ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(va), C_LOC(va))
-        CALL check_status('clSetKernelArg: arg 0 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(un), C_LOC(un))
-        CALL check_status('clSetKernelArg: arg 1 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(vn), C_LOC(vn))
-        CALL check_status('clSetKernelArg: arg 2 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(hu), C_LOC(hu))
-        CALL check_status('clSetKernelArg: arg 3 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(hv), C_LOC(hv))
-        CALL check_status('clSetKernelArg: arg 4 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(ht), C_LOC(ht))
-        CALL check_status('clSetKernelArg: arg 5 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 6, C_SIZEOF(ssha_v), C_LOC(ssha_v))
-        CALL check_status('clSetKernelArg: arg 6 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 7, C_SIZEOF(sshn_t), C_LOC(sshn_t))
-        CALL check_status('clSetKernelArg: arg 7 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 8, C_SIZEOF(sshn_u), C_LOC(sshn_u))
-        CALL check_status('clSetKernelArg: arg 8 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 9, C_SIZEOF(sshn_v), C_LOC(sshn_v))
-        CALL check_status('clSetKernelArg: arg 9 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 10, C_SIZEOF(tmask), C_LOC(tmask))
-        CALL check_status('clSetKernelArg: arg 10 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 11, C_SIZEOF(dx_v), C_LOC(dx_v))
-        CALL check_status('clSetKernelArg: arg 11 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 12, C_SIZEOF(dx_t), C_LOC(dx_t))
-        CALL check_status('clSetKernelArg: arg 12 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 13, C_SIZEOF(dy_u), C_LOC(dy_u))
-        CALL check_status('clSetKernelArg: arg 13 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 14, C_SIZEOF(dy_v), C_LOC(dy_v))
-        CALL check_status('clSetKernelArg: arg 14 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 15, C_SIZEOF(dy_t), C_LOC(dy_t))
-        CALL check_status('clSetKernelArg: arg 15 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 16, C_SIZEOF(area_v), C_LOC(area_v))
-        CALL check_status('clSetKernelArg: arg 16 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 17, C_SIZEOF(gphiv), C_LOC(gphiv))
-        CALL check_status('clSetKernelArg: arg 17 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 18, C_SIZEOF(omega), C_LOC(omega))
-        CALL check_status('clSetKernelArg: arg 18 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 19, C_SIZEOF(d2r), C_LOC(d2r))
-        CALL check_status('clSetKernelArg: arg 19 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 20, C_SIZEOF(g), C_LOC(g))
-        CALL check_status('clSetKernelArg: arg 20 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 21, C_SIZEOF(rdt), C_LOC(rdt))
-        CALL check_status('clSetKernelArg: arg 21 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 22, C_SIZEOF(cbfr), C_LOC(cbfr))
-        CALL check_status('clSetKernelArg: arg 22 of momentum_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 23, C_SIZEOF(visc), C_LOC(visc))
-        CALL check_status('clSetKernelArg: arg 23 of momentum_v_code', ierr)
+    SUBROUTINE momentum_v_code_set_args(kernel_obj, xstart, xstop, ystart, ystop, va, un, vn, hu, hv, ht, ssha_v, sshn_t, sshn_u, &
+&sshn_v, tmask, dx_v, dx_t, dy_u, dy_v, dy_t, area_v, gphiv, omega, d2r, g, rdt, cbfr, visc)
+      USE clfortran, ONLY: clSetKernelArg
+      USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
+      USE ocl_utils_mod, ONLY: check_status
+      INTEGER, intent(in), target :: xstart, xstop, ystart, ystop
+      INTEGER(KIND=c_intptr_t), intent(in), target :: va, un, vn, hu, hv, ht, ssha_v, sshn_t, sshn_u, sshn_v, tmask, dx_v, dx_t, &
+&dy_u, dy_v, dy_t, area_v, gphiv
+      REAL(KIND=go_wp), intent(in), target :: omega
+      REAL(KIND=go_wp), intent(in), target :: d2r
+      REAL(KIND=go_wp), intent(in), target :: g
+      REAL(KIND=go_wp), intent(in), target :: rdt
+      REAL(KIND=go_wp), intent(in), target :: cbfr
+      REAL(KIND=go_wp), intent(in), target :: visc
+      INTEGER ierr
+      INTEGER(KIND=c_intptr_t), target :: kernel_obj
+      ! Set the arguments for the momentum_v_code OpenCL Kernel
+      ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(xstart), C_LOC(xstart))
+      CALL check_status('clSetKernelArg: arg 0 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(xstop), C_LOC(xstop))
+      CALL check_status('clSetKernelArg: arg 1 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(ystart), C_LOC(ystart))
+      CALL check_status('clSetKernelArg: arg 2 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(ystop), C_LOC(ystop))
+      CALL check_status('clSetKernelArg: arg 3 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(va), C_LOC(va))
+      CALL check_status('clSetKernelArg: arg 4 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(un), C_LOC(un))
+      CALL check_status('clSetKernelArg: arg 5 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 6, C_SIZEOF(vn), C_LOC(vn))
+      CALL check_status('clSetKernelArg: arg 6 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 7, C_SIZEOF(hu), C_LOC(hu))
+      CALL check_status('clSetKernelArg: arg 7 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 8, C_SIZEOF(hv), C_LOC(hv))
+      CALL check_status('clSetKernelArg: arg 8 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 9, C_SIZEOF(ht), C_LOC(ht))
+      CALL check_status('clSetKernelArg: arg 9 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 10, C_SIZEOF(ssha_v), C_LOC(ssha_v))
+      CALL check_status('clSetKernelArg: arg 10 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 11, C_SIZEOF(sshn_t), C_LOC(sshn_t))
+      CALL check_status('clSetKernelArg: arg 11 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 12, C_SIZEOF(sshn_u), C_LOC(sshn_u))
+      CALL check_status('clSetKernelArg: arg 12 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 13, C_SIZEOF(sshn_v), C_LOC(sshn_v))
+      CALL check_status('clSetKernelArg: arg 13 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 14, C_SIZEOF(tmask), C_LOC(tmask))
+      CALL check_status('clSetKernelArg: arg 14 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 15, C_SIZEOF(dx_v), C_LOC(dx_v))
+      CALL check_status('clSetKernelArg: arg 15 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 16, C_SIZEOF(dx_t), C_LOC(dx_t))
+      CALL check_status('clSetKernelArg: arg 16 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 17, C_SIZEOF(dy_u), C_LOC(dy_u))
+      CALL check_status('clSetKernelArg: arg 17 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 18, C_SIZEOF(dy_v), C_LOC(dy_v))
+      CALL check_status('clSetKernelArg: arg 18 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 19, C_SIZEOF(dy_t), C_LOC(dy_t))
+      CALL check_status('clSetKernelArg: arg 19 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 20, C_SIZEOF(area_v), C_LOC(area_v))
+      CALL check_status('clSetKernelArg: arg 20 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 21, C_SIZEOF(gphiv), C_LOC(gphiv))
+      CALL check_status('clSetKernelArg: arg 21 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 22, C_SIZEOF(omega), C_LOC(omega))
+      CALL check_status('clSetKernelArg: arg 22 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 23, C_SIZEOF(d2r), C_LOC(d2r))
+      CALL check_status('clSetKernelArg: arg 23 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 24, C_SIZEOF(g), C_LOC(g))
+      CALL check_status('clSetKernelArg: arg 24 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 25, C_SIZEOF(rdt), C_LOC(rdt))
+      CALL check_status('clSetKernelArg: arg 25 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 26, C_SIZEOF(cbfr), C_LOC(cbfr))
+      CALL check_status('clSetKernelArg: arg 26 of momentum_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 27, C_SIZEOF(visc), C_LOC(visc))
+      CALL check_status('clSetKernelArg: arg 27 of momentum_v_code', ierr)
     END SUBROUTINE momentum_v_code_set_args
-
-    SUBROUTINE bc_ssh_code_set_args(kernel_obj, istp, ssha_t, tmask, rdt)
-        USE clfortran, ONLY: clSetKernelArg
-        USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
-        USE ocl_utils_mod, ONLY: check_status
-        INTEGER(KIND=c_intptr_t), intent(in), target :: ssha_t, tmask
-        INTEGER, intent(in), target :: istp
-        REAL(KIND=go_wp), intent(in), target :: rdt
-        INTEGER ierr
-        INTEGER(KIND=c_intptr_t), target :: kernel_obj
-
-        ! Set the arguments for the bc_ssh_code OpenCL Kernel
-        ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(istp), C_LOC(istp))
-        CALL check_status('clSetKernelArg: arg 0 of bc_ssh_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(ssha_t), C_LOC(ssha_t))
-        CALL check_status('clSetKernelArg: arg 1 of bc_ssh_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(tmask), C_LOC(tmask))
-        CALL check_status('clSetKernelArg: arg 2 of bc_ssh_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(rdt), C_LOC(rdt))
-        CALL check_status('clSetKernelArg: arg 3 of bc_ssh_code', ierr)
+    SUBROUTINE bc_ssh_code_set_args(kernel_obj, xstart, xstop, ystart, ystop, istp, ssha_t, tmask, rdt)
+      USE clfortran, ONLY: clSetKernelArg
+      USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
+      USE ocl_utils_mod, ONLY: check_status
+      INTEGER, intent(in), target :: xstart, xstop, ystart, ystop
+      INTEGER(KIND=c_intptr_t), intent(in), target :: ssha_t, tmask
+      INTEGER, intent(in), target :: istp
+      REAL(KIND=go_wp), intent(in), target :: rdt
+      INTEGER ierr
+      INTEGER(KIND=c_intptr_t), target :: kernel_obj
+      ! Set the arguments for the bc_ssh_code OpenCL Kernel
+      ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(xstart), C_LOC(xstart))
+      CALL check_status('clSetKernelArg: arg 0 of bc_ssh_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(xstop), C_LOC(xstop))
+      CALL check_status('clSetKernelArg: arg 1 of bc_ssh_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(ystart), C_LOC(ystart))
+      CALL check_status('clSetKernelArg: arg 2 of bc_ssh_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(ystop), C_LOC(ystop))
+      CALL check_status('clSetKernelArg: arg 3 of bc_ssh_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(istp), C_LOC(istp))
+      CALL check_status('clSetKernelArg: arg 4 of bc_ssh_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(ssha_t), C_LOC(ssha_t))
+      CALL check_status('clSetKernelArg: arg 5 of bc_ssh_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 6, C_SIZEOF(tmask), C_LOC(tmask))
+      CALL check_status('clSetKernelArg: arg 6 of bc_ssh_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 7, C_SIZEOF(rdt), C_LOC(rdt))
+      CALL check_status('clSetKernelArg: arg 7 of bc_ssh_code', ierr)
     END SUBROUTINE bc_ssh_code_set_args
-
-    SUBROUTINE bc_solid_u_code_set_args(kernel_obj, ua, tmask)
-        USE clfortran, ONLY: clSetKernelArg
-        USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
-        USE ocl_utils_mod, ONLY: check_status
-        INTEGER(KIND=c_intptr_t), intent(in), target :: ua, tmask
-        INTEGER ierr
-        INTEGER(KIND=c_intptr_t), target :: kernel_obj
-
-        ! Set the arguments for the bc_solid_u_code OpenCL Kernel
-        ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(ua), C_LOC(ua))
-        CALL check_status('clSetKernelArg: arg 0 of bc_solid_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(tmask), C_LOC(tmask))
-        CALL check_status('clSetKernelArg: arg 1 of bc_solid_u_code', ierr)
+    SUBROUTINE bc_solid_u_code_set_args(kernel_obj, xstart, xstop, ystart, ystop, ua, tmask)
+      USE clfortran, ONLY: clSetKernelArg
+      USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
+      USE ocl_utils_mod, ONLY: check_status
+      INTEGER, intent(in), target :: xstart, xstop, ystart, ystop
+      INTEGER(KIND=c_intptr_t), intent(in), target :: ua, tmask
+      INTEGER ierr
+      INTEGER(KIND=c_intptr_t), target :: kernel_obj
+      ! Set the arguments for the bc_solid_u_code OpenCL Kernel
+      ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(xstart), C_LOC(xstart))
+      CALL check_status('clSetKernelArg: arg 0 of bc_solid_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(xstop), C_LOC(xstop))
+      CALL check_status('clSetKernelArg: arg 1 of bc_solid_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(ystart), C_LOC(ystart))
+      CALL check_status('clSetKernelArg: arg 2 of bc_solid_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(ystop), C_LOC(ystop))
+      CALL check_status('clSetKernelArg: arg 3 of bc_solid_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(ua), C_LOC(ua))
+      CALL check_status('clSetKernelArg: arg 4 of bc_solid_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(tmask), C_LOC(tmask))
+      CALL check_status('clSetKernelArg: arg 5 of bc_solid_u_code', ierr)
     END SUBROUTINE bc_solid_u_code_set_args
-
-    SUBROUTINE bc_solid_v_code_set_args(kernel_obj, va, tmask)
-        USE clfortran, ONLY: clSetKernelArg
-        USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
-        USE ocl_utils_mod, ONLY: check_status
-        INTEGER(KIND=c_intptr_t), intent(in), target :: va, tmask
-        INTEGER ierr
-        INTEGER(KIND=c_intptr_t), target :: kernel_obj
-
-        ! Set the arguments for the bc_solid_v_code OpenCL Kernel
-        ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(va), C_LOC(va))
-        CALL check_status('clSetKernelArg: arg 0 of bc_solid_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(tmask), C_LOC(tmask))
-        CALL check_status('clSetKernelArg: arg 1 of bc_solid_v_code', ierr)
+    SUBROUTINE bc_solid_v_code_set_args(kernel_obj, xstart, xstop, ystart, ystop, va, tmask)
+      USE clfortran, ONLY: clSetKernelArg
+      USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
+      USE ocl_utils_mod, ONLY: check_status
+      INTEGER, intent(in), target :: xstart, xstop, ystart, ystop
+      INTEGER(KIND=c_intptr_t), intent(in), target :: va, tmask
+      INTEGER ierr
+      INTEGER(KIND=c_intptr_t), target :: kernel_obj
+      ! Set the arguments for the bc_solid_v_code OpenCL Kernel
+      ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(xstart), C_LOC(xstart))
+      CALL check_status('clSetKernelArg: arg 0 of bc_solid_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(xstop), C_LOC(xstop))
+      CALL check_status('clSetKernelArg: arg 1 of bc_solid_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(ystart), C_LOC(ystart))
+      CALL check_status('clSetKernelArg: arg 2 of bc_solid_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(ystop), C_LOC(ystop))
+      CALL check_status('clSetKernelArg: arg 3 of bc_solid_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(va), C_LOC(va))
+      CALL check_status('clSetKernelArg: arg 4 of bc_solid_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(tmask), C_LOC(tmask))
+      CALL check_status('clSetKernelArg: arg 5 of bc_solid_v_code', ierr)
     END SUBROUTINE bc_solid_v_code_set_args
-
-    SUBROUTINE bc_flather_u_code_set_args(kernel_obj, ua, hu, sshn_u, tmask, g)
-        USE clfortran, ONLY: clSetKernelArg
-        USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
-        USE ocl_utils_mod, ONLY: check_status
-        INTEGER(KIND=c_intptr_t), intent(in), target :: ua, hu, sshn_u, tmask
-        REAL(KIND=go_wp), intent(in), target :: g
-        INTEGER ierr
-        INTEGER(KIND=c_intptr_t), target :: kernel_obj
-
-        ! Set the arguments for the bc_flather_u_code OpenCL Kernel
-        ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(ua), C_LOC(ua))
-        CALL check_status('clSetKernelArg: arg 0 of bc_flather_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(hu), C_LOC(hu))
-        CALL check_status('clSetKernelArg: arg 1 of bc_flather_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(sshn_u), C_LOC(sshn_u))
-        CALL check_status('clSetKernelArg: arg 2 of bc_flather_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(tmask), C_LOC(tmask))
-        CALL check_status('clSetKernelArg: arg 3 of bc_flather_u_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(g), C_LOC(g))
-        CALL check_status('clSetKernelArg: arg 4 of bc_flather_u_code', ierr)
+    SUBROUTINE bc_flather_u_code_set_args(kernel_obj, xstart, xstop, ystart, ystop, ua, hu, sshn_u, tmask, g)
+      USE clfortran, ONLY: clSetKernelArg
+      USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
+      USE ocl_utils_mod, ONLY: check_status
+      INTEGER, intent(in), target :: xstart, xstop, ystart, ystop
+      INTEGER(KIND=c_intptr_t), intent(in), target :: ua, hu, sshn_u, tmask
+      REAL(KIND=go_wp), intent(in), target :: g
+      INTEGER ierr
+      INTEGER(KIND=c_intptr_t), target :: kernel_obj
+      ! Set the arguments for the bc_flather_u_code OpenCL Kernel
+      ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(xstart), C_LOC(xstart))
+      CALL check_status('clSetKernelArg: arg 0 of bc_flather_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(xstop), C_LOC(xstop))
+      CALL check_status('clSetKernelArg: arg 1 of bc_flather_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(ystart), C_LOC(ystart))
+      CALL check_status('clSetKernelArg: arg 2 of bc_flather_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(ystop), C_LOC(ystop))
+      CALL check_status('clSetKernelArg: arg 3 of bc_flather_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(ua), C_LOC(ua))
+      CALL check_status('clSetKernelArg: arg 4 of bc_flather_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(hu), C_LOC(hu))
+      CALL check_status('clSetKernelArg: arg 5 of bc_flather_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 6, C_SIZEOF(sshn_u), C_LOC(sshn_u))
+      CALL check_status('clSetKernelArg: arg 6 of bc_flather_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 7, C_SIZEOF(tmask), C_LOC(tmask))
+      CALL check_status('clSetKernelArg: arg 7 of bc_flather_u_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 8, C_SIZEOF(g), C_LOC(g))
+      CALL check_status('clSetKernelArg: arg 8 of bc_flather_u_code', ierr)
     END SUBROUTINE bc_flather_u_code_set_args
-
-    SUBROUTINE bc_flather_v_code_set_args(kernel_obj, va, hv, sshn_v, tmask, g)
-        USE clfortran, ONLY: clSetKernelArg
-        USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
-        USE ocl_utils_mod, ONLY: check_status
-        INTEGER(KIND=c_intptr_t), intent(in), target :: va, hv, sshn_v, tmask
-        REAL(KIND=go_wp), intent(in), target :: g
-        INTEGER ierr
-        INTEGER(KIND=c_intptr_t), target :: kernel_obj
-
-        ! Set the arguments for the bc_flather_v_code OpenCL Kernel
-        ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(va), C_LOC(va))
-        CALL check_status('clSetKernelArg: arg 0 of bc_flather_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(hv), C_LOC(hv))
-        CALL check_status('clSetKernelArg: arg 1 of bc_flather_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(sshn_v), C_LOC(sshn_v))
-        CALL check_status('clSetKernelArg: arg 2 of bc_flather_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(tmask), C_LOC(tmask))
-        CALL check_status('clSetKernelArg: arg 3 of bc_flather_v_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(g), C_LOC(g))
-        CALL check_status('clSetKernelArg: arg 4 of bc_flather_v_code', ierr)
+    SUBROUTINE bc_flather_v_code_set_args(kernel_obj, xstart, xstop, ystart, ystop, va, hv, sshn_v, tmask, g)
+      USE clfortran, ONLY: clSetKernelArg
+      USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
+      USE ocl_utils_mod, ONLY: check_status
+      INTEGER, intent(in), target :: xstart, xstop, ystart, ystop
+      INTEGER(KIND=c_intptr_t), intent(in), target :: va, hv, sshn_v, tmask
+      REAL(KIND=go_wp), intent(in), target :: g
+      INTEGER ierr
+      INTEGER(KIND=c_intptr_t), target :: kernel_obj
+      ! Set the arguments for the bc_flather_v_code OpenCL Kernel
+      ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(xstart), C_LOC(xstart))
+      CALL check_status('clSetKernelArg: arg 0 of bc_flather_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(xstop), C_LOC(xstop))
+      CALL check_status('clSetKernelArg: arg 1 of bc_flather_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(ystart), C_LOC(ystart))
+      CALL check_status('clSetKernelArg: arg 2 of bc_flather_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(ystop), C_LOC(ystop))
+      CALL check_status('clSetKernelArg: arg 3 of bc_flather_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(va), C_LOC(va))
+      CALL check_status('clSetKernelArg: arg 4 of bc_flather_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(hv), C_LOC(hv))
+      CALL check_status('clSetKernelArg: arg 5 of bc_flather_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 6, C_SIZEOF(sshn_v), C_LOC(sshn_v))
+      CALL check_status('clSetKernelArg: arg 6 of bc_flather_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 7, C_SIZEOF(tmask), C_LOC(tmask))
+      CALL check_status('clSetKernelArg: arg 7 of bc_flather_v_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 8, C_SIZEOF(g), C_LOC(g))
+      CALL check_status('clSetKernelArg: arg 8 of bc_flather_v_code', ierr)
     END SUBROUTINE bc_flather_v_code_set_args
-
-    SUBROUTINE field_copy_code_set_args(kernel_obj, un, ua)
-        USE clfortran, ONLY: clSetKernelArg
-        USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
-        USE ocl_utils_mod, ONLY: check_status
-        INTEGER(KIND=c_intptr_t), intent(in), target :: un, ua
-        INTEGER ierr
-        INTEGER(KIND=c_intptr_t), target :: kernel_obj
-
-        ! Set the arguments for the field_copy_code OpenCL Kernel
-        ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(un), C_LOC(un))
-        CALL check_status('clSetKernelArg: arg 0 of field_copy_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(ua), C_LOC(ua))
-        CALL check_status('clSetKernelArg: arg 1 of field_copy_code', ierr)
+    SUBROUTINE field_copy_code_set_args(kernel_obj, xstart, xstop, ystart, ystop, un, ua)
+      USE clfortran, ONLY: clSetKernelArg
+      USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
+      USE ocl_utils_mod, ONLY: check_status
+      INTEGER, intent(in), target :: xstart, xstop, ystart, ystop
+      INTEGER(KIND=c_intptr_t), intent(in), target :: un, ua
+      INTEGER ierr
+      INTEGER(KIND=c_intptr_t), target :: kernel_obj
+      ! Set the arguments for the field_copy_code OpenCL Kernel
+      ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(xstart), C_LOC(xstart))
+      CALL check_status('clSetKernelArg: arg 0 of field_copy_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(xstop), C_LOC(xstop))
+      CALL check_status('clSetKernelArg: arg 1 of field_copy_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(ystart), C_LOC(ystart))
+      CALL check_status('clSetKernelArg: arg 2 of field_copy_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(ystop), C_LOC(ystop))
+      CALL check_status('clSetKernelArg: arg 3 of field_copy_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(un), C_LOC(un))
+      CALL check_status('clSetKernelArg: arg 4 of field_copy_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(ua), C_LOC(ua))
+      CALL check_status('clSetKernelArg: arg 5 of field_copy_code', ierr)
     END SUBROUTINE field_copy_code_set_args
-
-    SUBROUTINE next_sshu_code_set_args(kernel_obj, sshn_u, sshn_t, tmask, area_t, area_u)
-        USE clfortran, ONLY: clSetKernelArg
-        USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
-        USE ocl_utils_mod, ONLY: check_status
-        INTEGER(KIND=c_intptr_t), intent(in), target :: sshn_u, sshn_t, tmask, area_t, area_u
-        INTEGER ierr
-        INTEGER(KIND=c_intptr_t), target :: kernel_obj
-
-        ! Set the arguments for the next_sshu_code OpenCL Kernel
-        ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(sshn_u), C_LOC(sshn_u))
-        CALL check_status('clSetKernelArg: arg 0 of next_sshu_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(sshn_t), C_LOC(sshn_t))
-        CALL check_status('clSetKernelArg: arg 1 of next_sshu_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(tmask), C_LOC(tmask))
-        CALL check_status('clSetKernelArg: arg 2 of next_sshu_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(area_t), C_LOC(area_t))
-        CALL check_status('clSetKernelArg: arg 3 of next_sshu_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(area_u), C_LOC(area_u))
-        CALL check_status('clSetKernelArg: arg 4 of next_sshu_code', ierr)
+    SUBROUTINE next_sshu_code_set_args(kernel_obj, xstart, xstop, ystart, ystop, sshn_u, sshn_t, tmask, area_t, area_u)
+      USE clfortran, ONLY: clSetKernelArg
+      USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
+      USE ocl_utils_mod, ONLY: check_status
+      INTEGER, intent(in), target :: xstart, xstop, ystart, ystop
+      INTEGER(KIND=c_intptr_t), intent(in), target :: sshn_u, sshn_t, tmask, area_t, area_u
+      INTEGER ierr
+      INTEGER(KIND=c_intptr_t), target :: kernel_obj
+      ! Set the arguments for the next_sshu_code OpenCL Kernel
+      ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(xstart), C_LOC(xstart))
+      CALL check_status('clSetKernelArg: arg 0 of next_sshu_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(xstop), C_LOC(xstop))
+      CALL check_status('clSetKernelArg: arg 1 of next_sshu_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(ystart), C_LOC(ystart))
+      CALL check_status('clSetKernelArg: arg 2 of next_sshu_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(ystop), C_LOC(ystop))
+      CALL check_status('clSetKernelArg: arg 3 of next_sshu_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(sshn_u), C_LOC(sshn_u))
+      CALL check_status('clSetKernelArg: arg 4 of next_sshu_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(sshn_t), C_LOC(sshn_t))
+      CALL check_status('clSetKernelArg: arg 5 of next_sshu_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 6, C_SIZEOF(tmask), C_LOC(tmask))
+      CALL check_status('clSetKernelArg: arg 6 of next_sshu_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 7, C_SIZEOF(area_t), C_LOC(area_t))
+      CALL check_status('clSetKernelArg: arg 7 of next_sshu_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 8, C_SIZEOF(area_u), C_LOC(area_u))
+      CALL check_status('clSetKernelArg: arg 8 of next_sshu_code', ierr)
     END SUBROUTINE next_sshu_code_set_args
-
-    SUBROUTINE next_sshv_code_set_args(kernel_obj, sshn_v, sshn_t, tmask, area_t, area_v)
-        USE clfortran, ONLY: clSetKernelArg
-        USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
-        USE ocl_utils_mod, ONLY: check_status
-        INTEGER(KIND=c_intptr_t), intent(in), target :: sshn_v, sshn_t, tmask, area_t, area_v
-        INTEGER ierr
-        INTEGER(KIND=c_intptr_t), target :: kernel_obj
-
-        ! Set the arguments for the next_sshv_code OpenCL Kernel
-        ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(sshn_v), C_LOC(sshn_v))
-        CALL check_status('clSetKernelArg: arg 0 of next_sshv_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(sshn_t), C_LOC(sshn_t))
-        CALL check_status('clSetKernelArg: arg 1 of next_sshv_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(tmask), C_LOC(tmask))
-        CALL check_status('clSetKernelArg: arg 2 of next_sshv_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(area_t), C_LOC(area_t))
-        CALL check_status('clSetKernelArg: arg 3 of next_sshv_code', ierr)
-        ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(area_v), C_LOC(area_v))
-        CALL check_status('clSetKernelArg: arg 4 of next_sshv_code', ierr)
+    SUBROUTINE next_sshv_code_set_args(kernel_obj, xstart, xstop, ystart, ystop, sshn_v, sshn_t, tmask, area_t, area_v)
+      USE clfortran, ONLY: clSetKernelArg
+      USE iso_c_binding, ONLY: c_sizeof, c_loc, c_intptr_t
+      USE ocl_utils_mod, ONLY: check_status
+      INTEGER, intent(in), target :: xstart, xstop, ystart, ystop
+      INTEGER(KIND=c_intptr_t), intent(in), target :: sshn_v, sshn_t, tmask, area_t, area_v
+      INTEGER ierr
+      INTEGER(KIND=c_intptr_t), target :: kernel_obj
+      ! Set the arguments for the next_sshv_code OpenCL Kernel
+      ierr = clSetKernelArg(kernel_obj, 0, C_SIZEOF(xstart), C_LOC(xstart))
+      CALL check_status('clSetKernelArg: arg 0 of next_sshv_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 1, C_SIZEOF(xstop), C_LOC(xstop))
+      CALL check_status('clSetKernelArg: arg 1 of next_sshv_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 2, C_SIZEOF(ystart), C_LOC(ystart))
+      CALL check_status('clSetKernelArg: arg 2 of next_sshv_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 3, C_SIZEOF(ystop), C_LOC(ystop))
+      CALL check_status('clSetKernelArg: arg 3 of next_sshv_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 4, C_SIZEOF(sshn_v), C_LOC(sshn_v))
+      CALL check_status('clSetKernelArg: arg 4 of next_sshv_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 5, C_SIZEOF(sshn_t), C_LOC(sshn_t))
+      CALL check_status('clSetKernelArg: arg 5 of next_sshv_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 6, C_SIZEOF(tmask), C_LOC(tmask))
+      CALL check_status('clSetKernelArg: arg 6 of next_sshv_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 7, C_SIZEOF(area_t), C_LOC(area_t))
+      CALL check_status('clSetKernelArg: arg 7 of next_sshv_code', ierr)
+      ierr = clSetKernelArg(kernel_obj, 8, C_SIZEOF(area_v), C_LOC(area_v))
+      CALL check_status('clSetKernelArg: arg 8 of next_sshv_code', ierr)
     END SUBROUTINE next_sshv_code_set_args
-
+ 
     SUBROUTINE psy_init()
         USE fortcl, ONLY: ocl_env_init, add_kernels
         CHARACTER(LEN=30) kernel_names(11)
