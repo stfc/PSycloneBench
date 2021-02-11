@@ -137,8 +137,8 @@ contains
             sshn_t%grid%dx_v_device, &
             sshn_t%grid%dx_t_device, &
             sshn_t%grid%dy_u_device, &
-            sshn_t%grid%dx_v_device, &
-            sshn_t%grid%dx_t_device, &
+            sshn_t%grid%dy_v_device, &
+            sshn_t%grid%dy_t_device, &
             sshn_t%grid%gphiu_device, &
             sshn_t%grid%gphiv_device, & 
             ! Scalars
