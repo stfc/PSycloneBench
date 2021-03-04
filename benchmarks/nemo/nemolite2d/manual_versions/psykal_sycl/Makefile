@@ -1,4 +1,4 @@
-# Makefile for manual C++ version of PSyKAl'd NEMOLite2D.
+# Makefile for the manual SYCL version of PSyKAl'd NEMOLite2D.
 #
 # This Makefile picks up the compiler to use any flags from
 # environment variables. e.g. to use gfortran:
@@ -9,6 +9,9 @@
 # export F90FLAGS="-O3"
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
+
+# Additionally is uses SYCL_COMP and SYCL_FLAGS to compile the SYCL specific
+# files. The default values are the ones expected by Intel OneAPI DPC++
 SYCL_COMP ?= dpcpp
 SYCL_FLAGS ?= -fsycl -O3 -mtune=native
 
@@ -39,11 +42,8 @@ time_step_mod.o: ${COMMON_LIB} inf_lib
 	$(SYCL_COMP) -o $@ timing.o $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
 		$(LDFLAGS) ${OMPFLAGS}  -lgfortran -lsycl
 
-# C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
-# the imported ../common.mk)
-# Since kernels are included directly any modification in the kernel files
-# must trigger a recompilation.
-%.o: %.cpp ../../kernels/c_family/*.c
+# Compile the SYCL version of the invoke
+time_step_sycl.o: time_step_sycl.cpp
 	$(SYCL_COMP) $(SYCL_FLAGS)  -fPIC -c $< -o $@
 
 timing.o: timing.cpp
@@ -61,10 +61,3 @@ allclean: clean
 	${MAKE} -C ${COMMON_DIR} allclean
 	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${TIMER_DIR} allclean
-
-summary:
-	@echo -n "${CC}\t\tcpu\t"
-	@./nemolite2d.exe | awk 'BEGIN {ORS="\t"} \
-		{if ($$2 == "checksum") {print $$4} } \
-		{if ($$1 == "Time-stepping") {print $$5} } \
-		END {ORS="\n"; print ""}'
