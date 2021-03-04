@@ -53,7 +53,7 @@ nemolite2d-serial: timer_lib_serial inf_lib_serial
 
 # Generic rules
 nemolite2d.exe: $(MODULE_LIST)
-	$(F90) -o $@ $(MODULE_LIST) $(TIMER_LIB) $(LDFLAGS) ${OMPFLAGS}
+	$(F90) -o $@ $(MODULE_LIST) $(TIMER_LIB_DM) $(LDFLAGS) ${OMPFLAGS}
 
 clean: 
 	rm -f *.o *.mod *.MOD *~
