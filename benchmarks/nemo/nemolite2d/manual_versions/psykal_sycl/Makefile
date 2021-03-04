@@ -9,8 +9,8 @@
 # export F90FLAGS="-O3"
 # export OMPFLAGS=" -fopenmp"
 # export AR=ar
-SYCL_COMP := dpcpp
-SYCLFLAGS := -fsycl -O3 -mtune=native
+SYCL_COMP ?= dpcpp
+SYCL_FLAGS ?= -fsycl -O3 -mtune=native
 
 .PHONY: all nemolite2d_sycl
 .DEFAULT_GOAL := nemolite2d_sycl
@@ -33,18 +33,18 @@ nemolite2d.o: $(COMMON_MODULES)
 # Interdependencies between modules, alphabetical order
 time_step_mod.o: ${COMMON_LIB} inf_lib
 
-# Linking the executable needs the -lstdc++ to link also the std lib functions
-# called from C++ code
+# Linking the executable needs the libgfortran runtime library installed in the system
+# and available in the library path.
 %.exe: $(MODULE_LIST) timing.o
-	$(F90) -o $@ timing.o $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) ${OMPFLAGS}  -lstdc++ -lsycl
+	$(SYCL_COMP) -o $@ timing.o $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
+		$(LDFLAGS) ${OMPFLAGS}  -lgfortran -lsycl
 
 # C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
 # the imported ../common.mk)
 # Since kernels are included directly any modification in the kernel files
 # must trigger a recompilation.
 %.o: %.cpp ../../kernels/c_family/*.c
-	$(SYCL_COMP) $(SYCLFLAGS)  -fPIC -c $< -o $@
+	$(SYCL_COMP) $(SYCL_FLAGS)  -fPIC -c $< -o $@
 
 timing.o: timing.cpp
 	$(CXX) -c $<
