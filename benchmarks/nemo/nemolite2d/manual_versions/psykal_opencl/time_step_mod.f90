@@ -52,6 +52,8 @@ contains
             sshn_v_device, hu_device, hv_device, un_device, vn_device, ua_device, &
             ht_device, ssha_u_device, va_device, ssha_v_device
         INTEGER, save :: num_cmd_queues
+        type(c_ptr) :: swap
+        logical, parameter :: no_copy_optimization = .True.
 
         IF (first_time) THEN
             ! Ensure OpenCL run-time is initialised for this PSy-layer module
@@ -105,7 +107,7 @@ contains
         va_device = transfer(va%device_ptr, va_device)
         ssha_v_device = transfer(ssha_v%device_ptr, ssha_v_device)
 
-        IF (first_time) THEN
+        IF (first_time .or. no_copy_optimization) THEN
             ! Before writing into the device we need to execute the set_args
             ! subroutines because some architectures (e.g. Xilinx FPGA) use
             ! this information for the memory placement into different device
@@ -160,6 +162,18 @@ contains
                 va%whole%ystop - 1, va_device, hv_device, sshn_v_device, &
                 hv%grid%tmask_device, g)
 
+            CALL next_sshu_code_set_args(kernel_next_sshu_code, &
+                sshn_u%internal%xstart - 1, sshn_u%internal%xstop - 1, &
+                sshn_u%internal%ystart - 1, sshn_u%internal%ystop - 1, &
+                sshn_u_device, ssha_t_device, sshn_t%grid%tmask_device, &
+                sshn_t%grid%area_t_device, sshn_t%grid%area_u_device)
+
+            CALL next_sshv_code_set_args(kernel_next_sshv_code, &
+                sshn_v%internal%xstart - 1, sshn_v%internal%xstop - 1, &
+                sshn_v%internal%ystart - 1, sshn_v%internal%ystop - 1, &
+                sshn_v_device, ssha_t_device, sshn_t%grid%tmask_device, &
+                sshn_t%grid%area_t_device, sshn_t%grid%area_v_device)
+
             CALL field_copy_code_set_args(kernel_field_copy_code1, &
                 0, SIZE(un%data, 1) - 1, 0, SIZE(un%data, 2) - 1, &
                 un_device, ua_device)
@@ -171,19 +185,10 @@ contains
             CALL field_copy_code_set_args(kernel_field_copy_code3, &
                 0, SIZE(sshn_t%data, 1) - 1, 0, SIZE(sshn_t%data, 2) - 1, &
                 sshn_t_device, ssha_t_device)
+        ENDIF
 
-            CALL next_sshu_code_set_args(kernel_next_sshu_code, &
-                sshn_u%internal%xstart - 1, sshn_u%internal%xstop - 1, &
-                sshn_u%internal%ystart - 1, sshn_u%internal%ystop - 1, &
-                sshn_u_device, sshn_t_device, sshn_t%grid%tmask_device, &
-                sshn_t%grid%area_t_device, sshn_t%grid%area_u_device)
 
-            CALL next_sshv_code_set_args(kernel_next_sshv_code, &
-                sshn_v%internal%xstart - 1, sshn_v%internal%xstop - 1, &
-                sshn_v%internal%ystart - 1, sshn_v%internal%ystop - 1, &
-                sshn_v_device, sshn_t_device, sshn_t%grid%tmask_device, &
-                sshn_t%grid%area_t_device, sshn_t%grid%area_v_device)
-
+        IF (first_time) THEN
             ! Write initial data to device
             call ssha_t%write_to_device()
             call sshn_t%write_to_device()
@@ -236,33 +241,51 @@ contains
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_flather_v_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), &
             0, C_NULL_PTR, C_NULL_PTR)
-        ! Needs to be done every time because field_copy_code kernel is reused
-        ! with 3 different argument sets. Alternatively we could clone the
-        ! kernel 3 times in allkernels.cl with different names.
-        CALL field_copy_code_set_args(kernel_field_copy_code1, &
-            0, SIZE(un%data, 1) - 1, 0, SIZE(un%data, 2) - 1, &
-            un_device, ua_device)
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code1, &
-            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            C_NULL_PTR, C_NULL_PTR)
-        CALL field_copy_code_set_args(kernel_field_copy_code2, &
-            0, SIZE(vn%data, 1) - 1, 0, SIZE(vn%data, 2) - 1, &
-            vn_device, va_device)
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code2, &
-            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            C_NULL_PTR, C_NULL_PTR)
-        CALL field_copy_code_set_args(kernel_field_copy_code3, &
-            0, SIZE(sshn_t%data, 1) - 1, 0, SIZE(sshn_t%data, 2) - 1, &
-            sshn_t_device, ssha_t_device)
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code3, &
-            2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
-            C_NULL_PTR, C_NULL_PTR)
+
+        ! Next kernels can be brought before the Copy kernels by switching
+        ! appropriately sshn_t_device <-> ssha_t_device in the set_args
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_next_sshu_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_next_sshv_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
+
+        if (.not. no_copy_optimization) then
+            ! Needs to be done every time because field_copy_code kernel is reused
+            ! with 3 different argument sets. Alternatively we could clone the
+            ! kernel 3 times in allkernels.cl with different names.
+            CALL field_copy_code_set_args(kernel_field_copy_code1, &
+                0, SIZE(un%data, 1) - 1, 0, SIZE(un%data, 2) - 1, &
+                un_device, ua_device)
+            ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code1, &
+                2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+                C_NULL_PTR, C_NULL_PTR)
+            CALL field_copy_code_set_args(kernel_field_copy_code2, &
+                0, SIZE(vn%data, 1) - 1, 0, SIZE(vn%data, 2) - 1, &
+                vn_device, va_device)
+            ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code2, &
+                2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+                C_NULL_PTR, C_NULL_PTR)
+            CALL field_copy_code_set_args(kernel_field_copy_code3, &
+                0, SIZE(sshn_t%data, 1) - 1, 0, SIZE(sshn_t%data, 2) - 1, &
+                sshn_t_device, ssha_t_device)
+            ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_field_copy_code3, &
+                2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
+                C_NULL_PTR, C_NULL_PTR)
+        else
+            swap = ssha_t%device_ptr
+            ssha_t%device_ptr = sshn_t%device_ptr
+            sshn_t%device_ptr = swap
+
+            swap = ua%device_ptr
+            ua%device_ptr = un%device_ptr
+            un%device_ptr = swap
+
+            swap = va%device_ptr
+            va%device_ptr = vn%device_ptr
+            vn%device_ptr = swap
+        endif
 
         ! Block until all kernels have finished
         ierr = clFinish(cmd_queues(1))

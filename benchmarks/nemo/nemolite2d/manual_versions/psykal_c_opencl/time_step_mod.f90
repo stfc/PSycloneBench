@@ -85,9 +85,10 @@ contains
         INTEGER, intent(in) :: istp
         LOGICAL, save :: first_time=.true.
 
-        ! TODO: issue #35 - Should this use %get_data() instead?
         call wrapper_c_invoke_time_step( &
-            ! Fields
+            ! Fields -- we don't use get_data() because we don't want a data
+            ! synchronisation point here. This will be appropriately managed
+            ! inside he invoke if necessary.
             ssha_t%data, &
             sshn_t%data, &
             sshn_u%data, &
