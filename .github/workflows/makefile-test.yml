@@ -54,7 +54,7 @@ jobs:
         submodules: recursive
     - name: Install dependencies
       run: >
-        sudo apt-get install build-essential gfortran opencl-headers
-        ocl-icd-opencl-dev pocl-opencl-icd 
+        sudo apt update && sudo apt install build-essential gfortran
+        opencl-headers ocl-icd-opencl-dev pocl-opencl-icd 
     - name: Build system
       run: source compiler_setup/gnu.sh && make
