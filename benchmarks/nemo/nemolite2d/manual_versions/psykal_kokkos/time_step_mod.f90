@@ -1,3 +1,5 @@
+! First PSy-layer level with a wrapper to the C PSy-layer using C_ISO_BINDINGS
+! of the appropriate data.
 module time_step_mod
     use field_mod
     use kind_params_mod
@@ -17,26 +19,26 @@ module time_step_mod
             ! Device pointers
             ssha_t_dp, sshn_t_dp, sshn_u_dp, sshn_v_dp, hu_dp, hv_dp, un_dp, &
             vn_dp, ua_dp, ht_dp, ssha_u_dp, va_dp, ssha_v_dp, &
-            ! Grid
             tmask_dp, area_t_dp, area_u_dp, area_v_dp, dx_u_dp, dx_v_dp, &
             dx_t_dp, dy_u_dp, dy_v_dp, dy_t_dp, gphiu_dp, gphiv_dp, &
             ! Scalars
             istp, internal_xstart, internal_xstop, internal_ystart, &
-            internal_ystop, width, rdt, cbfr, visc, omega, d2r, g &
+            internal_ystop, width, total_size, rdt, cbfr, visc, omega, d2r, g &
         ) bind (C, name="c_invoke_time_step")
             use iso_c_binding
             real(kind=c_double), intent(inout), dimension(*) :: ssha_t, &
                 sshn_t, sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, &
                 ssha_v, area_t, area_u, area_v, dx_u, dx_v, dx_t, dy_u, dy_v, &
                 dy_t, gphiu, gphiv
-            integer(c_intptr_t), intent(inout) :: ssha_t_dp, sshn_t_dp, &
+            type(c_ptr), intent(inout) :: ssha_t_dp, sshn_t_dp, &
                 sshn_u_dp, sshn_v_dp, hu_dp, hv_dp, un_dp, vn_dp, ua_dp, &
-                ht_dp, ssha_u_dp, va_dp, ssha_v_dp, tmask_dp, area_t_dp, &
+                ht_dp, ssha_u_dp, va_dp, ssha_v_dp
+            integer(c_intptr_t), intent(inout) :: tmask_dp, area_t_dp, &
                 area_u_dp, area_v_dp, dx_u_dp, dx_v_dp, dx_t_dp, dy_u_dp, &
                 dy_v_dp, dy_t_dp, gphiu_dp, gphiv_dp
             integer(kind=c_int), intent(inout), dimension(*) :: tmask
             integer(kind=c_int), intent(in), value :: istp, internal_xstart, &
-                internal_xstop, internal_ystart, internal_ystop, width
+                internal_xstop, internal_ystart, internal_ystop, width, total_size
             real(kind=c_double), intent(in), value :: rdt, cbfr, visc, omega, &
                 d2r, g
         end subroutine wrapper_c_invoke_time_step
@@ -45,14 +47,25 @@ module time_step_mod
     ! Fortran to C wrapper interface using iso_c_bindings for the function to
     ! read data from the device location 'from' to the host location 'to'
     interface
-        subroutine wrapper_read_from_device(from, to, nx, ny, width) &
+        subroutine wrapper_read_from_device(from, to, offset, nx, ny, &
+                                            stride_gap) &
                 bind(C, name="kokkos_read_from_device")
-            use iso_c_binding, only: c_intptr_t, c_int, c_double
-            use kind_params_mod, only: go_wp
-            integer(c_intptr_t), intent(in), value :: from
-            integer(c_intptr_t), intent(in), value :: to
-            integer(c_int), intent(in), value :: nx, ny, width
+            use iso_c_binding, only: c_ptr, c_int
+            type(c_ptr), intent(in), value :: from
+            type(c_ptr), intent(in), value :: to
+            integer(c_int), intent(in), value :: offset, nx, ny, stride_gap
         end subroutine wrapper_read_from_device
+    end interface
+
+    interface
+        subroutine write_to_device_c_interface(from, to, offset, nx, ny, &
+                                               stride_gap) &
+                bind(C, name="c_write_to_device")
+            use iso_c_binding, only: c_int, c_ptr
+            type(c_ptr), intent(in), value :: from
+            type(c_ptr), intent(in), value :: to
+            integer(c_int), intent(in), value :: offset, nx, ny, stride_gap
+        end subroutine write_to_device_c_interface
     end interface
 contains
 
@@ -72,9 +85,10 @@ contains
         INTEGER, intent(in) :: istp
         LOGICAL, save :: first_time=.true.
 
-        ! TODO: Should this use %get_data() instead?
         call wrapper_c_invoke_time_step( &
-            ! Fields
+            ! Fields -- we don't use get_data() because we don't want a data
+            ! synchronisation point here. This will be appropriately managed
+            ! inside he invoke if necessary.
             ssha_t%data, &
             sshn_t%data, &
             sshn_u%data, &
@@ -124,10 +138,10 @@ contains
             sshn_t%grid%dx_v_device, &
             sshn_t%grid%dx_t_device, &
             sshn_t%grid%dy_u_device, &
-            sshn_t%grid%dx_v_device, &
-            sshn_t%grid%dx_t_device, &
+            sshn_t%grid%dy_v_device, &
+            sshn_t%grid%dy_t_device, &
             sshn_t%grid%gphiu_device, &
-            sshn_t%grid%gphiv_device, &
+            sshn_t%grid%gphiv_device, & 
             ! Scalars
             istp, &
             ssha_t%grid%subdomain%internal%xstart - 1, & ! 1 -> 0 indexing
@@ -135,6 +149,7 @@ contains
             ssha_t%grid%subdomain%internal%ystart - 1, & ! 1 -> 0 indexing
             ssha_t%grid%subdomain%internal%ystop - 1, & ! 1 -> 0 indexing
             size(ssha_t%data, 1), & ! Size of the contiguous dimension
+            size(ssha_t%data), & ! Total array size
             rdt, &
             cbfr, &
             visc, &
@@ -165,10 +180,15 @@ contains
             sshn_t%read_from_device_c => wrapper_read_from_device
             sshn_u%read_from_device_c => wrapper_read_from_device
             sshn_v%read_from_device_c => wrapper_read_from_device
+            hu%read_from_device_c => wrapper_read_from_device
+            hv%read_from_device_c => wrapper_read_from_device
             un%read_from_device_c => wrapper_read_from_device
             vn%read_from_device_c => wrapper_read_from_device
             ua%read_from_device_c => wrapper_read_from_device
+            ht%read_from_device_c => wrapper_read_from_device
+            ssha_u%read_from_device_c => wrapper_read_from_device
             va%read_from_device_c => wrapper_read_from_device
+            ssha_v%read_from_device_c => wrapper_read_from_device
         endif
 
     END SUBROUTINE invoke_time_step

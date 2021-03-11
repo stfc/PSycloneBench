@@ -16,6 +16,7 @@
 // Create 2D View types for the Fields and Grid arrays
 typedef Kokkos::View<double**> double_2dview;
 typedef Kokkos::View<int**> int_2dview;
+int dim1, dim2;
 
 bool first_time = true;
 
@@ -81,6 +82,7 @@ extern "C" void c_invoke_time_step(
         int internal_ystart,
         int internal_ystop,
         int width,
+        int total_size,
         double rdt,
         double cbfr,
         double visc,
@@ -121,6 +123,9 @@ extern "C" void c_invoke_time_step(
     if(first_time){
         std::cout << typeid(execution_space).name() << std::endl;
         std::cout << typeid(double_2dview::memory_space).name() << std::endl;
+
+        dim1 = width;
+        dim2 = width;
 
         // Allocate Fields
         ssha_t_view_p = new double_2dview("ssha_t", internal_xstop+1, internal_ystop+1);
@@ -682,8 +687,8 @@ extern "C" void c_invoke_time_step(
 
 }
 
-extern "C" void kokkos_read_from_device(double_2dview from, double* to,
-                                        int nx, int ny, int width){
+extern "C" void kokkos_read_from_device(double_2dview from, double * to,
+                                        int offset, int nx, int ny, int gap){
 
     // First, we need to copy data from the device into a host mirror ( which
     // has the same data-layout as the device copy), it requires to allocate
@@ -694,9 +699,9 @@ extern "C" void kokkos_read_from_device(double_2dview from, double* to,
     // Then, we copy the data from the mirror to the original location.
     // Since the mirror data layout is decided by kokkos, we make explicit
     // copies of each element to its location.
-    for(int jj=0; jj < ny; jj++){
-        for(int ji=0; ji < nx; ji++){
-            int idx = jj*width + ji;
+    for(int jj=1; jj < dim2-1; jj++){
+        for(int ji=1; ji < dim1-1; ji++){
+            int idx = (jj*dim2 + ji);
             to[idx] = mirror(jj, ji);
         }
     }
