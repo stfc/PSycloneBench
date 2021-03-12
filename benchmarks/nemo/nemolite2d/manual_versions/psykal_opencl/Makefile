@@ -32,6 +32,13 @@ device_binary: allkernels.cl
 device_binary_nohup:
 	nohup make device_binary > nohup.out &
 
+device_binary_tasks: allkernels_tasks.cl
+	${OCL_COMPILER} $< -o $<.xo
+	${OCL_LINKER} $<.xo -o $@.xclbin
+
+device_binary_tasks_nohup:
+	nohup make device_binary_tasks > nohup.out &
+
 run_jit:
 	FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
 
