@@ -303,6 +303,7 @@ contains
         IF (.NOT. field%data_on_device) THEN
             size_in_bytes = int(field%grid%nx*field%grid%ny, 8) * &
                             c_sizeof(field%data(1,1))
+            write(*,*)  "New", size_in_bytes
             ! Create buffer on device
             field%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
                                          field%device_ptr)
@@ -312,7 +313,7 @@ contains
         END IF
     end subroutine initialise_device_buffer
 
-    subroutine read_opencl(from, to, offset, nx, ny, gap)
+    subroutine read_opencl(from, to, startx, starty, nx, ny)
         use iso_c_binding, only: c_ptr, c_intptr_t, c_size_t, c_sizeof
         USE ocl_utils_mod, ONLY: check_status
         use kind_params_mod, only: go_wp
@@ -320,13 +321,15 @@ contains
         USE fortcl, ONLY: get_cmd_queues
         type(c_ptr), intent(in) :: from
         real(go_wp), dimension(:,:), intent(inout), target :: to
-        integer, intent(in) :: offset, nx, ny, gap
+        integer, intent(in) :: startx, starty, nx, ny
         INTEGER(c_size_t) :: size_in_bytes, offset_in_bytes
         integer(c_intptr_t) :: cl_mem
         INTEGER(c_intptr_t), pointer :: cmd_queues(:)
         integer :: ierr
-        size_in_bytes = int((nx+gap)*ny, 8) * c_sizeof(to(1,1))
-        offset_in_bytes = int(offset, 8) * c_sizeof(to(1,1))
+        ! Copy complete ny rows (regadless of nx)
+        size_in_bytes = int(size(to, 1) * ny, 8) * c_sizeof(to(1,1))
+        offset_in_bytes = int(size(to, 1) * (startx - 1) + (starty - 1), 8) * c_sizeof(to(1,1))
+        write(*,*)  "Read", size_in_bytes, offset_in_bytes
         cl_mem = transfer(from, cl_mem)
         cmd_queues => get_cmd_queues()
         ierr = clEnqueueReadBuffer(cmd_queues(1), cl_mem, &
@@ -335,7 +338,7 @@ contains
         CALL check_status('clEnqueueReadBuffer', ierr)
     end subroutine read_opencl
 
-    subroutine write_opencl(from, to, offset, nx, ny, gap)
+    subroutine write_opencl(from, to, startx, starty, nx, ny)
         use iso_c_binding, only: c_ptr, c_intptr_t, c_size_t, c_sizeof
         USE ocl_utils_mod, ONLY: check_status
         use kind_params_mod, only: go_wp
@@ -343,13 +346,15 @@ contains
         USE fortcl, ONLY: get_cmd_queues
         real(go_wp), dimension(:,:), intent(in), target :: from
         type(c_ptr), intent(in) :: to
-        integer, intent(in) :: offset, nx, ny, gap
+        integer, intent(in) :: startx, starty, nx, ny
         integer(c_intptr_t) :: cl_mem
         INTEGER(c_size_t) :: size_in_bytes, offset_in_bytes
         INTEGER(c_intptr_t), pointer :: cmd_queues(:)
         integer :: ierr
-        size_in_bytes = int((nx+gap)*ny, 8) * c_sizeof(from(1,1))
-        offset_in_bytes = int(offset, 8) * c_sizeof(from(1,1))
+        ! Copy complete ny rows (regadless of nx)
+        size_in_bytes = int(size(from, 1) * ny, 8) * c_sizeof(from(1,1))
+        offset_in_bytes = int(size(from, 1) * (startx - 1) + (starty - 1)) * c_sizeof(from(1,1))
+        write(*,*)  "Write", size_in_bytes, offset_in_bytes
         cl_mem = transfer(to, cl_mem)
         cmd_queues => get_cmd_queues()
         ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &

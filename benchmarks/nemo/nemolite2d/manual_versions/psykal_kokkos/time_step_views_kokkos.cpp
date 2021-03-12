@@ -688,7 +688,7 @@ extern "C" void c_invoke_time_step(
 }
 
 extern "C" void kokkos_read_from_device(double_2dview from, double * to,
-                                        int offset, int nx, int ny, int gap){
+                                        int startx, int starty, int nx, int ny){
 
     // First, we need to copy data from the device into a host mirror ( which
     // has the same data-layout as the device copy), it requires to allocate
@@ -699,8 +699,8 @@ extern "C" void kokkos_read_from_device(double_2dview from, double * to,
     // Then, we copy the data from the mirror to the original location.
     // Since the mirror data layout is decided by kokkos, we make explicit
     // copies of each element to its location.
-    for(int jj=1; jj < dim2-1; jj++){
-        for(int ji=1; ji < dim1-1; ji++){
+    for(int jj=starty; jj < starty+ny; jj++){
+        for(int ji=startx; ji < startx+nx; ji++){
             int idx = (jj*dim2 + ji);
             to[idx] = mirror(jj, ji);
         }
