@@ -55,6 +55,6 @@ jobs:
     - name: Install dependencies
       run: >
         sudo apt update && sudo apt install build-essential gfortran
-        opencl-headers ocl-icd-opencl-dev pocl-opencl-icd 
+        opencl-headers ocl-icd-opencl-dev pocl-opencl-icd
     - name: Build system
       run: source compiler_setup/gnu.sh && make

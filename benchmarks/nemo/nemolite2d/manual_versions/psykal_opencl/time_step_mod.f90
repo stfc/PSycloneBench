@@ -54,7 +54,7 @@ contains
         INTEGER, save :: num_cmd_queues
         type(c_ptr) :: swap
         logical, parameter :: no_copy_optimization = .False.
-        logical, parameter :: tasks_optimization = .True.
+        logical, parameter :: tasks_optimization = .False.
 
         IF (first_time) THEN
             ! Ensure OpenCL run-time is initialised for this PSy-layer module
@@ -188,7 +188,6 @@ contains
                 sshn_t_device, ssha_t_device)
         ENDIF
 
-
         IF (first_time) THEN
             ! Write initial data to device
             call ssha_t%write_to_device()
@@ -208,24 +207,25 @@ contains
             call write_device_grid(ssha_t)
         END IF
 
-        ! Set up local and global sizes (for memory blocking)
-        if(.false.) then
-            globalsize = (/sshn_t%grid%nx, sshn_t%grid%ny/)
-            localsize = (/64, 1/)
-        else
+        ! Set up local and global sizes
+        if(tasks_optimization) then
+            ! Only one task enqueued if using tasks optimization
             globalsize = (/1, 1/)
             localsize = (/1, 1/)
+        else
+            ! Groups of 64 contiguous ids for the whole domain if using NDRanges
+            globalsize = (/sshn_t%grid%nx, sshn_t%grid%ny/)
+            localsize = (/64, 1/)
         endif
-
 
         ! Launch the kernels
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_continuity_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_momentum_u_code, &
+        ierr = clEnqueueNDRangeKernel(cmd_queues(2), kernel_momentum_u_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_momentum_v_code, &
+        ierr = clEnqueueNDRangeKernel(cmd_queues(3), kernel_momentum_v_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
         ! Needs to be done every time because of the changing istp value
@@ -236,18 +236,22 @@ contains
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_ssh_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_solid_u_code, 2, &
+        ierr = clEnqueueNDRangeKernel(cmd_queues(2), kernel_bc_solid_u_code, 2, &
             C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_solid_v_code, &
+        ierr = clEnqueueNDRangeKernel(cmd_queues(3), kernel_bc_solid_v_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_flather_u_code, &
+        ierr = clEnqueueNDRangeKernel(cmd_queues(2), kernel_bc_flather_u_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), &
             0, C_NULL_PTR, C_NULL_PTR)
-        ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_flather_v_code, &
+        ierr = clEnqueueNDRangeKernel(cmd_queues(3), kernel_bc_flather_v_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), &
             0, C_NULL_PTR, C_NULL_PTR)
+
+        ierr = clFinish(cmd_queues(1))
+        ierr = clFinish(cmd_queues(2))
+        ierr = clFinish(cmd_queues(3))
 
         ! Next kernels can be brought before the Copy kernels by switching
         ! appropriately sshn_t_device <-> ssha_t_device in the set_args
@@ -310,7 +314,6 @@ contains
         IF (.NOT. field%data_on_device) THEN
             size_in_bytes = int(field%grid%nx*field%grid%ny, 8) * &
                             c_sizeof(field%data(1,1))
-            write(*,*)  "New", size_in_bytes
             ! Create buffer on device
             field%device_ptr = transfer(create_rw_buffer(size_in_bytes), &
                                          field%device_ptr)
@@ -319,6 +322,10 @@ contains
             field%write_to_device_f => write_opencl
         END IF
     end subroutine initialise_device_buffer
+
+    ! This OpenCL manual implementation only ever read/writes whole buffers
+    ! at once, so the coarse-grain (full rows) read/write functions below
+    ! already provide sufficient performance.
 
     subroutine read_opencl(from, to, startx, starty, nx, ny)
         use iso_c_binding, only: c_ptr, c_intptr_t, c_size_t, c_sizeof
@@ -333,10 +340,9 @@ contains
         integer(c_intptr_t) :: cl_mem
         INTEGER(c_intptr_t), pointer :: cmd_queues(:)
         integer :: ierr
-        ! Copy complete ny rows (regadless of nx)
+        ! Copy complete ny rows (regardless of nx)
         size_in_bytes = int(size(to, 1) * ny, 8) * c_sizeof(to(1,1))
-        offset_in_bytes = int(size(to, 1) * (startx - 1) + (starty - 1), 8) * c_sizeof(to(1,1))
-        write(*,*)  "Read", size_in_bytes, offset_in_bytes
+        offset_in_bytes = int(size(to, 1) * (starty - 1), 8) * c_sizeof(to(1,1))
         cl_mem = transfer(from, cl_mem)
         cmd_queues => get_cmd_queues()
         ierr = clEnqueueReadBuffer(cmd_queues(1), cl_mem, &
@@ -358,10 +364,9 @@ contains
         INTEGER(c_size_t) :: size_in_bytes, offset_in_bytes
         INTEGER(c_intptr_t), pointer :: cmd_queues(:)
         integer :: ierr
-        ! Copy complete ny rows (regadless of nx)
+        ! Copy complete ny rows (regardless of nx)
         size_in_bytes = int(size(from, 1) * ny, 8) * c_sizeof(from(1,1))
-        offset_in_bytes = int(size(from, 1) * (startx - 1) + (starty - 1)) * c_sizeof(from(1,1))
-        write(*,*)  "Write", size_in_bytes, offset_in_bytes
+        offset_in_bytes = int(size(from, 1) * (starty - 1)) * c_sizeof(from(1,1))
         cl_mem = transfer(to, cl_mem)
         cmd_queues => get_cmd_queues()
         ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
@@ -869,7 +874,9 @@ contains
         IF (.not. initialised) THEN
             initialised = .True.
             ! Initialise the OpenCL environment/device
-            CALL ocl_env_init(1)
+            ! parameters are: number of command queues, device selection,
+            !                 profiling, out_of_order
+            CALL ocl_env_init(3, 1, .false., .false.)
             ! The kernels this PSy layer module requires
             kernel_names(1) = "continuity_code"
             kernel_names(2) = "momentum_u_code"
