@@ -53,7 +53,8 @@ contains
             ht_device, ssha_u_device, va_device, ssha_v_device
         INTEGER, save :: num_cmd_queues
         type(c_ptr) :: swap
-        logical, parameter :: no_copy_optimization = .True.
+        logical, parameter :: no_copy_optimization = .False.
+        logical, parameter :: tasks_optimization = .True.
 
         IF (first_time) THEN
             ! Ensure OpenCL run-time is initialised for this PSy-layer module
@@ -208,8 +209,14 @@ contains
         END IF
 
         ! Set up local and global sizes (for memory blocking)
-        globalsize = (/sshn_t%grid%nx, sshn_t%grid%ny/)
-        localsize = (/64, 1/)
+        if(.false.) then
+            globalsize = (/sshn_t%grid%nx, sshn_t%grid%ny/)
+            localsize = (/64, 1/)
+        else
+            globalsize = (/1, 1/)
+            localsize = (/1, 1/)
+        endif
+
 
         ! Launch the kernels
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_continuity_code, &
