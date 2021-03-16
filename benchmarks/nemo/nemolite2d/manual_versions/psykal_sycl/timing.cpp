@@ -291,12 +291,6 @@ void TimerReportMPI()
     timings[i].rank = idPE;
   }
 
-  /** \todo Ideally this MPI code should be in Parallel_MPI.c but
-      this currently gives a circular dependency because some
-      of the routines in that file call the timing API. This 
-      implies that I should split out the truly MPI-specific stuff
-      from the generic parallel code (and maybe put the latter in
-      e.g. Parallel.c) */
 #ifdef MPI_BUILD
   MPI_Reduce(timings, max_vals, num_active_timers, 
 	     MPI_FLOAT_INT, MPI_MAXLOC, 0, MPI_COMM_WORLD);

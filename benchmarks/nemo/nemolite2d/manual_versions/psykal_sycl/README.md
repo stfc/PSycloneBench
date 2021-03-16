@@ -6,7 +6,7 @@ The Fortran(NemoLite2d) to C++/SYCL(PSy-layer) calls are done with the
 interface introduced in the `psykal_cpp` version.
 
 SYCL is a Khronos Standard for Performance Portable C++, several
-implementations of these standard are available. This code aims to be
+implementations of this standard are available. This code aims to be
 compliant with the standard and usable from any SYCL implementation but
 it has been developed using the Intel OneAPI implementation and the correct
 compilation with other implementations is not guaranteed.
@@ -36,7 +36,7 @@ Model parameters (size of domain [jpiglo,jpjglo], number of time-steps
 [nitend], whether or not and how often to do output [irecord]) may be
 configured by editing the `namelist` file.
 
-SYCL can run on several target platform (including accelerated devices),
+SYCL can run on several target platforms (including accelerated devices),
 by default it will run on the host platform. For example:
 
     > ./nemolite2d_sycl.exe

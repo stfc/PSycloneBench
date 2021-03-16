@@ -105,7 +105,17 @@ extern "C" void c_invoke_time_step(
 
         int selected_device = 0;
         if(const char* env_p = std::getenv("SYCL_PLATFORM")){
-            selected_device = std::stoi(env_p);
+            try {
+                selected_device = std::stoi(env_p);
+                if (selected_device < 0 or selected_device > index - 1){
+                    throw "SYCL_PLATFORM value is out of range";
+                }
+            } catch (...){
+                std::cout << "Error: '" << env_p <<
+                    "' is not a valid SYCL_PLATFORM." << std::endl;
+                std::exit(-1);
+            }
+
             auto selected_platform_name = devices[selected_device].get_platform().get_info<info::platform::name>();
             auto selected_dev_name = devices[selected_device].get_info<info::device::name>();
             std::cout <<  "Selected device: " << selected_device << " - " <<
@@ -681,6 +691,7 @@ extern "C" void c_invoke_time_step(
 
 extern "C" void sycl_read_from_device(void* from, double* to,
                                         int nx, int ny, int width){
-    // Just add a wait for now (it may not work in accelerators yet)
+    // Just add a synchronization point to make sure the data contains
+    // the expected values. No explicit data transfer is required.
     workqueue->wait();
 }

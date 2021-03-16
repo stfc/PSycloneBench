@@ -7,7 +7,6 @@ program gocean2d
   use gocean2d_io_mod, only: model_write
   use gocean_mod,      only: model_write_log, gocean_initialise, &
                              gocean_finalise
-  !use likwid
 
   !> A Horizontal 2D hydrodynamic ocean model which
   !!   1) using structured grid
@@ -44,13 +43,11 @@ program gocean2d
   ! points immediately to the North and East of a T point all have the
   ! same i,j index).  This is the same offset scheme as used by NEMO.
   model_grid = grid_type(GO_ARAKAWA_C, &
-  !  BC_PERIODIC, BC_NON_PERIODIC ??
                          (/GO_BC_EXTERNAL,GO_BC_EXTERNAL,GO_BC_NONE/), &
                          GO_OFFSET_NE)
 
   !! read in model parameters and configure the model grid 
   CALL model_init(model_grid)
-  !call likwid_markerInit()
 
   ! Create fields on this grid
 
@@ -98,8 +95,6 @@ program gocean2d
   !! time stepping 
   do istp = nit000, nitend, 1
 
-     !call model_write_log("('istp == ',I6)",istp)
-
      call step(istp,                               &
                ua_fld, va_fld, un_fld, vn_fld,     &
                sshn_t_fld, sshn_u_fld, sshn_v_fld, &
@@ -122,7 +117,6 @@ program gocean2d
 
   !! finalise the model run
   call model_finalise()
-  !call likwid_markerClose()
 
   call model_write_log("((A))", 'Simulation finished!!')
 

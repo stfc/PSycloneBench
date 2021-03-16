@@ -1,16 +1,14 @@
 # Makefile for the manual SYCL version of PSyKAl'd NEMOLite2D.
 #
-# This Makefile picks up the compiler to use any flags from
-# environment variables. e.g. to use gfortran:
+# This Makefile picks up the compiler to use plus any flags from
+# environment variables. e.g. to use GNU toolchain:
 # 
 # export F90=gfortran
 # export CXX=g++
 # export CFLAGS="-O3"
 # export F90FLAGS="-O3"
-# export OMPFLAGS=" -fopenmp"
-# export AR=ar
 
-# Additionally is uses SYCL_COMP and SYCL_FLAGS to compile the SYCL specific
+# Additionally it uses SYCL_COMP and SYCL_FLAGS to compile the SYCL specific
 # files. The default values are the ones expected by Intel OneAPI DPC++
 SYCL_COMP ?= dpcpp
 SYCL_FLAGS ?= -fsycl -O3 -mtune=native
