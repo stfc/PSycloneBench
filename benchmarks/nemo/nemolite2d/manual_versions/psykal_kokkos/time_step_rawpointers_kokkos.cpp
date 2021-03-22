@@ -254,8 +254,9 @@ extern "C" void c_invoke_time_step(
 
 }
 
-extern "C" void kokkos_read_from_device(void * from, double * to, int offset,
-                                        int startx, int starty, int width){
+extern "C" void kokkos_read_from_device(void * from, double * to, int startx,
+                                        int starty, int nx, int ny,
+                                        bool blocking){
     // This implementation does not work with accelerator devices,
     // this function just exist because it uses a common Fortran
     // interface with the Kokkos Views implementation.

@@ -2,6 +2,7 @@
 // implementation of the c_invoke_time_step routine.
 
 #include "opencl_utils.h"
+#include <stdbool.h>
 
 // Uncomment line below to use TIMER
 // #define USE_TIMER
@@ -31,7 +32,6 @@
 #define NUM_QUEUES 1
 
 int first_time = 1;
-int save_width;
 int buff_size;
 
 enum KERNELS {
@@ -171,7 +171,6 @@ void c_invoke_time_step(
 
     int ret;
     buff_size = total_size * sizeof(cl_double);
-    save_width = width;
 
 #ifdef USE_TIMER
     TimerInit();
@@ -787,13 +786,18 @@ void c_invoke_time_step(
 // Function that specify how to retrieve the device data 'from' to a host
 // location 'to', this function will be called by the infrastructure whenever
 // the data is needed on the host.
-void c_read_from_device(void * from, void * to, int startx, int starty, int nx, int ny){
+void c_read_from_device(void * from, void * to, int startx, int starty, int nx,
+                        int ny, bool blocking){
     int size_in_bytes = buff_size;
     check_status("clEnqueueReadBuffer", clEnqueueReadBuffer(
         command_queue[0], (cl_mem)from, CL_TRUE, 0,
 		size_in_bytes, to, 0, NULL, NULL));
 }
-void c_write_to_device(void * from, void * to, int statrx, int starty, int nx, int ny){
+// Function that specify how to write host data 'from' into the device the device
+// location 'to', this function will be called by the infrastructure whenever
+// the data is needed on the device.
+void c_write_to_device(void * from, void * to, int statrx, int starty, int nx,
+                       int ny, bool blocking){
     int size_in_bytes = buff_size;
     check_status("clEnqueueReadBuffer", clEnqueueReadBuffer(
         command_queue[0], (cl_mem)from, CL_TRUE, 0,

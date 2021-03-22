@@ -47,24 +47,26 @@ module time_step_mod
     ! Fortran to C wrapper interface using iso_c_bindings for the function to
     ! read data from the device location 'from' to the host location 'to'
     interface
-        subroutine wrapper_read_from_device(from, to, offset, nx, ny, &
-                                            stride_gap) &
+        subroutine wrapper_read_from_device(from, to, startx, starty, nx, ny, &
+                                            blocking) &
                 bind(C, name="c_read_from_device")
-            use iso_c_binding, only: c_ptr, c_int
+            use iso_c_binding, only: c_ptr, c_int, c_bool
             type(c_ptr), intent(in), value :: from
             type(c_ptr), intent(in), value :: to
-            integer(c_int), intent(in), value :: offset, nx, ny, stride_gap
+            integer(c_int), intent(in), value :: startx, starty, nx, ny
+            logical(c_bool), intent(in), value :: blocking
         end subroutine wrapper_read_from_device
     end interface
 
     interface
-        subroutine write_to_device_c_interface(from, to, offset, nx, ny, &
-                                               stride_gap) &
+        subroutine write_to_device_c_interface(from, to, startx, starty, nx, ny, &
+                                               blocking) &
                 bind(C, name="c_write_to_device")
-            use iso_c_binding, only: c_int, c_ptr
+            use iso_c_binding, only: c_ptr, c_int, c_bool
             type(c_ptr), intent(in), value :: from
             type(c_ptr), intent(in), value :: to
-            integer(c_int), intent(in), value :: offset, nx, ny, stride_gap
+            integer(c_int), intent(in), value :: startx, starty, nx, ny
+            logical(c_bool), intent(in), value :: blocking
         end subroutine write_to_device_c_interface
     end interface
 contains

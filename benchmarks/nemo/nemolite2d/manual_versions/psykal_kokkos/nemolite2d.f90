@@ -31,7 +31,6 @@ program gocean2d
 
   ! time stepping index
   integer     :: istp  
-  real(go_wp) :: rstp 
   integer     :: itimer0
 
   ! Scratch space for logging messages
