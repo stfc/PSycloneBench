@@ -690,7 +690,8 @@ extern "C" void c_invoke_time_step(
 }
 
 extern "C" void sycl_read_from_device(void* from, double* to,
-                                        int nx, int ny, int width){
+                                        int startx, int starty, int nx,
+                                        int ny, bool blocking){
     // Just add a synchronization point to make sure the data contains
     // the expected values. No explicit data transfer is required.
     workqueue->wait();
