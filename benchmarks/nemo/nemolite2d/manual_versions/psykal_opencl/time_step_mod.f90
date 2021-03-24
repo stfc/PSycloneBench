@@ -10,11 +10,11 @@ contains
     ! following workflow:
     ! 1 ) The first time its called, initialize OpenCL and populate the
     !     necessary resources (e.g. queues, kernel functions).
-    ! 2 ) If the device does not contain up-to-date data of the fields and
+    ! 2 ) Calls set_arguments to set up each OpenCL kernel argument list.
+    ! 3 ) If the device does not contain up-to-date data of the fields and
     !     scalars used, it copies them into the device.
-    ! 3 ) Calls set_arguments and enqueue functions for each of the kernels
-    !     to execute.
-    ! 4 ) Has a barrier at the end to wait for all enqueued tasks to finish.
+    ! 4 ) Enqueue functions for each of the kernels to execute.
+    ! 5 ) Barrier at the end to wait for all enqueued tasks to finish.
     SUBROUTINE invoke_time_step(ssha_t, sshn_t, sshn_u, sshn_v, hu, hv, un, &
                                 vn, ua, ht, ssha_u, va, ssha_v, istp)
         USE field_mod
@@ -216,6 +216,10 @@ contains
             ! Groups of 64 contiguous ids for the whole domain if using NDRanges
             globalsize = (/sshn_t%grid%nx, sshn_t%grid%ny/)
             localsize = (/64, 1/)
+            if (mod(globalsize(1), localsize(1)) /= 0) then
+                stop "OpenCL nx global size must be a multiple of 64, " // &
+                     "change the problem size or use DL_ESM_ALIGNMENT=64"
+            endif
         endif
 
         ! Launch the kernels
@@ -263,9 +267,10 @@ contains
             C_NULL_PTR, C_NULL_PTR)
 
         if (.not. no_copy_optimization) then
-            ! Needs to be done every time because field_copy_code kernel is reused
-            ! with 3 different argument sets. Alternatively we could clone the
-            ! kernel 3 times in allkernels.cl with different names.
+            ! The set_args subroutine need to be called every time because the
+            ! field_copy_code kernel is reused with 3 different argument sets.
+            ! Alternatively we could clone the kernel 3 times in allkernels.cl
+            ! with different names.
             CALL field_copy_code_set_args(kernel_field_copy_code1, &
                 0, SIZE(un%data, 1) - 1, 0, SIZE(un%data, 2) - 1, &
                 un_device, ua_device)
@@ -326,8 +331,7 @@ contains
     ! This OpenCL manual implementation only ever read/writes whole buffers
     ! at once, so the coarse-grain (full rows) read/write functions below
     ! already provide sufficient performance.
-
-    subroutine read_opencl(from, to, startx, starty, nx, ny)
+    subroutine read_opencl(from, to, startx, starty, nx, ny, blocking)
         use iso_c_binding, only: c_ptr, c_intptr_t, c_size_t, c_sizeof
         USE ocl_utils_mod, ONLY: check_status
         use kind_params_mod, only: go_wp
@@ -336,6 +340,7 @@ contains
         type(c_ptr), intent(in) :: from
         real(go_wp), dimension(:,:), intent(inout), target :: to
         integer, intent(in) :: startx, starty, nx, ny
+        logical, intent(in) :: blocking
         INTEGER(c_size_t) :: size_in_bytes, offset_in_bytes
         integer(c_intptr_t) :: cl_mem
         INTEGER(c_intptr_t), pointer :: cmd_queues(:)
@@ -351,7 +356,7 @@ contains
         CALL check_status('clEnqueueReadBuffer', ierr)
     end subroutine read_opencl
 
-    subroutine write_opencl(from, to, startx, starty, nx, ny)
+    subroutine write_opencl(from, to, startx, starty, nx, ny, blocking)
         use iso_c_binding, only: c_ptr, c_intptr_t, c_size_t, c_sizeof
         USE ocl_utils_mod, ONLY: check_status
         use kind_params_mod, only: go_wp
@@ -360,6 +365,7 @@ contains
         real(go_wp), dimension(:,:), intent(in), target :: from
         type(c_ptr), intent(in) :: to
         integer, intent(in) :: startx, starty, nx, ny
+        logical, intent(in) :: blocking
         integer(c_intptr_t) :: cl_mem
         INTEGER(c_size_t) :: size_in_bytes, offset_in_bytes
         INTEGER(c_intptr_t), pointer :: cmd_queues(:)

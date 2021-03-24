@@ -2,32 +2,30 @@
 #define LEN 256
 
 __attribute__((vec_type_hint(double)))
-__kernel __attribute__ ((reqd_work_group_size(1, 1, 1)))
-__kernel __attribute__((xcl_zero_global_work_offset))
+__attribute__ ((reqd_work_group_size(1, 1, 1)))
+__attribute__((xcl_zero_global_work_offset))
 __kernel void bc_flather_u_code(
   int xstart,
   int xstop,
   int ystart,
   int ystop,
   __global double * restrict ua,
-  __global double * restrict hu,
-  __global double * restrict sshn_u,
-  __global int * restrict tmask,
+  const __global double * restrict hu,
+  const __global double * restrict sshn_u,
+  const __global int * restrict tmask,
   double g
   ){
-  
   for (int jj = ystart; jj <= ystop; jj++){
-      __attribute__((opencl_unroll_hint(8)))
       for (int ji = xstart; ji <= xstop; ji++){
           int jiu;
           if (!((tmask[jj * LEN + ji] + tmask[jj * LEN + (ji + 1)]) <= (-1))) {
               if ((tmask[jj * LEN + ji] < 0)) {
                 jiu = (ji + 1);
-                ua[jj * LEN + ji] = (ua[jj * LEN + jiu] + (native_sqrt((g / hu[jj * LEN + ji])) * (sshn_u[jj * LEN + ji] - sshn_u[jj * LEN + jiu])));
+                ua[jj * LEN + ji] = (ua[jj * LEN + jiu] + (sqrt((g / hu[jj * LEN + ji])) * (sshn_u[jj * LEN + ji] - sshn_u[jj * LEN + jiu])));
               } else {
                 if ((tmask[jj * LEN + (ji + 1)] < 0)) {
                   jiu = (ji - 1);
-                  ua[jj * LEN + ji] = (ua[jj * LEN + jiu] + (native_sqrt((g / hu[jj * LEN + ji])) * (sshn_u[jj * LEN + ji] - sshn_u[jj * LEN + jiu])));
+                  ua[jj * LEN + ji] = (ua[jj * LEN + jiu] + (sqrt((g / hu[jj * LEN + ji])) * (sshn_u[jj * LEN + ji] - sshn_u[jj * LEN + jiu])));
                 }
               }
           }
@@ -36,21 +34,20 @@ __kernel void bc_flather_u_code(
 }
 
 __attribute__((vec_type_hint(double)))
-__kernel __attribute__ ((reqd_work_group_size(1, 1, 1)))
-__kernel __attribute__((xcl_zero_global_work_offset))
+__attribute__ ((reqd_work_group_size(1, 1, 1)))
+__attribute__((xcl_zero_global_work_offset))
 __kernel void bc_flather_v_code(
   int xstart,
   int xstop,
   int ystart,
   int ystop,
   __global double * restrict va,
-  __global double * restrict hv,
-  __global double * restrict sshn_v,
-  __global int * restrict tmask,
+  const __global double * restrict hv,
+  const __global double * restrict sshn_v,
+  const __global int * restrict tmask,
   double g
   ){
   for (int jj = ystart; jj <= ystop; jj++){
-      __attribute__((xcl_pipeline_loop))
       for (int ji = xstart; ji <= xstop; ji++){
           if (((tmask[jj * LEN + ji] + tmask[(jj + 1) * LEN + ji]) <= (-1))) {
             continue;
@@ -69,13 +66,16 @@ __kernel void bc_flather_v_code(
   }
 }
 
+__attribute__((vec_type_hint(double)))
+__attribute__ ((reqd_work_group_size(1, 1, 1)))
+__attribute__((xcl_zero_global_work_offset))
 __kernel void bc_solid_u_code(
   int xstart,
   int xstop,
   int ystart,
   int ystop,
   __global double * restrict ua,
-  __global int * restrict tmask
+  const __global int * restrict tmask
   ){
   for (int jj = ystart; jj <= ystop; jj++){
       for (int ji = xstart; ji <= xstop; ji++){
@@ -86,13 +86,16 @@ __kernel void bc_solid_u_code(
   }
 }
 
+__attribute__((vec_type_hint(double)))
+__attribute__ ((reqd_work_group_size(1, 1, 1)))
+__attribute__((xcl_zero_global_work_offset))
 __kernel void bc_solid_v_code(
   int xstart,
   int xstop,
   int ystart,
   int ystop,
   __global double * restrict va,
-  __global int * restrict tmask
+  const __global int * restrict tmask
   ){
   for (int jj = ystart; jj <= ystop; jj++){
       for (int ji = xstart; ji <= xstop; ji++){
@@ -104,8 +107,8 @@ __kernel void bc_solid_v_code(
 }
 
 __attribute__((vec_type_hint(double)))
-__kernel __attribute__ ((reqd_work_group_size(1, 1, 1)))
-__kernel __attribute__((xcl_zero_global_work_offset))
+__attribute__ ((reqd_work_group_size(1, 1, 1)))
+__attribute__((xcl_zero_global_work_offset))
 __kernel void bc_ssh_code(
   int xstart,
   int xstop,
@@ -113,27 +116,26 @@ __kernel void bc_ssh_code(
   int ystop,
   int istep,
   __global double * restrict ssha,
-  __global int * restrict tmask,
+  const __global int * restrict tmask,
   double rdt
   ){
   for (int jj = ystart; jj <= ystop; jj++){
-      __attribute__((opencl_unroll_hint(8)))
       for (int ji = xstart; ji <= xstop; ji++){
           double amp_tide = 0.2;
           double omega_tide = ((2.0 * 3.14159) / (12.42 * 3600.));
           double rtime = ((double)istep * rdt);
           if (!(tmask[jj * LEN + ji] <= 0)) {
               if ((tmask[(jj - 1) * LEN + ji] < 0)) {
-                ssha[jj * LEN + ji] = (amp_tide * native_sin((omega_tide * rtime)));
+                ssha[jj * LEN + ji] = (amp_tide * sin((omega_tide * rtime)));
               } else {
                 if ((tmask[(jj + 1) * LEN + ji] < 0)) {
-                  ssha[jj * LEN + ji] = (amp_tide * native_sin((omega_tide * rtime)));
+                  ssha[jj * LEN + ji] = (amp_tide * sin((omega_tide * rtime)));
                 } else {
                   if ((tmask[jj * LEN + (ji + 1)] < 0)) {
-                    ssha[jj * LEN + ji] = (amp_tide * native_sin((omega_tide * rtime)));
+                    ssha[jj * LEN + ji] = (amp_tide * sin((omega_tide * rtime)));
                   } else {
                     if ((tmask[jj * LEN + (ji - 1)] < 0)) {
-                      ssha[jj * LEN + ji] = (amp_tide * native_sin((omega_tide * rtime)));
+                      ssha[jj * LEN + ji] = (amp_tide * sin((omega_tide * rtime)));
                     }
                   }
                 }
@@ -144,26 +146,25 @@ __kernel void bc_ssh_code(
 }
 
 __attribute__((vec_type_hint(double)))
-__kernel __attribute__ ((reqd_work_group_size(1, 1, 1)))
-__kernel __attribute__((xcl_zero_global_work_offset))
+__attribute__ ((reqd_work_group_size(1, 1, 1)))
+__attribute__((xcl_zero_global_work_offset))
 __kernel void continuity_code(
   int xstart,
   int xstop,
   int ystart,
   int ystop,
   __global double * restrict ssha,
-  __global double * restrict sshn,
-  __global double * restrict sshn_u,
-  __global double * restrict sshn_v,
-  __global double * restrict hu,
-  __global double * restrict hv,
-  __global double * restrict un,
-  __global double * restrict vn,
-  __global double * restrict e12t,
+  const __global double * restrict sshn,
+  const __global double * restrict sshn_u,
+  const __global double * restrict sshn_v,
+  const __global double * restrict hu,
+  const __global double * restrict hv,
+  const __global double * restrict un,
+  const __global double * restrict vn,
+  const __global double * restrict e12t,
   double rdt
   ){
   for (int jj = ystart; jj <= ystop; jj++){
-      __attribute__((opencl_unroll_hint(8)))
       for (int ji = xstart; ji <= xstop; ji++){
           double rtmp1 = ((sshn_u[jj * LEN + ji] + hu[jj * LEN + ji]) * un[jj * LEN + ji]);
           double rtmp2 = ((sshn_u[jj * LEN + (ji - 1)] + hu[jj * LEN + (ji - 1)]) * un[jj * LEN + (ji - 1)]);
@@ -174,13 +175,16 @@ __kernel void continuity_code(
   }
 }
 
+__attribute__((vec_type_hint(double)))
+__attribute__ ((reqd_work_group_size(1, 1, 1)))
+__attribute__((xcl_zero_global_work_offset))
 __kernel void field_copy_code(
   int xstart,
   int xstop,
   int ystart,
   int ystop,
   __global double * restrict output,
-  __global double * restrict input
+  const __global double * restrict input
   ){
   for (int jj = ystart; jj <= ystop; jj++){
       for (int ji = xstart; ji <= xstop; ji++){
@@ -189,29 +193,32 @@ __kernel void field_copy_code(
   }
 }
 
+__attribute__((vec_type_hint(double)))
+__attribute__ ((reqd_work_group_size(1, 1, 1)))
+__attribute__((xcl_zero_global_work_offset))
 __kernel void momentum_u_code(
   int xstart,
   int xstop,
   int ystart,
   int ystop,
   __global double * restrict ua,
-  __global double * restrict un,
-  __global double * restrict vn,
-  __global double * restrict hu,
-  __global double * restrict hv,
-  __global double * restrict ht,
-  __global double * restrict ssha_u,
-  __global double * restrict sshn,
-  __global double * restrict sshn_u,
-  __global double * restrict sshn_v,
-  __global int * restrict tmask,
-  __global double * restrict e1u,
-  __global double * restrict e1v,
-  __global double * restrict e1t,
-  __global double * restrict e2u,
-  __global double * restrict e2t,
-  __global double * restrict e12u,
-  __global double * restrict gphiu,
+  const __global double * restrict un,
+  const __global double * restrict vn,
+  const __global double * restrict hu,
+  const __global double * restrict hv,
+  const __global double * restrict ht,
+  const __global double * restrict ssha_u,
+  const __global double * restrict sshn,
+  const __global double * restrict sshn_u,
+  const __global double * restrict sshn_v,
+  const __global int * restrict tmask,
+  const __global double * restrict e1u,
+  const __global double * restrict e1v,
+  const __global double * restrict e1t,
+  const __global double * restrict e2u,
+  const __global double * restrict e2t,
+  const __global double * restrict e12u,
+  const __global double * restrict gphiu,
   double omega,
   double d2r,
   double g,
@@ -293,29 +300,32 @@ __kernel void momentum_u_code(
   }
 }
 
+__attribute__((vec_type_hint(double)))
+__attribute__ ((reqd_work_group_size(1, 1, 1)))
+__attribute__((xcl_zero_global_work_offset))
 __kernel void momentum_v_code(
   int xstart,
   int xstop,
   int ystart,
   int ystop,
   __global double * restrict va,
-  __global double * restrict un,
-  __global double * restrict vn,
-  __global double * restrict hu,
-  __global double * restrict hv,
-  __global double * restrict ht,
-  __global double * restrict ssha_v,
-  __global double * restrict sshn,
-  __global double * restrict sshn_u,
-  __global double * restrict sshn_v,
-  __global int * restrict tmask,
-  __global double * restrict e1v,
-  __global double * restrict e1t,
-  __global double * restrict e2u,
-  __global double * restrict e2v,
-  __global double * restrict e2t,
-  __global double * restrict e12v,
-  __global double * restrict gphiv,
+  const __global double * restrict un,
+  const __global double * restrict vn,
+  const __global double * restrict hu,
+  const __global double * restrict hv,
+  const __global double * restrict ht,
+  const __global double * restrict ssha_v,
+  const __global double * restrict sshn,
+  const __global double * restrict sshn_u,
+  const __global double * restrict sshn_v,
+  const __global int * restrict tmask,
+  const __global double * restrict e1v,
+  const __global double * restrict e1t,
+  const __global double * restrict e2u,
+  const __global double * restrict e2v,
+  const __global double * restrict e2t,
+  const __global double * restrict e12v,
+  const __global double * restrict gphiv,
   double omega,
   double d2r,
   double g,
@@ -397,16 +407,19 @@ __kernel void momentum_v_code(
   }
 }
 
+__attribute__((vec_type_hint(double)))
+__attribute__ ((reqd_work_group_size(1, 1, 1)))
+__attribute__((xcl_zero_global_work_offset))
 __kernel void next_sshu_code(
   int xstart,
   int xstop,
   int ystart,
   int ystop,
   __global double * restrict sshn_u,
-  __global double * restrict sshn,
-  __global int * restrict tmask,
-  __global double * restrict e12t,
-  __global double * restrict e12u
+  const __global double * restrict sshn,
+  const __global int * restrict tmask,
+  const __global double * restrict e12t,
+  const __global double * restrict e12u
   ){
   double rtmp1;
   for (int jj = ystart; jj <= ystop; jj++){
@@ -430,16 +443,19 @@ __kernel void next_sshu_code(
   }
 }
 
+__attribute__((vec_type_hint(double)))
+__attribute__ ((reqd_work_group_size(1, 1, 1)))
+__attribute__((xcl_zero_global_work_offset))
 __kernel void next_sshv_code(
   int xstart,
   int xstop,
   int ystart,
   int ystop,
   __global double * restrict sshn_v,
-  __global double * restrict sshn,
-  __global int * restrict tmask,
-  __global double * restrict e12t,
-  __global double * restrict e12v
+  const __global double * restrict sshn,
+  const __global int * restrict tmask,
+  const __global double * restrict e12t,
+  const __global double * restrict e12v
   ){
   double rtmp1;
   for (int jj = ystart; jj <= ystop; jj++){
