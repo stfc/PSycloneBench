@@ -1,4 +1,5 @@
 
+// LEN value predefined for a problem size of 250x250
 #define LEN 256
 
 __attribute__((vec_type_hint(double)))

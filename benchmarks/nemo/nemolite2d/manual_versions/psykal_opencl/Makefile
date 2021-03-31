@@ -8,7 +8,8 @@
 LDFLAGS += ${OMPFLAGS}
 FFLAGS += ${OPENCL_INCLUDE}
 
-.PHONY: all device_binary device_binary_nohup
+.PHONY: all device_binary device_binary_nohup device_binary_tasks \
+	    device_binary_tasks_nohup
 .DEFAULT_GOAL := nemolite2d.exe
 include ../common.mk
 

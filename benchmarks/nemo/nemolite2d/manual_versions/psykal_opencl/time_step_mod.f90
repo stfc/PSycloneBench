@@ -53,6 +53,8 @@ contains
             ht_device, ssha_u_device, va_device, ssha_v_device
         INTEGER, save :: num_cmd_queues
         type(c_ptr) :: swap
+        ! Optimisations disabled by default, note that they only produce correct
+        ! results for specific problem_sizes and number of iterations.
         logical, parameter :: no_copy_optimization = .False.
         logical, parameter :: tasks_optimization = .False.
 
