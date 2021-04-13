@@ -51,6 +51,9 @@ contains
         INTEGER(KIND=c_intptr_t) :: ssha_t_device, sshn_t_device, sshn_u_device, &
             sshn_v_device, hu_device, hv_device, un_device, vn_device, ua_device, &
             ht_device, ssha_u_device, va_device, ssha_v_device
+        INTEGER(KIND=c_intptr_t) :: tmask_device, area_t_device, area_u_device, &
+            area_v_device, dx_u_device, dx_v_device, dx_t_device, dy_u_device, &
+            dy_v_device, dy_t_device, gphiu_device, gphiv_device
         INTEGER, save :: num_cmd_queues
         type(c_ptr) :: swap
         ! Optimisations disabled by default, note that they only produce correct
@@ -71,6 +74,9 @@ contains
             kernel_bc_solid_v_code = get_kernel_by_name("bc_solid_v_code")
             kernel_bc_flather_u_code = get_kernel_by_name("bc_flather_u_code")
             kernel_bc_flather_v_code = get_kernel_by_name("bc_flather_v_code")
+            ! Having 3 versions of the field_copy_code kernels avoid the need
+            ! to execute a set_args prior to each dispatch to match the 3 set
+            ! of arguments the kernel uses.
             kernel_field_copy_code1 = get_kernel_by_name("field_copy_code")
             kernel_field_copy_code2 = get_kernel_by_name("field_copy_code")
             kernel_field_copy_code3 = get_kernel_by_name("field_copy_code")
@@ -110,6 +116,19 @@ contains
         va_device = transfer(va%device_ptr, va_device)
         ssha_v_device = transfer(ssha_v%device_ptr, ssha_v_device)
 
+        tmask_device = transfer(ssha_t%grid%tmask_device, tmask_device)
+        area_t_device = transfer(ssha_t%grid%area_t_device, area_t_device)
+        area_u_device = transfer(ssha_t%grid%area_t_device, area_u_device)
+        area_v_device = transfer(ssha_t%grid%area_v_device, area_v_device)
+        dx_u_device = transfer(ssha_t%grid%dx_u_device, dx_u_device)
+        dx_v_device = transfer(ssha_t%grid%dx_u_device, dx_v_device)
+        dx_t_device = transfer(ssha_t%grid%dx_t_device, dx_t_device)
+        dy_u_device = transfer(ssha_t%grid%dy_u_device, dy_u_device)
+        dy_v_device = transfer(ssha_t%grid%dy_v_device, dy_v_device)
+        dy_t_device = transfer(ssha_t%grid%dy_t_device, dy_t_device)
+        gphiu_device = transfer(ssha_t%grid%gphiu_device, gphiu_device)
+        gphiv_device = transfer(ssha_t%grid%gphiv_device, gphiv_device)
+
         IF (first_time .or. no_copy_optimization) THEN
             ! Before writing into the device we need to execute the set_args
             ! subroutines because some architectures (e.g. Xilinx FPGA) use
@@ -120,62 +139,60 @@ contains
                 ssha_t%internal%ystart - 1, ssha_t%internal%ystop - 1, &
                 ssha_t_device, sshn_t_device, sshn_u_device, sshn_v_device, &
                 hu_device, hv_device, un_device, vn_device, &
-                sshn_t%grid%area_t_device, rdt)
+                area_t_device, rdt)
 
             CALL momentum_u_code_set_args(kernel_momentum_u_code, &
                 ua%internal%xstart - 1, ua%internal%xstop - 1, &
                 ua%internal%ystart - 1, ua%internal%ystop - 1, &
                 ua_device, un_device, vn_device, hu_device, hv_device, &
                 ht_device, ssha_u_device, sshn_t_device, sshn_u_device, &
-                sshn_v_device, un%grid%tmask_device, un%grid%dx_u_device, &
-                un%grid%dx_v_device, un%grid%dx_t_device, un%grid%dy_u_device, &
-                un%grid%dy_t_device, un%grid%area_u_device, &
-                un%grid%gphiu_device, omega, d2r, g, rdt, cbfr, visc)
+                sshn_v_device, tmask_device, dx_u_device, dx_v_device, &
+                dx_t_device, dy_u_device, dy_t_device, area_u_device, &
+                gphiu_device, omega, d2r, g, rdt, cbfr, visc)
 
             CALL momentum_v_code_set_args(kernel_momentum_v_code, &
                 va%internal%xstart - 1, va%internal%xstop - 1, &
                 va%internal%ystart - 1, va%internal%ystop - 1, va_device, &
                 un_device, vn_device, hu_device, hv_device, ht_device, &
                 ssha_v_device, sshn_t_device, sshn_u_device, sshn_v_device, &
-                un%grid%tmask_device, un%grid%dx_v_device, un%grid%dx_t_device, &
-                un%grid%dy_u_device, un%grid%dy_v_device, un%grid%dy_t_device, &
-                un%grid%area_v_device, un%grid%gphiv_device, omega, d2r, g, &
-                rdt, cbfr, visc)
+                tmask_device, dx_v_device, dx_t_device, dy_u_device, &
+                dy_v_device, dy_t_device, area_v_device, gphiv_device, &
+                omega, d2r, g, rdt, cbfr, visc)
 
             CALL bc_ssh_code_set_args(kernel_bc_ssh_code, &
                 ssha_t%internal%xstart - 1, ssha_t%internal%xstop - 1, &
                 ssha_t%internal%ystart - 1, ssha_t%internal%ystop - 1, istp, &
-                ssha_t_device, ssha_t%grid%tmask_device, rdt)
+                ssha_t_device, tmask_device, rdt)
 
             CALL bc_solid_u_code_set_args(kernel_bc_solid_u_code, &
                 ua%whole%xstart - 1, ua%whole%xstop - 1, ua%whole%ystart - 1, &
-                ua%whole%ystop - 1, ua_device, ua%grid%tmask_device)
+                ua%whole%ystop - 1, ua_device, tmask_device)
 
             CALL bc_solid_v_code_set_args(kernel_bc_solid_v_code, &
                 va%whole%xstart - 1, va%whole%xstop - 1, va%whole%ystart - 1, &
-                va%whole%ystop - 1, va_device, va%grid%tmask_device)
+                va%whole%ystop - 1, va_device, tmask_device)
 
             CALL bc_flather_u_code_set_args(kernel_bc_flather_u_code, &
                 ua%whole%xstart - 1, ua%whole%xstop - 1, ua%whole%ystart - 1, &
                 ua%whole%ystop - 1, ua_device, hu_device, sshn_u_device, &
-                hu%grid%tmask_device, g)
+                tmask_device, g)
 
             CALL bc_flather_v_code_set_args(kernel_bc_flather_v_code, &
                 va%whole%xstart - 1, va%whole%xstop - 1, va%whole%ystart - 1, &
                 va%whole%ystop - 1, va_device, hv_device, sshn_v_device, &
-                hv%grid%tmask_device, g)
+                tmask_device, g)
 
             CALL next_sshu_code_set_args(kernel_next_sshu_code, &
                 sshn_u%internal%xstart - 1, sshn_u%internal%xstop - 1, &
                 sshn_u%internal%ystart - 1, sshn_u%internal%ystop - 1, &
-                sshn_u_device, ssha_t_device, sshn_t%grid%tmask_device, &
-                sshn_t%grid%area_t_device, sshn_t%grid%area_u_device)
+                sshn_u_device, ssha_t_device, tmask_device, &
+                area_t_device, area_u_device)
 
             CALL next_sshv_code_set_args(kernel_next_sshv_code, &
                 sshn_v%internal%xstart - 1, sshn_v%internal%xstop - 1, &
                 sshn_v%internal%ystart - 1, sshn_v%internal%ystop - 1, &
-                sshn_v_device, ssha_t_device, sshn_t%grid%tmask_device, &
-                sshn_t%grid%area_t_device, sshn_t%grid%area_v_device)
+                sshn_v_device, ssha_t_device, tmask_device, &
+                area_t_device, area_v_device)
 
             CALL field_copy_code_set_args(kernel_field_copy_code1, &
                 0, SIZE(un%data, 1) - 1, 0, SIZE(un%data, 2) - 1, &
@@ -238,7 +255,7 @@ contains
         CALL bc_ssh_code_set_args(kernel_bc_ssh_code, &
             ssha_t%internal%xstart - 1, ssha_t%internal%xstop - 1, &
             ssha_t%internal%ystart - 1, ssha_t%internal%ystop - 1, istp, &
-            ssha_t_device, ssha_t%grid%tmask_device, rdt)
+            ssha_t_device, tmask_device, rdt)
         ierr = clEnqueueNDRangeKernel(cmd_queues(1), kernel_bc_ssh_code, &
             2, C_NULL_PTR, C_LOC(globalsize), C_LOC(localsize), 0, &
             C_NULL_PTR, C_NULL_PTR)
@@ -305,7 +322,8 @@ contains
             vn%device_ptr = swap
         endif
 
-        ! Block until all kernels have finished
+        ! Block until all kernels have finished (all the kernels dispatched
+        ! after the last set of clFinishes run exclusively on cmd_queue(1))
         ierr = clFinish(cmd_queues(1))
         CALL check_status('Barrier end of iteration', ierr)
 
@@ -332,7 +350,9 @@ contains
 
     ! This OpenCL manual implementation only ever read/writes whole buffers
     ! at once, so the coarse-grain (full rows) read/write functions below
-    ! already provide sufficient performance.
+    ! already provide sufficient performance. This manual implementation
+    ! ignores the blocking parameters as we know the read/write operations
+    ! that it uses are always blocking.
     subroutine read_opencl(from, to, startx, starty, nx, ny, blocking)
         use iso_c_binding, only: c_ptr, c_intptr_t, c_size_t, c_sizeof
         USE ocl_utils_mod, ONLY: check_status
@@ -383,33 +403,49 @@ contains
         CALL check_status('clEnqueueWriteBuffer', ierr)
     end subroutine write_opencl
 
+    ! Routine to initialise all the OpenCL buffers for the grid properties
+    ! associated to the given field.
     subroutine initialise_device_grid(field)
         USE fortcl, ONLY: create_rw_buffer
         type(r2d_field), intent(inout), target :: field
         integer(kind=c_size_t) size_in_bytes
-        IF (field%grid%tmask_device == 0) THEN
+        IF (.not. c_associated(field%grid%tmask_device)) THEN
             ! Create integer grid fields
             size_in_bytes = int(field%grid%nx * field%grid%ny, 8) * &
                             c_sizeof(field%grid%tmask(1,1))
-            field%grid%tmask_device = create_rw_buffer(size_in_bytes)
+            field%grid%tmask_device = transfer(create_rw_buffer(size_in_bytes), &
+                                               field%grid%tmask_device)
 
             ! Create real grid buffers
             size_in_bytes = int(field%grid%nx * field%grid%ny, 8) * &
                             c_sizeof(field%grid%area_t(1,1))
-            field%grid%area_t_device = create_rw_buffer(size_in_bytes)
-            field%grid%area_u_device = create_rw_buffer(size_in_bytes)
-            field%grid%area_v_device = create_rw_buffer(size_in_bytes)
-            field%grid%dx_u_device = create_rw_buffer(size_in_bytes)
-            field%grid%dx_v_device = create_rw_buffer(size_in_bytes)
-            field%grid%dx_t_device = create_rw_buffer(size_in_bytes)
-            field%grid%dy_u_device = create_rw_buffer(size_in_bytes)
-            field%grid%dy_v_device = create_rw_buffer(size_in_bytes)
-            field%grid%dy_t_device = create_rw_buffer(size_in_bytes)
-            field%grid%gphiu_device = create_rw_buffer(size_in_bytes)
-            field%grid%gphiv_device = create_rw_buffer(size_in_bytes)
+            field%grid%area_t_device = transfer(create_rw_buffer(size_in_bytes), &
+                                                field%grid%area_t_device)
+            field%grid%area_u_device = transfer(create_rw_buffer(size_in_bytes), &
+                                                field%grid%area_u_device)
+            field%grid%area_v_device = transfer(create_rw_buffer(size_in_bytes), &
+                                                field%grid%area_v_device)
+            field%grid%dx_u_device = transfer(create_rw_buffer(size_in_bytes), &
+                                              field%grid%dx_u_device)
+            field%grid%dx_v_device = transfer(create_rw_buffer(size_in_bytes), &
+                                              field%grid%dx_v_device)
+            field%grid%dx_t_device = transfer(create_rw_buffer(size_in_bytes), &
+                                              field%grid%dx_t_device)
+            field%grid%dy_u_device = transfer(create_rw_buffer(size_in_bytes), &
+                                              field%grid%dy_u_device)
+            field%grid%dy_v_device = transfer(create_rw_buffer(size_in_bytes), &
+                                              field%grid%dy_v_device)
+            field%grid%dy_t_device = transfer(create_rw_buffer(size_in_bytes), &
+                                              field%grid%dy_t_device)
+            field%grid%gphiu_device = transfer(create_rw_buffer(size_in_bytes), &
+                                               field%grid%gphiu_device)
+            field%grid%gphiv_device = transfer(create_rw_buffer(size_in_bytes), &
+                                               field%grid%gphiv_device)
         END IF
     end subroutine initialise_device_grid
 
+    ! Routine to write the host values of the grid properties associated to the
+    ! given field into its equivalent OpenCL device buffers.
     subroutine write_device_grid(field)
         USE fortcl, ONLY: get_cmd_queues
         USE clfortran
@@ -417,12 +453,14 @@ contains
         type(r2d_field), intent(inout), target :: field
         integer(kind=c_size_t) size_in_bytes
         INTEGER(c_intptr_t), pointer :: cmd_queues(:)
+        INTEGER(c_intptr_t) :: cl_mem
         integer :: ierr
         cmd_queues => get_cmd_queues()
         ! Integer grid buffers
+        cl_mem = transfer(field%grid%tmask_device, cl_mem)
         size_in_bytes = int(field%grid%nx * field%grid%ny, 8) * &
                             c_sizeof(field%grid%tmask(1,1))
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%tmask_device, &
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%tmask), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer tmask', ierr)
@@ -430,47 +468,58 @@ contains
         ! Real grid buffers
         size_in_bytes = int(field%grid%nx * field%grid%ny, 8) * &
                             c_sizeof(field%grid%area_t(1,1))
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%area_t_device, &
+        cl_mem = transfer(field%grid%area_t_device, cl_mem)
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%area_t), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer area_t_device', ierr)
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%area_u_device, &
+        cl_mem = transfer(field%grid%area_u_device, cl_mem)
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%area_u), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer area_u_device', ierr)
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%area_v_device, &
+        cl_mem = transfer(field%grid%area_v_device, cl_mem)
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%area_v), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer area_v_device', ierr)
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%dx_u_device, &
+        cl_mem = transfer(field%grid%dx_u_device, cl_mem)
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%dx_u), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer dx_u_device', ierr)
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%dx_v_device, &
+        cl_mem = transfer(field%grid%dx_v_device, cl_mem)
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%dx_v), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer dx_v_device', ierr)
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%dx_t_device, &
+        cl_mem = transfer(field%grid%dx_t_device, cl_mem)
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%dx_t), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer dx_t_device', ierr)
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%dy_u_device, &
+        cl_mem = transfer(field%grid%dy_u_device, cl_mem)
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%dy_u), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer dy_u_device', ierr)
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%dy_v_device, &
+        cl_mem = transfer(field%grid%dy_v_device, cl_mem)
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%dy_v), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer dy_v_device', ierr)
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%dy_t_device, &
+        cl_mem = transfer(field%grid%dy_t_device, cl_mem)
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%dy_t), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer dy_t_device', ierr)
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%gphiu_device, &
+        cl_mem = transfer(field%grid%gphiu_device, cl_mem)
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%gphiu), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer gphiu_device', ierr)
-        ierr = clEnqueueWriteBuffer(cmd_queues(1), field%grid%gphiv_device, &
+        cl_mem = transfer(field%grid%gphiv_device, cl_mem)
+        ierr = clEnqueueWriteBuffer(cmd_queues(1), cl_mem, &
             CL_TRUE, 0_8, size_in_bytes, C_LOC(field%grid%gphiv), 0, &
             C_NULL_PTR, C_NULL_PTR)
         CALL check_status('clEnqueueWriteBuffer gphiv_device', ierr)

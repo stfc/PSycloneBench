@@ -25,12 +25,14 @@ target and the proper environment loaded. For example:
     > make device_binary
 
 Since this process can take a long time it is convenient to launch
-the building process detach from the terminal session with:
+the building process detached from the terminal session with:
 
     > make device_binary_nohup
 
 There are equivalent ``device_binary_tasks`` and ``device_binary_tasks_nohup``
-to compile a task-based version of the OpenCL kernels.
+to compile a task-based version of the OpenCL kernels. Currently this is
+constrained to a single problem size set by a define pre-processor parameter
+in the ``allkernel_tasks.cl`` (set by default to 250x250 problem sizes).
 
 ## Running ##
 
@@ -54,6 +56,12 @@ execution command could look like this:
 
     > DL_ESM_ALIGNMENT=64 FORTCL_PLATFORM=2 \
       FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
+
+Note that if the ``task_optimization`` parameter has been turned true on the
+``time_step_mod.f90``, the OpenCL kernels provided must also contain a task
+implementation. For example:
+
+    > FORTCL_KERNELS_FILE=allkernels_tasks.cl ./nemolite2d.exe 
 
 ## Output ##
 

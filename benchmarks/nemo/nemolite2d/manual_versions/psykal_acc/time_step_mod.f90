@@ -85,6 +85,12 @@ contains
     real(go_wp), dimension(:,:), intent(inout), target :: to
     integer, intent(in) :: startx, starty, nx, ny
     logical, intent(in) :: blocking
+
+    ! Currently non-blocking reads are only requested by halo_exchanges which
+    ! this manual version doesn't have, so it is safe to ignore. In the future
+    ! we could use the 'async' clause if non-blocking synchronisations are
+    ! needed.
+
     !$acc update host(to)
   end subroutine read_openacc
 

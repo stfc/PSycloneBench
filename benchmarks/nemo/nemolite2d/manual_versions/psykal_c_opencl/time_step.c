@@ -32,7 +32,6 @@
 #define NUM_QUEUES 1
 
 int first_time = 1;
-int buff_size;
 
 enum KERNELS {
   K_CONTINUITY,
@@ -170,7 +169,7 @@ void c_invoke_time_step(
         ){
 
     int ret;
-    buff_size = total_size * sizeof(cl_double);
+    int buff_size = total_size * sizeof(cl_double);
 
 #ifdef USE_TIMER
     TimerInit();
@@ -788,7 +787,10 @@ void c_invoke_time_step(
 // the data is needed on the host.
 void c_read_from_device(void * from, void * to, int startx, int starty, int nx,
                         int ny, bool blocking){
-    int size_in_bytes = buff_size;
+    // This implementation assumes all reads will be blocking and contiguous
+    // (e.g. nx and ny will represent the full buffer) because this is always
+    // the case in this manual implementation.
+    int size_in_bytes = nx * ny * sizeof(cl_double);
     check_status("clEnqueueReadBuffer", clEnqueueReadBuffer(
         command_queue[0], (cl_mem)from, CL_TRUE, 0,
 		size_in_bytes, to, 0, NULL, NULL));
@@ -798,7 +800,10 @@ void c_read_from_device(void * from, void * to, int startx, int starty, int nx,
 // the data is needed on the device.
 void c_write_to_device(void * from, void * to, int statrx, int starty, int nx,
                        int ny, bool blocking){
-    int size_in_bytes = buff_size;
+    // This implementation assumes all writes will be blocking and contiguous
+    // (e.g. nx and ny will represent the full buffer) because this is always
+    // the case in this manual implementation.
+    int size_in_bytes = nx * ny * sizeof(cl_double);
     check_status("clEnqueueReadBuffer", clEnqueueReadBuffer(
         command_queue[0], (cl_mem)from, CL_TRUE, 0,
 		size_in_bytes, to, 0, NULL, NULL));

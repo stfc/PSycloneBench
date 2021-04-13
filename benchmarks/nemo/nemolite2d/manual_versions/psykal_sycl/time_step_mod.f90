@@ -30,8 +30,7 @@ module time_step_mod
                 dy_t, gphiu, gphiv
             type(c_ptr), intent(inout) :: ssha_t_dp, sshn_t_dp, &
                 sshn_u_dp, sshn_v_dp, hu_dp, hv_dp, un_dp, vn_dp, ua_dp, &
-                ht_dp, ssha_u_dp, va_dp, ssha_v_dp
-            integer(c_intptr_t), intent(inout) :: tmask_dp, area_t_dp, &
+                ht_dp, ssha_u_dp, va_dp, ssha_v_dp, tmask_dp, area_t_dp, &
                 area_u_dp, area_v_dp, dx_u_dp, dx_v_dp, dx_t_dp, dy_u_dp, &
                 dy_v_dp, dy_t_dp, gphiu_dp, gphiv_dp
             integer(kind=c_int), intent(inout), dimension(*) :: tmask
@@ -71,7 +70,9 @@ contains
             sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v
         INTEGER, intent(in) :: istp
 
-        ! TODO: Should this use %get_data() instead?
+        ! Fields -- we don't use get_data() because we don't want a data
+        ! synchronisation point here. This will be appropriately managed
+        ! inside the invoke if necessary.
         call wrapper_c_invoke_time_step( &
             ! Fields
             ssha_t%data, &

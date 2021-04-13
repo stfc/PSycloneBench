@@ -32,8 +32,7 @@ module time_step_mod
                 dy_t, gphiu, gphiv
             type(c_ptr), intent(inout) :: ssha_t_dp, sshn_t_dp, &
                 sshn_u_dp, sshn_v_dp, hu_dp, hv_dp, un_dp, vn_dp, ua_dp, &
-                ht_dp, ssha_u_dp, va_dp, ssha_v_dp
-            integer(c_intptr_t), intent(inout) :: tmask_dp, area_t_dp, &
+                ht_dp, ssha_u_dp, va_dp, ssha_v_dp, tmask_dp, area_t_dp, &
                 area_u_dp, area_v_dp, dx_u_dp, dx_v_dp, dx_t_dp, dy_u_dp, &
                 dy_v_dp, dy_t_dp, gphiu_dp, gphiv_dp
             integer(kind=c_int), intent(inout), dimension(*) :: tmask
@@ -90,7 +89,7 @@ contains
         call wrapper_c_invoke_time_step( &
             ! Fields -- we don't use get_data() because we don't want a data
             ! synchronisation point here. This will be appropriately managed
-            ! inside he invoke if necessary.
+            ! inside the invoke if necessary.
             ssha_t%data, &
             sshn_t%data, &
             sshn_u%data, &
@@ -182,12 +181,9 @@ contains
             sshn_t%read_from_device_c => wrapper_read_from_device
             sshn_u%read_from_device_c => wrapper_read_from_device
             sshn_v%read_from_device_c => wrapper_read_from_device
-            hu%read_from_device_c => wrapper_read_from_device
-            hv%read_from_device_c => wrapper_read_from_device
             un%read_from_device_c => wrapper_read_from_device
             vn%read_from_device_c => wrapper_read_from_device
             ua%read_from_device_c => wrapper_read_from_device
-            ht%read_from_device_c => wrapper_read_from_device
             ssha_u%read_from_device_c => wrapper_read_from_device
             va%read_from_device_c => wrapper_read_from_device
             ssha_v%read_from_device_c => wrapper_read_from_device
