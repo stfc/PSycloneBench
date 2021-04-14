@@ -46,7 +46,7 @@ or the target source code. If the source code is given, the OpenCL
 runtime system will JIT compile the necessary device objects at runtime.
 The following command shows an example of a JIT compiled execution:
 
-    > FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe 
+    > FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
 
 Also, it is often necessary to specify the desired target platform and the
 padding necessary (mandatory for OpenCL < 2) to launch the OpenCL application
@@ -61,7 +61,7 @@ Note that if the ``task_optimization`` parameter has been turned true on the
 ``time_step_mod.f90``, the OpenCL kernels provided must also contain a task
 implementation. For example:
 
-    > FORTCL_KERNELS_FILE=allkernels_tasks.cl ./nemolite2d.exe 
+    > FORTCL_KERNELS_FILE=allkernels_tasks.cl ./nemolite2d.exe
 
 ## Output ##
 
