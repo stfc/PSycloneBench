@@ -76,14 +76,21 @@ contains
 
   !===============================================
 
-  subroutine read_openacc(from, to, nx, ny, width)
+  subroutine read_openacc(from, to, startx, starty, nx, ny, blocking)
     ! Function that specify how to retrieve the device data 'from' to a host
     ! location 'to', this function will be called by the infrastructure
     ! whenever the data is needed on the host.
-    use iso_c_binding, only: c_intptr_t
-    integer(c_intptr_t), intent(in) :: from
-    real(go_wp), dimension(:,:), intent(inout) :: to
-    integer, intent(in) :: nx, ny, width
+    use iso_c_binding, only: c_ptr
+    type(c_ptr), intent(in) :: from
+    real(go_wp), dimension(:,:), intent(inout), target :: to
+    integer, intent(in) :: startx, starty, nx, ny
+    logical, intent(in) :: blocking
+
+    ! Currently non-blocking reads are only requested by halo_exchanges which
+    ! this manual version doesn't have, so it is safe to ignore. In the future
+    ! we could use the 'async' clause if non-blocking synchronisations are
+    ! needed.
+
     !$acc update host(to)
   end subroutine read_openacc
 

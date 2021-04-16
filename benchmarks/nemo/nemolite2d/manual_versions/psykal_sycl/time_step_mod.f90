@@ -23,12 +23,12 @@ module time_step_mod
             istp, internal_xstart, internal_xstop, internal_ystart, &
             internal_ystop, width, total_size, rdt, cbfr, visc, omega, d2r, g &
         ) bind (C, name="c_invoke_time_step")
-            use iso_c_binding
+            use iso_c_binding, only: c_double, c_int, c_ptr, c_intptr_t
             real(kind=c_double), intent(inout), dimension(*) :: ssha_t, &
                 sshn_t, sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, &
                 ssha_v, area_t, area_u, area_v, dx_u, dx_v, dx_t, dy_u, dy_v, &
                 dy_t, gphiu, gphiv
-            integer(c_intptr_t), intent(inout) :: ssha_t_dp, sshn_t_dp, &
+            type(c_ptr), intent(inout) :: ssha_t_dp, sshn_t_dp, &
                 sshn_u_dp, sshn_v_dp, hu_dp, hv_dp, un_dp, vn_dp, ua_dp, &
                 ht_dp, ssha_u_dp, va_dp, ssha_v_dp, tmask_dp, area_t_dp, &
                 area_u_dp, area_v_dp, dx_u_dp, dx_v_dp, dx_t_dp, dy_u_dp, &
@@ -42,13 +42,15 @@ module time_step_mod
     end interface    
 
     interface
-        subroutine wrapper_read_from_device(from, to, nx, ny, width) &
+        subroutine wrapper_read_from_device(from, to, startx, starty, nx, ny, &
+                                            blocking) &
                 bind(C, name="sycl_read_from_device")
-            use iso_c_binding, only: c_intptr_t, c_int, c_double
+            use iso_c_binding, only: c_ptr, c_int, c_bool
             use kind_params_mod, only: go_wp
-            integer(c_intptr_t), intent(in), value :: from
-            integer(c_intptr_t), intent(in), value :: to
-            integer(c_int), intent(in), value :: nx, ny, width
+            type(c_ptr), intent(in), value :: from
+            type(c_ptr), intent(in), value :: to
+            integer(c_int), intent(in), value :: startx, starty, nx, ny
+            logical(c_bool), intent(in), value :: blocking
         end subroutine wrapper_read_from_device
     end interface
 contains
@@ -68,7 +70,9 @@ contains
             sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v
         INTEGER, intent(in) :: istp
 
-        ! TODO: Should this use %get_data() instead?
+        ! Fields -- we don't use get_data() because we don't want a data
+        ! synchronisation point here. This will be appropriately managed
+        ! inside the invoke if necessary.
         call wrapper_c_invoke_time_step( &
             ! Fields
             ssha_t%data, &

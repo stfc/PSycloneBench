@@ -16,6 +16,24 @@ If you are using Bash and the Gnu compiler then:
 
 should build the `nemolite2d.exe` binary.
 
+Note that in some platforms, like FPGAs, using a JIT solution for the
+OpenCL kernels is not feasible. In this case the OpenCL kernel binary
+has to be compiled ahead of time with the ``device_binary`` Makefile
+target and the proper environment loaded. For example:
+
+    > source ../../../../../compiler_setup/xilinx.sh
+    > make device_binary
+
+Since this process can take a long time it is convenient to launch
+the building process detached from the terminal session with:
+
+    > make device_binary_nohup
+
+There are equivalent ``device_binary_tasks`` and ``device_binary_tasks_nohup``
+to compile a task-based version of the OpenCL kernels. Currently this is
+constrained to a single problem size set by a define pre-processor parameter
+in the ``allkernel_tasks.cl`` (set by default to 250x250 problem sizes).
+
 ## Running ##
 
 Model parameters (size of domain [jpiglo,jpjglo], number of time-steps
@@ -28,7 +46,22 @@ or the target source code. If the source code is given, the OpenCL
 runtime system will JIT compile the necessary device objects at runtime.
 The following command shows an example of a JIT compiled execution:
 
-    > FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe 
+    > FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
+
+Also, it is often necessary to specify the desired target platform and the
+padding necessary (mandatory for OpenCL < 2) to launch the OpenCL application
+as expected. These can be set respectively by the environment variables
+``FORTCL_PLATFORM`` and `` DL_ESM_ALIGNMENT``. A complete example of an OpenCL
+execution command could look like this:
+
+    > DL_ESM_ALIGNMENT=64 FORTCL_PLATFORM=2 \
+      FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
+
+Note that if the ``task_optimization`` parameter has been turned true on the
+``time_step_mod.f90``, the OpenCL kernels provided must also contain a task
+implementation. For example:
+
+    > FORTCL_KERNELS_FILE=allkernels_tasks.cl ./nemolite2d.exe
 
 ## Output ##
 
