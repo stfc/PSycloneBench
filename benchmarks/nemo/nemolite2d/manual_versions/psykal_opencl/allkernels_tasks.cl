@@ -47,8 +47,7 @@ __kernel void bc_flather_u_code(
         tmask_buffer[ji] = tmask[jj * LEN + ji];
       }
 
-
-      // Next optimisation: Put ji-/+1 in separate registers
+      // Computation loop
       for (int ji = xstart; ji <= xstop; ji++){
           if (!((tmask_buffer[ji] + tmask_buffer[ji + 1]) <= (-1))) {
               if ((tmask[jj * LEN + ji] < 0)) {
@@ -127,6 +126,7 @@ __kernel void bc_flather_v_code(
         sshn_v_nextrow[ji] = sshn_v[(jj+1) * LEN + ji];
       }
 
+      // Computation loop
       for (int ji = xstart; ji <= xstop; ji++){
           if (((tmask_buffer[ji] + tmask_nextrow[ji]) <= (-1))) {
             continue;
@@ -139,6 +139,8 @@ __kernel void bc_flather_v_code(
             }
           }
       }
+
+      // Burst data writes
       for (int ji = xstart; ji <= xstop; ji++){
         va[jj * LEN + ji] = va_buffer[ji];
       }
@@ -455,6 +457,7 @@ __kernel void momentum_u_code(
   // Create buffers for burst copies
   double ua_buffer[LEN];
   double un_buffer[LEN];
+  //#pragma HLS array_partition variable=un_buffer cyclic factor=3
   double vn_buffer[LEN];
   double hu_buffer[LEN];
   double hv_buffer[LEN];
@@ -487,20 +490,94 @@ __kernel void momentum_u_code(
   int e2u_previousrow[LEN];
   int e2u_nextrow[LEN];
 
+  // Load initial data for nextrow that are needed to populate buffers
+  for (int ji = xstart; ji <= xstop; ji++){
+    un_nextrow[ji] = un[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    hu_nextrow[ji] = hu[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    tmask_nextrow[ji] = tmask[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    e2u_nextrow[ji] = e2u[ystart * LEN + ji];
+  }
+  // Load initial data for buffers that are needed to populate previousrows
+  for (int ji = xstart; ji <= xstop; ji++){
+    un_buffer[ji] = un[(ystart-1) * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    vn_buffer[ji] = vn[(ystart-1) * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    hu_buffer[ji] = hu[(ystart-1) * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    hv_buffer[ji] = hv[(ystart-1) * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    sshn_u_buffer[ji] = sshn_u[(ystart-1) * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    sshn_v_buffer[ji] = sshn_v[(ystart-1) * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    tmask_buffer[ji] = tmask[(ystart-1) * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    e1v_buffer[ji] = e1v[(ystart-1) * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    e2u_buffer[ji] = e2u[(ystart-1) * LEN + ji];
+  }
+
   for (int jj = ystart; jj <= ystop; jj++){
 
-      // Burst data reads
+      // Populate previous rows (from already loaded data in buffers if possible)
+      for (int ji = xstart; ji <= xstop; ji++){
+        un_previousrow[ji] = un_buffer[ji];
+      }
+      for (int ji = xstart; ji <= xstop; ji++){
+        vn_previousrow[ji] = vn_buffer[ji];
+      }
+      for (int ji = xstart; ji <= xstop; ji++){
+        hu_previousrow[ji] = hu_buffer[ji];
+      }
+      for (int ji = xstart; ji <= xstop; ji++){
+        hv_previousrow[ji] = hv_buffer[ji];
+      }
+      for (int ji = xstart; ji <= xstop; ji++){
+        sshn_u_previousrow[ji] = sshn_u_buffer[ji];
+      }
+      for (int ji = xstart; ji <= xstop; ji++){
+        sshn_u_nextrow[ji] = sshn_u_buffer[ji];
+      }
+      for (int ji = xstart; ji <= xstop; ji++){
+        sshn_v_previousrow[ji] = sshn_v_buffer[ji];
+      }
+      for (int ji = xstart; ji <= xstop; ji++){
+        tmask_previousrow[ji] = tmask_buffer[ji];
+      }
+      for (int ji = xstart; ji <= xstop; ji++){
+        e1v_previousrow[ji] = e1v_buffer[ji];
+      }
+      for (int ji = xstart; ji <= xstop; ji++){
+        e2u_previousrow[ji] = e2u_buffer[ji];
+      }
+
+      // Burst data reads (from already loaded data in nextrows if possible)
       for (int ji = xstart; ji <= xstop; ji++){
         ua_buffer[ji] = ua[jj * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        un_buffer[ji] = un[jj * LEN + ji];
+        un_buffer[ji] = un_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         vn_buffer[ji] = vn[jj * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        hu_buffer[ji] = hu[jj * LEN + ji];
+        hu_buffer[ji] = hu_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         hv_buffer[ji] = hv[jj * LEN + ji];
@@ -521,7 +598,7 @@ __kernel void momentum_u_code(
         sshn_v_buffer[ji] = sshn_v[jj * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        tmask_buffer[ji] = tmask[jj * LEN + ji];
+        tmask_buffer[ji] = tmask_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         e1u_buffer[ji] = e1u[jj * LEN + ji];
@@ -533,7 +610,7 @@ __kernel void momentum_u_code(
         e1t_buffer[ji] = e1t[jj * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        e2u_buffer[ji] = e2u[jj * LEN + ji];
+        e2u_buffer[ji] = e2u_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         e2t_buffer[ji] = e2t[jj * LEN + ji];
@@ -544,45 +621,16 @@ __kernel void momentum_u_code(
       for (int ji = xstart; ji <= xstop; ji++){
         gphiu_buffer[ji] = gphiu[jj * LEN + ji];
       }
-      // Other rows copies
-      for (int ji = xstart; ji <= xstop; ji++){
-        un_previousrow[ji] = un[(jj-1) * LEN + ji];
-      }
+
+      // Load next row with data burst reads
       for (int ji = xstart; ji <= xstop; ji++){
         un_nextrow[ji] = un[(jj+1) * LEN + ji];
-      }
-      for (int ji = xstart; ji <= xstop; ji++){
-        vn_previousrow[ji] = vn[(jj-1) * LEN + ji];
-      }
-      for (int ji = xstart; ji <= xstop; ji++){
-        hu_previousrow[ji] = hu[(jj-1) * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         hu_nextrow[ji] = hu[(jj+1) * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        hv_previousrow[ji] = hv[(jj-1) * LEN + ji];
-      }
-      for (int ji = xstart; ji <= xstop; ji++){
-        sshn_u_previousrow[ji] = sshn_u[(jj-1) * LEN + ji];
-      }
-      for (int ji = xstart; ji <= xstop; ji++){
-        sshn_u_nextrow[ji] = sshn_u[(jj+1) * LEN + ji];
-      }
-      for (int ji = xstart; ji <= xstop; ji++){
-        sshn_v_previousrow[ji] = sshn_v[(jj-1) * LEN + ji];
-      }
-      for (int ji = xstart; ji <= xstop; ji++){
-        tmask_previousrow[ji] = tmask[(jj-1) * LEN + ji];
-      }
-      for (int ji = xstart; ji <= xstop; ji++){
         tmask_nextrow[ji] = tmask[(jj+1) * LEN + ji];
-      }
-      for (int ji = xstart; ji <= xstop; ji++){
-        e1v_previousrow[ji] = e1v[(jj-1) * LEN + ji];
-      }
-      for (int ji = xstart; ji <= xstop; ji++){
-        e2u_previousrow[ji] = e2u[(jj-1) * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         e2u_nextrow[ji] = e2u[(jj+1) * LEN + ji];
@@ -730,56 +778,97 @@ __kernel void momentum_v_code(
   double e2u_nextrow[LEN];
   double e2t_nextrow[LEN];
 
+  // Load initial data for nextrow that are needed to populate buffers
+  for (int ji = xstart; ji <= xstop; ji++){
+    un_nextrow[ji] = un[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    vn_nextrow[ji] = vn[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    hu_nextrow[ji] = hu[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    ht_nextrow[ji] = ht[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    sshn_nextrow[ji] = sshn[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    sshn_u_nextrow[ji] = sshn_u[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    tmask_nextrow[ji] = tmask[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    e1t_nextrow[ji] = e1t[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    e2u_nextrow[ji] = e2u[ystart * LEN + ji];
+  }
+  for (int ji = xstart; ji <= xstop; ji++){
+    e2t_nextrow[ji] = e2t[ystart * LEN + ji];
+  }
+
+  // Load initial data for buffers that are needed to populate previousrows
+  for (int ji = xstart; ji <= xstop; ji++){
+    vn_buffer[ji] = vn[(ystart-1) * LEN + ji];
+  }
+  
   for (int jj = ystart; jj <= ystop; jj++){
+
+      for (int ji = xstart; ji <= xstop; ji++){
+        vn_previousrow[ji] = vn_buffer[ji];
+      }
 
       // Burst buffer reads
       for (int ji = xstart; ji <= xstop; ji++){
         va_buffer[ji] = va[jj * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        un_buffer[ji] = un[jj * LEN + ji];
+        un_buffer[ji] = un_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        vn_buffer[ji] = vn[jj * LEN + ji];
+        vn_buffer[ji] = vn_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        hu_buffer[ji] = hu[jj * LEN + ji];
+        hu_buffer[ji] = hu_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         hv_buffer[ji] = hv[jj * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        ht_buffer[ji] = ht[jj * LEN + ji];
+        ht_buffer[ji] = ht_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         ssha_v_buffer[ji] = ssha_v[jj * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        sshn_buffer[ji] = sshn[jj * LEN + ji];
+        sshn_buffer[ji] = sshn_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        sshn_u_buffer[ji] = sshn_u[jj * LEN + ji];
+        sshn_u_buffer[ji] = sshn_u_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         sshn_v_buffer[ji] = sshn_v[jj * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        tmask_buffer[ji] = tmask[jj * LEN + ji];
+        tmask_buffer[ji] = tmask_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         e1v_buffer[ji] = e1v[jj * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        e1t_buffer[ji] = e1t[jj * LEN + ji];
+        e1t_buffer[ji] = e1t_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        e2u_buffer[ji] = e2u[jj * LEN + ji];
+        e2u_buffer[ji] = e2u_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         e2v_buffer[ji] = e2v[jj * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
-        e2t_buffer[ji] = e2t[jj * LEN + ji];
+        e2t_buffer[ji] = e2t_nextrow[ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         e12v_buffer[ji] = e12v[jj * LEN + ji];
@@ -791,9 +880,6 @@ __kernel void momentum_v_code(
 
       for (int ji = xstart; ji <= xstop; ji++){
         un_nextrow[ji] = un[(jj+1) * LEN + ji];
-      }
-      for (int ji = xstart; ji <= xstop; ji++){
-        vn_previousrow[ji] = vn[(jj-1) * LEN + ji];
       }
       for (int ji = xstart; ji <= xstop; ji++){
         vn_nextrow[ji] = vn[(jj+1) * LEN + ji];
