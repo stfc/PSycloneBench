@@ -12,7 +12,7 @@ export OPENCL_INCLUDE=""
 
 
 # Configurable parameters
-echo "Set EXECUTION_TARGET to switch the target platform:"
+echo "Set FPGA_EXECUTION_TARGET to switch the target platform:"
 echo "    sw_emu - for software emulation"
 echo "    hw_emu - for hardware emulation"
 echo "    hw - for FPGA execution. (default)"

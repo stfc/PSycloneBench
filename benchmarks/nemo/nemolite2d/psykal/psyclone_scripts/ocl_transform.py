@@ -8,7 +8,7 @@ from psyclone.domain.gocean.transformations import \
     GOMoveIterationBoundariesInsideKernelTrans
 from psyclone.configuration import Config
 
-FUCTIONAL_PARALLELISM = False
+FUCTIONAL_PARALLELISM = True
 MOVE_BOUNDARIES = True
 XILINX_CONFIG_FILE = False
 TILING = 64
@@ -38,7 +38,6 @@ def trans(psy):
         'bc_solid_v_code': 3,
         'bc_flather_u_code': 2,
         'bc_flather_v_code': 3,
-        # Needs a barrier here (currently added manually)
         'field_copy_code': 1,
         'next_sshu_code': 1,
         'next_sshv_code': 1
