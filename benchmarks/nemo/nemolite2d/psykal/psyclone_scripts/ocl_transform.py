@@ -13,6 +13,7 @@ MOVE_BOUNDARIES = True
 XILINX_CONFIG_FILE = False
 TILING = 64
 
+
 def trans(psy):
     ''' Transform the schedule for OpenCL generation '''
 
@@ -58,7 +59,6 @@ def trans(psy):
         else:
             kern.set_opencl_options({'local_size': TILING})
 
-
     # Transform invoke to OpenCL
     cltrans.apply(schedule)
 
@@ -67,18 +67,18 @@ def trans(psy):
         path = Config.get().kernel_output_dir
         with open(os.path.join(path, "xilinx.cfg"), "w") as cfgfile:
             cfgfile.write("# Xilinx FPGA configuration file\n")
-            #cfgfile.write("[connectivity]\n")
-            #cfgfile.write("# Create 2 CU of the given kernels\n")
-            #cfgfile.write("nk=continuity_code:2\n")
-            #cfgfile.write("nk=momentum_u_code:2\n")
-            #cfgfile.write("nk=momentum_v_code:2\n")
-            #cfgfile.write("nk=bc_ssh_code:2\n")
+            # cfgfile.write("[connectivity]\n")
+            # cfgfile.write("# Create 2 CU of the given kernels\n")
+            # cfgfile.write("nk=continuity_code:2\n")
+            # cfgfile.write("nk=momentum_u_code:2\n")
+            # cfgfile.write("nk=momentum_v_code:2\n")
+            # cfgfile.write("nk=bc_ssh_code:2\n")
 
-            #cfgfile.write("\n[hls]\n")
-            #cfgfile.write("# Assign CUs to different SLRs\n")
-            #cfgfile.write("slr=momentum_u_code_1:SLR0\n")
-            #cfgfile.write("slr=momentum_u_code_2:SLR0\n")
-            #cfgfile.write("slr=momentum_v_code_1:SLR2\n")
-            #cfgfile.write("slr=momentum_v_code_2:SLR2\n")
+            # cfgfile.write("\n[hls]\n")
+            # cfgfile.write("# Assign CUs to different SLRs\n")
+            # cfgfile.write("slr=momentum_u_code_1:SLR0\n")
+            # cfgfile.write("slr=momentum_u_code_2:SLR0\n")
+            # cfgfile.write("slr=momentum_v_code_1:SLR2\n")
+            # cfgfile.write("slr=momentum_v_code_2:SLR2\n")
 
     return psy
