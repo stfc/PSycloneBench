@@ -5,6 +5,10 @@
 // - Added vec_type_hint(double) and xcl_zero_global_work_offset kernels hints.
 // - Added const attributes.
 // - Removed duplicated LEN expressions.
+// - Add buffers in each kernel to burst read and write from memory blocks of LEN
+// size. Then the body of the kernel access this data from the buffer (which is a
+// register instead of memory) which significantly improve performance on the Xilinx
+// platform.
 
 
 // LEN value predefined for a problem size of 250x250
@@ -81,6 +85,7 @@ __kernel void bc_flather_v_code(
   const __global int * restrict tmask,
   double g
   ){
+
   // Create buffers for burst copies
   double va_buffer[LEN];
   double hv_buffer[LEN];
@@ -109,7 +114,6 @@ __kernel void bc_flather_v_code(
         tmask_buffer[ji] = tmask[jj * LEN + ji];
       }
 
-      // Others
       for (int ji = xstart; ji <= xstop; ji++){
         tmask_nextrow[ji] = tmask[(jj+1) * LEN + ji];
       }
@@ -241,6 +245,7 @@ __kernel void bc_ssh_code(
         tmask_p1[ji] = tmask[(jj+1) * LEN + ji];
       }
 
+      // Computation loop
       for (int ji = xstart; ji <= xstop; ji++){
           if (!(tmask[jj * LEN + ji] <= 0)) {
               if ((tmask_m1[ji] < 0)) {
@@ -349,6 +354,7 @@ __kernel void continuity_code(
         vn_buffer[ji] = vn[jj * LEN + ji];
       }
 
+      // Computation loop
       for (int ji = xstart; ji <= xstop; ji++){
           double this_sshn_u = sshn_u_buffer[ji];
           double this_hu = hu_buffer[ji];
@@ -636,6 +642,7 @@ __kernel void momentum_u_code(
         e2u_nextrow[ji] = e2u[(jj+1) * LEN + ji];
       }
 
+      // Computation loop
       for (int ji = xstart; ji <= xstop; ji++){
           if (((tmask_buffer[ji] + tmask_buffer[(ji + 1)]) <= 0)) {
             continue;
@@ -909,6 +916,7 @@ __kernel void momentum_v_code(
         e2t_nextrow[ji] = e2t[(jj+1) * LEN + ji];
       }
 
+      // Computation loop
       for (int ji = xstart; ji <= xstop; ji++){
           if (((tmask_buffer[ji] + tmask_buffer[(ji + 1)]) <= 0)) {
             continue;
@@ -1002,6 +1010,7 @@ __kernel void next_sshu_code(
         e12u_buffer[ji] = e12u[jj * LEN + ji];
       }
 
+      // Computation loop
       for (int ji = xstart; ji <= xstop; ji++){
           if (((tmask_buffer[ji] + tmask_buffer[(ji + 1)]) <= 0)) {
             continue;
@@ -1077,7 +1086,7 @@ __kernel void next_sshv_code(
         e12t_nextrow[ji] = e12t[(jj+1) * LEN + ji];
       }
         
-
+      // Computation loop
       for (int ji = xstart; ji <= xstop; ji++){
           if (((tmask_buffer[ji] + tmask_nextrow[ji]) <= 0)) {
             continue;
