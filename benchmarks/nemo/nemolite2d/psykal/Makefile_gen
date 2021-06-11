@@ -47,7 +47,7 @@ KERNELS_MULTIPLE = boundary_conditions_0_mod.o \
 # Choose which kernels to use
 KERNELS = ${KERNELS_UNMOD}
 
-.PHONY: nemolite2d nemolite2docl
+.PHONY: nemolite2d nemolite2docl device_binary device_binary_nohup
 
 all: nemolite2d
 .DEFAULT_GOAL := nemolite2d
