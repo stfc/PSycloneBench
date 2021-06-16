@@ -8,11 +8,25 @@ from psyclone.domain.gocean.transformations import \
     GOMoveIterationBoundariesInsideKernelTrans
 from psyclone.configuration import Config
 
-FUCTIONAL_PARALLELISM = True
-MOVE_BOUNDARIES = True
-XILINX_CONFIG_FILE = False
-TILING = 64
 
+# Global variables to configure the PSyclone OpenCL generation:
+
+# If FUCTIONAL_PARALLELISM is enabled the kernels will be dispatched to
+# multiple command queues and run asynchronously when possible, otherwise
+# all kernels will be run in-order in command queue number 1.
+FUCTIONAL_PARALLELISM = True
+
+# If MOVE_BOUNDARIES is True (mandatory for now) the start and stop boundaries
+# of each loop will be moved from the PSy-layer to inside the kernel.
+MOVE_BOUNDARIES = True
+
+# If XILINX_CONFIG_FILE is True, this script will also generate a Xiling .cfg
+# configuration file in the output directory.
+XILINX_CONFIG_FILE = False
+
+# The TILING parameter sets the number of kernel iterations that will be run
+# together by a single kernel execution.
+TILING = 64
 
 def trans(psy):
     ''' Transform the schedule for OpenCL generation '''

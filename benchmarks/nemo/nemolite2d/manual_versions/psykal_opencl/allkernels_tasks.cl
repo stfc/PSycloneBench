@@ -38,6 +38,8 @@ __kernel void bc_flather_u_code(
   for (int jj = ystart; jj <= ystop; jj++){
 
       // Burst data reads
+      // This must be independent loops otherwise the Xilinx compiler
+      // produces significantly slower memory read operations.
       for (int ji = xstart; ji <= xstop; ji++){
         ua_buffer[ji] = ua[jj * LEN + ji];
       }
@@ -54,7 +56,7 @@ __kernel void bc_flather_u_code(
       // Computation loop
       for (int ji = xstart; ji <= xstop; ji++){
           if (!((tmask_buffer[ji] + tmask_buffer[ji + 1]) <= (-1))) {
-              if ((tmask[jj * LEN + ji] < 0)) {
+              if ((tmask_buffer[jj * LEN + ji] < 0)) {
                 ua_buffer[ji] = (ua_buffer[ji + 1] + (sqrt((g / hu_buffer[ji])) * (sshn_u_buffer[ji] - sshn_u_buffer[ji + 1])));
               } else {
                 if ((tmask_buffer[ji + 1] < 0)) {
@@ -101,6 +103,8 @@ __kernel void bc_flather_v_code(
   for (int jj = ystart; jj <= ystop; jj++){
 
       // Burst data reads
+      // This must be independent loops otherwise the Xilinx compiler
+      // produces significantly slower memory read operations.
       for (int ji = xstart; ji <= xstop; ji++){
         va_buffer[ji] = va[jj * LEN + ji];
       }
@@ -113,7 +117,6 @@ __kernel void bc_flather_v_code(
       for (int ji = xstart; ji <= xstop; ji++){
         tmask_buffer[ji] = tmask[jj * LEN + ji];
       }
-
       for (int ji = xstart; ji <= xstop; ji++){
         tmask_nextrow[ji] = tmask[(jj+1) * LEN + ji];
       }
@@ -163,8 +166,8 @@ __kernel void bc_solid_u_code(
   const __global int * restrict tmask
   ){
   for (int jj = ystart; jj <= ystop; jj++){
-      double this_tmask;
-      double next_tmask = tmask[jj * LEN + xstart];
+      int this_tmask;
+      int next_tmask = tmask[jj * LEN + xstart];
       for (int ji = xstart; ji <= xstop; ji++){
           this_tmask = next_tmask;
           next_tmask = tmask[jj * LEN + (ji + 1)];
@@ -186,8 +189,8 @@ __kernel void bc_solid_v_code(
   __global double * restrict va,
   const __global int * restrict tmask
   ){
-  double this_row[LEN];
-  double next_row[LEN];
+  int this_row[LEN];
+  int next_row[LEN];
   for (int ji = xstart; ji <= xstop; ji++){
       next_row[ji] = tmask[ystart * LEN + ji];
   }
@@ -225,12 +228,14 @@ __kernel void bc_ssh_code(
   double rtime = ((double)istep * rdt);
   double value = (amp_tide * sin((omega_tide * rtime)));
 
-  // Temporal buffers
+  // Temporary buffers
   int tmask_p1[LEN];
   int tmask_this[LEN];
   int tmask_m1[LEN];
   
-  // Next: can also buffer ssha
+  // Burst data reads
+  // This must be independent loops otherwise the Xilinx compiler
+  // produces significantly slower memory read operations.
   for (int ji = xstart; ji <= xstop; ji++){
     tmask_m1[ji] = tmask[(ystart - 1) * LEN + ji];
   }
@@ -313,6 +318,8 @@ __kernel void continuity_code(
   double vn_previousrow[LEN];
 
   // Burst load previous rows
+  // This must be independent loops otherwise the Xilinx compiler
+  // produces significantly slower memory read operations.
   for (int ji = xstart; ji <= xstop; ji++){
     ssh_v_previousrow[ji] = sshn_v[(ystart - 1) * LEN + ji];
   }
@@ -463,7 +470,6 @@ __kernel void momentum_u_code(
   // Create buffers for burst copies
   double ua_buffer[LEN];
   double un_buffer[LEN];
-  //#pragma HLS array_partition variable=un_buffer cyclic factor=3
   double vn_buffer[LEN];
   double hu_buffer[LEN];
   double hv_buffer[LEN];
@@ -497,6 +503,8 @@ __kernel void momentum_u_code(
   int e2u_nextrow[LEN];
 
   // Load initial data for nextrow that are needed to populate buffers
+  // This must be independent loops otherwise the Xilinx compiler
+  // produces significantly slower memory read operations.
   for (int ji = xstart; ji <= xstop; ji++){
     un_nextrow[ji] = un[ystart * LEN + ji];
   }
@@ -786,6 +794,8 @@ __kernel void momentum_v_code(
   double e2t_nextrow[LEN];
 
   // Load initial data for nextrow that are needed to populate buffers
+  // This must be independent loops otherwise the Xilinx compiler
+  // produces significantly slower memory read operations.
   for (int ji = xstart; ji <= xstop; ji++){
     un_nextrow[ji] = un[ystart * LEN + ji];
   }
@@ -997,6 +1007,8 @@ __kernel void next_sshu_code(
   for (int jj = ystart; jj <= ystop; jj++){
 
       // Burst data reads
+      // This must be independent loops otherwise the Xilinx compiler
+      // produces significantly slower memory read operations.
       for (int ji = xstart; ji <= xstop; ji++){
         sshn_buffer[ji] = sshn[jj * LEN + ji];
       }
@@ -1063,6 +1075,8 @@ __kernel void next_sshv_code(
   for (int jj = ystart; jj <= ystop; jj++){
 
       // Burst data reads
+      // This must be independent loops otherwise the Xilinx compiler
+      // produces significantly slower memory read operations.
       for (int ji = xstart; ji <= xstop; ji++){
         sshn_buffer[ji] = sshn[jj * LEN + ji];
       }
