@@ -27,15 +27,19 @@ nemolite2d.exe: ${COMMON_LIB} inf_lib timer_lib fcl_lib ${COMMON_MODULES}
 # The generated device file can be used with:
 # > FORTCL_KERNELS_FILE=device_binary ./nemolite2d.exe
 device_binary: allkernels.cl
-	${OCL_COMPILER} $< -o $<.xo
-	${OCL_LINKER} $<.xo -o $@.xclbin
+	${OCL_COMPILER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $< -o $<.xo
+	${OCL_LINKER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $<.xo -o $@.xclbin
 
 device_binary_nohup:
 	nohup make device_binary > nohup.out &
 
 device_binary_tasks: allkernels_tasks.cl
-	${OCL_COMPILER} $< -o $<.xo
-	${OCL_LINKER} $<.xo -o $@.xclbin
+	${OCL_COMPILER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $< -o $<.xo
+	${OCL_LINKER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $<.xo -o $@.xclbin
 
 device_binary_tasks_nohup:
 	nohup make device_binary_tasks > nohup.out &
@@ -46,6 +50,7 @@ run_jit:
 clean:
 	rm -f *.o *.mod *~ gnu_opt_report.txt *.optrpt *.dat *.log
 	rm -rf _x device_binary.* allkernels.cl.* nohup.out .ipcache
+	rm -rf device_binary_tasks.* allkernels_tasks.cl.*
 
 allclean: clean
 	rm -f *.exe

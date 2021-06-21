@@ -3,6 +3,7 @@ via the -s option. This script module-inline all kernels in the PSy-layer.'''
 
 from psyclone.psyGen import TransInfo
 
+
 def trans(psy):
     ''' Transformation script entry function '''
 

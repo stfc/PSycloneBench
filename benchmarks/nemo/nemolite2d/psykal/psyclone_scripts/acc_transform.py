@@ -4,6 +4,7 @@ function via the -s option. Performs OpenACC transformations. '''
 from psyclone.psyGen import TransInfo
 from psyclone.psyir.nodes import Loop
 
+
 def trans(psy):
     ''' Take the supplied psy object, apply OpenACC transformations
     to the schedule of invoke_0 and return the new psy object '''
@@ -22,8 +23,7 @@ def trans(psy):
     # in the schedule
     for child in schedule.children:
         if isinstance(child, Loop):
-            newschedule, _ = loop_trans.apply(child, {"collapse": 2})
-            schedule = newschedule
+            loop_trans.apply(child, {"collapse": 2})
 
     # Put all of the loops in a single parallel region
     parallel_trans.apply(schedule)
