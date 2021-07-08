@@ -2,13 +2,30 @@
 #
 # F90       - How to invoke the Fortran compiler
 # F90FLAGS  - Flags to pass to the Fortran compiler
-# OMPFLAGS  - Flags for compiling with OpenMP
+# OMPFLAGS  - Flags needed for linking dl_timer
 # AR        - Command to use when creating an archive (.a)
 
-.PHONY: all nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
+.PHONY: all nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv \
+	nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
 .DEFAULT_GOAL := nemolite2d
 
 include ../common.mk
+
+# List of implementations that will me compiled with 'make all' and executed
+# with 'make summary_table'
+IMPLEMENTATIONS=nemolite2d nemolite2d_align nemolite2d_preload
+
+# The implementations commented out below don't produce the same results but
+# can still be compiled with 'make <IMPLEMENTATION>' or uncommenting them.
+#
+# Implementation that produce slightly different results:
+# IMPLEMENTATIONS += nemolite2d_alignall nemolite2d_nopeel
+#
+# Implementation that produce NaN results:
+# IMPLEMENTATIONS += nemolite2d_nodiv nemolite2d_8arrays
+#
+# Implementations that purposely produce different results:
+# IMPLEMENTATIONS += nemolite2d_cont_only
 
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
@@ -18,10 +35,8 @@ COMMON_MODULES = ${COMMON_LIB} ${KERNELS} ${INF_LIB}
 # Interdependencies between modules, alphabetical order
 time_step_mod.o: ${COMMON_LIB} ${KERNELS} inf_lib
 
-
 # The targets that this Makefile supports
-all: nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv \
-nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
+all: ${IMPLEMENTATIONS}
 
 # Normal targets. Need to link with OpenMP in order to use OMP timer
 nemolite2d: ${COMMON_MODULES} time_step_mod.o nemolite2d.o
@@ -86,7 +101,7 @@ nemolite2d_8arrays: ${COMMON_MODULES} time_step_mod_alignall_preload_nopeel_8arr
 	$(F90) -o $@ $(MODULE_LIST) ${TIMER_LIB} $(LDFLAGS)
 
 clean: 
-	rm -f *.o *.mod *.MOD *~
+	rm -f *.o *.mod *.MOD *~ go2d_* tmask_*
 
 libclean:
 	${MAKE} -C ${INF_DIR} distclean
@@ -102,8 +117,20 @@ docs:
 	doxygen gocean2d.doxy.config
 
 summary:
-	@echo -n "${CC}\t\tcpu\t"
+	@echo -n "cpu\t${COMPILER_VERSION}\t"
 	@./nemolite2d.exe | awk 'BEGIN {ORS="\t"} \
 		{if ($$2 == "checksum") {print $$4} } \
 		{if ($$1 == "Time-stepping") {print $$5} } \
 		END {ORS="\n"; print ""}'
+
+# Execute all enabled implementations with their best full node performance and
+# report their ua and uv final checksums and the time-stepping time.
+summary_table:
+	@echo "Implementation\t\tPlatform\tCompiler\tua checksum\tuv checksum\ttime/step"
+	@$(foreach var,$(IMPLEMENTATIONS), \
+		echo -n "$(var)\tcpu\t${COMPILER_VERSION}\t" && \
+		./$(var).exe | awk 'BEGIN {ORS="\t"} \
+			{if ($$2 == "checksum") {print $$4} } \
+			{if ($$1 == "Time-stepping") {print $$5} } \
+			END {ORS="\n"; print ""}'; \
+	)
