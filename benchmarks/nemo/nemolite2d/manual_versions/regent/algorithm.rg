@@ -95,6 +95,10 @@ task main()
   fill(setup_data.{jpiglo, jpjglo, nit000, nitend, record, jphgr_msh}, 0)
   fill(setup_data.{dx, dy, dep_const, rdt, cbfr, visc}, 0)
   read_namelist(setup_data)
+  if(setup_data.jphgr_msh < 0 or setup_data.jphgr_msh > 3) then
+    c.printf("Wrong grid definition type (jphgr_msh must be 0, 1, 2, or 3), check your namelist file") 
+    return
+  end
 
   var grid_space = ispace(int2d, {x = setup_data[0].jpiglo + 3,
                                   y = setup_data[0].jpjglo + 3},
@@ -117,7 +121,7 @@ task main()
 
 
   --Initialise model
-  model_init(grid, loop_conditions_data)
+  model_init(grid, loop_conditions_data, setup_data.jphgr_msh)
 
 --Create the sea surface field.
   var sea_surface = region(grid_space, uvt_time_field)
