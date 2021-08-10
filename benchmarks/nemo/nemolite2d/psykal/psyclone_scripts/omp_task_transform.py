@@ -51,7 +51,6 @@ def trans(psy):
     for i in range(len(next_dependencies)):
         if next_dependencies[i] is not None:
             next_dependence = next_dependencies[i]
-            print("next dependence {}".format(next_dependence))
             for j in range(i+1, next_dependence):
                 if j >= next_dependence:
                     break
@@ -69,7 +68,6 @@ def trans(psy):
     for i in range(len(next_dependencies)-1, -1, -1):
         if next_dependencies[i] is not None:
             schedule.addchild(OMPTaskwaitDirective(), next_dependencies[i])
-            print("Inserted taskwait at {}".format(next_dependencies[i]))
 
 
     single_trans = OMPSingleTrans()
