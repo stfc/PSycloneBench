@@ -44,7 +44,7 @@ COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
 # The targets that this Makefile supports
 .PHONY: all nemolite2d_serial nemolite2d_omp nemolite2d_mpi nemolite2d_acc \
-	nemolite2d_hybrid nemolite2d_ocl nemolite2d_mpiocl
+	nemolite2d_hybrid nemolite2d_ocl nemolite2d_mpiocl nemolite2d_ompt
 
 # We don't include the OpenACC or OpenCL targets here as they
 # have specialist compiler requirements so we require the user
@@ -82,6 +82,19 @@ nemolite2d_omp: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_transform.py
 	cp Makefile_gen $@/Makefile
 	cd $@ && make nemolite2d
 	@echo "OpenMP version prepared."
+
+# OpenMP task PSyclone code-generation of NemoLite2D
+nemolite2d_ompt: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_task_transform.py
+	@echo "Generating NemoLite2D with OpenMP using omp_task_transform.py"; rm -rf $@; mkdir -p $@
+	${PSYCLONE} -nodm -s psyclone_scripts/omp_task_transform.py \
+		-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
+	# Each generated folder needs its purposely built inf_lib and timer_lib
+	cp ${INF_LIB} $@/.
+	cp ${TIMER_LIB} $@/libdl_timer.a
+	cp namelist $@/.
+	cp Makefile_gen $@/Makefile
+	cd $@ && make nemolite2d
+	@echo "OpenMP task version prepared."
 
 # MPI PSyclone code-generation of NemoLite2D
 nemolite2d_mpi: parallel_libs nemolite2d_alg.f90 psyclone_scripts/serial_transform.py
