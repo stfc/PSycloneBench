@@ -28,16 +28,18 @@ def trans(psy):
     for kernel in schedule.kernels():
         module_inline_trans.apply(kernel)
 
+    # Setup the dependency tracking
     next_dependencies = []
     for child in schedule.children:
         next_dependencies.append(0)
 
+    # Fill the next_dependencies array with the forward dependencies
     i = 0
-
     for child in schedule.children:
         next_dependencies[i] = child.forward_dependence()
         i = i + 1
 
+    # Loop through the dependencies, convert them from nodes to indices
     i = 0
     for child in schedule.children:
         j = 0
@@ -48,6 +50,13 @@ def trans(psy):
             j = j + 1
         i = i + 1
 
+    # Loop through dependencies, and remove unneccessary ones.
+    # This is first done by looping through each dependence.
+    # For each dependence, we then loop over all other dependences
+    # between the nodes involved in that dependence. If this dependence
+    # fulfills a following dependence, the following dependence is removed.
+    # If this dependence is fulfilled by a following dependence, this dependence
+    # is removed.
     for i in range(len(next_dependencies)):
         if next_dependencies[i] is not None:
             next_dependence = next_dependencies[i]
@@ -63,8 +72,11 @@ def trans(psy):
 
     for child in schedule.children:
         loop_trans.apply(child)
-    print(next_dependencies)
-    # TODO: Sort out dependencies!
+
+    # Now we have computed (what we think is) a minimal set of 
+    # dependencies, add the taskwait directives required. We do
+    # this in reverse order to ensure we don't invalidate the
+    # positions in the schedule.
     for i in range(len(next_dependencies)-1, -1, -1):
         if next_dependencies[i] is not None:
             schedule.addchild(OMPTaskwaitDirective(), next_dependencies[i])
