@@ -7,7 +7,9 @@ from psyclone.psyir.nodes import Loop
 from psyclone.configuration import Config
 from psyclone.transformations import OMPParallelTrans, OMPSingleTrans
 from psyclone.transformations import OMPTaskloopTrans, KernelModuleInlineTrans
-from psyclone.psyir.nodes import OMPTaskwaitDirective
+from psyclone.psyir.nodes import OMPTaskwaitDirective, OMPDirective, \
+                                OMPTaskloopDirective
+from psyclone.psyGen import HaloExchange
 
 
 def trans(psy):
@@ -16,13 +18,12 @@ def trans(psy):
 
     schedule = psy.invokes.get('invoke_0').schedule
 
-    if config.distributed_memory:
-        print("Distributed memory not yet implemented")
-        quit()
+
 
     loop_trans = OMPTaskloopTrans(grainsize=32)
 
     module_inline_trans = KernelModuleInlineTrans()
+
 
     # Inline all kernels in this Schedule
     for kernel in schedule.kernels():
@@ -36,8 +37,18 @@ def trans(psy):
     # Fill the next_dependencies array with the forward dependencies
     i = 0
     for child in schedule.children:
-        next_dependencies[i] = child.forward_dependence()
-        i = i + 1
+        if isinstance(child, Loop):
+            forward_dep = child.forward_dependence()
+            # If the forward dependency is a HaloExchange it will be
+            # outside of the parallel region, so we don't need to worry.
+            if not isinstance(forward_dep, HaloExchange):
+                next_dependencies[i] = forward_dep
+            else:
+                next_dependencies[i] = None
+            i = i + 1
+        else:
+            next_dependencies[i] = None
+            i = i + 1
 
     # Loop through the dependencies, convert them from nodes to indices
     i = 0
@@ -49,7 +60,6 @@ def trans(psy):
                 break
             j = j + 1
         i = i + 1
-
     # Loop through dependencies, and remove unneccessary ones.
     # This is first done by looping through each dependence.
     # For each dependence, we then loop over all other dependences
@@ -71,7 +81,8 @@ def trans(psy):
                         next_dependencies[j] = None
 
     for child in schedule.children:
-        loop_trans.apply(child)
+        if isinstance(child, Loop):
+            loop_trans.apply(child)
 
     # Now we have computed (what we think is) a minimal set of 
     # dependencies, add the taskwait directives required. We do
@@ -81,10 +92,27 @@ def trans(psy):
         if next_dependencies[i] is not None:
             schedule.addchild(OMPTaskwaitDirective(), next_dependencies[i])
 
-
     single_trans = OMPSingleTrans()
     parallel_trans = OMPParallelTrans()
-    single_trans.apply(schedule.children)
-    parallel_trans.apply(schedule.children)
-
+    sets = []
+    if config.distributed_memory:
+        # Find all of the groupings of taskloop and taskwait directives. Each of these
+        # groups needs its own parallel+single regions.
+        next_set= []
+        for child in schedule.children:
+            a = []
+            a.append(child)
+            if isinstance(child, OMPTaskloopDirective) or isinstance(child, OMPTaskwaitDirective):
+                next_set.append(child)
+            elif not isinstance(child, OMPDirective) and len(next_set) != 0:
+                sets.append(next_set)
+                next_set=[]
+        if len(next_set) != 0:
+            sets.append(next_set)
+        for next_set in sets:
+            parallel_trans.apply(next_set)
+            single_trans.apply(next_set)
+    else:
+        single_trans.apply(schedule.children)
+        parallel_trans.apply(schedule.children)
 
