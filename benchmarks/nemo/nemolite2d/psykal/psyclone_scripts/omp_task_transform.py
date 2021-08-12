@@ -74,7 +74,7 @@ def trans(psy):
                 if j >= next_dependence:
                     break
                 if next_dependencies[j] is not None:
-                    if next_dependencies[j] < next_dependence:
+                    if next_dependencies[j] <= next_dependence:
                         next_dependence = next_dependencies[j]
                         next_dependencies[i] = None
                     if next_dependencies[j] > next_dependence:
