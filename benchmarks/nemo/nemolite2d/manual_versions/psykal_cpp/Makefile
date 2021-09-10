@@ -26,8 +26,13 @@ all: nemolite2d nemolite2d_omp
 nemolite2d: ${COMMON_LIB} timer_lib inf_lib time_step.o
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step.o" nemolite2d.exe
 
-nemolite2d_omp: ${COMMON_LIB} timer_lib inf_lib time_step_omp.o
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_omp.o" nemolite2d_omp.exe
+nemolite2d_omp: ${COMMON_LIB} timer_lib inf_lib
+	rm -f time_step_omp.o
+	${MAKE} CFLAGS="${CFLAGS} ${OMPFLAGS}" LDFLAGS="${LDFLAGS} ${OMPFLAGS}" MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_omp.o" nemolite2d_omp.exe
+
+nemolite2d_omp_gpu: ${COMMON_LIB} timer_lib inf_lib
+	rm -f time_step_omp.o
+	${MAKE} CFLAGS="${CFLAGS} ${OMPTARGETFLAGS}" LDFLAGS="${LDFLAGS} ${OMPTARGETFLAGS}" MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_omp.o" nemolite2d_omp_gpu.exe
 
 nemolite2d_ompopt: ${COMMON_LIB} timer_lib inf_lib time_step_ompopt.o
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_ompopt.o" nemolite2d_ompopt.exe
@@ -42,15 +47,15 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 # called from C++ code
 %.exe: $(MODULE_LIST)
 	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) ${OMPFLAGS} -lstdc++
+		$(LDFLAGS) -lstdc++
 
 # C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
 # the imported ../common.mk)
 # Since kernels are included directly any modification in the kernel files
 # must trigger a recompilation.
 %.o: %.cpp ../../kernels/c_family/*.c
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
-
+	$(CXX) $(CFLAGS) -c $< -o $@
+	
 clean: 
 	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~ *.dat
