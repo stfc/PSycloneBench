@@ -65,7 +65,6 @@ contains
   subroutine invoke_continuity_arrays(nx, ny, M, N, rdt, ssha, &
                                       sshn_t, sshn_u, sshn_v, &
                                       hu, hv, un, vn, area_t)
-    use global_parameters_mod, only: ALIGNMENT
     use kind_params_mod
     use dl_timer, only: timer_start, timer_stop, i_def64
     implicit none
@@ -80,12 +79,22 @@ contains
     real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     !> For timing
     integer, save :: idxt
-    integer :: ic
     integer(i_def64) :: nrepeat
+    integer, parameter :: ALIGNMENT = 4
 !DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
 !DIR$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
+
+
+    ! Runtime check
+    if( mod(M, ALIGNMENT) .ne. 0 ) then
+        write(*,*) "This PSy-layer is compiled expecting a ", ALIGNMENT, &
+            "-wide alignment."
+        write(*,*) "Use DL_ESM_ALIGNMENT environment variable to match", &
+           " this requierement."
+        stop
+    endif
 
     !nrepeat = 100 
     nrepeat = 1

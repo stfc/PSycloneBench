@@ -1,7 +1,8 @@
 module boundary_conditions_mod
   use kind_params_mod
   use argument_mod, only: GO_READ, GO_READWRITE, GO_I_SCALAR, &
-       GO_ARG, GO_R_SCALAR, GO_CU, GO_CV, GO_CT, GO_GRID_MASK_T
+       GO_ARG, GO_R_SCALAR, GO_CU, GO_CV, GO_CT, GO_GRID_MASK_T, &
+       GO_STENCIL
   use kernel_mod, only: kernel_type, GO_POINTWISE, GO_DOFS, &
       GO_ALL_PTS, GO_INTERNAL_PTS
   use physical_params_mod
@@ -14,7 +15,7 @@ module boundary_conditions_mod
   public bc_ssh, bc_solid_u, bc_solid_v, bc_flather_u, bc_flather_v
   public invoke_bc_solid_u,   invoke_bc_solid_v
   public invoke_bc_flather_u, invoke_bc_flather_v
-  public invoke_bc_ssh
+  public invoke_bc_ssh, setup_vmask_code
   public bc_ssh_code, bc_solid_u_code, bc_solid_v_code
   public bc_flather_u_code, bc_flather_v_code
 
@@ -100,9 +101,9 @@ module boundary_conditions_mod
 
   type, extends(kernel_type) :: bc_flather_u
      type(go_arg), dimension(4) :: meta_args =  &
-          (/ go_arg(GO_READWRITE, GO_CU, GO_POINTWISE),  & ! ua
+          (/ go_arg(GO_READWRITE, GO_CU, GO_STENCIL(000,111,000)),  & ! ua
              go_arg(GO_READ,      GO_CU, GO_POINTWISE),  & ! hu
-             go_arg(GO_READ,      GO_CU, GO_POINTWISE),  & ! sshn_u
+             go_arg(GO_READ,      GO_CU,  GO_STENCIL(000,111,000)),  & ! sshn_u
              go_arg(GO_READ,      GO_GRID_MASK_T)     &
            /)
 
@@ -128,9 +129,9 @@ module boundary_conditions_mod
 
   type, extends(kernel_type) :: bc_flather_v
      type(go_arg), dimension(4) :: meta_args =  &
-          (/ go_arg(GO_READWRITE, GO_CV, GO_POINTWISE),  & ! va
+          (/ go_arg(GO_READWRITE, GO_CV, GO_STENCIL(010,010,010)),  & ! va
              go_arg(GO_READ,      GO_CV, GO_POINTWISE),  & ! hv
-             go_arg(GO_READ,      GO_CV, GO_POINTWISE),  & ! sshn_v
+             go_arg(GO_READ,      GO_CV, GO_STENCIL(010,010,010)),  & ! sshn_v
              go_arg(GO_READ,      GO_GRID_MASK_T)     &
            /)
 
@@ -385,19 +386,16 @@ contains
     integer, intent(in) :: ji, jj
     integer,  dimension(:,:), intent(inout) :: vmask
     integer,  dimension(:,:), intent(in) :: tmask
-    integer :: jiv
 
     vmask(ji,jj) = 0
 
     IF(tmask(ji,jj) + tmask(ji,jj+1) <= -1) return
     
     IF(tmask(ji,jj) < 0) THEN
-       jiv = jj + 1
+       vmask(ji, jj + 1) = 1
     ELSE IF(tmask(ji,jj+1) < 0) THEN
-       jiv = jj - 1 
+       vmask(ji, jj - 1) = 1
     END IF
-
-    vmask(ji,jiv) = 1
 
   end subroutine setup_vmask_code
 

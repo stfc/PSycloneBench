@@ -6,7 +6,8 @@ module time_step_mod
     implicit none
     public invoke_time_step
 
-    ! Fortran to C wrapper interface using iso_c_bindings.
+    ! Fortran to C wrapper interface using iso_c_bindings for the main invoke
+    ! function.
     interface
         subroutine wrapper_c_invoke_time_step( &
             ! Fields
@@ -15,6 +16,11 @@ module time_step_mod
             ! Grid
             tmask, area_t, area_u, area_v, dx_u, dx_v, dx_t, dy_u, dy_v, &
             dy_t, gphiu, gphiv, &
+            ! Device pointers
+            ssha_t_dp, sshn_t_dp, sshn_u_dp, sshn_v_dp, hu_dp, hv_dp, un_dp, &
+            vn_dp, ua_dp, ht_dp, ssha_u_dp, va_dp, ssha_v_dp, &
+            tmask_dp, area_t_dp, area_u_dp, area_v_dp, dx_u_dp, dx_v_dp, &
+            dx_t_dp, dy_u_dp, dy_v_dp, dy_t_dp, gphiu_dp, gphiv_dp, &
             ! Scalars
             istp, internal_xstart, internal_xstop, internal_ystart, &
             internal_ystop, width, total_size, rdt, cbfr, visc, omega, d2r, g &
@@ -24,6 +30,11 @@ module time_step_mod
                 sshn_t, sshn_u, sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, &
                 ssha_v, area_t, area_u, area_v, dx_u, dx_v, dx_t, dy_u, dy_v, &
                 dy_t, gphiu, gphiv
+            type(c_ptr), intent(inout) :: ssha_t_dp, sshn_t_dp, &
+                sshn_u_dp, sshn_v_dp, hu_dp, hv_dp, un_dp, vn_dp, ua_dp, &
+                ht_dp, ssha_u_dp, va_dp, ssha_v_dp, tmask_dp, area_t_dp, &
+                area_u_dp, area_v_dp, dx_u_dp, dx_v_dp, dx_t_dp, dy_u_dp, &
+                dy_v_dp, dy_t_dp, gphiu_dp, gphiv_dp
             integer(kind=c_int), intent(inout), dimension(*) :: tmask
             integer(kind=c_int), intent(in), value :: istp, internal_xstart, &
                 internal_xstop, internal_ystart, internal_ystop, width, total_size
@@ -32,6 +43,31 @@ module time_step_mod
         end subroutine wrapper_c_invoke_time_step
     end interface    
 
+    ! Fortran to C wrapper interface using iso_c_bindings for the function to
+    ! read data from the device location 'from' to the host location 'to'
+    interface
+        subroutine wrapper_read_from_device(from, to, startx, starty, nx, ny, &
+                                            blocking) &
+                bind(C, name="c_read_from_device")
+            use iso_c_binding, only: c_ptr, c_int, c_bool
+            type(c_ptr), intent(in), value :: from
+            type(c_ptr), intent(in), value :: to
+            integer(c_int), intent(in), value :: startx, starty, nx, ny
+            logical(c_bool), intent(in), value :: blocking
+        end subroutine wrapper_read_from_device
+    end interface
+
+    interface
+        subroutine write_to_device_c_interface(from, to, startx, starty, nx, ny, &
+                                               blocking) &
+                bind(C, name="c_write_to_device")
+            use iso_c_binding, only: c_ptr, c_int, c_bool
+            type(c_ptr), intent(in), value :: from
+            type(c_ptr), intent(in), value :: to
+            integer(c_int), intent(in), value :: startx, starty, nx, ny
+            logical(c_bool), intent(in), value :: blocking
+        end subroutine write_to_device_c_interface
+    end interface
 contains
 
     ! This invoke_time_step needs to fetch all necessary arrays, global
@@ -48,10 +84,12 @@ contains
         TYPE(r2d_field), intent(inout) :: ssha_t, sshn_t, sshn_u, &
             sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v
         INTEGER, intent(in) :: istp
+        LOGICAL, save :: first_time=.true.
 
-        ! TODO: issue #35 - Should this use %get_data() instead?
         call wrapper_c_invoke_time_step( &
-            ! Fields
+            ! Fields -- we don't use get_data() because we don't want a data
+            ! synchronisation point here. This will be appropriately managed
+            ! inside the invoke if necessary.
             ssha_t%data, &
             sshn_t%data, &
             sshn_u%data, &
@@ -78,6 +116,33 @@ contains
             sshn_t%grid%dx_t, &
             sshn_t%grid%gphiu, &
             sshn_t%grid%gphiv, &
+            ! Field device pointers
+            ssha_t%device_ptr, &
+            sshn_t%device_ptr, &
+            sshn_u%device_ptr, &
+            sshn_v%device_ptr, &
+            hu%device_ptr, &
+            hv%device_ptr, &
+            un%device_ptr, &
+            vn%device_ptr, &
+            ua%device_ptr, &
+            ht%device_ptr, &
+            ssha_u%device_ptr, &
+            va%device_ptr, &
+            ssha_v%device_ptr, &
+            ! Grid device pointers
+            sshn_t%grid%tmask_device, &
+            sshn_t%grid%area_t_device, &
+            sshn_t%grid%area_u_device, &
+            sshn_t%grid%area_v_device, &
+            sshn_t%grid%dx_u_device, &
+            sshn_t%grid%dx_v_device, &
+            sshn_t%grid%dx_t_device, &
+            sshn_t%grid%dy_u_device, &
+            sshn_t%grid%dy_v_device, &
+            sshn_t%grid%dy_t_device, &
+            sshn_t%grid%gphiu_device, &
+            sshn_t%grid%gphiv_device, & 
             ! Scalars
             istp, &
             ssha_t%grid%subdomain%internal%xstart - 1, & ! 1 -> 0 indexing
@@ -93,6 +158,36 @@ contains
             d2r, &
             g &
         )
+
+        if (first_time) then
+            first_time = .false.
+            ! Mark data_on_device flags
+            ssha_t%data_on_device = .true.
+            sshn_t%data_on_device = .true.
+            sshn_u%data_on_device = .true.
+            sshn_v%data_on_device = .true.
+            hu%data_on_device = .true.
+            hv%data_on_device = .true.
+            un%data_on_device = .true.
+            vn%data_on_device = .true.
+            ua%data_on_device = .true.
+            ht%data_on_device = .true.
+            ssha_u%data_on_device = .true.
+            va%data_on_device = .true.
+            ssha_v%data_on_device = .true.
+
+            ! Specify device data retrieving methods
+            ssha_t%read_from_device_c => wrapper_read_from_device
+            sshn_t%read_from_device_c => wrapper_read_from_device
+            sshn_u%read_from_device_c => wrapper_read_from_device
+            sshn_v%read_from_device_c => wrapper_read_from_device
+            un%read_from_device_c => wrapper_read_from_device
+            vn%read_from_device_c => wrapper_read_from_device
+            ua%read_from_device_c => wrapper_read_from_device
+            ssha_u%read_from_device_c => wrapper_read_from_device
+            va%read_from_device_c => wrapper_read_from_device
+            ssha_v%read_from_device_c => wrapper_read_from_device
+        endif
 
     END SUBROUTINE invoke_time_step
 end module time_step_mod

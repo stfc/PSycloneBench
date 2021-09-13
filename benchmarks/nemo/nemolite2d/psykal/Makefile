@@ -31,17 +31,20 @@
 SHARED_DIR = ../../../../shared
 TIMER_DIR = ${SHARED_DIR}/dl_timer
 TIMER_INC = ${TIMER_DIR}/src
-TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
+TIMER_LIB = ${TIMER_DIR}/libdl_timer_omp.a
+TIMER_LIB_DM = ${TIMER_DIR}/libdl_timer_mpi.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
 INF_LIB = ${INF_DIR}/src/lib_fd.a
-FORTCL_INC = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/
-FORTCL_LIB = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/libFortCL.a
+FORTCL_DIR = ${SHARED_DIR}/FortCL/
+FORTCL_INC = ${SHARED_DIR}/FortCL/src/
+FORTCL_LIB = ${SHARED_DIR}/FortCL/src/libFortCL.a
 COMMON_DIR = ../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
 # The targets that this Makefile supports
-.PHONY: all inf_lib timer_lib
+.PHONY: all nemolite2d_serial nemolite2d_omp nemolite2d_mpi nemolite2d_acc \
+	nemolite2d_hybrid nemolite2d_ocl nemolite2d_mpiocl
 
 # We don't include the OpenACC or OpenCL targets here as they
 # have specialist compiler requirements so we require the user
@@ -52,82 +55,126 @@ all: nemolite2d_serial
 KERNEL_DIR = ../kernels/fortran
 
 # Shorthand for invoking PSyclone
-PSYCLONE = psyclone -api gocean1.0 -d ${KERNEL_DIR} -l
+PSYCLONE = psyclone -api gocean1.0 -d ${KERNEL_DIR} -l output
 
 # Serial PSyclone code-generation of NemoLite2D
-nemolite2d_serial: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90
+nemolite2d_serial: serial_libs nemolite2d_alg.f90 psyclone_scripts/serial_transform.py
 	@echo "Generating NemoLite2D Serial"; rm -rf $@; mkdir -p $@
-	${PSYCLONE} -nodm -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
-	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	${PSYCLONE} -nodm -s psyclone_scripts/serial_transform.py \
+		-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
+	# Each generated folder needs its purposely built inf_lib and timer_lib
+	cp ${INF_LIB} $@/.
+	cp ${TIMER_LIB} $@/libdl_timer.a
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
+	cd $@ && make nemolite2d
 	@echo "Serial version prepared."
-	@echo "Run 'make nemolite2d' inside the $@ folder."
 
 # OpenMP PSyclone code-generation of NemoLite2D
-nemolite2d_omp: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 omp_transform.py
+nemolite2d_omp: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_transform.py
 	@echo "Generating NemoLite2D with OpenMP using omp_transform.py"; rm -rf $@; mkdir -p $@
-	${PSYCLONE} -nodm -s ./omp_transform.py -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
-	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	${PSYCLONE} -nodm -s psyclone_scripts/omp_transform.py \
+		-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
+	# Each generated folder needs its purposely built inf_lib and timer_lib
+	cp ${INF_LIB} $@/.
+	cp ${TIMER_LIB} $@/libdl_timer.a
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
+	cd $@ && make nemolite2d
 	@echo "OpenMP version prepared."
-	@echo "Run 'make nemolite2d' inside the $@ folder."
-
 
 # MPI PSyclone code-generation of NemoLite2D
-nemolite2d_mpi: common_lib timer_lib mpi_inf_lib nemolite2d_alg.f90
+nemolite2d_mpi: parallel_libs nemolite2d_alg.f90 psyclone_scripts/serial_transform.py
 	@echo "Generating NemoLite2D with MPI"; rm -rf $@; mkdir -p $@
-	${PSYCLONE} -dm -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
-	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	${PSYCLONE} -dm -s psyclone_scripts/serial_transform.py \
+	   	-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
+	# Each generated folder needs its purposely built inf_lib and timer_lib
+	cp ${INF_LIB} $@/.
+	cp ${TIMER_LIB_DM} $@/libdl_timer.a
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
+	cd $@ && make nemolite2d
 	@echo "MPI version prepared."
-	@echo "Run 'make nemolite2d' inside the $@ folder."
 
 # Hybrid PSyclone code-generation of NemoLite2D
-nemolite2d_hybrid: common_lib timer_lib mpi_inf_lib nemolite2d_alg.f90 omp_transform.py
+nemolite2d_hybrid: parallel_libs nemolite2d_alg.f90 psyclone_scripts/omp_transform.py
 	@echo "Generating NemoLite2D with hybrid MPI+OpenMP using omp_transform.py"
 	rm -rf $@; mkdir -p $@
-	${PSYCLONE} -dm -s ./omp_transform.py -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
-	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	${PSYCLONE} -dm -s psyclone_scripts/omp_transform.py \
+		-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
+	# Each generated folder needs its purposely built inf_lib and timer_lib
+	cp ${INF_LIB} $@/.
+	cp ${TIMER_LIB_DM} $@/libdl_timer.a
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
+	cd $@ && make nemolite2d
 	@echo "Hybrid: MPI+OpenMP version prepared."
-	@echo "Run 'make nemolite2d' inside the $@ folder."
 
-
-# OpenACC PSyclone code-generation of NemoLite2D
-nemolite2d_acc: common_lib timer_lib serial_inf_lib nemolite2d_alg.f90 acc_transform.py
+# OpenACC PSyclone code-generation of NemoLite2D (current PSyclone 1.9 will fail
+# to generate the OpenACC for the GOcean API)
+nemolite2d_acc: serial_libs nemolite2d_alg.f90 psyclone_scripts/acc_transform.py
 	@echo "Generating NemoLite2D with OpenACC"; rm -rf $@; mkdir -p $@
-	${PSYCLONE} -nodm -s ./acc_transform.py -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
-	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	${PSYCLONE} -nodm -s psyclone_scripts/acc_transform.py \
+		-I ${COMMON_DIR} \
+		-okern $@ -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
+	# Each generated folder needs its purposely built inf_lib and timer_lib
+	cp ${INF_LIB} $@/.
+	cp ${TIMER_LIB} $@/libdl_timer.a
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
+	cd $@ && make nemolite2d
 	@echo "OpenACC version prepared."
-	@echo "Run 'make <target>' inside the $@ folder."
 
 # OpenCL PSyclone code-generation of NemoLite2D
-nemolite2d_ocl: common_lib timer_lib ocl_inf_lib nemolite2d_alg.f90 ocl_transform.py
+nemolite2d_ocl: serial_libs fortcl_lib nemolite2d_alg.f90 psyclone_scripts/ocl_transform.py
 	@echo "Generating NemoLite2D with OpenCL"; rm -rf $@; mkdir -p $@
 	# This PSyclone invokation will need to resolve some Fortran modules which need
 	# to be found in the path provided by the -I parameter.
-	${PSYCLONE} -nodm -s ./ocl_transform.py --kernel-renaming single \
+	${PSYCLONE} -nodm -s psyclone_scripts/ocl_transform.py --kernel-renaming single \
 		-I ${COMMON_DIR} \
 	   	-okern $@ -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
-	cp ${INF_LIB} $@/. # Each generated folder needs its purposely built inf_lib
+	# Each generated folder needs its purposely built inf_lib and timer_lib
+	cp ${INF_LIB} $@/.
+	cp ${TIMER_LIB} $@/libdl_timer.a
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
 	# Currently we need all kernels in a single OpenCL file
-	cat $@/*.cl >> $@/allkernels
-	mv $@/allkernels $@/allkernels.cl 
-	@echo "OpenCL version prepared."
-	@echo "Run 'make <target>' inside the $@ folder"
+	cat $@/*.cl >> $@/allkernels.cl
+	cd $@ && make nemolite2docl
+	@echo "OpenCL version prepared. There are additional optional targets inside"
+	@echo "the $@ folder to compile ahead-of-time the OpenCL kernels."
+
+# MPI+OpenCL PSyclone code-generation of NemoLite2D (currently PSyclone 1.9 will not
+# generate distributed memory OpenCL code)
+nemolite2d_mpiocl: parallel_libs fortcl_lib nemolite2d_alg.f90 psyclone_scripts/ocl_transform.py
+	@echo "Generating NemoLite2D with MPI and OpenCL"; rm -rf $@; mkdir -p $@
+	# This PSyclone invokation will need to resolve some Fortran modules which need
+	# to be found in the path provided by the -I parameter.
+	${PSYCLONE} -s psyclone_scripts/ocl_transform.py --kernel-renaming single \
+		-I ${COMMON_DIR} \
+		-okern $@ -oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
+	# Each generated folder needs its purposely built inf_lib and timer_lib
+	cp ${INF_LIB} $@/.
+	cp ${TIMER_LIB_DM} $@/libdl_timer.a
+	cp namelist $@/.
+	cp Makefile_gen $@/Makefile
+	# Currently we need all kernels in a single OpenCL file
+	cat $@/*.cl >> $@/allkernels.cl
+	cd $@ && make nemolite2docl
+	@echo "OpenCL version prepared. There are additional optional targets inside"
+	@echo "the $@ folder to compile ahead-of-time the OpenCL kernels."
 
 
 # Build the infrastructure libraries
+parallel_libs: timer_lib_parallel mpi_inf_lib common_lib_mpi
+
+serial_libs: timer_lib serial_inf_lib common_lib
+
 timer_lib:
 	${MAKE} -C ${TIMER_DIR} sm_lib
+
+timer_lib_parallel:
+	${MAKE} -C ${TIMER_DIR} MPIF90="${F90}" dm_lib
 
 serial_inf_lib:
 	${MAKE} -C ${INF_DIR} distclean
@@ -137,20 +184,22 @@ mpi_inf_lib:
 	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${INF_DIR} dm_fd_lib
 
-ocl_inf_lib:
-	${MAKE} -C ${INF_DIR} distclean
-	${MAKE} -C ${INF_DIR} cl_fd_lib
+fortcl_lib:
+	${MAKE} -C ${FORTCL_DIR}
 
 common_lib:
 	${MAKE} -C ${COMMON_DIR}
 
+common_lib_mpi:
+	${MAKE} -C ${COMMON_DIR} MPI=yes
 
 clean: 
 	rm -rf nemolite2d_serial nemolite2d_omp nemolite2d_mpi
-	rm -rf nemolite2d_hybrid nemolite2d_acc nemolite2d_ocl
+	rm -rf nemolite2d_hybrid nemolite2d_acc nemolite2d_ocl nemolite2d_mpiocl
 
 libclean:
 	${MAKE} -C ${INF_DIR} distclean
+	${MAKE} -C ${FORTCL_DIR} allclean
 	${MAKE} -C ${TIMER_DIR} allclean
 	${MAKE} -C ${COMMON_DIR} allclean
 

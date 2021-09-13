@@ -8,7 +8,8 @@
 LDFLAGS += ${OMPFLAGS}
 FFLAGS += ${OPENCL_INCLUDE}
 
-.PHONY: all device_binary
+.PHONY: all device_binary device_binary_nohup device_binary_tasks \
+	    device_binary_tasks_nohup
 .DEFAULT_GOAL := nemolite2d.exe
 include ../common.mk
 
@@ -24,16 +25,32 @@ nemolite2d.exe: ${COMMON_LIB} inf_lib timer_lib fcl_lib ${COMMON_MODULES}
 # offline-compile the kernels into a device binary object. This is
 # the common workflow for FPGA devices.
 # The generated device file can be used with:
-# > PSYCLONE_KERNELS_FILE=device_binary ./nemolite2d.exe
-device_binary: %.cl
-	${OCL_COMPILER} $< -o $<.xo
-	${OCL_LINKER} $<.xo -o $@
+# > FORTCL_KERNELS_FILE=device_binary ./nemolite2d.exe
+device_binary: allkernels.cl
+	${OCL_COMPILER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $< -o $<.xo
+	${OCL_LINKER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $<.xo -o $@.xclbin
+
+device_binary_nohup:
+	nohup make device_binary > nohup.out &
+
+device_binary_tasks: allkernels_tasks.cl
+	${OCL_COMPILER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $< -o $<.xo
+	${OCL_LINKER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $<.xo -o $@.xclbin
+
+device_binary_tasks_nohup:
+	nohup make device_binary_tasks > nohup.out &
 
 run_jit:
-	PSYCLONE_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
+	FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
 
 clean:
-	rm -f *.o *.mod *~ gnu_opt_report.txt *.optrpt *.dat
+	rm -f *.o *.mod *~ gnu_opt_report.txt *.optrpt *.dat *.log
+	rm -rf _x device_binary.* allkernels.cl.* nohup.out .ipcache
+	rm -rf device_binary_tasks.* allkernels_tasks.cl.*
 
 allclean: clean
 	rm -f *.exe
@@ -44,7 +61,7 @@ allclean: clean
 
 summary:
 	@echo -n "${CC}\t\tundef\t"
-	PSYCLONE_KERNELS_FILE=allkernels.cl ./nemolite2d.exe | awk \
+	FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe | awk \
 		'BEGIN {ORS="\t"} \
 		{if ($$2 == "checksum") {print $$4} } \
 		{if ($$1 == "Time-stepping") {print $$5} } \

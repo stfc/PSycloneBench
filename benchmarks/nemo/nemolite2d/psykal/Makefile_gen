@@ -6,69 +6,82 @@
 SHARED_DIR = ../../../../../shared
 TIMER_DIR = ${SHARED_DIR}/dl_timer
 TIMER_INC = ${TIMER_DIR}/src
-TIMER_LIB = ${TIMER_DIR}/dl_timer_lib.a
 INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
 INF_INC = ${INF_DIR}/src
-FORTCL_INC = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/
-FORTCL_LIB = ${SHARED_DIR}/dl_esm_inf/external/FortCL/src/libFortCL.a
+FORTCL_INC = ${SHARED_DIR}/FortCL/src/
+FORTCL_LIB = ${SHARED_DIR}/FortCL/src/libFortCL.a
 COMMON_DIR = ../../common
 COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 
-# It uses its own copy of INF_LIB
-INF_LIB=lib_fd.a
+# It uses its own copy of INF_LIB and TIMER_LIB
+INF_LIB = lib_fd.a
+TIMER_LIB = libdl_timer.a
 
 # The kernels used by this application and their location
 KERNEL_DIR = ../kernels/fortran
-KERNELS = boundary_conditions_mod.o \
-          continuity_mod.o \
-          momentum_mod.o \
-          time_update_mod.o \
-		  infrastructure_mod.o
 
+# Depending on how PSyclone was invoked the application could be using
+# different kernel filenames.
+# 1) Kernels unmodified or modified with single renaming scheme
+KERNELS_UNMOD = boundary_conditions_mod.o \
+                continuity_mod.o \
+                momentum_mod.o \
+                time_update_mod.o \
+		        infrastructure_mod.o
 
-PLATFORM = xilinx_u200_xdma_201830_2
-EXECUTION_TARGET = sw_emu # Options: sw_emu | hw_emu | hw
+# 2) Kernels modified with multiple renaming scheme
+KERNELS_MULTIPLE = boundary_conditions_0_mod.o \
+                   boundary_conditions_1_mod.o \
+                   boundary_conditions_2_mod.o \
+                   boundary_conditions_3_mod.o \
+                   boundary_conditions_4_mod.o \
+                   continuity_0_mod.o \
+                   infrastructure_0_mod.o \
+                   infrastructure_1_mod.o \
+                   infrastructure_2_mod.o \
+                   momentum_0_mod.o \
+                   momentum_1_mod.o \
+                   time_update_0_mod.o \
+                   time_update_1_mod.o
 
-.PHONY: nemolite2d nemolite2docl nemolite2dxilinx
+# Choose which kernels to use
+KERNELS = ${KERNELS_UNMOD}
+
+.PHONY: nemolite2d nemolite2docl device_binary device_binary_nohup
 
 all: nemolite2d
+.DEFAULT_GOAL := nemolite2d
 
 # Build NemoLite2D
 nemolite2d: ${KERNELS} psy.o alg.o
 	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
 		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS}
 
-
-# Build NemoLite2D for OpenCL (with JIT'ed kernels)
+# Build NemoLite2D for OpenCL
 nemolite2docl: ${KERNELS} psy.o alg.o
-	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
-		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} -lOpenCL
-
-
-# Build NemoLite2D for OpenCL with Xilinx SDK pre-compiled kernels
-nemolite2dxilinx: ${KERNELS} allkernels.xclbin psy.o alg.o
-	$(F90) $(F90FLAGS) -o $@.exe ${KERNELS} psy.o alg.o ${COMMON_LIB} \
-		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} -lOpenCL
-
+	$(F90) $(F90FLAGS) -o nemolite2d.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
+		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} ${FORTCL_LIB} -lOpenCL
 
 # Generic rules
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} \
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} \
 		-I${FORTCL_INC} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
 
 %.o: %.mod
 
-# Xilinx Vitis OpenCL kernel compilation
-%.xclbin: %.cl
-	# Compile to a .xo file
-	v++ --compile --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
-		$< -o $<.xo
-	# Link to create a Xilinx FPGA bianry container (.xclbin)
-	v++ --link --platform ${PLATFORM} --target ${EXECUTION_TARGET} \
-		${PROFILING_FLAGS} $<.xo -o $@
+# OpenCL Ahead-of-time kernel compilation: this target will use the Xilinx standard
+# suffixes for object (.xo) and binary (.xclbin) files
+device_binary: allkernels.cl
+	${OCL_COMPILER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $< -o $<.xo
+	${OCL_LINKER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $<.xo -o $@.xclbin
+
+device_binary_nohup:
+	nohup make device_binary > nohup.out &
 
 # If we need a .f90 file that doesn't exist then it must be a kernel.
 # Create a link to the required file...
@@ -78,10 +91,12 @@ nemolite2dxilinx: ${KERNELS} allkernels.xclbin psy.o alg.o
 clean:
 	rm -f *.o *.mod *_opt_report.txt
 
+# OpenCL Execution helpers
+run_opencl_jit:
+	FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
 
-# Execution helpers
 run_xilinx_sw_emu:
-	PSYCLONE_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=sw_emu ./nemolite2dxilinx.exe
+	FORTCL_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=sw_emu ./nemolite2d.exe
 
 run_xilinx_hw_emu:
-	PSYCLONE_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=hw_emu ./nemolite2dxilinx.exe
+	FORTCL_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=hw_emu ./nemolite2d.exe

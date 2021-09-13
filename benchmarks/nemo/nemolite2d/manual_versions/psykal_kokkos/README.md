@@ -16,7 +16,9 @@ The Makefile picks up the compiler and associated flags from environment
 variables. See e.g. ../../../compiler_setup/gnu.sh for sample
 settings for the Gnu compiler suite. Additionally, it needs the path to
 the Kokkos source code, this can be set inside the makefile or with the
-`KOKKOS_PATH` environment variable. If you are using Bash and the Gnu
+`KOKKOS_PATH` environment variable. Note that the linking step is done
+with the C++ compiler, but as it links also Fortran files, the libgfortran
+library needs to be in the library path. If you are using Bash and the Gnu
 compiler then:
 
     > source ../../../../../compiler_setup/gnu.sh
@@ -48,7 +50,7 @@ run on the GPU or change the data layout. This version is available in
 - View Containers: This version uses the Kokkos View containers in addition
 to the Kokkos parallel dispatch. This allows Kokkos to control the data layout,
 the padding, and the synchonization between host and device (GPU execution)
-but it requieres additional copies of the data for each layer.
+but it requires to keep two copies of the simulation data.
 This version is available in `time_step_views_kokkos.cpp` and can be built
 with an OpenMP or a Cuda backend by setting the KOKKOS_DEVICES environment
 variable. Note that the Cuda back-end requires that the `nvcc` compiler is

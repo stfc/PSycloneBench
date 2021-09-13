@@ -5,7 +5,7 @@
 SHARED_DIR=../../../../shared
 TIMER_DIR=${SHARED_DIR}/dl_timer
 TIMER_INC=${TIMER_DIR}/src
-TIMER_LIB=${TIMER_DIR}/dl_timer_lib.a
+TIMER_LIB=${TIMER_DIR}/libdl_timer_omp.a
 
 # For timing module in new version of code
 F90FLAGS += -I${TIMER_INC}
@@ -13,7 +13,7 @@ F90FLAGS += -I${TIMER_INC}
 # For IO module
 F90FLAGS += -I../
 
-EXECS = shallow_base
+EXECS = shallow_base.exe
 
 .PHONY: all timer_lib libclean
 
@@ -24,7 +24,7 @@ shallow_base.o: timer_lib ../shallow_io_mod.o
 ../shallow_io_mod.o:
 	${MAKE} -C ../ shallow_io_mod.o
 
-%: %.o 
+%.exe: %.o 
 	$(F90) $(OMPFLAGS) $(F90FLAGS) -o $@ $^ ../shallow_io_mod.o $(TIMER_LIB) $(LDFLAGS)
 
 %.o: %.f90

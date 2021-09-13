@@ -10,7 +10,6 @@ contains
   subroutine invoke_time_step(istp, ssha, ssha_u, ssha_v, &
                               sshn_t, sshn_u, sshn_v, &
                               hu, hv, ht, ua, va, un, vn)
-    use global_parameters_mod, only: ALIGNMENT
     use kind_params_mod
     use dl_timer
     use field_mod
@@ -44,6 +43,16 @@ contains
     ! end locals for momentum
     ! Locals for BCs
     real(go_wp) :: amp_tide, omega_tide, rtime
+    integer, parameter :: ALIGNMENT = 4
+    ! Alignment runtime check
+    if( mod(ssha%grid%nx, ALIGNMENT) .ne. 0 ) then
+        write(*,*) "This PSy-layer is compiled expecting a ", ALIGNMENT, &
+            "-wide alignment."
+        write(*,*) "Use DL_ESM_ALIGNMENT environment variable to match", &
+           " this requierement."
+        stop
+    endif
+
 
     M  = ssha%grid%subdomain%global%nx
     if(mod(M, ALIGNMENT) .ne. 0)then
@@ -522,7 +531,6 @@ contains
   subroutine invoke_continuity_arrays(nx, ny, M, N, rdt, ssha, &
                                       sshn_t, sshn_u, sshn_v, &
                                       hu, hv, un, vn, area_t)
-    use global_parameters_mod, only: ALIGNMENT
     use kind_params_mod
     use dl_timer
     implicit none
@@ -536,6 +544,16 @@ contains
     integer :: jj, ji, idxt
     real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
     integer(i_def64) :: nrepeat
+    integer, parameter :: ALIGNMENT = 4
+    ! Alignment runtime check
+    if( mod(M, ALIGNMENT) .ne. 0 ) then
+        write(*,*) "This PSy-layer is compiled expecting a ", ALIGNMENT, &
+            "-wide alignment."
+        write(*,*) "Use DL_ESM_ALIGNMENT environment variable to match", &
+           " this requierement."
+        stop
+    endif
+
 !DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
 !DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64

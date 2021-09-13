@@ -18,7 +18,7 @@ API_LIB = ${API_DIR}/gocean_api.a
 
 # Location of the dl_timer library
 TIMER_INC = /home/rupert/proj/dl_timer/src
-TIMER_LIB = /home/rupert/proj/dl_timer/dl_timer_lib.a
+TIMER_LIB = /home/rupert/proj/dl_timer/libdl_timer_omp.a
 
 # Location of the kernel code
 RDIR=../nemolite2d_psykal
