@@ -57,6 +57,12 @@ nemolite2d: ${KERNELS} psy.o alg.o
 	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
 		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS}
 
+
+# Build NemoLite2D for OpenACC, uses the same target as NemoLite2D but with
+# additional Fortran flags.
+nemolite2dacc:
+	$(MAKE) F90FLAGS="$(F90FLAGS) $(ACCFLAGS)" nemolite2d
+
 # Build NemoLite2D for OpenCL
 nemolite2docl: ${KERNELS} psy.o alg.o
 	$(F90) $(F90FLAGS) -o nemolite2d.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
