@@ -115,7 +115,7 @@ extern "C" void c_invoke_time_step(
 
    #pragma omp target data map (tofrom: va[0:width*width], tmask[0:width*width]) 
    {// Boundary conditions bc_solid_v kernel (whole domain but top y boundary)
-   #pragma omp parallel for
+   #pragma omp target teams distribute parallel for collapse(2)
     for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             bc_solid_v_code(ji, jj, width, va, tmask);
