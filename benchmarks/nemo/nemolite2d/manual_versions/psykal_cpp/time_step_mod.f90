@@ -46,6 +46,7 @@ contains
         TYPE(r2d_field), intent(inout) :: ssha_t, sshn_t, sshn_u, &
             sshn_v, hu, hv, un, vn, ua, ht, ssha_u, va, ssha_v
         INTEGER, intent(in) :: istp
+        LOGICAL, save :: first_time=.true.
 
         ! TODO: issue #35 - Should this use %get_data() instead?
         call wrapper_c_invoke_time_step( &
@@ -91,5 +92,54 @@ contains
             g &
         )
 
+        if (first_time) then
+            first_time = .false.
+            ! Mark data_on_device flags
+            ssha_t%data_on_device = .true.
+            sshn_t%data_on_device = .true.
+            sshn_u%data_on_device = .true.
+            sshn_v%data_on_device = .true.
+            hu%data_on_device = .true.
+            hv%data_on_device = .true.
+            un%data_on_device = .true.
+            vn%data_on_device = .true.
+            ua%data_on_device = .true.
+            ht%data_on_device = .true.
+            ssha_u%data_on_device = .true.
+            va%data_on_device = .true.
+            ssha_v%data_on_device = .true.
+
+            ! Specify device data retrieving methods
+            ssha_t%read_from_device_f => read_openmp
+            sshn_t%read_from_device_f => read_openmp
+            sshn_u%read_from_device_f => read_openmp
+            sshn_v%read_from_device_f => read_openmp
+            un%read_from_device_f => read_openmp
+            vn%read_from_device_f => read_openmp
+            ua%read_from_device_f => read_openmp
+            ssha_u%read_from_device_f => read_openmp
+            va%read_from_device_f => read_openmp
+            ssha_v%read_from_device_f => read_openmp
+        endif
+
     END SUBROUTINE invoke_time_step
+
+  subroutine read_openmp(from, to, startx, starty, nx, ny, blocking)
+    ! Function that specify how to retrieve the device data 'from' to a host
+    ! location 'to', this function will be called by the infrastructure
+    ! whenever the data is needed on the host.
+    use iso_c_binding, only: c_ptr
+    type(c_ptr), intent(in) :: from
+    real(go_wp), dimension(:,:), intent(inout), target :: to
+    integer, intent(in) :: startx, starty, nx, ny
+    logical, intent(in) :: blocking
+
+    ! Currently non-blocking reads are only requested by halo_exchanges which
+    ! this manual version doesn't have, so it is safe to ignore. In the future
+    ! we could use the 'async' clause if non-blocking synchronisations are
+    ! needed.
+
+    !$omp target update from(to)
+  end subroutine read_openmp
+
 end module time_step_mod

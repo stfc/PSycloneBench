@@ -18,7 +18,7 @@ include ../common.mk
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
 LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
-COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${KERNELS} ${INF_LIB}
+COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${INF_LIB}
 
 # Normal targets
 all: nemolite2d nemolite2d_omp
@@ -40,8 +40,7 @@ nemolite2d_ompopt: ${COMMON_LIB} timer_lib inf_lib time_step_ompopt.o
 nemolite2d.o: $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
-time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
-                 time_update_mod.o boundary_conditions_mod.o
+time_step_mod.o: ${COMMON_LIB} inf_lib
 
 # Linking the executable needs the -lstdc++ to link also the std lib functions
 # called from C++ code
