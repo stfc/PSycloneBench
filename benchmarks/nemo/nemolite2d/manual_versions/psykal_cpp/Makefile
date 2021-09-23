@@ -32,7 +32,7 @@ nemolite2d_omp: ${COMMON_LIB} timer_lib inf_lib
 
 nemolite2d_omp_gpu: ${COMMON_LIB} timer_lib inf_lib
 	rm -f time_step_omp.o
-	${MAKE} CFLAGS="${CFLAGS} ${OMPTARGETFLAGS}" LDFLAGS="${LDFLAGS} ${OMPTARGETFLAGS}" MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_omp.o" nemolite2d_omp_gpu.exe
+	 ${MAKE} F90FLAGS="${F90FLAGS} ${OMPTARGETFLAGS}" CFLAGS="${CFLAGS} ${OMPTARGETFLAGS}" LDFLAGS="${LDFLAGS} ${OMPTARGETFLAGS}" MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_omp.o" nemolite2d_omp_gpu.exe
 
 nemolite2d_ompopt: ${COMMON_LIB} timer_lib inf_lib time_step_ompopt.o
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_ompopt.o" nemolite2d_ompopt.exe
