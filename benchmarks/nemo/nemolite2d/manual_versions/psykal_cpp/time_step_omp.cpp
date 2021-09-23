@@ -53,7 +53,7 @@ extern "C" void c_invoke_time_step(
         double g
     	){
 
-#pragma omp target data map (tofrom: area_v[0:width*width], ssha_u[0:width*width], sshn_t[0:width*width], sshn_u[0:width*width], sshn_v[0:width*width], ssha_t[0:width*width], hu[0:width*width], hv[0:width*width], un[0:width*width], vn[0:width*width], area_t[0:width*width], ht[0:width*width], tmask[0:width*width], gphiu[0:width*width], dx_u[0:width*width], dx_v[0:width*width], dx_t[0:width*width], dy_u[0:width*width], dy_t[0:width*width], ua[0:width*width], va[0:width*width], area_u[0:width*width], ssha_v[0:width*width], dy_v[0:width*width], gphiv[0:width*width])
+#pragma omp target enter data map (to: area_v[0:width*width], ssha_u[0:width*width], sshn_t[0:width*width], sshn_u[0:width*width], sshn_v[0:width*width], ssha_t[0:width*width], hu[0:width*width], hv[0:width*width], un[0:width*width], vn[0:width*width], area_t[0:width*width], ht[0:width*width], tmask[0:width*width], gphiu[0:width*width], dx_u[0:width*width], dx_v[0:width*width], dx_t[0:width*width], dy_u[0:width*width], dy_t[0:width*width], ua[0:width*width], va[0:width*width], area_u[0:width*width], ssha_v[0:width*width], dy_v[0:width*width], gphiv[0:width*width])
     {// Continuity kernel (internal domain)
     #pragma omp target teams distribute parallel for collapse(2)
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
@@ -117,21 +117,22 @@ extern "C" void c_invoke_time_step(
         }
     }
  
- }
+ 
  
     //#pragma omp target update from(va, hv, sshn_v, tmask)
     // #pragma omp target data map (from: va, hv, sshn_v, tmask) 
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
     // We cannot execute this loop in (OpenMP) parallel because of the
     // loop-carried dependency in j.
+    #pragma omp target teams distribute parallel for collapse(2)
     for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             bc_flather_v_code(ji, jj, width, va, hv, sshn_v, tmask, g);
         }
     }
    
-   #pragma omp target data map (tofrom: un[0:width*width], ua[0:width*width], vn[0:width*width], va[0:width*width], sshn_t[0:width*width], ssha_t[0:width*width], sshn_u[0:width*width], tmask[0:width*width], area_t[0:width*width], area_u[0:width*width], area_v[0:width*width], sshn_v[0:width*width])
-   {// Copy 'next' fields to 'current' fields (whole domain)
+   
+   // Copy 'next' fields to 'current' fields (whole domain)
     #pragma omp target teams distribute parallel for collapse(2)
     //#pragma omp parallel for
     for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj++){
