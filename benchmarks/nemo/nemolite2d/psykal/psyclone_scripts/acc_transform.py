@@ -13,7 +13,7 @@ def trans(psy):
     loop_trans = tinfo.get_trans_name('ACCLoopTrans')
     enter_data_trans = tinfo.get_trans_name('ACCEnterDataTrans')
     routine_trans = tinfo.get_trans_name('ACCRoutineTrans')
-    glo2arg_trans = tinfo.get_trans_name('KernelGlobalsToArguments')
+    glo2arg_trans = tinfo.get_trans_name('KernelImportsToArguments')
     inline_trans = tinfo.get_trans_name('KernelModuleInline')
 
     invoke = psy.invokes.get('invoke_0')
