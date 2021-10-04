@@ -2,7 +2,7 @@
 #
 # F90       - How to invoke the Fortran compiler
 # F90FLAGS  - Flags to pass to the Fortran compiler
-# OMPFLAGS  - Flags for compiling with OpenMP
+# OMPFLAGS  - Flags needed for linking dl_timer
 # AR        - Command to use when creating an archive (.a)
 
 .PHONY: all nemolite2d nemolite2d_align nemolite2d_cont_only nemolite2d_nodiv nemolite2d_preload nemolite2d_alignall nemolite2d_nopeel nemolite2d_8arrays
@@ -89,6 +89,7 @@ clean:
 	rm -f *.o *.mod *.MOD *~
 
 libclean:
+	${MAKE} -C ${COMMON_DIR} allclean
 	${MAKE} -C ${INF_DIR} distclean
 	${MAKE} -C ${TIMER_DIR} allclean
 

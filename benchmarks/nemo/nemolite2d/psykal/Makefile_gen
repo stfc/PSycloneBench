@@ -93,7 +93,7 @@ clean:
 
 # OpenCL Execution helpers
 run_opencl_jit:
-	FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
+	 DL_ESM_ALIGNMENT=64 FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
 
 run_xilinx_sw_emu:
 	FORTCL_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=sw_emu ./nemolite2d.exe
