@@ -37,6 +37,7 @@ nemolite_acc:
 
 tra_adv_cpu:
 	${MAKE} -C ./benchmarks/nemo/tracer_advection/original
+	${MAKE} -C ./benchmarks/nemo/tracer_advection/compute_in_subroutine
 
 clean allclean:
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal $@
