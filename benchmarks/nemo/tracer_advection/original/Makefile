@@ -31,3 +31,6 @@ clean:
 	rm -f *.o
 	rm -f *~
 	rm -f tra_adv.exe
+
+allclean: clean
+	rm -f gnu_opt_report.txt output.dat

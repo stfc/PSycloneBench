@@ -8,7 +8,7 @@
 
 .PHONY: all shallow_cpu nemolite_cpu shallow_gen nemolite_gen
 
-all: shallow_cpu nemolite_cpu
+all: shallow_cpu nemolite_cpu tra_adv_cpu
 
 # All targets using PSyclone for code generation
 all_gen: shallow_gen nemolite_gen nemolite_cpu
@@ -35,11 +35,15 @@ nemolite_acc:
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/single_file_acc
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/psykal_acc
 
+tra_adv_cpu:
+	${MAKE} -C ./benchmarks/nemo/tracer_advection/original
+
 clean allclean:
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal $@
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/common $@
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions $@
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/original $@
+	${MAKE} -C ./benchmarks/nemo/tracer_advection/original $@
 	${MAKE} -C ./benchmarks/shallow/SEQ $@
 	${MAKE} -C ./benchmarks/shallow/SEQ/original $@
 	${MAKE} -C ./benchmarks/shallow/OMP $@
