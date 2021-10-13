@@ -8,29 +8,29 @@
 #   export OMPFLAGS=-fopenmp
 #   export MPIF90=mpif90
 
-all: tra_adv.exe
+.PHONY: all tra_adv_serial
 
-# Location of the dl_timer code
-TIMER_DIR = ../../../../shared/dl_timer
-TIMER_NAME = libdl_timer_omp.a
+all: tra_adv_serial
 
-FORT_FLAGS = ${F90FLAGS} ${OMPFLAGS} -I${TIMER_DIR}/src
+# Shorthand for invoking PSyclone
+PSYCLONE = psyclone -api nemo -l output
 
-tra_adv.exe: timer_lib tra_adv.o
-	${F90} ${OMPFLAGS} -o $@ tra_adv.o ${TIMER_DIR}/${TIMER_NAME}
+tra_adv_serial:
+	mkdir -p $@
+	cp tra_adv.F90 $@/.
+	cp Makefile_gen $@/Makefile
+	${MAKE} -C $@
 
-%.o: %.f90
-	${F90} ${FORT_FLAGS} -c $<
-%.o: %.F90
-	${F90} ${FORT_FLAGS} -c $<
-
-timer_lib:
-	make -C ${TIMER_DIR} sm_lib
+tra_adv_acc:
+	mkdir -p $@
+	${PSYCLONE} -s ./kernels_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	cp Makefile_gen $@/Makefile
+	${MAKE} -C $@
 
 clean:
-	rm -f *.o
-	rm -f *~
-	rm -f tra_adv.exe
+	${MAKE} -C tra_adv_serial $@
+	${MAKE} -C tra_adv_acc $@
 
-allclean: clean
-	rm -f gnu_opt_report.txt output.dat
+allclean:
+	rm -rf tra_adv_serial
+	rm -rf tra_adv_acc
