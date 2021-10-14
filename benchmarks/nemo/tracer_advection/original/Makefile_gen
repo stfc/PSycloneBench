@@ -7,8 +7,7 @@
 FORT_FLAGS = ${F90FLAGS} ${OMPFLAGS} ${PROF_LIB_INC}
 
 tra_adv.exe: tra_adv.o
-	${F90} ${OMPFLAGS} -o $@ tra_adv.o  \
-            ${LDFLAGS}
+	${F90} ${OMPFLAGS} -o $@ tra_adv.o ${LDFLAGS}
 
 %.o: %.f90
 	${F90} ${FORT_FLAGS} -c $<
