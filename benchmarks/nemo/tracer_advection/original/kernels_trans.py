@@ -100,7 +100,8 @@ def trans(psy):
         sched.view()
 
         directives = sched.walk(ACCDirective)
-        if not directives:
+        # ARPDBG - for now we rely on managed memory
+        if True:  # not directives:
             # We only need a data region if we've added any directives
             continue
 

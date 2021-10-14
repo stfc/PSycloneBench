@@ -53,39 +53,11 @@ def valid_kernel(node):
     :rtype: bool
 
     '''
-    from psyclone.psyir.nodes import CodeBlock, IfBlock
-    from fparser.two.utils import walk
-    from fparser.two import Fortran2003
-    # PGI (18.10) often produces code that fails at run time if a Kernels
-    # region includes If constructs.
-    excluded_node_types = (CodeBlock, IfBlock)
+    from psyclone.psyir.nodes import CodeBlock, Call
+    excluded_node_types = (CodeBlock, Call)
     if node.walk(excluded_node_types):
         return False
-    # Check that there are no derived-type references in the sub-tree (because
-    # PGI deep-copy doesn't like them).
-    # TODO #365 - this check should be part of our identification of valid
-    # NEMO kernels.
-    if walk(node.ast, Fortran2003.Data_Ref):
-        return False
     return True
-
-
-def have_loops(nodes):
-    '''
-    Checks to see whether there are any Loops in the list of nodes and
-    their sub-trees.
-
-    :param nodes: list of PSyIR nodes to check for Loops.
-    :type nodes: list of :py:class:`psyclone.psyir.nodes.Node`
-    :returns: True if a Loop is found, False otherwise.
-    :rtype: bool
-
-    '''
-    from psyclone.nemo import NemoLoop
-    for node in nodes:
-        if node.walk(NemoLoop):
-            return True
-    return False
 
 
 def add_kernels(children, default_present=True):
@@ -107,15 +79,13 @@ def add_kernels(children, default_present=True):
     for child in children[:]:
         # Can this node be included in a kernels region?
         if not valid_kernel(child):
-            if have_loops(node_list):
-                try_kernels_trans(node_list, default_present)
-                node_list = []
+            try_kernels_trans(node_list, default_present)
+            node_list = []
             # It can't so go down a level and try again
             add_kernels(child.children)
         else:
             node_list.append(child)
-    if have_loops(node_list):
-        try_kernels_trans(node_list, default_present)
+    try_kernels_trans(node_list, default_present)
 
 
 def try_kernels_trans(nodes, default_present):
@@ -132,6 +102,8 @@ def try_kernels_trans(nodes, default_present):
     '''
     from psyclone.errors import InternalError
     from psyclone.transformations import TransformationError, ACCKernelsTrans
+    if not nodes:
+        return
     try:
         _, _ = ACCKernelsTrans().apply(nodes,
                                        {"default_present": default_present})
