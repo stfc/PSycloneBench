@@ -32,7 +32,7 @@ tra_adv_serial: dl_timer
 # has profiling instrumentation added that uses NVTX.  We profile 'invokes'
 # rather than 'kernels' since the whole outer loop gets put into a single
 # ACC KERNELS region.
-tra_adv_acc:
+tra_adv_acc: dl_timer
 	mkdir -p $@
 	${PSYCLONE} --profile invokes -s ./kernels_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile

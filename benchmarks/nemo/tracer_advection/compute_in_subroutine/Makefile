@@ -10,11 +10,16 @@
 #   export OMPFLAGS=-fopenmp
 #   export MPIF90=mpif90
 
+.PHONY: tra_adv_serial tra_adv_acc
+
 all: tra_adv_serial
 
 # Location of the dl_timer code
 DL_TIMER_DIR = ../../../../shared/dl_timer
 DL_TIMER_NAME = libdl_timer_omp.a
+
+# Shorthand for invoking PSyclone.
+PSYCLONE = psyclone -api nemo -l output
 
 tra_adv_serial: dl_timer
 	mkdir -p $@
@@ -22,6 +27,14 @@ tra_adv_serial: dl_timer
 	cp Makefile_gen $@/Makefile
 	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
             LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
+
+tra_adv_acc: dl_timer
+	mkdir -p $@
+	${PSYCLONE} --profile invokes -s ./kernels_trans.py -opsy $@/tra_adv_compute.f90 ./tra_adv_compute.F90
+	cp Makefile_gen $@/Makefile
+	cp tra_adv_driver.F90 $@/.
+	${MAKE} PROF_LIB_INC="-I${PSYCLONE_NVIDIA_LIB_DIR} -I../${DL_TIMER_DIR}/src" \
+           LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME} ${PSYCLONE_NVIDIA_LIB_DIR}/libnvtx_prof.a" -C $@
 
 dl_timer:
 	${MAKE} -C ${DL_TIMER_DIR} sm_lib
