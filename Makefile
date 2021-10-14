@@ -36,15 +36,14 @@ nemolite_acc:
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions/psykal_acc
 
 tra_adv_cpu:
-	${MAKE} -C ./benchmarks/nemo/tracer_advection/original
-	${MAKE} -C ./benchmarks/nemo/tracer_advection/compute_in_subroutine
+	${MAKE} -C ./benchmarks/nemo/tracer_advection
 
 clean allclean:
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/psykal $@
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/common $@
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/manual_versions $@
 	${MAKE} -C ./benchmarks/nemo/nemolite2d/original $@
-	${MAKE} -C ./benchmarks/nemo/tracer_advection/original $@
+	${MAKE} -C ./benchmarks/nemo/tracer_advection $@
 	${MAKE} -C ./benchmarks/shallow/SEQ $@
 	${MAKE} -C ./benchmarks/shallow/SEQ/original $@
 	${MAKE} -C ./benchmarks/shallow/OMP $@
