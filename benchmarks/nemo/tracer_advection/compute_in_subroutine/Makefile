@@ -10,29 +10,24 @@
 #   export OMPFLAGS=-fopenmp
 #   export MPIF90=mpif90
 
-all: tra_adv.exe
+all: tra_adv_serial
 
 # Location of the dl_timer code
-TIMER_DIR = ../../../../shared/dl_timer
-TIMER_NAME = libdl_timer_omp.a
+DL_TIMER_DIR = ../../../../shared/dl_timer
+DL_TIMER_NAME = libdl_timer_omp.a
 
-FORT_FLAGS = ${F90FLAGS} ${OMPFLAGS} -I${TIMER_DIR}/src
+tra_adv_serial: dl_timer
+	mkdir -p $@
+	cp tra_adv_*.F90 $@/.
+	cp Makefile_gen $@/Makefile
+	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
+            LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
-tra_adv.exe: timer_lib tra_adv_compute.o tra_adv_driver.o
-	${F90} ${OMPFLAGS} -o $@ tra_adv_compute.o tra_adv_driver.o ${TIMER_DIR}/${TIMER_NAME}
-
-%.o: %.f90
-	${F90} ${FORT_FLAGS} -c $<
-%.o: %.F90
-	${F90} ${FORT_FLAGS} -c $<
-
-timer_lib:
-	make -C ${TIMER_DIR} sm_lib
+dl_timer:
+	${MAKE} -C ${DL_TIMER_DIR} sm_lib
 
 clean:
-	rm -f *.o *.mod
-	rm -f *~
-	rm -f tra_adv.exe
+	${MAKE} -C tra_adv_serial $@
 
 allclean: clean
-	rm -f gnu_opt_report.txt output.dat
+	rm -rf tra_adv_serial
