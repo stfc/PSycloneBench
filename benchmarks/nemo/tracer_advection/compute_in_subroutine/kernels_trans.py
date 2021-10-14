@@ -67,13 +67,15 @@ PSyclone. Issue #309 will tackle this limitation.
 '''
 
 from __future__ import print_function
-from psyclone.psyGen import TransInfo
-from kernel_utils import add_kernels
-from psyclone.psyir.nodes import ACCDirective
 
+from kernel_utils import add_kernels
+from psyclone.domain.nemo.transformations import NemoAllArrayRange2LoopTrans
+from psyclone.psyir.nodes import ACCDirective, Assignment
+from psyclone.psyGen import TransInfo
 
 # Get the PSyclone transformations we will use
 ACC_DATA_TRANS = TransInfo().get_trans_name('ACCDataTrans')
+ARRAY_RANGE_TRANS = NemoAllArrayRange2LoopTrans()
 
 
 def trans(psy):
@@ -95,6 +97,10 @@ def trans(psy):
                   format(invoke.name))
             continue
         sched.view()
+
+        # Transform any array assignments (Fortran ':' notation) into loops.
+        for assignment in sched.walk(Assignment):
+            ARRAY_RANGE_TRANS.apply(assignment)
 
         add_kernels(sched.children)
         sched.view()
