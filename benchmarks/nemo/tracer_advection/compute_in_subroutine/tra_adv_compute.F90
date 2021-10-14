@@ -5,6 +5,7 @@
 module tra_adv_compute_mod
 
   implicit none
+  REAL*8, DIMENSION(:,:,:), ALLOCATABLE :: zslpx, zslpy, zwx, zwy, zind
 
 contains
 
@@ -21,10 +22,14 @@ contains
     INTEGER, INTENT(IN) :: jpi, jpj, jpk
     
     ! local variables
-    REAL*8, DIMENSION(jpi,jpj,jpk) :: zslpx, zslpy, zwx, zwy, zind
     REAL*8                         :: zu, z0u, zzwx, zv, z0v, zzwy, ztra, zbtr, zdt, &
          zalpha, zice, zw, z0w
     INTEGER                        :: ji, jj, jk
+
+    if(.not. allocated(zslpx))then
+       allocate(zslpx(jpi,jpj,jpk), zslpy(jpi,jpj,jpk), zwx(jpi,jpj,jpk), &
+                zwy(jpi,jpj,jpk), zind(jpi,jpj,jpk))
+    end if
 
     ! Not sure what to do with 2D and 1D arrays in the SIR backend
     DO jk = 1, jpk
