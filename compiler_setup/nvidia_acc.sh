@@ -22,23 +22,27 @@ F90FLAGS="-O3 -Minfo=all"
 # For Tesla K20c
 #F90FLAGS+=" -acc -ta=tesla,cc35,maxregcount:80,nordc -Mcuda=cc35,maxregcount:80,nordc"
 # Generic flags
-F90FLAGS+=" -acc -ta=tesla:nordc -Mcuda=nordc -Mmanaged"
+F90FLAGS+=" -acc -ta=tesla:managed"
 # Linker flags
 # For Quadro K600
 #LDFLAGS+=" -acc -ta=tesla,cc30 -Mcuda=cc30,nordc"
 # For Tesla K20c
 #LDFLAGS="-acc -ta=nvidia,cc35 -Mcuda=cc35,nordc"
 # Generic flags
-LDFLAGS="-acc -ta=nvidia -Mcuda=nordc -Mmanaged"
+LDFLAGS="-acc -ta=tesla:managed -Mcuda"
 # Location of various CUDA maths libraries
-LDFLAGS+=" -L${CUDA_MATH_DIR}/lib64"
+LDFLAGS+=" -L${CUDA_MATH_DIR}/lib64  -lnvToolsExt"
 # Flags to use when compiling with OpenMP support
 OMPFLAGS="-mp"
 # Command to use to create archive of object files
 AR=ar
+# Location of PSyclone NVIDIA profiling library (used when adding
+# profiling to the nemo/tracer_advection benchmark).
+PSYCLONE_NVIDIA_LIB_DIR=/home/aporter/PSyclone/lib/profiling/nvidia
 # ==============================
 export F90
 export F90FLAGS
 export LDFLAGS
 export AR
+export PSYCLONE_NVIDIA_LIB_DIR
 
