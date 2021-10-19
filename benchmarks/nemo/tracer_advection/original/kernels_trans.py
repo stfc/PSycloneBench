@@ -33,7 +33,7 @@
 # -----------------------------------------------------------------------------
 # Authors: R. W. Ford, A. R. Porter and S. Siso, STFC Daresbury Lab
 
-'''A transformation script that seeks to apply OpenACC DATA and KERNELS
+'''A transformation script that seeks to apply OpenACC KERNELS
 directives to NEMO style code.  In order to use
 it you must first install PSyclone. See README.md in the top-level
 psyclone directory.
@@ -56,24 +56,22 @@ routine) then the script moves a level down the tree and then repeats
 the process of attempting to create the largest possible Kernel
 region.
 
-Once the Kernels regions have been created, the script then simply
-encloses each of them within an OpenACC Data region (since these have
-already been made as large as possible). In reality, the purpose of a
-data region is to keep data on the remote GPU device for as long as
-possible, ideally between Kernel regions. However, this requires more
-sophisticated dependency analysis than is yet implemented in
-PSyclone. Issue #309 will tackle this limitation.
-
 '''
 
 from __future__ import print_function
-from psyclone.psyGen import TransInfo
-from kernel_utils import add_kernels
-from psyclone.psyir.nodes import ACCDirective
+from psyclone.domain.nemo.transformations import NemoAllArrayRange2LoopTrans
+from psyclone.errors import InternalError
+from psyclone.psyir.nodes import Assignment, CodeBlock, Call, Literal, Loop, \
+    ACCLoopDirective
+from psyclone.transformations import ACCLoopTrans, TransformationError, \
+    ACCKernelsTrans
 
+
+COLLAPSE_LOOPS = False
+EXPAND_IMPLICIT_LOOPS = False
 
 # Get the PSyclone transformations we will use
-ACC_DATA_TRANS = TransInfo().get_trans_name('ACCDataTrans')
+ARRAY_RANGE_TRANS = NemoAllArrayRange2LoopTrans()
 
 
 def trans(psy):
@@ -96,22 +94,111 @@ def trans(psy):
             continue
         sched.view()
 
+        if EXPAND_IMPLICIT_LOOPS:
+            # Transform any array assignments (Fortran ':' notation)
+            # into loops.
+            for assignment in sched.walk(Assignment):
+                ARRAY_RANGE_TRANS.apply(assignment)
+
         add_kernels(sched.children)
         sched.view()
 
-        directives = sched.walk(ACCDirective)
-        # ARPDBG - for now we rely on managed memory
-        if True:  # not directives:
-            # We only need a data region if we've added any directives
-            continue
 
-        # Since we've already taken care to only include recognised code within
-        # 'kernels' directives, we simply put each of those directives inside
-        # a data region. In reality we would want to try and make the data
-        # regions bigger but this is only an example.
-        for directive in directives:
-            ACC_DATA_TRANS.apply([directive])
+def valid_kernel(node):
+    '''
+    Whether the sub-tree that has `node` at its root is eligible to be
+    enclosed within an OpenACC KERNELS directive.
 
-        sched.view()
+    :param node: the node in the PSyIR to check.
+    :type node: :py:class:`psyclone.psyir.nodes.Node`
 
-        invoke.schedule = sched
+    :returns: True if the sub-tree can be enclosed in a KERNELS region.
+    :rtype: bool
+
+    '''
+    excluded_node_types = (CodeBlock, Call)
+    return node.walk(excluded_node_types) == []
+
+
+def add_kernels(children, default_present=True):
+    '''
+    Walks through the PSyIR inserting OpenACC KERNELS directives at as
+    high a level as possible.
+
+    :param children: list of sibling Nodes in PSyIR that are candidates for \
+                     inclusion in an ACC KERNELS region.
+    :type children: list of :py:class:`psyclone.psyir.nodes.Node`
+    :param bool default_present: whether or not to supply the \
+                          DEFAULT(PRESENT) clause to ACC KERNELS directives.
+
+    '''
+    if not children:
+        return
+
+    node_list = []
+    for child in children[:]:
+        # Can this node be included in a kernels region?
+        if not valid_kernel(child):
+            try_kernels_trans(node_list, default_present)
+            node_list = []
+            # It can't so go down a level and try again
+            add_kernels(child.children)
+        else:
+            node_list.append(child)
+    try_kernels_trans(node_list, default_present)
+
+
+def try_kernels_trans(nodes, default_present):
+    '''
+    Attempt to enclose the supplied list of nodes within a kernels
+    region. If the transformation fails then the error message is
+    reported but execution continues.
+
+    :param nodes: list of Nodes to enclose within a Kernels region.
+    :type nodes: list of :py:class:`psyclone.psyir.nodes.Node`
+    :param bool default_present: whether or not to supply the \
+                          DEFAULT(PRESENT) clause to ACC KERNELS directives.
+
+    '''
+    if not nodes:
+        return
+    try:
+        _, _ = ACCKernelsTrans().apply(nodes,
+                                       {"default_present": default_present})
+        if COLLAPSE_LOOPS:
+            collapse_loops(nodes)
+    except (TransformationError, InternalError) as err:
+        print("Failed to transform nodes: {0}", nodes)
+        print("Error was: {0}".format(str(err)))
+
+
+def collapse_loops(nodes):
+    '''
+    Searches the supplied list of nodes and applies an ACC LOOP COLLAPSE(2)
+    directive to any perfectly-nested lon-lat loops.
+
+    :param nodes: list of nodes to search for loops.
+    :type nodes: list of :py:class:`psyclone.psyir.nodes.Node`
+
+    '''
+    loop_trans = ACCLoopTrans()
+
+    for node in nodes:
+        loops = node.walk(Loop)
+        for loop in loops:
+            if loop.ancestor(ACCLoopDirective):
+                # We've already transformed a parent Loop so skip this one.
+                continue
+            loop_options = {}
+            # We put a COLLAPSE(2) clause on any perfectly-nested lon-lat
+            # loops that have a Literal value for their step. The latter
+            # condition is necessary to avoid compiler errors with 20.7.
+            if loop.loop_type == "lat" and \
+               isinstance(loop.step_expr, Literal) and \
+               isinstance(loop.loop_body[0], Loop) and \
+               loop.loop_body[0].loop_type == "lon" and \
+               isinstance(loop.loop_body[0].step_expr, Literal) and \
+               len(loop.loop_body.children) == 1:
+                loop_options["collapse"] = 2
+            if loop_options:
+                loop_trans.apply(loop, loop_options)
