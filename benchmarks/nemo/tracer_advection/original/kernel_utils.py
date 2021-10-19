@@ -40,6 +40,12 @@
 
 from __future__ import print_function
 
+from psyclone.errors import InternalError
+from psyclone.psyir.nodes import CodeBlock, Call, Literal, Loop, \
+    ACCLoopDirective
+from psyclone.transformations import ACCLoopTrans, TransformationError, \
+    ACCKernelsTrans
+
 
 def valid_kernel(node):
     '''
@@ -53,7 +59,6 @@ def valid_kernel(node):
     :rtype: bool
 
     '''
-    from psyclone.psyir.nodes import CodeBlock, Call
     excluded_node_types = (CodeBlock, Call)
     if node.walk(excluded_node_types):
         return False
@@ -100,13 +105,44 @@ def try_kernels_trans(nodes, default_present):
                           DEFAULT(PRESENT) clause to ACC KERNELS directives.
 
     '''
-    from psyclone.errors import InternalError
-    from psyclone.transformations import TransformationError, ACCKernelsTrans
     if not nodes:
         return
     try:
         _, _ = ACCKernelsTrans().apply(nodes,
                                        {"default_present": default_present})
+        # collapse_loops(nodes)
     except (TransformationError, InternalError) as err:
         print("Failed to transform nodes: {0}", nodes)
         print("Error was: {0}".format(str(err)))
+
+
+def collapse_loops(nodes):
+    '''
+    Searches the supplied list of nodes and applies an ACC LOOP COLLAPSE(2)
+    directive to any perfectly-nested lon-lat loops.
+
+    :param nodes: list of nodes to search for loops.
+    :type nodes: list of :py:class:`psyclone.psyir.nodes.Node`
+
+    '''
+    loop_trans = ACCLoopTrans()
+
+    for node in nodes:
+        loops = node.walk(Loop)
+        for loop in loops:
+            if loop.ancestor(ACCLoopDirective):
+                # We've already transformed a parent Loop so skip this one.
+                continue
+            loop_options = {}
+            # We put a COLLAPSE(2) clause on any perfectly-nested lon-lat
+            # loops that have a Literal value for their step. The latter
+            # condition is necessary to avoid compiler errors with 20.7.
+            if loop.loop_type == "lat" and \
+               isinstance(loop.step_expr, Literal) and \
+               isinstance(loop.loop_body[0], Loop) and \
+               loop.loop_body[0].loop_type == "lon" and \
+               isinstance(loop.loop_body[0].step_expr, Literal) and \
+               len(loop.loop_body.children) == 1:
+                loop_options["collapse"] = 2
+            if loop_options:
+                loop_trans.apply(loop, loop_options)
