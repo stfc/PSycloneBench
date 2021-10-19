@@ -21,15 +21,15 @@ F90FLAGS="-O3 -Minfo=all"
 #F90FLAGS+=" -acc -ta=tesla:cc30,nordc -Mcuda=cc30,nordc"
 # For Tesla K20c
 #F90FLAGS+=" -acc -ta=tesla,cc35,maxregcount:80,nordc -Mcuda=cc35,maxregcount:80,nordc"
-# Generic flags
-F90FLAGS+=" -acc -ta=tesla:managed"
+# V100 with managed memory
+F90FLAGS+=" -acc=gpu -gpu=cc70,managed"
 # Linker flags
 # For Quadro K600
 #LDFLAGS+=" -acc -ta=tesla,cc30 -Mcuda=cc30,nordc"
 # For Tesla K20c
 #LDFLAGS="-acc -ta=nvidia,cc35 -Mcuda=cc35,nordc"
-# Generic flags
-LDFLAGS="-acc -ta=tesla:managed -Mcuda"
+# V100 with managed memory
+LDFLAGS="-acc=gpu -gpu=cc70,managed"
 # Location of various CUDA maths libraries
 LDFLAGS+=" -L${CUDA_MATH_DIR}/lib64  -lnvToolsExt"
 # Flags to use when compiling with OpenMP support
