@@ -34,7 +34,7 @@ tra_adv_serial: dl_timer
 # ACC KERNELS region.
 tra_adv_acc: dl_timer
 	mkdir -p $@
-	${PSYCLONE} --profile invokes -s ./kernels_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} --profile invokes -s ../scripts/kernels_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} PROF_LIB_INC="-I${PSYCLONE_NVIDIA_LIB_DIR} -I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME} ${PSYCLONE_NVIDIA_LIB_DIR}/libnvtx_prof.a" -C $@
