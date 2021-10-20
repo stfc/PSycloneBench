@@ -31,7 +31,7 @@ F90FLAGS+=" -acc=gpu -gpu=cc70,managed"
 # V100 with managed memory
 LDFLAGS="-acc=gpu -gpu=cc70,managed"
 # Location of various CUDA maths libraries
-LDFLAGS+=" -L${CUDA_MATH_DIR}/lib64  -lnvToolsExt"
+LDFLAGS+=" -Mcuda -L${CUDA_MATH_DIR}/lib64  -lnvToolsExt"
 # Flags to use when compiling with OpenMP support
 OMPFLAGS="-mp"
 # Command to use to create archive of object files
