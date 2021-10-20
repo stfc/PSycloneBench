@@ -259,7 +259,7 @@ PROGRAM tra_adv
      DO jj = 2, jpj-1
         DO ji = 2, jpi-1
            checksum = checksum + mydomain(ji,jj,jk)
-           write(4,*) mydomain(ji,jj,jk)
+           write(24,*) mydomain(ji,jj,jk)
         END DO
      END DO
   END DO
