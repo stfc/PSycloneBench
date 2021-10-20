@@ -70,6 +70,19 @@ def trans(psy):
     :rtype: :py:class:`psyclone.psyGen.PSy`
 
     '''
+    # For each Invoke perform the transformations required to convert
+    # the Schedule into a form that the SIR Writer will accept.
+    for invoke in psy.invokes.invoke_list:
+        schedule = invoke.schedule
+
+        make_sir_compliant(schedule)
+
+    return psy
+
+
+def make_sir_compliant(schedule):
+    '''
+    '''
     abs_trans = Abs2CodeTrans()
     sign_trans = Sign2CodeTrans()
     min_trans = Min2CodeTrans()
@@ -77,48 +90,40 @@ def trans(psy):
     array_access_trans = NemoAllArrayAccess2LoopTrans()
     hoist_trans = HoistTrans()
 
-    # For each Invoke write out the SIR representation of the
-    # schedule. Note, there is no algorithm layer in the NEMO API so
-    # the invokes represent all of the original code.
-    for invoke in psy.invokes.invoke_list:
-        schedule = invoke.schedule
+    # Transform any single index accesses in array assignments
+    # (e.g. a(1)) into 1-trip loops.
+    for assignment in schedule.walk(Assignment):
+        array_access_trans.apply(assignment)
 
-        # Transform any single index accesses in array assignments
-        # (e.g. a(1)) into 1-trip loops.
-        for assignment in schedule.walk(Assignment):
-            array_access_trans.apply(assignment)
+    # Transform any array assignments (Fortran ':' notation) into loops.
+    for assignment in schedule.walk(Assignment):
+        array_range_trans.apply(assignment)
 
-        # Transform any array assignments (Fortran ':' notation) into loops.
-        for assignment in schedule.walk(Assignment):
-            array_range_trans.apply(assignment)
+    for kernel in schedule.walk(NemoKern):
 
-        for kernel in schedule.walk(NemoKern):
+        kernel_schedule = kernel.get_kernel_schedule()
+        for oper in kernel_schedule.walk(Operation):
+            if oper.operator == UnaryOperation.Operator.ABS:
+                # Apply ABS transformation
+                abs_trans.apply(oper)
+            elif oper.operator == BinaryOperation.Operator.SIGN:
+                # Apply SIGN transformation
+                sign_trans.apply(oper)
+            elif oper.operator in [BinaryOperation.Operator.MIN,
+                                   NaryOperation.Operator.MIN]:
+                # Apply (2-n arg) MIN transformation
+                min_trans.apply(oper)
 
-            kernel_schedule = kernel.get_kernel_schedule()
-            for oper in kernel_schedule.walk(Operation):
-                if oper.operator == UnaryOperation.Operator.ABS:
-                    # Apply ABS transformation
-                    abs_trans.apply(oper)
-                elif oper.operator == BinaryOperation.Operator.SIGN:
-                    # Apply SIGN transformation
-                    sign_trans.apply(oper)
-                elif oper.operator in [BinaryOperation.Operator.MIN,
-                                       NaryOperation.Operator.MIN]:
-                    # Apply (2-n arg) MIN transformation
-                    min_trans.apply(oper)
-
-        # Remove any loop invariant assignments inside k-loops to make
-        # them perfectly nested. At the moment this transformation
-        # does not perform any dependence analysis validation so could
-        # move code that should not be moved, see issue
-        # #1387. However, it is known that it is safe do apply this
-        # transformation to this particular code
-        # (tra_adv_compute.F90).
-        for loop in schedule.loops():
-            # outermost only
-            if loop.loop_type == "levels":
-                for child in loop.loop_body[:]:
-                    if isinstance(child, Assignment):
-                        hoist_trans.apply(child)
-
-    return psy
+    # Remove any loop invariant assignments inside k-loops to make
+    # them perfectly nested. At the moment this transformation
+    # does not perform any dependence analysis validation so could
+    # move code that should not be moved, see issue
+    # #1387. However, it is known that it is safe do apply this
+    # transformation to this particular code
+    # (tra_adv_compute.F90).
+    for loop in schedule.loops():
+        # outermost only
+        if loop.loop_type == "levels":
+            for child in loop.loop_body[:]:
+                if isinstance(child, Assignment):
+                    hoist_trans.apply(child)
