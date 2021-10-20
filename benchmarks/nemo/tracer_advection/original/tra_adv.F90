@@ -7,17 +7,16 @@
 PROGRAM tra_adv
    USE dl_timer, only: timer_init, timer_register, timer_start, timer_stop, &
        timer_report
-   REAL*8, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) :: t3sn, t3ns, t3ew, t3we
    REAL*8, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   :: tsn 
    REAL*8, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   :: pun, pvn, pwn
    REAL*8, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   :: mydomain, zslpx, zslpy, zwx, zwy, umask, vmask, tmask, zind
    REAL*8, ALLOCATABLE, SAVE, DIMENSION(:,:)     :: ztfreez, rnfmsk, upsmsk
    REAL*8, ALLOCATABLE, SAVE, DIMENSION(:)       :: rnfmsk_z
    REAL*8                                        :: zice, zu, z0u, zzwx, zv, z0v, zzwy, ztra, zbtr, zdt, zalpha
-   REAL*8                                        :: r
+   REAL*8                                        :: r, checksum
    REAL*8                                        :: zw, z0w
    INTEGER                                       :: jpi, jpj, jpk, ji, jj, jk, jt
-   INTEGER*8                                     :: it
+   INTEGER*8                                     :: itn_count
    CHARACTER(len=10)                             :: env
    !> Timer indexes, one for initialisation, one for the 'time-stepping'
    INTEGER :: init_timer, step_timer
@@ -29,13 +28,13 @@ PROGRAM tra_adv
    CALL get_environment_variable("JPK", env)
    READ ( env, '(i10)' ) jpk
    CALL get_environment_variable("IT", env)
-   READ ( env, '(i10)' ) it
+   READ ( env, '(i10)' ) itn_count
 
    ! Set-up our timers
 
    CALL timer_init()
    CALL timer_register(init_timer, label='Initialisation')
-   CALL timer_register(step_timer, label='Time-stepping', num_repeats=it)
+   CALL timer_register(step_timer, label='Time-stepping', num_repeats=itn_count)
 
    ! Initialisation
 
@@ -104,7 +103,7 @@ PROGRAM tra_adv
 !***********************
    call timer_start(step_timer)
 
-   DO jt = 1, it
+   DO jt = 1, itn_count
        DO jk = 1, jpk
           DO jj = 1, jpj
              DO ji = 1, jpi
@@ -253,36 +252,41 @@ PROGRAM tra_adv
 
   call timer_stop(step_timer)
 
-  OPEN(unit = 4, file = 'output.dat', form='formatted')
-  
+  OPEN(unit = 24, file = 'output.dat', form='formatted')
+
+  checksum = 0.0d0
   DO jk = 1, jpk-1
      DO jj = 2, jpj-1
         DO ji = 2, jpi-1
+           checksum = checksum + mydomain(ji,jj,jk)
            write(4,*) mydomain(ji,jj,jk)
         END DO
      END DO
   END DO
 
-  CLOSE(4)
+  write(*, "('Checksum for domain ', 2(I4, ' x'), I4, ' (',I4,' iterations) = ',E23.16)") &
+       jpi, jpj, jpk, itn_count, checksum
 
-  DEALLOCATE( mydomain )
-  DEALLOCATE( zwx )
-  DEALLOCATE( zwy )
-  DEALLOCATE( zslpx )
-  DEALLOCATE( zslpy )
-  DEALLOCATE( pun )
-  DEALLOCATE( pvn )
-  DEALLOCATE( pwn )
-  DEALLOCATE( umask)
-  DEALLOCATE( vmask)
-  DEALLOCATE( tmask)
-  DEALLOCATE( zind )
-  DEALLOCATE( ztfreez )
-  DEALLOCATE( rnfmsk)
-  DEALLOCATE( upsmsk)
-  DEALLOCATE( rnfmsk_z)
-  DEALLOCATE( tsn)
+  close(24)
 
-  CALL timer_report()
+  deallocate( mydomain )
+  deallocate( zwx )
+  deallocate( zwy )
+  deallocate( zslpx )
+  deallocate( zslpy )
+  deallocate( pun )
+  deallocate( pvn )
+  deallocate( pwn )
+  deallocate( umask)
+  deallocate( vmask)
+  deallocate( tmask)
+  deallocate( zind )
+  deallocate( ztfreez )
+  deallocate( rnfmsk)
+  deallocate( upsmsk)
+  deallocate( rnfmsk_z)
+  deallocate( tsn)
 
-END PROGRAM tra_adv
+  call timer_report()
+
+end program tra_adv

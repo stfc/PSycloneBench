@@ -7,7 +7,7 @@ program tracer_advection
   REAL*8, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   :: mydomain, umask, vmask, tmask, zind
   REAL*8, ALLOCATABLE, SAVE, DIMENSION(:,:)     :: ztfreez, rnfmsk, upsmsk
   REAL*8, ALLOCATABLE, SAVE, DIMENSION(:)       :: rnfmsk_z
-  REAL*8                                        :: r
+  REAL*8                                        :: r, checksum
   INTEGER                                       :: jpi, jpj, jpk, ji, jj, jk, jt
   INTEGER*8                                     :: itn_count
   CHARACTER(len=10)                             :: env
@@ -94,32 +94,39 @@ program tracer_advection
 
   call timer_stop(step_timer)
 
-  OPEN(unit = 24, file = 'output.dat', form='formatted')
-  
-  DO jk = 1, jpk-1
-     DO jj = 2, jpj-1
-        DO ji = 2, jpi-1
+  ! Output final field and compute checksum
+
+  open(unit = 24, file = 'output.dat', form='formatted')
+
+  checksum = 0.0d0
+  do jk = 1, jpk-1
+     do jj = 2, jpj-1
+        do ji = 2, jpi-1
+           checksum = checksum + mydomain(ji,jj,jk)
            write(24,*) mydomain(ji,jj,jk)
-        END DO
-     END DO
-  END DO
+        end do
+     end do
+  end do
 
-  CLOSE(24)
+  write(*, "('Checksum for domain ', 2(I4, ' x'), I4, ' (',I4,' iterations) = ',E23.16)") &
+       jpi, jpj, jpk, itn_count, checksum
 
-  DEALLOCATE( mydomain )
-  DEALLOCATE( pun )
-  DEALLOCATE( pvn )
-  DEALLOCATE( pwn )
-  DEALLOCATE( umask)
-  DEALLOCATE( vmask)
-  DEALLOCATE( tmask)
-  DEALLOCATE( zind )
-  DEALLOCATE( ztfreez )
-  DEALLOCATE( rnfmsk)
-  DEALLOCATE( upsmsk)
-  DEALLOCATE( rnfmsk_z)
-  DEALLOCATE( tsn)
+  close(24)
 
-  CALL timer_report()
+  deallocate( mydomain )
+  deallocate( pun )
+  deallocate( pvn )
+  deallocate( pwn )
+  deallocate( umask)
+  deallocate( vmask)
+  deallocate( tmask)
+  deallocate( zind )
+  deallocate( ztfreez )
+  deallocate( rnfmsk)
+  deallocate( upsmsk)
+  deallocate( rnfmsk_z)
+  deallocate( tsn)
+
+  call timer_report()
 
 end program tracer_advection
