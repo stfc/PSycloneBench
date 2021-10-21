@@ -26,6 +26,8 @@ nemolite2d_omp - as above but with work-sharing OpenMP pragmas in for each
                  loop in the PSy-layer (`time_step_omp.cpp`). 
 nemolite2d_ompopt - as above but with some optimizations to achieve better
                     performance (`time_step_ompopt.cpp`).
+nemolite2d_omp_gpu - as in nemolite2d with added OpenMP target pragmas to 
+                     offload to a GPU (`time_step_omp.cpp`).
 
 ## Running ##
 

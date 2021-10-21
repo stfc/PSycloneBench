@@ -51,10 +51,11 @@ extern "C" void c_invoke_time_step(
         double omega,
         double d2r,
         double g
-    	){
+  	){
 
 #pragma omp target enter data map (to: area_v[0:width*width], ssha_u[0:width*width], sshn_t[0:width*width], sshn_u[0:width*width], sshn_v[0:width*width], ssha_t[0:width*width], hu[0:width*width], hv[0:width*width], un[0:width*width], vn[0:width*width], area_t[0:width*width], ht[0:width*width], tmask[0:width*width], gphiu[0:width*width], dx_u[0:width*width], dx_v[0:width*width], dx_t[0:width*width], dy_u[0:width*width], dy_t[0:width*width], ua[0:width*width], va[0:width*width], area_u[0:width*width], ssha_v[0:width*width], dy_v[0:width*width], gphiv[0:width*width])
-    {// Continuity kernel (internal domain)
+
+    // Continuity kernel (internal domain)
     #pragma omp target teams distribute parallel for collapse(2)
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
@@ -62,7 +63,6 @@ extern "C" void c_invoke_time_step(
                 hu, hv, un, vn, rdt, area_t);
         }
     }
-
     
     // Momentum_u kernel (internal domain u points)
     #pragma omp target teams distribute parallel for collapse(2)
@@ -73,7 +73,6 @@ extern "C" void c_invoke_time_step(
                 area_u, gphiu, rdt, cbfr, visc, omega, d2r, g);
         }
     }
-
 
     // Momentum_v kernel (internal domain v points)
     #pragma omp target teams distribute parallel for collapse(2)
@@ -116,11 +115,7 @@ extern "C" void c_invoke_time_step(
             bc_flather_u_code(ji, jj, width, ua, hu, sshn_u, tmask, g);
         }
     }
- 
- 
- 
-    //#pragma omp target update from(va, hv, sshn_v, tmask)
-    // #pragma omp target data map (from: va, hv, sshn_v, tmask) 
+  
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
     // We cannot execute this loop in (OpenMP) parallel because of the
     // loop-carried dependency in j.
@@ -131,10 +126,8 @@ extern "C" void c_invoke_time_step(
         }
     }
    
-   
-   // Copy 'next' fields to 'current' fields (whole domain)
+    // Copy 'next' fields to 'current' fields (whole domain)
     #pragma omp target teams distribute parallel for collapse(2)
-    //#pragma omp parallel for
     for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             int idx = jj * width + ji;
@@ -146,7 +139,6 @@ extern "C" void c_invoke_time_step(
  
     // Time update kernel (internal domain u points)
     #pragma omp target teams distribute parallel for collapse(2)   
-    //#pragma omp parallel for    
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop - 1; ji++){
             next_sshu_code(ji, jj, width, sshn_u, sshn_t, tmask, area_t, area_u);
@@ -154,12 +146,11 @@ extern "C" void c_invoke_time_step(
     }
  
     // Time update kernel (internal domain v points)
-    #pragma omp target teams distribute parallel for collapse(2)  
-    // #pragma omp parallel for 
+    #pragma omp target teams distribute parallel for collapse(2)   
     for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             next_sshv_code(ji, jj, width, sshn_v, sshn_t, tmask, area_t, area_v);
         }
     }
-}
+
 }
