@@ -12,7 +12,7 @@
 
 .PHONY: tra_adv_serial tra_adv_acc
 
-all: tra_adv_serial
+all: tra_adv_serial tra_adv_no_auto_serial
 
 # Location of the dl_timer code
 DL_TIMER_DIR = ../../../../shared/dl_timer
@@ -24,7 +24,16 @@ PSYCLONE = psyclone -api nemo -l output
 # Serial version.
 tra_adv_serial: dl_timer
 	mkdir -p $@
-	cp tra_adv_*.F90 $@/.
+	cp tra_adv_driver.F90 $@/.
+	cp tra_adv_compute_auto_arrays.F90 $@/tra_adv_compute.F90
+	cp Makefile_gen $@/Makefile
+	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
+            LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
+
+# Serial version with automatic arrays moved to module scope.
+tra_adv_no_auto_serial: dl_timer
+	mkdir -p $@
+	cp tra_adv_{driver,compute}.F90 $@/.
 	cp Makefile_gen $@/Makefile
 	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
             LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
@@ -33,7 +42,7 @@ tra_adv_serial: dl_timer
 tra_adv_acc: dl_timer
 	mkdir -p $@
 	${PSYCLONE} -s ../scripts/kernels_trans.py -opsy \
-            $@/tra_adv_compute.f90 ./tra_adv_compute.F90
+            $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
 	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
@@ -43,7 +52,7 @@ tra_adv_acc: dl_timer
 tra_adv_acc_prof: dl_timer
 	mkdir -p $@
 	${PSYCLONE} --profile invokes -s ../scripts/kernels_trans.py -opsy \
-            $@/tra_adv_compute.f90 ./tra_adv_compute.F90
+            $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
 	${MAKE} PROF_LIB_INC="-I${PSYCLONE_NVIDIA_LIB_DIR} -I../${DL_TIMER_DIR}/src" \
@@ -53,7 +62,7 @@ tra_adv_acc_prof: dl_timer
 tra_adv_sir: dl_timer
 	mkdir -p $@
 	${PSYCLONE} -s ../scripts/sir_trans.py -opsy $@/tra_adv_compute.f90 \
-            ./tra_adv_compute.F90
+            ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
 	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
@@ -63,7 +72,7 @@ tra_adv_sir: dl_timer
 tra_adv_sir_acc: dl_timer
 	mkdir -p $@
 	${PSYCLONE} -s ../scripts/sir_kernels_trans.py -opsy \
-            $@/tra_adv_compute.f90 ./tra_adv_compute.F90
+            $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
 	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
