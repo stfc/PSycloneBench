@@ -5,7 +5,7 @@ that PSyclone will generate an OpenCL PSy layer. '''
 import os
 from psyclone.psyGen import TransInfo
 from psyclone.domain.gocean.transformations import \
-    GOMoveIterationBoundariesInsideKernelTrans
+    GOMoveIterationBoundariesInsideKernelTrans, GOOpenCLTrans
 from psyclone.configuration import Config
 
 
@@ -28,14 +28,15 @@ XILINX_CONFIG_FILE = False
 # together by a single kernel execution.
 TILING = 64
 
+
 def trans(psy):
     ''' Transform the schedule for OpenCL generation '''
 
     # Import transformations
     tinfo = TransInfo()
-    globaltrans = tinfo.get_trans_name('KernelGlobalsToArguments')
+    globaltrans = tinfo.get_trans_name('KernelImportsToArguments')
     move_boundaries_trans = GOMoveIterationBoundariesInsideKernelTrans()
-    cltrans = tinfo.get_trans_name('OCLTrans')
+    cltrans = GOOpenCLTrans()
 
     # Get the invoke routine
     schedule = psy.invokes.get('invoke_0').schedule
