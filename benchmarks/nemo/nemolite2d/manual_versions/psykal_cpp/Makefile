@@ -46,7 +46,7 @@ time_step_mod.o: ${COMMON_LIB} inf_lib
 # called from C++ code
 %.exe: $(MODULE_LIST)
 	$(F90) -o $@ $(MODULE_LIST) ${COMMON_LIB} ${INF_LIB} $(TIMER_LIB) \
-		$(LDFLAGS) -lstdc++
+		$(LDFLAGS) ${OMPFLAGS} -lstdc++
 
 # C++ rules (be aware of filename clashes as there is already a %.o: %.f90 in
 # the imported ../common.mk)
