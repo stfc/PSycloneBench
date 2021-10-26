@@ -54,7 +54,7 @@ time_step_mod.o: ${COMMON_LIB} inf_lib
 # must trigger a recompilation.
 %.o: %.cpp ../../kernels/c_family/*.c
 	$(CXX) $(CFLAGS) -c $< -o $@
-	
+
 clean: 
 	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~ *.dat

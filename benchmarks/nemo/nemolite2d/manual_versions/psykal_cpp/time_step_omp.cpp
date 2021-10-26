@@ -53,7 +53,6 @@ extern "C" void c_invoke_time_step(
         double g
  	){
 
-
     // Continuity kernel (internal domain)
     #pragma omp parallel for
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
@@ -123,7 +122,7 @@ extern "C" void c_invoke_time_step(
             bc_flather_v_code(ji, jj, width, va, hv, sshn_v, tmask, g);
         }
     }
-   
+
     // Copy 'next' fields to 'current' fields (whole domain)
     #pragma omp parallel for
     for(int jj = internal_ystart - 1; jj < internal_ystop + 1; jj++){
@@ -144,7 +143,7 @@ extern "C" void c_invoke_time_step(
     }
 
     // Time update kernel (internal domain v points)
-    #pragma omp parallel for   
+    #pragma omp parallel for
     for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop; ji++){
             next_sshv_code(ji, jj, width, sshn_v, sshn_t, tmask, area_t, area_v);
