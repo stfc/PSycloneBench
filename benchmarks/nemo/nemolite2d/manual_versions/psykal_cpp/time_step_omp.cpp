@@ -51,7 +51,7 @@ extern "C" void c_invoke_time_step(
         double omega,
         double d2r,
         double g
- 	){
+        ){
 
     // Continuity kernel (internal domain)
     #pragma omp parallel for
