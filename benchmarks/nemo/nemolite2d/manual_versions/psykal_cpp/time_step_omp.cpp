@@ -51,7 +51,8 @@ extern "C" void c_invoke_time_step(
         double omega,
         double d2r,
         double g
-  	){
+ 	){
+
 
     // Continuity kernel (internal domain)
     #pragma omp parallel for
@@ -61,7 +62,7 @@ extern "C" void c_invoke_time_step(
                 hu, hv, un, vn, rdt, area_t);
         }
     }
-    
+
     // Momentum_u kernel (internal domain u points)
     #pragma omp parallel for
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
@@ -80,8 +81,8 @@ extern "C" void c_invoke_time_step(
                 sshn_t, sshn_u, sshn_v, tmask, dx_v, dx_t, dy_u, dy_v, dy_t, \
                 area_v, gphiv, rdt, cbfr, visc, omega, d2r, g);
         }
-    } 
- 
+    }
+
     // Boundary conditions bc_ssh kernel (internal domain)
     #pragma omp parallel for
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
@@ -89,9 +90,9 @@ extern "C" void c_invoke_time_step(
             bc_ssh_code(ji, jj, width, istep, ssha_t, tmask, rdt);
         }
     }
-  
+
     // Boundary conditions bc_solid_u kernel (whole domain but top x boundary)
-    #pragma omp parallel for 
+    #pragma omp parallel for
     for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop; ji++){
             bc_solid_u_code(ji, jj, width, ua, tmask);
@@ -99,13 +100,13 @@ extern "C" void c_invoke_time_step(
     }
 
     // Boundary conditions bc_solid_v kernel (whole domain but top y boundary)
-    #pragma omp parallel for 
+    #pragma omp parallel for
     for(int jj = internal_ystart - 1; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart - 1; ji <= internal_xstop + 1; ji++){
             bc_solid_v_code(ji, jj, width, va, tmask);
         }
     }
- 
+
     // Boundary conditions bc_flather_u kernel (whole domain but top x boundary)
     #pragma omp parallel for
     for(int jj = internal_ystart - 1; jj <= internal_ystop + 1; jj++){
@@ -113,7 +114,7 @@ extern "C" void c_invoke_time_step(
             bc_flather_u_code(ji, jj, width, ua, hu, sshn_u, tmask, g);
         }
     }
-  
+
     // Boundary conditions bc_flather_v kernel (whole domain but top y boundary)
     // We cannot execute this loop in (OpenMP) parallel because of the
     // loop-carried dependency in j.
@@ -133,15 +134,15 @@ extern "C" void c_invoke_time_step(
             sshn_t[idx] = ssha_t[idx];
         }
     }
- 
+
     // Time update kernel (internal domain u points)
-    #pragma omp parallel for  
+    #pragma omp parallel for
     for(int jj = internal_ystart; jj <= internal_ystop; jj++){
         for(int ji = internal_xstart; ji <= internal_xstop - 1; ji++){
             next_sshu_code(ji, jj, width, sshn_u, sshn_t, tmask, area_t, area_u);
         }
     }
- 
+
     // Time update kernel (internal domain v points)
     #pragma omp parallel for   
     for(int jj = internal_ystart; jj <= internal_ystop - 1; jj++){
@@ -149,5 +150,4 @@ extern "C" void c_invoke_time_step(
             next_sshv_code(ji, jj, width, sshn_v, sshn_t, tmask, area_t, area_v);
         }
     }
-
 }
