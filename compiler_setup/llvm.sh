@@ -1,4 +1,4 @@
-# Build settings for the PGI compiler with OpenACC
+# Build settings for the LLVM compiler
 # ================================================
 # Fortran compiler
 F90=flang

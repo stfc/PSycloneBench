@@ -1,4 +1,4 @@
-# Build settings for the PGI compiler with OpenACC
+# Build settings for the Nvidia compiler
 # ================================================
 # Fortran compiler
 F90=nvfortran
