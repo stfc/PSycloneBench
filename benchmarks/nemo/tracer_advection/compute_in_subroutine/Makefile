@@ -33,7 +33,8 @@ tra_adv_serial: dl_timer
 # Serial version with automatic arrays moved to module scope.
 tra_adv_no_auto_serial: dl_timer
 	mkdir -p $@
-	cp tra_adv_{driver,compute}.F90 $@/.
+	cp tra_adv_driver.F90 $@/.
+	cp tra_adv_compute.F90 $@/.
 	cp Makefile_gen $@/Makefile
 	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
             LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
