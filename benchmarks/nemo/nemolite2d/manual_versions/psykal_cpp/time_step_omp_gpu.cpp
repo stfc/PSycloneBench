@@ -45,6 +45,7 @@ extern "C" void c_invoke_time_step(
         int internal_ystart,
         int internal_ystop,
         int width,
+	int height,
         double rdt,
         double cbfr,
         double visc,
@@ -53,7 +54,7 @@ extern "C" void c_invoke_time_step(
         double g
   	){
 
-#pragma omp target enter data map (to: area_v[0:width*width], ssha_u[0:width*width], sshn_t[0:width*width], sshn_u[0:width*width], sshn_v[0:width*width], ssha_t[0:width*width], hu[0:width*width], hv[0:width*width], un[0:width*width], vn[0:width*width], area_t[0:width*width], ht[0:width*width], tmask[0:width*width], gphiu[0:width*width], dx_u[0:width*width], dx_v[0:width*width], dx_t[0:width*width], dy_u[0:width*width], dy_t[0:width*width], ua[0:width*width], va[0:width*width], area_u[0:width*width], ssha_v[0:width*width], dy_v[0:width*width], gphiv[0:width*width])
+#pragma omp target enter data map (to: area_v[0:width*height], ssha_u[0:width*height], sshn_t[0:width*height], sshn_u[0:width*height], sshn_v[0:width*height], ssha_t[0:width*height], hu[0:width*height], hv[0:width*height], un[0:width*height], vn[0:width*height], area_t[0:width*height], ht[0:width*height], tmask[0:width*height], gphiu[0:width*height], dx_u[0:width*height], dx_v[0:width*height], dx_t[0:width*height], dy_u[0:width*height], dy_t[0:width*height], ua[0:width*height], va[0:width*height], area_u[0:width*height], ssha_v[0:width*height], dy_v[0:width*height], gphiv[0:width*height])
 
     // Continuity kernel (internal domain)
     #pragma omp target teams distribute parallel for collapse(2)
