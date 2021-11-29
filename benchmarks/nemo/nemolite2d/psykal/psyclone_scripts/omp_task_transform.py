@@ -5,10 +5,11 @@ inlines all kernels in the schedule.'''
 from psyclone.psyGen import TransInfo
 from psyclone.psyir.nodes import Loop
 from psyclone.configuration import Config
-from psyclone.transformations import OMPParallelTrans, OMPSingleTrans
-from psyclone.transformations import OMPTaskloopTrans, KernelModuleInlineTrans
-from psyclone.psyir.nodes import OMPTaskwaitDirective, OMPDirective, \
-                                OMPTaskloopDirective
+from psyclone.transformations import OMPParallelTrans, OMPSingleTrans, \
+                                     OMPTaskloopTrans, KernelModuleInlineTrans
+from psyclone.psyir.transformations import OMPTaskwaitTrans
+from psyclone.psyir.nodes import OMPTaskloopDirective, OMPTaskwaitDirective, \
+                                 OMPDirective, OMPParallelDirective
 from psyclone.psyGen import HaloExchange
 
 
@@ -20,7 +21,8 @@ def trans(psy):
 
 
 
-    loop_trans = OMPTaskloopTrans(grainsize=32)
+    loop_trans = OMPTaskloopTrans(grainsize=32, nogroup=True)
+    wait_trans = OMPTaskwaitTrans()
 
     module_inline_trans = KernelModuleInlineTrans()
 
@@ -29,68 +31,9 @@ def trans(psy):
     for kernel in schedule.kernels():
         module_inline_trans.apply(kernel)
 
-    # Setup the dependency tracking
-    next_dependencies = []
-    for child in schedule.children:
-        next_dependencies.append(0)
-
-    # Fill the next_dependencies array with the forward dependencies
-    i = 0
-    for child in schedule.children:
-        if isinstance(child, Loop):
-            forward_dep = child.forward_dependence()
-            # If the forward dependency is a HaloExchange it will be
-            # outside of the parallel region, so we don't need to worry.
-            if not isinstance(forward_dep, HaloExchange):
-                next_dependencies[i] = forward_dep
-            else:
-                next_dependencies[i] = None
-            i = i + 1
-        else:
-            next_dependencies[i] = None
-            i = i + 1
-
-    # Loop through the dependencies, convert them from nodes to indices
-    i = 0
-    for child in schedule.children:
-        j = 0
-        for child in schedule.children:
-            if child == next_dependencies[i]:
-                next_dependencies[i] = j
-                break
-            j = j + 1
-        i = i + 1
-    # Loop through dependencies, and remove unneccessary ones.
-    # This is first done by looping through each dependence.
-    # For each dependence, we then loop over all other dependences
-    # between the nodes involved in that dependence. If this dependence
-    # fulfills a following dependence, the following dependence is removed.
-    # If this dependence is fulfilled by a following dependence, this dependence
-    # is removed.
-    for i in range(len(next_dependencies)):
-        if next_dependencies[i] is not None:
-            next_dependence = next_dependencies[i]
-            for j in range(i+1, next_dependence):
-                if j >= next_dependence:
-                    break
-                if next_dependencies[j] is not None:
-                    if next_dependencies[j] <= next_dependence:
-                        next_dependence = next_dependencies[j]
-                        next_dependencies[i] = None
-                    if next_dependencies[j] > next_dependence:
-                        next_dependencies[j] = None
-
     for child in schedule.children:
         if isinstance(child, Loop):
             loop_trans.apply(child)
-
-    # Now we have computed (what we think is) a minimal set of 
-    # dependencies, add the taskwait directives required. We do
-    # this in reverse order to ensure we don't invalidate the
-    # positions in the schedule.
-    for i in range(len(next_dependencies)-1, -1, -1):
-        if next_dependencies[i] is not None:
-            schedule.addchild(OMPTaskwaitDirective(), next_dependencies[i])
 
     single_trans = OMPSingleTrans()
     parallel_trans = OMPParallelTrans()
@@ -98,21 +41,33 @@ def trans(psy):
     if config.distributed_memory:
         # Find all of the groupings of taskloop and taskwait directives. Each of these
         # groups needs its own parallel+single regions.
-        next_set= []
-        for child in schedule.children:
-            a = []
-            a.append(child)
+        next_start = 0
+        next_end = 0
+        for index in range(len(schedule.children)):
+            child = schedule.children[index]
             if isinstance(child, OMPTaskloopDirective) or isinstance(child, OMPTaskwaitDirective):
-                next_set.append(child)
-            elif not isinstance(child, OMPDirective) and len(next_set) != 0:
-                sets.append(next_set)
-                next_set=[]
-        if len(next_set) != 0:
-            sets.append(next_set)
+                next_end = next_end + 1
+            elif not isinstance(child, OMPDirective):
+                if next_start == index:
+                    next_end = index + 1
+                    next_start = index + 1
+                else:
+                    sets.append((next_start, next_end))
+                    next_end = index + 1
+                    next_start = index+1
+            else:
+                next_end = next_end + 1
+        if next_start <= index:
+            sets.append((next_start, index+1))
+        sets.reverse()
         for next_set in sets:
-            parallel_trans.apply(next_set)
-            single_trans.apply(next_set)
+            single_trans.apply(schedule[next_set[0]:next_set[1]])
+            parallel_trans.apply(schedule[next_set[0]])
+        for child in schedule.children:
+            if isinstance(child, OMPParallelDirective):
+                wait_trans.apply(child)
     else:
         single_trans.apply(schedule.children)
         parallel_trans.apply(schedule.children)
+        wait_trans.apply(schedule.children[0])
 
