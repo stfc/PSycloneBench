@@ -70,4 +70,3 @@ def trans(psy):
         single_trans.apply(schedule.children)
         parallel_trans.apply(schedule.children)
         wait_trans.apply(schedule.children[0])
-
