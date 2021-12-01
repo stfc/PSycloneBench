@@ -10,20 +10,13 @@ CXX=nvc++
 CFLAGS="-O3 -Minfo=all -g"
 # Fortran compiler flags
 F90FLAGS="-O3 -Minfo=all"
-# Debugging options
-#F90FLAGS"+=" -fcheck=all -fbacktrace -ffpe-trap=invalid -g -O0"
-# -Mcuda is for CUDA Fortran
-# nordc - do not link to routines compiled for device (ensure
-# kernel code is in-lined in loops)
-# cc = compute capability
-# Registers are shared by threads in an SMP. The more registers a kernel
-# uses, the fewer threads it can support. This parameter can be tuned and
-# shoul be a multiple of 8.
-# -Mcuda is required to build CUDA Fortran
 
-# Flags to use when compiling with OpenMP support
+# Debugging options
+# F90FLAGS"+=" -fcheck=all -fbacktrace -ffpe-trap=invalid -g -O0"
+
+# Flag to use when compiling with OpenMP support
 OMPFLAGS="-mp"
-# Flags to use when compiling with OpenMP support
+# Flag to use when compiling with OpenMP GPU offloading support
 OMPTARGETFLAGS="-mp=gpu"
 # Flags to use when compiling with OpenACC support
 ACCFLAGS="-acc -ta=tesla"
@@ -48,4 +41,3 @@ export F90FLAGS
 
 export LDFLAGS
 export AR
-
