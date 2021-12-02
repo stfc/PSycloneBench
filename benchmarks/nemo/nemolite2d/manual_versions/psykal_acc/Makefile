@@ -62,13 +62,13 @@ time_update_mod.o: inf_lib
 # Generic rules
 
 %.exe: $(MODULE_LIST)
-	$(F90) $(OMPFLAGS) -o $@ $(MODULE_LIST) ${COMMON_LIB} $(TIMER_LIB) $(LDFLAGS)
+	$(F90) $(ACCFLAGS) -o $@ $(MODULE_LIST) ${COMMON_LIB} $(TIMER_LIB) $(LDFLAGS)
 
 %.o: %.f90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+	$(F90) $(ACCFLAGS) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
 
 %.o: %.F90
-	$(F90) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
+	$(F90) $(ACCFLAGS) $(F90FLAGS) -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} -c $<
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean

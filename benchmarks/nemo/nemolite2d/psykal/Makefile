@@ -122,7 +122,7 @@ nemolite2d_acc: serial_libs nemolite2d_alg.f90 psyclone_scripts/acc_transform.py
 	cp ${TIMER_LIB} $@/libdl_timer.a
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
-	cd $@ && make nemolite2d
+	cd $@ && make nemolite2dacc
 	@echo "OpenACC version prepared."
 
 # OpenCL PSyclone code-generation of NemoLite2D
