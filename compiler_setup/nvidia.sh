@@ -7,12 +7,19 @@ CC=nvc
 CXX=nvc++
 
 # C and C++ flags
-CFLAGS="-O3 -Minfo=all -g"
+CFLAGS="-O3"
 # Fortran compiler flags
 F90FLAGS="-O3 -Minfo=all"
 
 # Debugging options
-# F90FLAGS"+=" -fcheck=all -fbacktrace -ffpe-trap=invalid -g -O0"
+# The below flags used alongside the above
+# would provide debugging information if required
+# -Minfo=all provides compiler feedback
+# -g provides debugging info to use with GDB
+# -O0 tells the compiler to make no optimisations
+# -fcheck=all enables run-time tests
+# -fbacktrace provides a backtrace of encountered errors
+# -ffpe-trap=invalid indicates the line where an error occurs
 
 # Flag to use when compiling with OpenMP support
 OMPFLAGS="-mp"

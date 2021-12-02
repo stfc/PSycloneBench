@@ -1,7 +1,10 @@
 # Build settings for the LLVM compiler
 # ================================================
-# This is an experimental file so other flags may be needed
-# for accelerated compilation
+# This is an experimental file so other flags may be
+# needed for accelerated compilation
+# Alternative flags have been provided in the comments
+# where they have been found to be useful
+
 # Fortran compiler
 F90=flang
 # C and C++ compiler
@@ -9,8 +12,11 @@ CC=clang
 CXX=clang++
 
 # C and C++ flags
+# note that -g is used for debugging information
+# as this is an experimental implementation
 CFLAGS="-O3 -march=native -g"
 # Fortran compiler flags
+# As above, -g provides debugging information
 F90FLAGS="-O3 -march=native -g"
 # Flags to use when compiling with OpenMP support
 OMPFLAGS="-fopenmp"
