@@ -41,6 +41,10 @@ CXX := $(KOKKOS_PATH)/bin/nvcc_wrapper
 KOKKOS_CUDA_OPTIONS = "enable_lambda"
 # If CUDA_LIB is not provided, infer path from the nvcc compiler location.
 CUDA_LIB ?= $(shell echo $(shell which nvcc) | sed 's/bin\/nvcc/lib64/g')
+else ifeq ($(KOKKOS_DEVICES),HIP)
+$(info "Using HIP device")
+CXX := hipcc
+CFLAGS := -O3
 else
 $(error "Unrecognised KOKKOS_DEVICES value: $(KOKKOS_DEVICES)")
 endif
