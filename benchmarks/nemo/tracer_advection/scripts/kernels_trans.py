@@ -163,8 +163,7 @@ def try_kernels_trans(nodes, default_present):
     if not nodes:
         return
     try:
-        _, _ = ACCKernelsTrans().apply(nodes,
-                                       {"default_present": default_present})
+        ACCKernelsTrans().apply(nodes, {"default_present": default_present})
         if COLLAPSE_LOOPS:
             collapse_loops(nodes)
     except (TransformationError, InternalError) as err:
