@@ -78,6 +78,15 @@ tra_adv_sir_acc: dl_timer
 	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
+tra_adv_sir_acc_prof: dl_timer
+	mkdir -p $@
+	${PSYCLONE} --profile invokes -s ../scripts/sir_kernels_trans.py -opsy \
+            $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
+	cp Makefile_gen $@/Makefile
+	cp tra_adv_driver.F90 $@/.
+	${MAKE} PROF_LIB_INC="-I${PSYCLONE_NVIDIA_LIB_DIR} -I../${DL_TIMER_DIR}/src" \
+           LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME} ${PSYCLONE_NVIDIA_LIB_DIR}/libnvtx_prof.a" -C $@
+
 dl_timer:
 	${MAKE} -C ${DL_TIMER_DIR} sm_lib
 
