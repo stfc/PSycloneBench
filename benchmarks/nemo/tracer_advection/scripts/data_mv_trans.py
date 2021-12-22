@@ -64,7 +64,8 @@ from psyclone.errors import InternalError
 from psyclone.psyir.nodes import Assignment, CodeBlock, Call, Literal, Loop, \
     ACCLoopDirective
 from psyclone.transformations import ACCLoopTrans, TransformationError, \
-    ACCKernelsTrans
+    ACCKernelsTrans, ACCEnterDataTrans
+from psyclone.psyir.transformations import ACCUpdateTrans
 
 
 COLLAPSE_LOOPS = False
@@ -72,6 +73,8 @@ EXPAND_IMPLICIT_LOOPS = False
 
 # Get the PSyclone transformations we will use
 ARRAY_RANGE_TRANS = NemoAllArrayRange2LoopTrans()
+EDATA_TRANS = ACCEnterDataTrans()
+UPDATE_TRANS = ACCUpdateTrans()
 
 
 def trans(psy):
@@ -101,6 +104,8 @@ def trans(psy):
                 ARRAY_RANGE_TRANS.apply(assignment)
 
         add_kernels(sched.children)
+        EDATA_TRANS.apply(sched)
+        UPDATE_TRANS.apply(sched)
         sched.view()
 
 
