@@ -105,7 +105,7 @@ def trans(psy):
 
         add_kernels(sched.children)
         EDATA_TRANS.apply(sched)
-        UPDATE_TRANS.apply(sched)
+        UPDATE_TRANS.apply(sched, options={"allow-codeblocks": True})
         sched.view()
 
 
