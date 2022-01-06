@@ -18,7 +18,7 @@ include ../common.mk
 # INF_LIB is an archive that must come at the end of the list of objects
 # passed to the linker
 LIBS = ${COMMON_LIB} ${TIMER_LIB} ${INF_LIB}
-COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${KERNELS} ${INF_LIB}
+COMMON_MODULES = time_step_mod.o ${COMMON_LIB} ${INF_LIB}
 
 # Normal targets
 all: nemolite2d nemolite2d_omp
@@ -26,8 +26,13 @@ all: nemolite2d nemolite2d_omp
 nemolite2d: ${COMMON_LIB} timer_lib inf_lib time_step.o
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step.o" nemolite2d.exe
 
-nemolite2d_omp: ${COMMON_LIB} timer_lib inf_lib time_step_omp.o
-	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_omp.o" nemolite2d_omp.exe
+nemolite2d_omp: ${COMMON_LIB} timer_lib inf_lib
+	rm -f time_step_omp.o
+	${MAKE} CFLAGS="${CFLAGS} ${OMPFLAGS}" LDFLAGS="${LDFLAGS} ${OMPFLAGS}" MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_omp.o" nemolite2d_omp.exe
+
+nemolite2d_omp_gpu: ${COMMON_LIB} timer_lib inf_lib
+	rm -f time_step_omp.o
+	${MAKE} F90FLAGS="${F90FLAGS} ${OMPTARGETFLAGS}" CFLAGS="${CFLAGS} ${OMPTARGETFLAGS}" LDFLAGS="${LDFLAGS} ${OMPTARGETFLAGS}" MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_omp_gpu.o" nemolite2d_omp_gpu.exe
 
 nemolite2d_ompopt: ${COMMON_LIB} timer_lib inf_lib time_step_ompopt.o
 	${MAKE} MODULE_LIST="nemolite2d.o ${COMMON_MODULES} time_step_ompopt.o" nemolite2d_ompopt.exe
@@ -35,8 +40,7 @@ nemolite2d_ompopt: ${COMMON_LIB} timer_lib inf_lib time_step_ompopt.o
 nemolite2d.o: $(COMMON_MODULES)
 
 # Interdependencies between modules, alphabetical order
-time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
-                 time_update_mod.o boundary_conditions_mod.o
+time_step_mod.o: ${COMMON_LIB} inf_lib
 
 # Linking the executable needs the -lstdc++ to link also the std lib functions
 # called from C++ code
@@ -49,7 +53,7 @@ time_step_mod.o: ${COMMON_LIB} inf_lib momentum_mod.o continuity_mod.o \
 # Since kernels are included directly any modification in the kernel files
 # must trigger a recompilation.
 %.o: %.cpp ../../kernels/c_family/*.c
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -c $< -o $@
+	$(CXX) $(CFLAGS) -c $< -o $@
 
 clean: 
 	${MAKE} -C ${INF_DIR} clean
