@@ -3,16 +3,19 @@
 # purposes of processing with Dusk/Dawn.
 
 # Compiler and associated flags must be set through the following
-# environment variables:
+# environment variables, e.g.:
 #
 #   export F90=gfortran
 #   export F90FLAGS=-O3
 #   export OMPFLAGS=-fopenmp
 #   export MPIF90=mpif90
+#
+# Scripts are provided to do this in PSycloneBench/compiler_setup
 
-.PHONY: tra_adv_serial tra_adv_acc
+.PHONY: tra_adv_serial tra_adv_acc tra_adv_acc_edata tra_adv_sir \
+        tra_adv_sir_acc
 
-all: tra_adv_serial tra_adv_no_auto_serial
+all: tra_adv_serial
 
 # Location of the dl_timer code
 DL_TIMER_DIR = ../../../../shared/dl_timer
