@@ -62,7 +62,7 @@ from __future__ import print_function
 from psyclone.domain.nemo.transformations import NemoAllArrayRange2LoopTrans
 from psyclone.errors import InternalError
 from psyclone.psyir.nodes import Assignment, CodeBlock, Call, Literal, Loop, \
-    ACCLoopDirective
+    ACCLoopDirective, ACCKernelsDirective, IfBlock
 from psyclone.transformations import ACCLoopTrans, TransformationError, \
     ACCKernelsTrans, ACCEnterDataTrans
 from psyclone.psyir.transformations import ACCUpdateTrans
@@ -104,7 +104,11 @@ def trans(psy):
                 ARRAY_RANGE_TRANS.apply(assignment)
 
         add_kernels(sched.children)
-        EDATA_TRANS.apply(sched)
+        have_kernels = sched.walk(ACCKernelsDirective,
+                                  stop_type=ACCKernelsDirective)
+        if have_kernels:
+            EDATA_TRANS.apply(sched)
+
         UPDATE_TRANS.apply(sched, options={"allow-codeblocks": True})
         sched.view()
 
@@ -147,7 +151,12 @@ def add_kernels(children, default_present=True):
             try_kernels_trans(node_list, default_present)
             node_list = []
             # It can't so go down a level and try again
-            add_kernels(child.children)
+            if isinstance(child, IfBlock):
+                add_kernels(child.if_body)
+                if child.else_body:
+                    add_kernels(child.else_body)
+            elif not isinstance(child, Call):
+                add_kernels(child.children)
         else:
             node_list.append(child)
     try_kernels_trans(node_list, default_present)
