@@ -1,4 +1,4 @@
-.PHONY: all compute_in_subroutine original
+.PHONY: all compute_in_subroutine multi_kernel original
 
 all: compute_in_subroutine multi_kernel original
 

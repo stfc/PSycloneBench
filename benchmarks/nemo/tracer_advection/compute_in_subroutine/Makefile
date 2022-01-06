@@ -3,12 +3,14 @@
 # with Dusk/Dawn.
 
 # Compiler and associated flags must be set through the following
-# environment variables:
+# environment variables, e.g.:
 #
 #   export F90=gfortran
 #   export F90FLAGS=-O3
 #   export OMPFLAGS=-fopenmp
 #   export MPIF90=mpif90
+#
+# Some scripts are provided in PSycloneBench/compiler_setup to do this.
 
 .PHONY: tra_adv_serial tra_adv_acc
 
@@ -18,7 +20,8 @@ all: tra_adv_serial tra_adv_no_auto_serial
 DL_TIMER_DIR = ../../../../shared/dl_timer
 DL_TIMER_NAME = libdl_timer_omp.a
 
-# Shorthand for invoking PSyclone.
+# Shorthand for invoking PSyclone with line-length limiting applied
+# to the output Fortran.
 PSYCLONE = psyclone -api nemo -l output
 
 # Serial version.
