@@ -24,9 +24,9 @@ MOVE_BOUNDARIES = True
 # configuration file in the output directory.
 XILINX_CONFIG_FILE = False
 
-# The TILING parameter sets the number of kernel iterations that will be run
-# together by a single kernel execution.
-TILING = 64
+# The WORK_GROUP_SIZE parameter sets the number of kernel iterations that will
+# be run together by a single kernel execution.
+WORK_GROUP_SIZE = 64
 
 
 def trans(psy):
@@ -62,17 +62,25 @@ def trans(psy):
     # Remove global variables from inside each kernel, pass the boundary
     # values as arguments to the kernel and set the OpenCL work size to 64,
     # which is required for performance (with OpenCL < 1.2 this requires
-    # the resulting application to be executed with DL_ESM_ALIGNMENT=64)
+    # the resulting application to be executed with DL_ESM_ALIGNMENT=64).
+    # Technically the OpenCL global_size (which is controlled by
+    # DL_ESM_ALIGNMENT) must be divisible by the work_group_size (which
+    # is set to 64 in the psyclone script) in OpenCL implementations < 2.0.
+    # But from OpenCL 2.0 the standard says its not necessary anymore.
+    # In practice it is safe to always use it as most implementations
+    # are lacking in this aspect.
+    # If using a different WORK_GROUP_SIZE, make sure to update the
+    # DL_ESM_ALIGNMENT to match.
     for kern in schedule.kernels():
         print(kern.name)
         globaltrans.apply(kern)
         if MOVE_BOUNDARIES:
             move_boundaries_trans.apply(kern)
         if FUCTIONAL_PARALLELISM:
-            kern.set_opencl_options({'local_size': TILING,
+            kern.set_opencl_options({'local_size': WORK_GROUP_SIZE,
                                      'queue_number': qmap[kern.name]})
         else:
-            kern.set_opencl_options({'local_size': TILING})
+            kern.set_opencl_options({'local_size': WORK_GROUP_SIZE})
 
     # Transform invoke to OpenCL
     cltrans.apply(schedule)
