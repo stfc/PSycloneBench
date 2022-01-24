@@ -80,4 +80,3 @@ def trans(psy):
     for child in schedule.children:
         if isinstance(child, OMPParallelDirective):
             wait_trans.apply(child)
-        child = schedule.children[idx]
