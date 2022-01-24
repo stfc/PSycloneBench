@@ -43,10 +43,10 @@ def trans(psy):
     # don't apply OpenMP transformations to the Halo Exchange operations.
     next_start = 0
     next_end = 0
-    for idx in range(len(schedule.children)):
+    idx = 0
+    for idx, child in enumerate(schedule.children):
         # Loop through through the schedule until we find a non-OpenMP
         # node, and extend the grouping until we do.
-        child = schedule.children[idx]
         if isinstance(child, (OMPTaskloopDirective, OMPTaskwaitDirective)):
             next_end = next_end + 1
         elif not isinstance(child, OMPDirective):
@@ -60,7 +60,7 @@ def trans(psy):
             else:
                 sets.append((next_start, next_end))
                 next_end = idx + 1
-                next_start = idx+1
+                next_start = idx + 1
         else:
             next_end = next_end + 1
     # If currently in a grouping of directives, add it to the list
@@ -80,3 +80,4 @@ def trans(psy):
     for child in schedule.children:
         if isinstance(child, OMPParallelDirective):
             wait_trans.apply(child)
+        child = schedule.children[idx]
