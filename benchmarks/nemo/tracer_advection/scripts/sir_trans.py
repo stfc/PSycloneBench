@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2020-2021, Science and Technology Facilities Council
+# Copyright (c) 2020-2022, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
-# Author: R. W. Ford, STFC Daresbury Lab
+# Authors: R. W. Ford and A. R. Porter, STFC Daresbury Lab.
 
 '''Module providing a transformation script that converts the supplied
 PSyIR to the Stencil intermediate representation (SIR) and
@@ -65,10 +65,8 @@ from psyclone.domain.nemo.transformations import NemoAllArrayRange2LoopTrans, \
 
 
 def trans(psy):
-    '''Transformation routine for use with PSyclone. Applies the PSyIR2SIR
-    transform to the supplied invokes after replacing any ABS, SIGN, MAX or
-    MIN intrinsics with equivalent code. This is done because the SIR
-    does not support intrinsics.
+    '''Transformation routine for use with PSyclone. It calls
+    :py:func:`make_sir_compliant` for each schedule in each invoke.
 
     :param psy: the PSy object which this script will transform.
     :type psy: :py:class:`psyclone.psyGen.PSy`
@@ -88,6 +86,17 @@ def trans(psy):
 
 def make_sir_compliant(schedule):
     '''
+    Applies various transformations to the supplied schedule to replace any
+    features that cannot be represented in SIR with alternative forms:
+
+    1. Converts any accesses of individual array elements into 1-trip loops.
+    2. Transforms array assignments into loops.
+    3. Replaces any ABS, SIGN, MIN or MAX intrinsics with equivalent PSyIR.
+    4. Hoists any loop-invariant assignments out of loops over levels.
+
+    :param schedule: the schedule to transform.
+    :type schedule: :py:class:`psyclone.psyir.nodes.Schedule`
+
     '''
     abs_trans = Abs2CodeTrans()
     sign_trans = Sign2CodeTrans()
