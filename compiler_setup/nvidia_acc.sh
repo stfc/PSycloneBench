@@ -4,8 +4,10 @@
 F90=nvfortran
 # C compiler
 CC=nvcc
+# Gives more debug information without performance cost
 CFLAGS="-g"
-# Fortran compiler flags
+# Fortran compiler flags. -Minfo=all gets the compiler to report on all
+# optimisation/parallelisation that it performs.
 F90FLAGS="-O3 -Minfo=all"
 # Debugging options
 #F90FLAGS"+=" -fcheck=all -fbacktrace -ffpe-trap=invalid -g -O0"
@@ -15,7 +17,7 @@ F90FLAGS="-O3 -Minfo=all"
 # cc = compute capability
 # Registers are shared by threads in an SMP. The more registers a kernel
 # uses, the fewer threads it can support. This parameter can be tuned and
-# shoul be a multiple of 8.
+# should be a multiple of 8.
 # -Mcuda is required to build CUDA Fortran
 # For Quadro K600
 #F90FLAGS+=" -acc -ta=tesla:cc30,nordc -Mcuda=cc30,nordc"
@@ -30,7 +32,8 @@ F90FLAGS+=" -acc=gpu -gpu=cc70,managed"
 #LDFLAGS="-acc -ta=nvidia,cc35 -Mcuda=cc35,nordc"
 # V100 with managed memory
 LDFLAGS="-acc=gpu -gpu=cc70,managed"
-# Location of various CUDA maths libraries
+# Location of various CUDA maths libraries. libnvToolsExt is required when
+# using nvtx for profiling.
 LDFLAGS+=" -Mcuda -L${CUDA_MATH_DIR}/lib64  -lnvToolsExt"
 # Flags to use when compiling with OpenMP support
 OMPFLAGS="-mp"
