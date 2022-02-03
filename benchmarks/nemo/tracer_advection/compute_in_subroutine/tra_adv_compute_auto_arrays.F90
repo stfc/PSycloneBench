@@ -26,7 +26,6 @@ contains
          zalpha, zice, zw, z0w
     INTEGER                        :: ji, jj, jk
 
-    ! Not sure what to do with 2D and 1D arrays in the SIR backend
     DO jk = 1, jpk
        DO jj = 1, jpj
           DO ji = 1, jpi
