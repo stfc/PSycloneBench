@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2018-2021, Science and Technology Facilities Council
+# Copyright (c) 2018-2022, Science and Technology Facilities Council
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
  >>> psyclone -api "nemo" -s ./omp_trans.py tra_adv.F90
 
 This should produce a lot of output, ending with generated Fortran.
+
 '''
 
 
@@ -63,8 +64,6 @@ def trans(psy):
         # Apply the OMP transformation to each loop over levels containing
         # a kernel
         for loop in sched.loops():
-            # TODO loop.kernel method needs extending to cope with
-            # multiple kernels
             kernels = loop.walk(NemoKern)
             if kernels and loop.loop_type == "levels":
                 ompt.apply(loop)

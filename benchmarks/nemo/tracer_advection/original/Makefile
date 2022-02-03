@@ -39,9 +39,9 @@ tra_adv_acc: dl_timer
 	${MAKE} PROF_LIB_INC="-I${PSYCLONE_NVIDIA_LIB_DIR} -I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME} ${PSYCLONE_NVIDIA_LIB_DIR}/libnvtx_prof.a" -C $@
 
-tra_adv_omp:
+tra_adv_omp: ../scripts/omp_trans.py
 	mkdir -p $@
-	${PSYCLONE} -s ./omp_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/omp_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
             LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
