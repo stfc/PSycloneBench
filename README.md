@@ -54,6 +54,13 @@ The `psykal` directory contains the version of NEMOLite2D that uses
 PSyclone to generate the PSy layer. Currently serial and OpenMP
 versions may be generated.
 
+### NEMO Tracer Advection ###
+
+The `benchmarks/nemo/tracer_advection` directory contains various versions
+of a benchmark based on one of the tracer-advection routines in the NEMO
+code base. The version in the `original` directory was supplied by Silvia
+Mocavero of [CMCC](https://www.cmcc.it/).
+
 ### Shallow ###
 
 `benchmarks/shallow` contains various versions of the Shallow benchmark,
