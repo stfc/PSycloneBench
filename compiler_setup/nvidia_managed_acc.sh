@@ -1,6 +1,5 @@
-# Build settings for the NVIDIA compiler with OpenACC *WITHOUT*
-# managed memory.
-# =============================================================
+# Build settings for the NVIDIA compiler with OpenACC
+# ===================================================
 # Fortran compiler
 F90=nvfortran
 # C compiler
@@ -24,15 +23,15 @@ F90FLAGS="-O3 -Minfo=all"
 #F90FLAGS+=" -acc -ta=tesla:cc30,nordc -Mcuda=cc30,nordc"
 # For Tesla K20c
 #F90FLAGS+=" -acc -ta=tesla,cc35,maxregcount:80,nordc -Mcuda=cc35,maxregcount:80,nordc"
-# For V100
-F90FLAGS+=" -acc=gpu -gpu=cc70"
+# V100 with managed memory
+F90FLAGS+=" -acc=gpu -gpu=cc70,managed"
 # Linker flags
 # For Quadro K600
 #LDFLAGS+=" -acc -ta=tesla,cc30 -Mcuda=cc30,nordc"
 # For Tesla K20c
 #LDFLAGS="-acc -ta=nvidia,cc35 -Mcuda=cc35,nordc"
-# For V100
-LDFLAGS="-acc=gpu -gpu=cc70"
+# V100 with managed memory
+LDFLAGS="-acc=gpu -gpu=cc70,managed"
 # Location of various CUDA maths libraries. libnvToolsExt is required when
 # using nvtx for profiling.
 LDFLAGS+=" -Mcuda -L${CUDA_MATH_DIR}/lib64  -lnvToolsExt"
@@ -42,7 +41,7 @@ OMPFLAGS="-mp"
 AR=ar
 # Location of PSyclone NVIDIA profiling library (used when adding
 # profiling to the nemo/tracer_advection benchmark).
-PSYCLONE_NVIDIA_LIB_DIR=${HOME}/PSyclone/lib/profiling/nvidia
+PSYCLONE_NVIDIA_LIB_DIR=/home/aporter/PSyclone/lib/profiling/nvidia
 # ==============================
 export F90
 export F90FLAGS

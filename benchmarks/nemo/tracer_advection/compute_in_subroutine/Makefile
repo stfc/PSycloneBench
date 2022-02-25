@@ -91,7 +91,8 @@ tra_adv_sir_acc_prof: dl_timer
 	${MAKE} PROF_LIB_INC="-I${PSYCLONE_NVIDIA_LIB_DIR} -I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME} ${PSYCLONE_NVIDIA_LIB_DIR}/libnvtx_prof.a" -C $@
 
-# OpenACC with explicit data-movement directives.
+# OpenACC with explicit data-movement directives. Note that this target *must
+# not* be compiled with NVIDIA's 'managed-memory' option enabled.
 tra_adv_data_mv: dl_timer
 	mkdir -p $@
 	${PSYCLONE} -s ../scripts/kernels_explicit_trans.py -opsy \
