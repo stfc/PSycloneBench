@@ -410,7 +410,9 @@ contains
       end do
     end do
 !$acc end parallel
-!$acc acc wait
+!$acc wait(1)
+!$acc wait(2)
+!$acc wait(3)
 
 !    call timer_stop(idxt)
 
@@ -421,8 +423,7 @@ contains
     ! Apply open and solid boundary conditions
 
 !    call timer_start('BCs', idxt)
-!$acc parallel present(tmask, ssha)
-!$acc loop collapse(2)
+!$acc parallel loop present(tmask, ssha) async(1)
     DO jj = 2, N
 ! SIMD
        DO ji = 2, M
@@ -451,8 +452,7 @@ contains
 ! This loop only writes to ssha and subsequent loop does not use
 ! this field therefore we need not block.
 
-!$acc parallel present(tmaskptr, ua)
-!$acc loop collapse(2)
+!$acc parallel loop present(tmaskptr, ua) async(2)
     do jj = 1, N+1, 1
        do ji = 1, M, 1
           !call bc_solid_u_code(ji, jj, &
@@ -470,8 +470,7 @@ contains
 ! This loop only writes to ua and subsequent loop does not use this field
 ! or the preceeding ssha so no need to block.
 
-!$acc parallel present(tmask, va)
-!$acc loop collapse(2)
+!$acc parallel loop present(tmask, va) async(3)
     do jj = 1, N, 1
        do ji = 1, M+1, 1
 !          call bc_solid_v_code(ji,jj, &
@@ -490,8 +489,7 @@ contains
 ! Although there is an apparent loop-carried dependency in j in this
 ! loop, the tmask is always set-up such that each trip *will* be
 ! independent
-!$acc parallel present(tmask, va, hv, sshn_v)
-!$acc loop collapse(2) independent
+!$acc parallel loop present(tmask, va, hv, sshn_v) async(3)
      DO jj = 1, N, 1
        DO ji = 1, M+1, 1
 !          call bc_flather_v_code(ji,jj, &
@@ -513,8 +511,7 @@ contains
     END DO
 !$acc end parallel
 
-!$acc parallel present(tmask, ua, hu, sshn_u)
-!$acc loop collapse(2) independent
+!$acc parallel loop present(tmask, ua, hu, sshn_u) async(2)
     DO jj = 1, N+1, 1
        DO ji = 1, M, 1
 !          call bc_flather_u_code(ji,jj, &
@@ -617,6 +614,9 @@ contains
       end do
     end do
 !$acc end parallel
+!$acc wait(1)
+!$acc wait(2)
+!$acc wait(3)
 
 !    call timer_stop(idxt)
 
