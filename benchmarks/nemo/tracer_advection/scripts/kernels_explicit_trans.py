@@ -56,7 +56,8 @@ between CPU and GPU.
 from kernels_trans import add_kernels
 from psyclone.domain.nemo.transformations import NemoAllArrayRange2LoopTrans
 from psyclone.psyir.nodes import Assignment
-from psyclone.psyir.transformations import ACCUpdateTrans
+from psyclone.psyir.transformations import (ACCUpdateTrans,
+                                            HoistLocalArraysTrans)
 from psyclone.transformations import ACCEnterDataTrans
 
 
@@ -66,6 +67,7 @@ EXPAND_IMPLICIT_LOOPS = False
 ARRAY_RANGE_TRANS = NemoAllArrayRange2LoopTrans()
 EDATA_TRANS = ACCEnterDataTrans()
 UPDATE_TRANS = ACCUpdateTrans()
+HOIST_TRANS = HoistLocalArraysTrans()
 
 
 def trans(psy):
@@ -86,7 +88,11 @@ def trans(psy):
             print("Invoke {0} has no Schedule! Skipping...".
                   format(invoke.name))
             continue
-        sched.view()
+
+        # Ensure any local, automatic arrays are promoted to module
+        # scope so that they can be kept on the GPU.
+        if not sched.is_program:
+            HOIST_TRANS.apply(sched)
 
         if EXPAND_IMPLICIT_LOOPS:
             # Transform any array assignments (Fortran ':' notation)

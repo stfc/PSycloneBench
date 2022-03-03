@@ -115,3 +115,4 @@ allclean: clean
 	rm -rf tra_adv_acc_prof
 	rm -rf tra_adv_sir
 	rm -rf tra_adv_sir_acc
+	rm -rf tra_adv_data_mv
