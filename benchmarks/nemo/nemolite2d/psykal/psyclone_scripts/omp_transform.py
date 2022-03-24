@@ -11,7 +11,7 @@ from psyclone.psyir.transformations import LoopTiling2DTrans
 
 # If MOVE_BOUNDARIES is True the start and stop boundaries of each loop will
 # be moved from the PSy-layer to inside the kernel.
-MOVE_BOUNDARIES = False
+MOVE_BOUNDARIES = True
 
 # The TILING parameter sets the number of kernel iterations that will be run
 # together by a single kernel execution.
@@ -40,7 +40,9 @@ def trans(psy):
     if TILING > 1:
         for loop in schedule.walk(Loop):
             if loop.loop_type == "outer":
-                LoopTiling2DTrans().apply(loop, {"tilesize": TILING})
+                LoopTiling2DTrans().apply(loop,
+                                          {"tilesize": TILING,
+                                           "strategy": 'exactly_divisible'})
 
     # Apply the OpenMPLoop transformation to every child in the schedule or
     # OpenMPParallelLoop to every Loop if it has distributed memory.

@@ -8,8 +8,10 @@ from psyclone.domain.gocean.transformations import \
     GOMoveIterationBoundariesInsideKernelTrans
 
 # If MOVE_BOUNDARIES is True the start and stop boundaries of each loop will
-# be moved from the PSy-layer to inside the kernel.
-MOVE_BOUNDARIES = False
+# be moved from the PSy-layer to a mask inside the kernel. This is useful in
+# combination with tiling as then all loop trip counts are equal an all loops
+# can be made exactly divisible by a single tiling size.
+MOVE_BOUNDARIES = True
 
 # The TILING parameter sets the number of kernel iterations that will be run
 # together by a single kernel execution.
@@ -36,6 +38,8 @@ def trans(psy):
     if TILING > 1:
         for loop in schedule.walk(Loop):
             if loop.loop_type == "outer":
-                LoopTiling2DTrans().apply(loop, {"tilesize": TILING})
+                LoopTiling2DTrans().apply(
+                    loop, {"tilesize": TILING,
+                           "strategy": 'exaclty_divisible'})
 
     return psy
