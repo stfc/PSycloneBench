@@ -80,7 +80,7 @@ nemolite2docl: ${KERNELS} psy.o alg.o
 
 # OpenCL Ahead-of-time kernel compilation: this target will use the Xilinx standard
 # suffixes for object (.xo) and binary (.xclbin) files
-device_binary: allkernels.cl
+device_binary: opencl_kernels_0.cl
 	${OCL_COMPILER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
 		--target ${FPGA_EXECUTION_TARGET} $< -o $<.xo
 	${OCL_LINKER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
@@ -99,10 +99,10 @@ clean:
 
 # OpenCL Execution helpers
 run_opencl_jit:
-	 DL_ESM_ALIGNMENT=64 FORTCL_KERNELS_FILE=allkernels.cl ./nemolite2d.exe
+	 DL_ESM_ALIGNMENT=64 FORTCL_KERNELS_FILE=opencl_kernels_0.cl ./nemolite2d.exe
 
 run_xilinx_sw_emu:
-	FORTCL_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=sw_emu ./nemolite2d.exe
+	FORTCL_KERNELS_FILE=device_binary.xclbin XCL_EMULATION_MODE=sw_emu ./nemolite2d.exe
 
 run_xilinx_hw_emu:
-	FORTCL_KERNELS_FILE=allkernels.xclbin XCL_EMULATION_MODE=hw_emu ./nemolite2d.exe
+	FORTCL_KERNELS_FILE=device_binary.xclbin XCL_EMULATION_MODE=hw_emu ./nemolite2d.exe

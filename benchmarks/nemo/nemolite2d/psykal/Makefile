@@ -164,8 +164,6 @@ nemolite2d_ocl: serial_libs fortcl_lib nemolite2d_alg.f90 psyclone_scripts/ocl_t
 	cp ${TIMER_LIB} $@/libdl_timer.a
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
-	# Currently we need all kernels in a single OpenCL file
-	cat $@/*.cl >> $@/allkernels.cl
 	cd $@ && make nemolite2docl
 	@echo "OpenCL version prepared. There are additional optional targets inside"
 	@echo "the $@ folder to compile ahead-of-time the OpenCL kernels."
@@ -184,8 +182,6 @@ nemolite2d_mpiocl: parallel_libs fortcl_lib nemolite2d_alg.f90 psyclone_scripts/
 	cp ${TIMER_LIB_DM} $@/libdl_timer.a
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
-	# Currently we need all kernels in a single OpenCL file
-	cat $@/*.cl >> $@/allkernels.cl
 	cd $@ && make nemolite2docl
 	@echo "OpenCL version prepared. There are additional optional targets inside"
 	@echo "the $@ folder to compile ahead-of-time the OpenCL kernels."
