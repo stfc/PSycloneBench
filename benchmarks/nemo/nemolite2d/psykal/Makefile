@@ -222,6 +222,7 @@ common_lib_mpi:
 clean: 
 	rm -rf nemolite2d_serial nemolite2d_omp nemolite2d_mpi
 	rm -rf nemolite2d_hybrid nemolite2d_acc nemolite2d_ocl nemolite2d_mpiocl
+	rm -rf nemolite2d_ompt nemolite2d_ompt_mpi
 
 libclean:
 	${MAKE} -C ${INF_DIR} distclean
