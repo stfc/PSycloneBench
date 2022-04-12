@@ -35,12 +35,12 @@ KOKKOS_ARCH = Volta70 # Pascal64
 CFLAGS := -O3
 # Still use the selected compiler but using the Kokkos nvcc_wrapper
 NVCC_WRAPPER_DEFAULT_COMPILER = $(CXX)
-CXX := $(KOKKOS_PATH)/bin/nvcc_wrapper
+CXX := $(KOKKOS_PATH)/bin/nvcc_wrapper -allow-unsupported-compiler
 # The enable lambda option is necessary for the nvcc compiler to recognise
 # as CUDA kernels the lambda-inlined functions.
 KOKKOS_CUDA_OPTIONS = "enable_lambda"
 # If CUDA_LIB is not provided, infer path from the nvcc compiler location.
-CUDA_LIB ?= $(shell echo $(shell which nvcc) | sed 's/bin\/nvcc/lib64/g')
+CUDA_ROOT ?= $(shell echo $(shell which nvcc) | sed 's/bin\/nvcc//g')
 else
 $(error "Unrecognised KOKKOS_DEVICES value: $(KOKKOS_DEVICES)")
 endif

@@ -1,5 +1,5 @@
 program gocean2d
-  use dl_timer
+  use dl_timer, only: timer_start, timer_stop, timer_init, timer_report, i_def64
   use grid_mod
   use field_mod
   use initialisation_mod, only: initialisation
@@ -7,11 +7,11 @@ program gocean2d
   use gocean2d_io_mod, only: model_write
   use gocean_mod,      only: model_write_log, gocean_initialise, &
                              gocean_finalise
+  !use likwid
 
-  !> GOcean2d is a Horizontal 2D hydrodynamic ocean model initially developed
-  !! by Hedong Liu, UK National Oceanography Centre (NOC), which:
-  !!   1) uses structured grid
-  !!   2) uses direct data addressing structures
+  !> A Horizontal 2D hydrodynamic ocean model which
+  !!   1) using structured grid
+  !!   2) using direct data addressing structures
 
   implicit none
 
@@ -30,9 +30,13 @@ program gocean2d
   type(r2d_field) :: ua_fld, va_fld
 
   ! time stepping index
-  integer :: istp   
-  integer :: itimer0
+  integer     :: istp  
+  integer     :: itimer0
 
+  ! Scratch space for logging messages
+  character(len=160) :: log_str
+
+  ! Initialise GOcean infrastructure
   call gocean_initialise()
 
   ! Create the model grid. We use a NE offset (i.e. the U, V and F
@@ -45,6 +49,7 @@ program gocean2d
 
   !! read in model parameters and configure the model grid 
   CALL model_init(model_grid)
+  !call likwid_markerInit()
 
   ! Create fields on this grid
 
@@ -78,16 +83,35 @@ program gocean2d
 
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
 
+  write(log_str, "('Simulation domain = (',I4,':',I4,',',I4,':',I4,')')") &
+                       model_grid%subdomain%global%xstart, &
+                       model_grid%subdomain%global%xstop,  &
+                       model_grid%subdomain%global%ystart, &
+                       model_grid%subdomain%global%ystop
+  call model_write_log("((A))", TRIM(log_str))
+
+  ! Start timer for time-stepping section
+  CALL timer_start(itimer0, label='Warm up', &
+                   num_repeats=INT(1,kind=i_def64) )
+
+  call step(nit000,                               &
+           ua_fld, va_fld, un_fld, vn_fld,     &
+           sshn_t_fld, sshn_u_fld, sshn_v_fld, &
+           ssha_t_fld, ssha_u_fld, ssha_v_fld, &
+           hu_fld, hv_fld, ht_fld)
+
+  ! Stop the timer for the time-stepping section
+  call timer_stop(itimer0)
   ! Start timer for time-stepping section
   CALL timer_start(itimer0, label='Time-stepping', &
-                   num_repeats=int((nitend-nit000+1),8) )
+                   num_repeats=INT(nitend-nit000,kind=i_def64) )
 
   !! time stepping 
-  do istp = nit000, nitend, 1
+  do istp = nit000+1, nitend, 1
 
      !call model_write_log("('istp == ',I6)",istp)
 
-     call step(model_grid, istp,                   &
+     call step(istp,                               &
                ua_fld, va_fld, un_fld, vn_fld,     &
                sshn_t_fld, sshn_u_fld, sshn_v_fld, &
                ssha_t_fld, ssha_u_fld, ssha_v_fld, &
@@ -102,14 +126,15 @@ program gocean2d
   call timer_stop(itimer0)
 
   ! Compute and output some checksums for error checking
-  call model_write_log("('ua checksum = ',E16.8)", &
+  call model_write_log("('ua checksum = ', E16.8)", &
                        field_checksum(ua_fld))
-  call model_write_log("('va checksum = ',E16.8)", &
+  call model_write_log("('va checksum = ', E16.8)", &
                        field_checksum(va_fld))
 
   !! finalise the model run
   call model_finalise()
-  
+  !call likwid_markerClose()
+
   call model_write_log("((A))", 'Simulation finished!!')
 
   call gocean_finalise()
@@ -118,7 +143,7 @@ end program gocean2d
 
 !+++++++++++++++++++++++++++++++++++
 
-subroutine step(grid, istp, &
+subroutine step(istp,           &
                 ua, va, un, vn, &
                 sshn, sshn_u, sshn_v, ssha, ssha_u, ssha_v, &
                 hu, hv, ht)
@@ -128,7 +153,6 @@ subroutine step(grid, istp, &
   use time_step_mod, only: invoke_time_step
   use gocean2d_io_mod, only: model_write
   implicit none
-  type(grid_type), intent(in) :: grid
   !> The current time step
   integer,         intent(in) :: istp
   type(r2d_field), intent(inout) :: un, vn, sshn, sshn_u, sshn_v
@@ -138,28 +162,6 @@ subroutine step(grid, istp, &
   call invoke_time_step(istp, ssha, ssha_u, ssha_v, &
                         sshn, sshn_u, sshn_v, &
                         hu, hv, ht, ua, va, un, vn)
-
-!  call invoke(                                               &
-!              continuity(istp, ssha, sshn_t, sshn_u, sshn_v, &
-!                         hu, hv, un, vn),                    &
-!              momentum_u(ua, un, vn,                         &
-!                         ssha_u, sshn_t, sshn_u, sshn_v),    &
-!              momentum_v(va, un, vn, hu, hv, ht,             &
-!                         ssha_v, sshn_t, sshn_u, sshn_v),    &
-!              bc_ssh(istp, ssha),                            &
-!              bc_solid_u(ua),                                &
-!              bc_solid_v(va),                                &
-!              bc_flather_u(ua, hu, sshn_u),                  &
-!              bc_flather_v(va, hv, sshn_v),                  &
-!              copy_field(ua, un),                            &
-!              copy_field(va, vn),                            &
-!              copy_field(ssha, sshn_t),                      &
-!              next_sshu(sshn_u, sshn_t),                     &
-!              next_sshv(sshn_v, sshn_t)                      &
-!             )
-
-
-!  call model_write(grid, istp, ht, sshn, un, vn)
 
 end subroutine step
 
