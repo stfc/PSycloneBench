@@ -11,7 +11,7 @@
 #include "timing.h"
 #endif
 
-#define TILE {64,4}
+#define TILE {64,1}
 
 // Create 2D View types for the Fields and Grid arrays
 typedef Kokkos::View<double**> double_2dview;
@@ -115,7 +115,11 @@ extern "C" void c_invoke_time_step(
     // The execution space is given as a preprocessor define when compiling
     // this file. e.g. `g++ -DEXEC_SPACE=OpenMP time_step_kokkos.cpp -c`
 #if defined (EXECUTION_SPACE)
+    #if EXECUTION_SPACE == HIP
+    using execution_space = Kokkos::Experimental::EXECUTION_SPACE;
+    #else
     using execution_space = Kokkos::EXECUTION_SPACE;
+    #endif
 #else
     using execution_space = Kokkos::DefaultExecutionSpace;
 #endif
