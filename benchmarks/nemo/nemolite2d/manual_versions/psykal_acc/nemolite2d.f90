@@ -10,8 +10,8 @@ program gocean2d
 
   !> GOcean2d is a Horizontal 2D hydrodynamic ocean model initially developed
   !! by Hedong Liu, UK National Oceanography Centre (NOC), which:
-  !!   1) using structured grid
-  !!   2) using direct data addressing structures
+  !!   1) uses structured grid
+  !!   2) uses direct data addressing structures
 
   implicit none
 
@@ -49,6 +49,11 @@ program gocean2d
 
   !! read in model parameters and configure the model grid 
   CALL model_init(model_grid)
+
+  ! Start timer for initialisation section (this must be after model_init
+  ! because dl_timer::timer_init() is called inside it)
+  CALL timer_start(itimer0, label='Initialise', &
+      num_repeats=INT(1,kind=i_def64) )
 
   ! Create fields on this grid
 
@@ -89,7 +94,10 @@ program gocean2d
                        model_grid%subdomain%global%ystop
   call model_write_log("((A))", TRIM(log_str))
 
-  ! Start timer for time-stepping section
+  ! Stop the timer for the initialisation section
+  call timer_stop(itimer0)
+
+  ! Start timer for warm-up section
   CALL timer_start(itimer0, label='Warm up', &
       num_repeats=INT(warmup_iterations,kind=i_def64) )
 
@@ -101,7 +109,7 @@ program gocean2d
                 hu_fld, hv_fld, ht_fld)
    enddo
 
-  ! Stop the timer for the time-stepping section
+  ! Stop the timer for the warm-up section
   call timer_stop(itimer0)
   ! Start timer for time-stepping section
   CALL timer_start(itimer0, label='Time-stepping', &
@@ -124,11 +132,18 @@ program gocean2d
   ! Stop the timer for the time-stepping section
   call timer_stop(itimer0)
 
+  ! Start timer for checksum section
+  CALL timer_start(itimer0, label='Checksum reductions', &
+      num_repeats=INT(1,kind=i_def64) )
+
   ! Compute and output some checksums for error checking
   call model_write_log("('ua checksum = ', E16.8)", &
                        field_checksum(ua_fld))
   call model_write_log("('va checksum = ', E16.8)", &
                        field_checksum(va_fld))
+
+  ! Stop the timer for the checksum section
+  call timer_stop(itimer0)
 
   !! finalise the model run
   call model_finalise()
