@@ -10,7 +10,7 @@
 
 
 program kdriver
-  use constants_mod, only : i_def, r_def, str_max_filename
+  use constants_mod, only : i_def, r_def, str_max_filename, r_double
   use dino_mod, only : dino_type
   use matrix_vector_kernel_mod
   use utils
@@ -27,7 +27,7 @@ program kdriver
   real(kind=r_def), allocatable :: nlayers_first(:,:,:,:)
   integer(kind=i_def) :: df, df2, lp, nthreads, memstart,memend
   real(kind=r_def) :: diff, err
-  real(kind=r_def) :: start, end
+  real(kind=r_double) :: start, end
 
   integer(kind=i_def), pointer :: map1(:) =>null(), map2(:)=>null()
   integer(kind=i_def) :: colour, cell, idx, tile, r, row

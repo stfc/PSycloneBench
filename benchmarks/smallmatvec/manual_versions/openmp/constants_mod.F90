@@ -21,7 +21,7 @@ module constants_mod
   real,             private :: r_val  !< A native real used to compute kind of native real.
   double precision, private :: dp_val !< A native double-precision used to compute kind of native dp.
 
-  integer, parameter :: r_def     = real64 !< Default real kind for application.
+  integer, parameter :: r_def     = real64 !< Default real kind for application computation.
   integer, parameter :: r_single  = real32 !< Default single precision real kind for application.
   integer, parameter :: r_double  = real64 !< Default double precision real kind for application.
 
