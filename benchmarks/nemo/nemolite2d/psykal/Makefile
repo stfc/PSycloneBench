@@ -109,6 +109,18 @@ nemolite2d_ompt_mpi: parallel_libs nemolite2d_alg.f90 psyclone_scripts/omp_task_
 	cd $@ && make nemolite2d
 	@echo "Task + MPI version prepared."
 
+nemolite2d_otter: serial_libs nemolite2d_alg.f90 psyclone_scripts/otter_task_transform.py
+	@echo "Generating NemoLite2D with Otter"; rm -rf $@; mkdir -p $@
+	${PSYCLONE} -nodm -s ./psyclone_scripts/otter_task_transform.py \
+	   	-oalg $@/alg.F90 -opsy $@/psy.F90 nemolite2d_alg.f90
+	# Each generated folder needs its purposely built inf_lib and timer_lib
+	cp ${INF_LIB} $@/.
+	cp ${TIMER_LIB} $@/libdl_timer.a
+	cp namelist $@/.
+	cp Makefile_gen $@/Makefile
+	cd $@ && make nemolite2d
+	@echo "Otter version prepared."
+
 # MPI PSyclone code-generation of NemoLite2D
 nemolite2d_mpi: parallel_libs nemolite2d_alg.f90 psyclone_scripts/serial_transform.py
 	@echo "Generating NemoLite2D with MPI"; rm -rf $@; mkdir -p $@
