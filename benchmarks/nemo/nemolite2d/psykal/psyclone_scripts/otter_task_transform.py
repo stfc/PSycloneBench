@@ -5,8 +5,9 @@ and inlines all kernels in the schedule.'''
 from psyclone.psyir.nodes import Loop
 from psyclone.configuration import Config
 from psyclone.transformations import KernelModuleInlineTrans
-from psyclone.psyir.transformations import OtterTaskloopTrans, OtterParallelTrans
-from psyclone.psyir.nodes import OtterNode, OtterTaskNode
+from psyclone.psyir.transformations import OtterTaskloopTrans,\
+        OtterParallelTrans, OtterSynchroniseRegionTrans
+from psyclone.psyir.nodes import OtterNode, OtterTaskNode, OtterParallelNode
 
 
 def trans(psy):
@@ -28,9 +29,11 @@ def trans(psy):
             loop_trans.apply(child)
 
     parallel_trans = OtterParallelTrans()
+    sync_trans = OtterSynchroniseRegionTrans()
     sets = []
     if not config.distributed_memory:
         parallel_trans.apply(schedule.children)
+        sync_trans.apply(schedule.children[0])
         return
     # Find all of the groupings of taskloop and taskwait directives. Each of
     # these groups needs its own parallel+single regions. This makes sure we
@@ -68,3 +71,6 @@ def trans(psy):
     # with an OpenMP Single and an OpenMP Parallel directive set.
     for next_set in sets:
         parallel_trans.apply(schedule[next_set[0]])
+    # Finall do synchronisation inside each parallel region
+    for child in schedule.walk(OtterParallelNode):
+        sync_trans.apply(child)
