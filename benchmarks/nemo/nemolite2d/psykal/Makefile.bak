@@ -1,0 +1,112 @@
+# Makefile to compile and link the PSyclone generated code.
+# To make permanant changes in this Makefile, modify the 'Makefile_gen'
+# file in the psykal root directory.
+
+# Location of the infrastructure libraries
+SHARED_DIR = ../../../../../shared
+TIMER_DIR = ${SHARED_DIR}/dl_timer
+TIMER_INC = ${TIMER_DIR}/src
+INF_DIR = ${SHARED_DIR}/dl_esm_inf/finite_difference
+INF_INC = ${INF_DIR}/src
+FORTCL_INC = ${SHARED_DIR}/FortCL/src/
+FORTCL_LIB = ${SHARED_DIR}/FortCL/src/libFortCL.a
+COMMON_DIR = ../../common
+COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
+OTTER_LIB = /home/achalk/otter-1/build/lib -lotter-serial
+OTTER_INC = /home/achalk/otter-1/build/
+
+# It uses its own copy of INF_LIB and TIMER_LIB
+INF_LIB = lib_fd.a
+TIMER_LIB = libdl_timer.a
+
+# The kernels used by this application and their location
+KERNEL_DIR = ../kernels/fortran
+
+# Depending on how PSyclone was invoked the application could be using
+# different kernel filenames.
+# 1) Kernels unmodified or modified with single renaming scheme
+KERNELS_UNMOD = boundary_conditions_mod.o \
+                continuity_mod.o \
+                momentum_mod.o \
+                time_update_mod.o \
+		        infrastructure_mod.o
+
+# 2) Kernels modified with multiple renaming scheme
+KERNELS_MULTIPLE = boundary_conditions_0_mod.o \
+                   boundary_conditions_1_mod.o \
+                   boundary_conditions_2_mod.o \
+                   boundary_conditions_3_mod.o \
+                   boundary_conditions_4_mod.o \
+                   continuity_0_mod.o \
+                   infrastructure_0_mod.o \
+                   infrastructure_1_mod.o \
+                   infrastructure_2_mod.o \
+                   momentum_0_mod.o \
+                   momentum_1_mod.o \
+                   time_update_0_mod.o \
+                   time_update_1_mod.o
+
+# Choose which kernels to use
+KERNELS = ${KERNELS_UNMOD}
+
+.PHONY: nemolite2d nemolite2docl device_binary device_binary_nohup
+
+all: nemolite2d
+.DEFAULT_GOAL := nemolite2d
+
+# Build NemoLite2D
+nemolite2d: ${KERNELS} psy.o alg.o
+	$(F90) $(F90FLAGS) -o $@.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
+		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} -L${OTTER_LIB} \
+	-I${OTTER_INC}
+
+
+# Build NemoLite2D for OpenACC, uses the same target as NemoLite2D but with
+# additional Fortran flags.
+nemolite2dacc:
+	$(MAKE) F90FLAGS="$(F90FLAGS) $(ACCFLAGS)" nemolite2d
+
+# Build NemoLite2D for OpenCL
+nemolite2docl: ${KERNELS} psy.o alg.o
+	$(F90) $(F90FLAGS) -o nemolite2d.exe  ${KERNELS} psy.o alg.o ${COMMON_LIB} \
+		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS} ${FORTCL_LIB} -lOpenCL
+
+# Generic rules
+%.o: %.f90
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} \
+		-I${FORTCL_INC} -c $<
+
+%.o: %.F90
+	$(F90) $(F90FLAGS) ${OMPFLAGS} -I${COMMON_DIR} -I${INF_INC} -I${TIMER_INC} \
+		-L${OTTER_LIB} -I${OTTER_INC} -c $<
+
+%.o: %.mod
+
+# OpenCL Ahead-of-time kernel compilation: this target will use the Xilinx standard
+# suffixes for object (.xo) and binary (.xclbin) files
+device_binary: opencl_kernels_0.cl
+	${OCL_COMPILER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $< -o $<.xo
+	${OCL_LINKER} ${OCL_DEVICE_FLAGS} --platform ${FPGA_PLATFORM} \
+		--target ${FPGA_EXECUTION_TARGET} $<.xo -o $@.xclbin
+
+device_binary_nohup:
+	nohup make device_binary > nohup.out &
+
+# If we need a .f90 file that doesn't exist then it must be a kernel.
+# Create a link to the required file...
+%.f90:
+	ln -sf ../../kernels/fortran/$@ .
+
+clean:
+	rm -f *.o *.mod *_opt_report.txt
+
+# OpenCL Execution helpers
+run_opencl_jit:
+	 DL_ESM_ALIGNMENT=64 FORTCL_KERNELS_FILE=opencl_kernels_0.cl ./nemolite2d.exe
+
+run_xilinx_sw_emu:
+	FORTCL_KERNELS_FILE=device_binary.xclbin XCL_EMULATION_MODE=sw_emu ./nemolite2d.exe
+
+run_xilinx_hw_emu:
+	FORTCL_KERNELS_FILE=device_binary.xclbin XCL_EMULATION_MODE=hw_emu ./nemolite2d.exe
