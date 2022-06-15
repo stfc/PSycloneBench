@@ -45,7 +45,7 @@ program gocean2d
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
   nrepeat = nitend - nit000 + 1
   call model_write_log('((A))', '=== Start Time-stepping ===')
-  call fortran_otterTraceInitialise_i(__FILE__, "main", __LINE__)
+  call fortran_otterTraceInitialise_i(__FILE__, 'main', __LINE__)
   call timer_start(itimer0, label='Time-stepping', num_repeats=nrepeat)
   do istp = nit000, nitend, 1
     call step(istp, ua_fld, va_fld, un_fld, vn_fld, sshn_t_fld, sshn_u_fld, sshn_v_fld, ssha_t_fld, ssha_u_fld, ssha_v_fld, &
