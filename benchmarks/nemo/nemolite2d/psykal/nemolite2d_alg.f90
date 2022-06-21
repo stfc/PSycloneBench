@@ -31,7 +31,10 @@ program gocean2d
   ! time stepping index
   integer :: istp 
   integer :: itimer0
-  integer(i_def64) :: nrepeat
+  integer :: warmup_iterations = 1
+
+  ! Scratch space for logging messages
+  character(len=160) :: log_str
 
   call gocean_initialise()
 
@@ -45,6 +48,11 @@ program gocean2d
 
   !! read in model parameters and configure the model grid 
   CALL model_init(model_grid)
+
+  ! Start timer for initialisation section (this must be after model_init
+  ! because dl_timer::timer_init() is called inside it)
+  CALL timer_start(itimer0, label='Initialise', &
+      num_repeats=INT(1,kind=i_def64) )
 
   ! Create fields on this grid
 
@@ -78,13 +86,37 @@ program gocean2d
 
   call model_write(model_grid, 0, ht_fld, sshn_t_fld, un_fld, vn_fld)
 
+  write(log_str, "('Simulation domain = (',I4,':',I4,',',I4,':',I4,')')") &
+                   model_grid%subdomain%global%xstart, &
+                   model_grid%subdomain%global%xstop,  &
+                   model_grid%subdomain%global%ystart, &
+                   model_grid%subdomain%global%ystop
+  call model_write_log("((A))", TRIM(log_str))
+
+  ! Stop the timer for the initialisation section
+  call timer_stop(itimer0)
+  
+  ! Start timer for warm-up section
+  CALL timer_start(itimer0, label='Warm up', &
+      num_repeats=INT(warmup_iterations,kind=i_def64) )
+
+  do istp = nit000, nit000 + warmup_iterations, 1
+      call step(istp,                               &
+                ua_fld, va_fld, un_fld, vn_fld,     &
+                sshn_t_fld, sshn_u_fld, sshn_v_fld, &
+                ssha_t_fld, ssha_u_fld, ssha_v_fld, &
+                hu_fld, hv_fld, ht_fld)
+   enddo
+
+  ! Stop the timer for the warm-up section
+  call timer_stop(itimer0)
+
   ! Start timer for time-stepping section
-  nrepeat = nitend - nit000 + 1
-  call model_write_log("((A))", '=== Start Time-stepping ===')
-  CALL timer_start(itimer0, label='Time-stepping', num_repeats=nrepeat)
+  CALL timer_start(itimer0, label='Time-stepping', &
+      num_repeats=INT(nitend-(nit000+warmup_iterations),kind=i_def64))
 
   !! time stepping 
-  do istp = nit000, nitend, 1
+  do istp = nit000+warmup_iterations, nitend, 1
 
      call step(istp,                               &
                ua_fld, va_fld, un_fld, vn_fld,     &
@@ -100,23 +132,22 @@ program gocean2d
   ! Stop the timer for the time-stepping section
   call timer_stop(itimer0)
 
-  call model_write_log("((A))", '=== Time-stepping finished ===')
+  ! Start timer for checksum section
+  CALL timer_start(itimer0, label='Checksum reductions', &
+      num_repeats=INT(1,kind=i_def64) )
 
   ! Compute and output some checksums for error checking
-  call model_write_log("('ua checksum = ',E16.8)", field_checksum(ua_fld))
-  call model_write_log("('va checksum = ',E16.8)", field_checksum(va_fld))
-  ! call model_write_log("('ssh_u checksum = ',E16.8)", &
-  !                      field_checksum(sshn_u_fld))
-  ! call model_write_log("('ssh_v checksum = ',E16.8)", &
-  !                      field_checksum(sshn_v_fld))
-  ! call model_write_log("('ssh_t checksum = ',E16.8)", &
-  !                      field_checksum(sshn_t_fld))
+  call model_write_log("('ua checksum = ', E16.8)", &
+                       field_checksum(ua_fld))
+  call model_write_log("('va checksum = ', E16.8)", &
+                       field_checksum(va_fld))
+
+  ! Stop the timer for the checksum section
+  call timer_stop(itimer0)
 
   !! finalise the model run
   call model_finalise()
-  
   call model_write_log("((A))", 'Simulation finished!!')
-
   call gocean_finalise()
 
 end program gocean2d
