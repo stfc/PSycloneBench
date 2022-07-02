@@ -7,7 +7,7 @@ module continuity_mod
   implicit none
 
   type, extends(kernel_type) :: continuity
-     type(go_arg), dimension(9) :: meta_args =         &
+     type(go_arg), dimension(11) :: meta_args =         &
            (/ go_arg(GO_WRITE, GO_CT, GO_POINTWISE),            & ! ssha
               go_arg(GO_READ,  GO_CT, GO_POINTWISE),            & ! sshn
               go_arg(GO_READ,  GO_CU, GO_STENCIL(000,110,000)), & ! sshn_u
@@ -16,6 +16,8 @@ module continuity_mod
               go_arg(GO_READ,  GO_CV, GO_STENCIL(000,010,010)), & ! hv
               go_arg(GO_READ,  GO_CU, GO_STENCIL(000,110,000)), & ! un
               go_arg(GO_READ,  GO_CV, GO_STENCIL(000,010,010)), & ! vn
+              go_arg(GO_READ,  GO_I_SCALAR, GO_POINTWISE),  &
+              go_arg(GO_READ,  GO_I_SCALAR, GO_POINTWISE),  &
               go_arg(GO_READ,  GO_GRID_AREA_T)           &
            /)
      !> This kernel updates only internal points of the simulation
@@ -54,6 +56,7 @@ contains
                                ssha%data, sshn%data,        &
                                sshn_u%data, sshn_v%data,    &
                                hu%data, hv%data, un%data, vn%data, &
+                               32, 32, &
                                ssha%grid%area_t)
        end do
     end do
@@ -187,24 +190,35 @@ contains
 
   subroutine continuity_code(ji, jj,                     &
                              ssha, sshn, sshn_u, sshn_v, &
-                             hu, hv, un, vn, e12t)
+                             hu, hv, un, vn, ct1, ct2, e12t)
     use model_mod, only: rdt
     implicit none
-    integer,                  intent(in)  :: ji, jj
+    integer,                  intent(in)  :: ji, jj, ct1, ct2
     real(go_wp), dimension(:,:), intent(in)  :: e12t
     real(go_wp), dimension(:,:), intent(out) :: ssha
     real(go_wp), dimension(:,:), intent(in)  :: sshn, sshn_u, sshn_v, &
                                              hu, hv, un, vn
-    ! Locals
-    real(go_wp) :: rtmp1, rtmp2, rtmp3, rtmp4
+    integer :: i, j
+    real(go_wp), dimension(32,32) :: tmp
 
-    rtmp1 = (sshn_u(ji  ,jj  ) + hu(ji  ,jj  )) * un(ji  ,jj  )
-    rtmp2 = (sshn_u(ji-1,jj  ) + hu(ji-1,jj  )) * un(ji-1,jj  )
-    rtmp3 = (sshn_v(ji  ,jj  ) + hv(ji  ,jj  )) * vn(ji  ,jj  )
-    rtmp4 = (sshn_v(ji  ,jj-1) + hv(ji  ,jj-1)) * vn(ji  ,jj-1)
+    
+    do i = 1, 32
+        do j = 1, 32
+            tmp(i,j) = sshn(i,j)
+        enddo
+    enddo
 
-    ssha(ji,jj) = sshn(ji,jj) + (rtmp2 - rtmp1 + rtmp4 - rtmp3) * &
-                    rdt / e12t(ji,jj)
+    do i = 1, 32
+        do j = 1, 32
+            tmp(i,j) = tmp(i - ct1 + ct2, j) / e12t(i,j)
+        enddo
+    enddo
+
+    do i = 1, 32
+        do j = 1, 32
+            ssha(ji,jj) =  ssha(ji,jj) + tmp(i,j)
+        enddo
+    enddo
 
   end subroutine continuity_code
 

@@ -175,14 +175,16 @@ subroutine step(istp,           &
   type(r2d_field), intent(inout) :: un, vn, sshn_t, sshn_u, sshn_v
   type(r2d_field), intent(inout) :: ua, va, ssha_t, ssha_u, ssha_v
   type(r2d_field), intent(inout) :: hu, hv, ht
+  integer :: ct1 = 32
+  integer :: ct2 = 32
 
   call invoke(                                               &
               continuity(ssha_t, sshn_t, sshn_u, sshn_v,     &
-                         hu, hv, un, vn),                    &
+                         hu, hv, un, vn, ct1, ct2),          &
               momentum_u(ua, un, vn, hu, hv, ht,             &
-                         ssha_u, sshn_t, sshn_u, sshn_v),    &
+                         ssha_u, sshn_t, sshn_u, sshn_v, ct1, ct2),    &
               momentum_v(va, un, vn, hu, hv, ht,             &
-                         ssha_v, sshn_t, sshn_u, sshn_v),    &
+                         ssha_v, sshn_t, sshn_u, sshn_v, ct1, ct2),    &
               bc_ssh(istp, ssha_t),                          &
               bc_solid_u(ua),                                &
               bc_solid_v(va),                                &

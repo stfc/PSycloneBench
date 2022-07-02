@@ -34,9 +34,9 @@ def trans(psy):
 
     # Import transformations
     tinfo = TransInfo()
-    globaltrans = tinfo.get_trans_name('KernelImportsToArguments')
+    globals_to_arguments = tinfo.get_trans_name('KernelImportsToArguments')
     move_boundaries_trans = GOMoveIterationBoundariesInsideKernelTrans()
-    cltrans = GOOpenCLTrans()
+    opencl_trans = GOOpenCLTrans()
 
     # Get the invoke routine
     schedule = psy.invokes.get('invoke_0').schedule
@@ -71,19 +71,35 @@ def trans(psy):
     # are lacking in this aspect.
     # If using a different WORK_GROUP_SIZE, make sure to update the
     # DL_ESM_ALIGNMENT to match.
+    #
+
+    # For each kernel in the Parallel System layer ...
     for kern in schedule.kernels():
-        print(kern.name)
-        globaltrans.apply(kern)
+        # Convert the Globals to Arguments, since OpenCL kernels won't
+        # have access to Fortran global variables.
+        globals_to_arguments.apply(kern)
+
+        # Traverse the whole domain and mask out the computations for the
+        # boundary values
         if MOVE_BOUNDARIES:
             move_boundaries_trans.apply(kern)
+
+        # Provide optional optimization parameters
+        koptions = {}
+        koptions['local_size'] = WORK_GROUP_SIZE # Set to 64
+
+        # Use multiple queues to allow out-of-order and/or concurrent
+        # execution of kernels if the device supports it.
         if FUCTIONAL_PARALLELISM:
-            kern.set_opencl_options({'local_size': WORK_GROUP_SIZE,
-                                     'queue_number': qmap[kern.name]})
-        else:
-            kern.set_opencl_options({'local_size': WORK_GROUP_SIZE})
+            koptions['queue_number'] = qmap[kern.name]
+
+        kern.set_opencl_options(koptions)
 
     # Transform invoke to OpenCL
-    cltrans.apply(schedule)
+    # opencl_trans.apply(schedule)
+
+    opencl_trans.apply(schedule, {'aggressive_flags': True,
+                                  'define_runtime_invariants': True})
 
     if XILINX_CONFIG_FILE:
         # Create a Xilinx Compiler Configuration file
