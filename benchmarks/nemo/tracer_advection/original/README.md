@@ -36,6 +36,13 @@ e.g. to build with Gnu Fortran one might use:
     (export OMPFLAGS=-fopenmp)
     export MPIF90=mpif90
 
+To use the NVIDIA compiler and OpenMP offload:
+
+    export F90=nvfortran
+    export F90FLAGS=-O3 -gpu=managed
+    export OMPTARGETFLAGS=-mp=gpu
+    unset OMPFLAGS
+
 Scripts to do this for various compilers may be found in the `compiler_setup`
 directory at the root of this repository.
 
