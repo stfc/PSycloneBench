@@ -1,7 +1,11 @@
 # Makefile for the original form of the tra_adv benchmark. Contains
-# targets for building the original (serial) version, a PSyclone-processed
-# OpenACC version and a PSyclone-processed OpenMP version.
-
+# targets for building the original (serial) version and three
+# different PSyclone-processed versions:
+#
+#  1. OpenACC;
+#  2. OpenMP for CPU;
+#  3. OpenMP offload for GPU.
+#
 # Compiler and associated flags must be set through the following
 # environment variables:
 #
@@ -9,7 +13,7 @@
 #   export F90FLAGS=-O3
 #   export OMPFLAGS=-fopenmp
 
-.PHONY: all tra_adv_serial tra_adv_acc tra_adv_omp
+.PHONY: all tra_adv_serial tra_adv_acc tra_adv_omp tra_adv_omp_gpu
 
 # The default is to build the original, serial CPU version
 all: tra_adv_serial
@@ -42,6 +46,13 @@ tra_adv_acc: dl_timer
 tra_adv_omp: ../scripts/omp_trans.py
 	mkdir -p $@
 	${PSYCLONE} -s ../scripts/omp_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	cp Makefile_gen $@/Makefile
+	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
+            LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
+
+tra_adv_omp_gpu: ../scripts/omp_gpu_trans.py
+	mkdir -p $@
+	${PSYCLONE} -s ../scripts/omp_gpu_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
             LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
