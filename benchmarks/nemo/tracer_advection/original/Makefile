@@ -54,7 +54,7 @@ tra_adv_omp_gpu: ../scripts/omp_gpu_trans.py
 	mkdir -p $@
 	${PSYCLONE} -s ../scripts/omp_gpu_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
-	${MAKE} F90FLAGS="${F90FLAGS} ${OMPTARGETFLAGS} -gpu=managed" PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
+	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
             LDFLAGS="${LDFLAGS} ${OMPTARGETFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
 dl_timer:
@@ -64,7 +64,10 @@ clean:
 	${MAKE} -C tra_adv_serial $@
 	${MAKE} -C tra_adv_acc $@
 	${MAKE} -C tra_adv_omp $@
+	${MAKE} -C tra_adv_omp_gpu $@
 
 allclean:
 	rm -rf tra_adv_serial
 	rm -rf tra_adv_acc
+	rm -rf tra_adv_omp
+	rm -rf tra_adv_omp_gpu

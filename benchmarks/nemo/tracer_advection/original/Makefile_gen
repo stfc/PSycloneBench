@@ -4,7 +4,7 @@
 # PROF_LIB_NAME must be set to the name of the profiling library (which
 # must be present in PROF_LIB_DIR).
 
-FORT_FLAGS = ${F90FLAGS} ${OMPFLAGS} ${PROF_LIB_INC}
+FORT_FLAGS = ${F90FLAGS} ${OMPFLAGS} ${OMPTARGETFLAGS} ${PROF_LIB_INC}
 
 tra_adv.exe: tra_adv.o
 	${F90} ${OMPFLAGS} -o $@ tra_adv.o ${LDFLAGS}
