@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2021, Science and Technology Facilities Council
+# Copyright (c) 2021-2022, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,13 +37,10 @@
 ''' PSyclone transformation script showing the introduction of OpenMP for GPU
 directives into Nemo code. '''
 
-from __future__ import print_function
 from psyclone.psyGen import TransInfo
 from psyclone.psyir.nodes import Loop, Assignment
 from psyclone.domain.nemo.transformations import NemoAllArrayRange2LoopTrans
 from psyclone.transformations import TransformationError
-
-USE_GPU = True  # Enable for generating OpenMP target directives
 
 
 def trans(psy):
@@ -75,14 +72,14 @@ def trans(psy):
         for loop in invoke.schedule.walk(Loop):
             if loop.loop_type == "levels":
                 try:
-                    if USE_GPU:
-                        omp_target_trans.apply(loop)
+                    omp_target_trans.apply(loop)
 
                     omp_loop_trans.apply(loop)
                 except TransformationError:
                     # This loop can not be transformed, proceed to next loop
                     continue
 
+                # Count the number of perfectly nested loops
                 num_nested_loops = 0
                 next_loop = loop
                 while isinstance(next_loop, Loop):
@@ -94,4 +91,4 @@ def trans(psy):
                 if num_nested_loops > 1:
                     loop.parent.parent.collapse = num_nested_loops
 
-        return psy
+    return psy
