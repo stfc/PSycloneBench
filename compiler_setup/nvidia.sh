@@ -43,6 +43,7 @@ export CXX
 
 export OMPFLAGS
 export OMPTARGETFLAGS
+export UMEMFLAGS
 export ACCFLAGS
 
 export CFLAGS
