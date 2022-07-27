@@ -39,9 +39,9 @@ e.g. to build with Gnu Fortran one might use:
 To use the NVIDIA compiler, OpenMP offload and managed memory:
 
     export F90=nvfortran
-    export F90FLAGS="-O3 -gpu=managed"
+    export F90FLAGS="-O3"
     export OMPTARGETFLAGS="-mp=gpu"
-    unset OMPFLAGS
+    export UMEMFLAGS="-gpu=managed"
 
 Scripts to do this for various compilers may be found in the `compiler_setup`
 directory at the root of this repository.
