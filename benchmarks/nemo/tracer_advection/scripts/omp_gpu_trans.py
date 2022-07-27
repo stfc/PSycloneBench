@@ -38,7 +38,7 @@
 directives into Nemo code. '''
 
 from psyclone.psyGen import TransInfo
-from psyclone.psyir.nodes import Loop, Assignment
+from psyclone.psyir.nodes import Loop, Assignment, CodeBlock
 from psyclone.domain.nemo.transformations import NemoAllArrayRange2LoopTrans
 from psyclone.transformations import TransformationError
 
@@ -70,7 +70,9 @@ def trans(psy):
 
         # Add the OpenMP directives in each loop
         for loop in invoke.schedule.walk(Loop):
-            if loop.loop_type == "levels":
+            # TODO PSyclone/#1815: OMPTargetTrans does not exclude CodeBlock
+            # nodes.
+            if loop.loop_type == "levels" and not loop.walk(CodeBlock):
                 try:
                     omp_target_trans.apply(loop)
 
