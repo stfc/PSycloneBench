@@ -38,7 +38,7 @@
 directives into Nemo code. '''
 
 from psyclone.psyGen import TransInfo
-from psyclone.psyir.nodes import Loop, Assignment, CodeBlock
+from psyclone.psyir.nodes import Loop, Assignment, CodeBlock, Directive
 from psyclone.domain.nemo.transformations import NemoAllArrayRange2LoopTrans
 from psyclone.transformations import TransformationError
 
@@ -72,25 +72,35 @@ def trans(psy):
         for loop in invoke.schedule.walk(Loop):
             # TODO PSyclone/#1815: OMPTargetTrans does not exclude CodeBlock
             # nodes.
-            if loop.loop_type == "levels" and not loop.walk(CodeBlock):
-                try:
-                    omp_target_trans.apply(loop)
+            if loop.walk(CodeBlock):
+                continue
 
-                    omp_loop_trans.apply(loop)
-                except TransformationError:
-                    # This loop can not be transformed, proceed to next loop
-                    continue
+            if loop.ancestor(Directive):
+                # Skip if an outer loop is already parallelised
+                continue
 
-                # Count the number of perfectly nested loops
-                num_nested_loops = 0
-                next_loop = loop
-                while isinstance(next_loop, Loop):
-                    num_nested_loops += 1
-                    if len(next_loop.loop_body.children) > 1:
-                        break
-                    next_loop = next_loop.loop_body.children[0]
+            try:
+                omp_loop_trans.apply(loop)
+                # Only add the target directive if the OMPLoop was successfully applied.
+                omp_target_trans.apply(loop.parent.parent)
+            except TransformationError as err:
+                # This loop can not be transformed, proceed to next loop
+                print("Loop not parallelised because:", str(err))
+                continue
 
-                if num_nested_loops > 1:
-                    loop.parent.parent.collapse = num_nested_loops
+            # Count the number of perfectly nested loops
+            num_nested_loops = 0
+            next_loop = loop
+            while isinstance(next_loop, Loop):
+                num_nested_loops += 1
+                if len(next_loop.loop_body.children) > 1:
+                    break
+                next_loop = next_loop.loop_body.children[0]
+
+            # TODO PSyclone/#1787: the code produced by the NVIDIA compiler
+            # crashes at run time if any of the loops included in a
+            # COLLAPSE use LBOUND/UBOUND in their limits.
+            #if num_nested_loops > 1:
+            #    loop.parent.parent.collapse = num_nested_loops
 
     return psy
