@@ -1,13 +1,8 @@
 # Makefile for the tracer-advection benchmark.
 #
-# PROF_LIB_DIR must be set to the location of the profiling library.
-# PROF_LIB_NAME must be set to the name of the profiling library (which
-# must be present in PROF_LIB_DIR).
-
-FORT_FLAGS = ${F90FLAGS} ${OMPFLAGS} ${PROF_LIB_INC}
 
 tra_adv.exe: tra_adv.o
-	${F90} ${OMPFLAGS} -o $@ tra_adv.o ${LDFLAGS}
+	${F90} ${FORT_FLAGS} -o $@ tra_adv.o ${LDFLAGS}
 
 %.o: %.f90
 	${F90} ${FORT_FLAGS} -c $<

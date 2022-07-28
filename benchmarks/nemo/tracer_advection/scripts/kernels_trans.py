@@ -167,8 +167,8 @@ def try_kernels_trans(nodes, default_present):
         if COLLAPSE_LOOPS:
             collapse_loops(nodes)
     except (TransformationError, InternalError) as err:
-        print("Failed to transform nodes: {0}", nodes)
-        print("Error was: {0}".format(str(err)))
+        print(f"Failed to transform nodes: {nodes}")
+        print(f"Error was: {err}")
 
 
 def collapse_loops(nodes):
