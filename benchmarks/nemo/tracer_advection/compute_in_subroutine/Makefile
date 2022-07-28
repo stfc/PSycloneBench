@@ -98,6 +98,7 @@ clean:
 	-${MAKE} -C tra_adv_serial $@
 
 allclean: clean
+	${MAKE} -C ${DL_TIMER_DIR} allclean
 	rm -rf tra_adv_serial
 	rm -rf tra_adv_acc
 	rm -rf tra_adv_acc_prof
