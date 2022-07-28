@@ -67,10 +67,18 @@ dl_timer:
 	make -C ${DL_TIMER_DIR} sm_lib
 
 clean:
+ifneq (,$(wildcard ./tra_adv_serial))
 	${MAKE} -C tra_adv_serial $@
+endif
+ifneq (,$(wildcard ./tra_adv_acc))
 	${MAKE} -C tra_adv_acc $@
+endif
+ifneq (,$(wildcard ./tra_adv_omp))
 	${MAKE} -C tra_adv_omp $@
+endif
+ifneq (,$(wildcard ./tra_adv_omp_gpu))
 	${MAKE} -C tra_adv_omp_gpu $@
+endif
 
 allclean:
 	make -C ${DL_TIMER_DIR} allclean
