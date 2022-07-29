@@ -39,6 +39,7 @@ directives into Nemo code. '''
 
 from psyclone.psyGen import TransInfo
 from psyclone.psyir.nodes import Loop, Assignment, CodeBlock, Directive
+from psyclone.psyir.transformations import HoistLoopBoundExprTrans, HoistTrans
 from psyclone.domain.nemo.transformations import NemoAllArrayRange2LoopTrans
 from psyclone.transformations import TransformationError
 
@@ -55,6 +56,8 @@ def trans(psy):
     '''
     omp_target_trans = TransInfo().get_trans_name('OMPTargetTrans')
     omp_loop_trans = TransInfo().get_trans_name('OMPLoopTrans')
+    hoist_trans = HoistTrans()
+    loopbounds_hoist = HoistLoopBoundExprTrans()
     # Disabling worksharing will produce the 'loop' directive which is better
     # suited to map the work into the GPU
     omp_loop_trans.omp_worksharing = False
@@ -67,6 +70,19 @@ def trans(psy):
         explicit_loops = NemoAllArrayRange2LoopTrans()
         for assignment in invoke.schedule.walk(Assignment):
             explicit_loops.apply(assignment)
+
+        # First hoist all possible expressions
+        for loop in  invoke.schedule.walk(Loop):
+            loopbounds_hoist.apply(loop)
+
+        # Hoist all possible assignments (in reverse order so the inner loop
+        # constants are hoisted all the way out if possible)
+        for loop in reversed(invoke.schedule.walk(Loop)):
+            for statement in list(loop.loop_body):
+                try:
+                    hoist_trans.apply(statement)
+                except TransformationError as err:
+                    pass
 
         # Add the OpenMP directives in each loop
         for loop in invoke.schedule.walk(Loop):
@@ -81,7 +97,8 @@ def trans(psy):
 
             try:
                 omp_loop_trans.apply(loop)
-                # Only add the target directive if the OMPLoop was successfully applied.
+                # Only add the target directive if the OMPLoop was successfully
+                # applied.
                 omp_target_trans.apply(loop.parent.parent)
             except TransformationError as err:
                 # This loop can not be transformed, proceed to next loop
@@ -97,10 +114,7 @@ def trans(psy):
                     break
                 next_loop = next_loop.loop_body.children[0]
 
-            # TODO PSyclone/#1787: the code produced by the NVIDIA compiler
-            # crashes at run time if any of the loops included in a
-            # COLLAPSE use LBOUND/UBOUND in their limits.
-            #if num_nested_loops > 1:
-            #    loop.parent.parent.collapse = num_nested_loops
+            if num_nested_loops > 1:
+                loop.parent.parent.collapse = num_nested_loops
 
     return psy
