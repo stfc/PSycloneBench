@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2021-2022, Science and Technology Facilities Council.
+# Copyright (c) 2022, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,17 +34,16 @@
 # -----------------------------------------------------------------------------
 # Authors: S. Siso, STFC Daresbury Lab
 
-''' PSyclone transformation script showing the introduction of OpenMP for GPU
-directives into Nemo code. '''
+''' PSyclone transformation script to insert OpenMP Parallel Loop directives
+to all the code loops, including implicit loops.'''
 
 from psyclone.psyGen import TransInfo
 from utils import insert_explicit_loop_parallelism, normalise_loops
 
 
 def trans(psy):
-    ''' Add OpenMP Target and Loop directives to all loops, including the
-    implicit ones, to parallelise the code and execute it in an acceleration
-    device.
+    ''' Add OpenMP Parallel Loop directive to all loops, including implicit
+    ones to target CPU parallelism.
 
     :param psy: the PSy object which this script will transform.
     :type psy: :py:class:`psyclone.psyGen.PSy`
@@ -52,11 +51,8 @@ def trans(psy):
     :rtype: :py:class:`psyclone.psyGen.PSy`
 
     '''
-    omp_target_trans = TransInfo().get_trans_name('OMPTargetTrans')
+    omp_parallel_trans = TransInfo().get_trans_name('OMPParallelTrans')
     omp_loop_trans = TransInfo().get_trans_name('OMPLoopTrans')
-    # Disabling worksharing will produce the 'loop' directive which is better
-    # suited to map the work into the GPU
-    omp_loop_trans.omp_worksharing = False
 
     print("Invokes found:")
     for invoke in psy.invokes.invoke_list:
@@ -70,7 +66,7 @@ def trans(psy):
 
         insert_explicit_loop_parallelism(
                 invoke.schedule,
-                region_directive_trans=omp_target_trans,
+                region_directive_trans=omp_parallel_trans,
                 loop_directive_trans=omp_loop_trans,
                 collapse=True
         )
