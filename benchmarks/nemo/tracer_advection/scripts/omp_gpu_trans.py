@@ -37,7 +37,8 @@
 ''' PSyclone transformation script showing the introduction of OpenMP for GPU
 directives into Nemo code. '''
 
-from psyclone.psyGen import TransInfo
+from psyclone.psyir.transformations import OMPTargetTrans
+from psyclone.transformations import OMPLoopTrans
 from utils import insert_explicit_loop_parallelism, normalise_loops
 
 
@@ -52,8 +53,8 @@ def trans(psy):
     :rtype: :py:class:`psyclone.psyGen.PSy`
 
     '''
-    omp_target_trans = TransInfo().get_trans_name('OMPTargetTrans')
-    omp_loop_trans = TransInfo().get_trans_name('OMPLoopTrans')
+    omp_target_trans = OMPTargetTrans()
+    omp_loop_trans = OMPLoopTrans()
     # Disabling worksharing will produce the 'loop' directive which is better
     # suited to map the work into the GPU
     omp_loop_trans.omp_worksharing = False

@@ -49,19 +49,19 @@ tra_adv_serial: dl_timer ./tra_adv.F90
 # ACC KERNELS region.
 tra_adv_acc_kernels: dl_timer ./tra_adv.F90
 	mkdir -p $@
-	${PSYCLONE} --profile invokes -s ../scripts/acc_kernels_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/acc_kernels_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
-	${MAKE} FORT_FLAGS="${F90FLAGS} -I${PSYCLONE_NVIDIA_LIB_DIR} -I../${DL_TIMER_DIR}/src" \
-           LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME} ${PSYCLONE_NVIDIA_LIB_DIR}/libnvtx_prof.a" -C $@
+	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} ${UMEMFLAGS} -I../${DL_TIMER_DIR}/src" \
+           LDFLAGS="${LDFLAGS} ${ACCFLAGS} ${UMEMFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
 tra_adv_acc_loops: dl_timer ./tra_adv.F90
 	mkdir -p $@
-	${PSYCLONE} --profile invokes -s ../scripts/acc_loops_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/acc_loops_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
-	${MAKE} FORT_FLAGS="${F90FLAGS} -I${PSYCLONE_NVIDIA_LIB_DIR} -I../${DL_TIMER_DIR}/src" \
-           LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME} ${PSYCLONE_NVIDIA_LIB_DIR}/libnvtx_prof.a" -C $@
+	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} ${UMEMFLAGS} -I../${DL_TIMER_DIR}/src" \
+           LDFLAGS="${LDFLAGS} ${ACCFLAGS} ${UMEMFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
-tra_adv_omp_levels: ../scripts/omp_trans.py dl_timer ./tra_adv.F90
+tra_adv_omp_levels: ../scripts/omp_cpu_levels_trans.py dl_timer ./tra_adv.F90
 	mkdir -p $@
 	${PSYCLONE} -s ../scripts/omp_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
@@ -108,9 +108,4 @@ endif
 
 allclean:
 	make -C ${DL_TIMER_DIR} allclean
-	rm -rf tra_adv_serial
-	rm -rf tra_adv_acc_kernels
-	rm -rf tra_adv_acc_loops
-	rm -rf tra_adv_omp_levels
-	rm -rf tra_adv_omp_gpu
-	rm -rf tra_adv_omp_cpu
+	rm -rf ${VERSIONS}
