@@ -3,11 +3,11 @@
 # different PSyclone-processed versions:
 #
 #  1. Serial;
-#  2. OpenACC kernels for GPU;
-#  3. OpenACC loops for GPU;
+#  2. OpenACC kernels for GPU with UniMem;
+#  3. OpenACC loops for GPU with UniMem;
 #  4. OpenMP k-loops parallelism for CPU;
 #  5. OpenMP all-loops parallelism for CPU;
-#  6. OpenMP offload for GPU.
+#  6. OpenMP all-loop offload for GPU with UniMem.
 #
 # Compiler and associated flags must be set through the following
 # environment variables:
@@ -17,10 +17,18 @@
 #   export OMPFLAGS=-fopenmp
 #
 # See the scripts in PSycloneBench/compiler_setup for examples.
+#
+# The optional ENABLE_NVIDIA_PROFILE=yes flag can be set to enable
+# GPU offloading versions to generate instrumented code. e.g.
+#
+#   make tra_adv_acc_kernels ENABLE_NVIDIA_PROFILE=yes
+#
+# this will require the PSYCLONE_NVIDIA_LIB_DIR to be properly set up.
 
 VERSIONS := tra_adv_serial tra_adv_acc_kernels tra_adv_acc_loops tra_adv_omp \
 		   	tra_adv_omp_gpu tra_adv_omp_gpu
-.PHONY: all ${VERSIONS}
+
+.PHONY: all clean allclean ${VERSIONS}
 
 # The default is to build the original, serial CPU version
 .DEFAULT_GOAL := tra_adv_serial
@@ -30,11 +38,19 @@ all: ${VERSIONS}
 DL_TIMER_DIR = ../../../../shared/dl_timer
 DL_TIMER_NAME = libdl_timer_omp.a
 
-# Shorthand for invoking PSyclone.
-PSYCLONE = psyclone -api nemo -l output
-PSYCLONE_PROFILE ?=
-#PSYCLONE_PROFILE ?= -profile invokes
+# Add necessary flags for Nvidia nvtx instrumentation
+ifeq ($(ENABLE_NVIDIA_PROFILE),yes)
+PSYCLONE_PROFILE := -p invokes
+F90FLAGS += -I${PSYCLONE_NVIDIA_LIB_DIR}
+LDFLAGS += -L${NVHPC_ROOT}/cuda/lib64 ${PSYCLONE_NVIDIA_LIB_DIR}/libnvtx_prof.a -lnvToolsExt -Mcuda
+else
+PSYCLONE_PROFILE :=
+endif
 
+# Shorthand for invoking PSyclone.
+PSYCLONE = psyclone -api nemo -l output ${PSYCLONE_PROFILE}
+
+# Instructions to compile each version
 
 tra_adv_serial: dl_timer ./tra_adv.F90
 	mkdir -p $@
@@ -43,10 +59,6 @@ tra_adv_serial: dl_timer ./tra_adv.F90
 	${MAKE} FORT_FLAGS="${F90FLAGS} -I../${DL_TIMER_DIR}/src" \
             LDFLAGS="${LDFLAGS} ${OMPFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
-# The OpenACC-accelerated version has the existing dl_timer calls but also
-# has profiling instrumentation added that uses NVTX.  We profile 'invokes'
-# rather than 'kernels' since the whole outer loop gets put into a single
-# ACC KERNELS region.
 tra_adv_acc_kernels: dl_timer ./tra_adv.F90
 	mkdir -p $@
 	${PSYCLONE} -s ../scripts/acc_kernels_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
@@ -87,25 +99,7 @@ dl_timer:
 	make -C ${DL_TIMER_DIR} sm_lib
 
 clean:
-ifneq (,$(wildcard ./tra_adv_serial))
-	${MAKE} -C tra_adv_serial $@
-endif
-ifneq (,$(wildcard ./tra_adv_acc_kernels))
-	${MAKE} -C tra_adv_acc_kernels $@
-endif
-ifneq (,$(wildcard ./tra_adv_acc_loops))
-	${MAKE} -C tra_adv_acc_loops $@
-endif
-ifneq (,$(wildcard ./tra_adv_omp_levels))
-	${MAKE} -C tra_adv_omp_levels $@
-endif
-ifneq (,$(wildcard ./tra_adv_omp_cpu))
-	${MAKE} -C tra_adv_omp_cpu $@
-endif
-ifneq (,$(wildcard ./tra_adv_omp_gpu))
-	${MAKE} -C tra_adv_omp_gpu $@
-endif
-
-allclean:
-	make -C ${DL_TIMER_DIR} allclean
 	rm -rf ${VERSIONS}
+
+allclean: clean
+	make -C ${DL_TIMER_DIR} allclean
