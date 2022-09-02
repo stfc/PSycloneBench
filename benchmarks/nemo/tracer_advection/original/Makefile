@@ -7,7 +7,7 @@
 #  3. OpenACC loops for GPU with UniMem;
 #  4. OpenMP k-loops parallelism for CPU;
 #  5. OpenMP all-loops parallelism for CPU;
-#  6. OpenMP all-loop offload for GPU with UniMem.
+#  6. OpenMP 5 all-loops parallelism for GPU with UniMem.
 #
 # Compiler and associated flags must be set through the following
 # environment variables:
@@ -88,6 +88,9 @@ tra_adv_omp_cpu: ../scripts/omp_cpu_trans.py dl_timer ./tra_adv.F90
             LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
 tra_adv_omp_gpu: ../scripts/omp_gpu_trans.py dl_timer ./tra_adv.F90
+ifndef UMEMFLAGS
+	$(error The OMP offload target requires OpenMP unified memory but the UMEMFLAGS environment variable is not set)
+endif
 	mkdir -p $@
 	${PSYCLONE} -s ../scripts/omp_gpu_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
