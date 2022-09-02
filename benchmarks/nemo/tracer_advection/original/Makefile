@@ -25,8 +25,8 @@
 #
 # this will require the PSYCLONE_NVIDIA_LIB_DIR to be properly set up.
 
-VERSIONS := tra_adv_serial tra_adv_acc_kernels tra_adv_acc_loops tra_adv_omp \
-		   	tra_adv_omp_gpu tra_adv_omp_gpu
+VERSIONS := tra_adv_serial tra_adv_acc_kernels tra_adv_acc_loops \
+			tra_adv_omp_cpu_levels tra_adv_omp_cpu tra_adv_omp_gpu
 
 .PHONY: all clean allclean ${VERSIONS}
 
@@ -73,9 +73,9 @@ tra_adv_acc_loops: dl_timer ./tra_adv.F90
 	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} ${UMEMFLAGS} -I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ${ACCFLAGS} ${UMEMFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
-tra_adv_omp_levels: ../scripts/omp_cpu_levels_trans.py dl_timer ./tra_adv.F90
+tra_adv_omp_cpu_levels: ../scripts/omp_cpu_levels_trans.py dl_timer ./tra_adv.F90
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/omp_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/omp_cpu_levels_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} FORT_FLAGS="${F90FLAGS} ${OMPFLAGS} -I../${DL_TIMER_DIR}/src" \
             LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
