@@ -61,14 +61,14 @@ def trans(psy):
         normalise_loops(
                 invoke.schedule,
                 unwrap_array_ranges=True,
-                hoist_expressions=True,
+                hoist_expressions=False,
         )
 
         insert_explicit_loop_parallelism(
                 invoke.schedule,
                 region_directive_trans=omp_parallel_trans,
                 loop_directive_trans=omp_loop_trans,
-                collapse=True
+                collapse=False
         )
 
     return psy
