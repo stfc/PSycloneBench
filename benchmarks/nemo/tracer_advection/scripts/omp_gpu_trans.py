@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
@@ -34,8 +33,8 @@
 # -----------------------------------------------------------------------------
 # Authors: S. Siso, STFC Daresbury Lab
 
-''' PSyclone transformation script showing the introduction of OpenMP for GPU
-directives into Nemo code. '''
+''' PSyclone transformation script to insert OpenMP Target Loop directives
+to the outermost loop that is parallelisable, including implicit loops. '''
 
 from psyclone.psyir.transformations import OMPTargetTrans
 from psyclone.transformations import OMPLoopTrans

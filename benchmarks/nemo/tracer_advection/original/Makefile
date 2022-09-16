@@ -1,13 +1,13 @@
 # Makefile for the original form of the tra_adv benchmark. Contains
-# targets for building the original (serial) version and three
+# targets for building the original (serial) version and multiple
 # different PSyclone-processed versions:
 #
 #  1. Serial;
 #  2. OpenACC kernels for GPU with UniMem;
-#  3. OpenACC loops for GPU with UniMem;
+#  3. OpenACC explicit loop parallelism for GPU with UniMem;
 #  4. OpenMP k-loops parallelism for CPU;
-#  5. OpenMP all-loops parallelism for CPU;
-#  6. OpenMP 5 all-loops parallelism for GPU with UniMem.
+#  5. OpenMP loop parallelism for CPU;
+#  6. OpenMP5 loop parallelism for GPU with UniMem.
 #
 # Compiler and associated flags must be set through the following
 # environment variables:

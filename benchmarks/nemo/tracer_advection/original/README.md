@@ -22,7 +22,8 @@ The Makefile supports the following targets:
 * tra_adv_omp_cpu_levels - version transformed by PSyclone for OpenMP threading
                            on CPU parallelising loops over the k-domain.
 * tra_adv_omp_cpu        - version transformed by PSyclone for OpenMP threading
-                           on CPU parallelising all loops.
+                           on CPU parallelising the outermost loop that is
+                           parallelisable.
 * tra_adv_omp_gpu        - version transformed by PSyclone for OpenMP offload to
                            GPU.
 
@@ -54,7 +55,8 @@ directory at the root of this repository.
 Additionally, the optional `ENABLE_NVIDIA_PROFILE=yes` flag can be set to enable
 GPU offloading versions to generate instrumented code, this will require the
 `PSYCLONE_NVIDIA_LIB_DIR` to be set up to reference the path to PSyclone's nvidia
-profiling lib.
+profiling lib (see
+https://psyclone.readthedocs.io/en/stable/profiling.html#interface-to-third-party-profiling-tools).
 
 ## Running ##
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
@@ -35,7 +34,7 @@
 # Authors: S. Siso, STFC Daresbury Lab
 
 ''' PSyclone transformation script to insert OpenACC Parallel Loop directives
-to all the code loops, including implicit loops.'''
+to the outermost loop that is parallelisable, including implicit loops.'''
 
 from psyclone.psyGen import TransInfo
 from utils import insert_explicit_loop_parallelism, normalise_loops
