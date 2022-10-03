@@ -2,10 +2,11 @@
 function via the -s option. It applies OpenMP tasking to every loop
 and inlines all kernels in the schedule.'''
 
+from psyclone.domain.common.transformations import KernelModuleInlineTrans
 from psyclone.psyir.nodes import Loop
 from psyclone.configuration import Config
 from psyclone.transformations import OMPParallelTrans, OMPSingleTrans, \
-                                     OMPTaskloopTrans, KernelModuleInlineTrans
+                                     OMPTaskloopTrans
 from psyclone.psyir.transformations import OMPTaskwaitTrans
 from psyclone.psyir.nodes import OMPTaskloopDirective, OMPTaskwaitDirective, \
                                  OMPDirective, OMPParallelDirective
