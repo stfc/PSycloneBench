@@ -66,6 +66,13 @@ tra_adv_acc_kernels: dl_timer ./tra_adv.F90
 	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} ${UMEMFLAGS} -I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ${ACCFLAGS} ${UMEMFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
+tra_adv_acc_kernels_data_mov: dl_timer ./tra_adv.F90
+	mkdir -p $@
+	${PSYCLONE} -s ${HOME}/workspace/stfc/PSyclone/examples/nemo/scripts/kernels_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	cp Makefile_gen $@/Makefile
+	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} -I../${DL_TIMER_DIR}/src" \
+           LDFLAGS="${LDFLAGS} ${ACCFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
+
 tra_adv_acc_loops: dl_timer ./tra_adv.F90
 	mkdir -p $@
 	${PSYCLONE} -s ../scripts/acc_loops_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90

@@ -36,8 +36,7 @@
 ''' PSyclone transformation script to insert OpenMP Target Loop directives
 to the outermost loop that is parallelisable, including implicit loops. '''
 
-from psyclone.psyir.transformations import OMPTargetTrans
-from psyclone.transformations import OMPLoopTrans
+from psyclone.psyir.transformations import OMPTargetTrans, OMPLoopTrans
 from utils import insert_explicit_loop_parallelism, normalise_loops
 
 
@@ -54,9 +53,8 @@ def trans(psy):
     '''
     omp_target_trans = OMPTargetTrans()
     omp_loop_trans = OMPLoopTrans()
-    # Disabling worksharing will produce the 'loop' directive which is better
-    # suited to map the work into the GPU
-    omp_loop_trans.omp_worksharing = False
+    omp_loop_trans.omp_directive = "teamsdistributeparalleldo"
+    omp_loop_trans.omp_schedule = "runtime"
 
     print("Invokes found:")
     for invoke in psy.invokes.invoke_list:
@@ -65,7 +63,7 @@ def trans(psy):
         normalise_loops(
                 invoke.schedule,
                 unwrap_array_ranges=True,
-                hoist_expressions=True,
+                hoist_expressions=True if omp_loop_trans.omp_directive=="loop" else False,
         )
 
         insert_explicit_loop_parallelism(
