@@ -54,7 +54,7 @@ def trans(psy):
     omp_target_trans = OMPTargetTrans()
     omp_loop_trans = OMPLoopTrans()
     omp_loop_trans.omp_directive = "teamsdistributeparalleldo"
-    omp_loop_trans.omp_schedule = "runtime"
+    omp_loop_trans.omp_schedule = "none"
 
     print("Invokes found:")
     for invoke in psy.invokes.invoke_list:
@@ -63,7 +63,7 @@ def trans(psy):
         normalise_loops(
                 invoke.schedule,
                 unwrap_array_ranges=True,
-                hoist_expressions=True if omp_loop_trans.omp_directive=="loop" else False,
+                hoist_expressions=True,
         )
 
         insert_explicit_loop_parallelism(
