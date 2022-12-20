@@ -85,17 +85,18 @@ nemolite2d_omp: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_transform.py
 	@echo "OpenMP version prepared."
 
 # OpenMP GPU offloading PSyclone code-generation of NemoLite2D
-nemolite2d_omp_gpu: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_transform.py
+nemolite2d_omp_gpu: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_gpu_transform.py
 	@echo "Generating NemoLite2D with OpenMP GPU offloading using omp_gpu_transform.py"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -nodm -s psyclone_scripts/omp_gpu_transform.py \
+		-I ${COMMON_DIR} \
 		-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
 	# Each generated folder needs its purposely built inf_lib and timer_lib
 	cp ${INF_LIB} $@/.
 	cp ${TIMER_LIB} $@/libdl_timer.a
 	cp namelist $@/.
 	cp Makefile_gen $@/Makefile
-	cd $@ && make nemolite2d
-	@echo "OpenMP version prepared."
+	cd $@ && make nemolite2dompgpu
+	@echo "OpenMP GPU offloading version prepared."
 
 # OpenMP task PSyclone code-generation of NemoLite2D
 nemolite2d_ompt: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_task_transform.py
