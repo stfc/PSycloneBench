@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2022, Science and Technology Facilities Council.
+# Copyright (c) 2018-2021, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,96 +31,81 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
-# Authors: S. Siso, STFC Daresbury Lab
+# Authors: R. W. Ford, A. R. Porter and S. Siso, STFC Daresbury Lab
 
-''' Utilities file to parallelise Nemo code. '''
+'''A transformation script that seeks to apply OpenACC KERNELS
+directives to NEMO style code.  In order to use
+it you must first install PSyclone. See README.md in the top-level
+psyclone directory.
 
+Once you have psyclone installed, this may be used by doing:
+
+ $ psyclone -api nemo -s ./kernels_trans.py some_source_file.f90
+
+This should produce a lot of output, ending with generated
+Fortran. Note that the Fortran source files provided to PSyclone must
+have already been preprocessed (if required).
+
+The transformation script attempts to insert Kernels directives at the
+highest possible location(s) in the schedule tree (i.e. to enclose as
+much code as possible in each Kernels region). However, due to
+limitations in the PGI compiler, we must take care to exclude certain
+nodes (such as If blocks) from within Kernel regions. If a proposed
+region is found to contain such a node (by the ``valid_kernel``
+routine) then the script moves a level down the tree and then repeats
+the process of attempting to create the largest possible Kernel
+region.
+
+'''
+
+from __future__ import print_function
 from psyclone.domain.nemo.transformations import NemoAllArrayRange2LoopTrans
 from psyclone.errors import InternalError
-from psyclone.psyir.nodes import Loop, Assignment, Directive, CodeBlock, Call
-from psyclone.psyir.transformations import HoistLoopBoundExprTrans, HoistTrans
-from psyclone.transformations import TransformationError, ACCKernelsTrans
+from psyclone.psyir.nodes import Assignment, CodeBlock, Call, Literal, Loop, \
+    ACCLoopDirective
+from psyclone.psyir.transformations import ACCUpdateTrans
+from psyclone.transformations import ACCLoopTrans, TransformationError, \
+    ACCKernelsTrans, ACCEnterDataTrans
 
 
-def normalise_loops(
-        schedule,
-        unwrap_array_ranges: bool = True,
-        hoist_expressions: bool = True,
-        ):
-    ''' Normalise all loops in the given schedule so that they are in an
-    appropriate form for the Parallelisation transformations to analyse
-    them.
+COLLAPSE_LOOPS = False
+EXPAND_IMPLICIT_LOOPS = False
 
-    :param schedule: the PSyIR Schedule to transform.
-    :param unwrap_array_ranges: whether to convert ranges to explicit loops.
-    :param hoist_expressions: whether to hoist bounds and loop invariant \
-        statements out of the loop nest.
-    '''
-    if unwrap_array_ranges:
-        # Convert all array implicit loops to explicit loops
-        explicit_loops = NemoAllArrayRange2LoopTrans()
-        for assignment in schedule.walk(Assignment):
-            explicit_loops.apply(assignment)
-
-    if hoist_expressions:
-        # First hoist all possible expressions
-        for loop in schedule.walk(Loop):
-            HoistLoopBoundExprTrans().apply(loop)
-
-        # Hoist all possible assignments (in reverse order so the inner loop
-        # constants are hoisted all the way out if possible)
-        for loop in reversed(schedule.walk(Loop)):
-            for statement in list(loop.loop_body):
-                try:
-                    HoistTrans().apply(statement)
-                except TransformationError:
-                    pass
+# Get the PSyclone transformations we will use
+ARRAY_RANGE_TRANS = NemoAllArrayRange2LoopTrans()
 
 
-def insert_explicit_loop_parallelism(
-        schedule,
-        region_directive_trans=None,
-        loop_directive_trans=None,
-        collapse: bool = True
-        ):
-    ''' For each loop in the schedule that doesn't already have a Directive
-    as an ancestor, attempt to insert the given region and loop directives.
+def trans(psy):
+    '''A PSyclone-script compliant transformation function. Applies
+    OpenACC 'kernels' and 'data' directives to NEMO code.
 
-    :param region_directive_trans: PSyclone transformation to insert the \
-        region directive.
-    :param loop_directive_trans: PSyclone transformation to use to insert the \
-        loop directive.
-    :param collapse: whether to attempt to insert the collapse clause to as \
-        many nested loops as possible.
+    :param psy: The PSy layer object to apply transformations to.
+    :type psy: :py:class:`psyclone.psyGen.PSy`
     '''
 
-    # Add the parallel directives in each loop
-    for loop in schedule.walk(Loop):
-        if loop.ancestor(Directive):
-            continue  # Skip if an outer loop is already parallelised
+    print("Invokes found:\n{0}\n".format(
+        "\n".join([str(name) for name in psy.invokes.names])))
 
-        try:
-            loop_directive_trans.apply(loop)
-            # Only add the region directive if the loop was successfully
-            # parallelised.
-            region_directive_trans.apply(loop.parent.parent)
-        except TransformationError as err:
-            # This loop can not be transformed, proceed to next loop
-            print("Loop not parallelised because:", str(err))
+    for invoke in psy.invokes.invoke_list:
+
+        sched = invoke.schedule
+        if not sched:
+            print("Invoke {0} has no Schedule! Skipping...".
+                  format(invoke.name))
             continue
+        sched.view()
 
-        if collapse:
-            # Count the number of perfectly nested loops
-            num_nested_loops = 0
-            next_loop = loop
-            while isinstance(next_loop, Loop):
-                num_nested_loops += 1
-                if len(next_loop.loop_body.children) > 1:
-                    break
-                next_loop = next_loop.loop_body.children[0]
+        if EXPAND_IMPLICIT_LOOPS:
+            # Transform any array assignments (Fortran ':' notation)
+            # into loops.
+            for assignment in sched.walk(Assignment):
+                ARRAY_RANGE_TRANS.apply(assignment)
 
-            if num_nested_loops > 1:
-                loop.parent.parent.collapse = num_nested_loops
+        add_kernels(sched.children)
+        ACCEnterDataTrans().apply(invoke.schedule)
+        ACCUpdateTrans().apply(invoke.schedule)
+
+        sched.view()
 
 
 def valid_kernel(node):
@@ -183,6 +168,40 @@ def try_kernels_trans(nodes, default_present):
         return
     try:
         ACCKernelsTrans().apply(nodes, {"default_present": default_present})
+        if COLLAPSE_LOOPS:
+            collapse_loops(nodes)
     except (TransformationError, InternalError) as err:
         print(f"Failed to transform nodes: {nodes}")
         print(f"Error was: {err}")
+
+
+def collapse_loops(nodes):
+    '''
+    Searches the supplied list of nodes and applies an ACC LOOP COLLAPSE(2)
+    directive to any perfectly-nested lon-lat loops.
+
+    :param nodes: list of nodes to search for loops.
+    :type nodes: list of :py:class:`psyclone.psyir.nodes.Node`
+
+    '''
+    loop_trans = ACCLoopTrans()
+
+    for node in nodes:
+        loops = node.walk(Loop)
+        for loop in loops:
+            if loop.ancestor(ACCLoopDirective):
+                # We've already transformed a parent Loop so skip this one.
+                continue
+            loop_options = {}
+            # We put a COLLAPSE(2) clause on any perfectly-nested lon-lat
+            # loops that have a Literal value for their step. The latter
+            # condition is necessary to avoid compiler errors with 20.7.
+            if loop.loop_type == "lat" and \
+               isinstance(loop.step_expr, Literal) and \
+               isinstance(loop.loop_body[0], Loop) and \
+               loop.loop_body[0].loop_type == "lon" and \
+               isinstance(loop.loop_body[0].step_expr, Literal) and \
+               len(loop.loop_body.children) == 1:
+                loop_options["collapse"] = 2
+            if loop_options:
+                loop_trans.apply(loop, loop_options)

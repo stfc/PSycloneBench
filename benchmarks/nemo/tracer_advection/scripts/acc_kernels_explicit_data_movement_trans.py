@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2018-2022, Science and Technology Facilities Council
+# Copyright (c) 2018-2022, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,40 +33,42 @@
 # -----------------------------------------------------------------------------
 # Authors: R. W. Ford, A. R. Porter and S. Siso, STFC Daresbury Lab
 
-'''A simple transformation script for the introduction of OpenMP with PSyclone.
+'''A transformation script that seeks to apply OpenACC KERNELS directives to
+NEMO style code. In order to use it you must first install PSyclone. See
+README.md in the top-level directory.
 
- >>> psyclone -api "nemo" -s ./omp_trans.py tra_adv.F90
+Once you have psyclone installed, this may be used by doing:
 
-This should produce a lot of output, ending with generated Fortran.
+ $ psyclone -api nemo -s <this_script> <target_source_file>
+
+The transformation script attempts to insert Kernels directives at the
+highest possible location(s) in the schedule tree (i.e. to enclose as
+much code as possible in each Kernels region).
 
 '''
 
+from psyclone.psyir.transformations import ACCUpdateTrans
+from psyclone.transformations import ACCEnterDataTrans
+from utils import add_kernels
+
 
 def trans(psy):
-    ''' Transform a specific Schedule by making all loops
-    over levels OpenMP parallel.
+    '''A PSyclone-script compliant transformation function. Applies
+    OpenACC 'kernels' and 'data movement' directives to NEMO code.
 
-    :param psy: the object holding all information on the PSy layer \
-                to be modified.
+    :param psy: The PSy layer object to apply transformations to.
     :type psy: :py:class:`psyclone.psyGen.PSy`
-
-    :returns: the transformed PSy object
-    :rtype:  :py:class:`psyclone.psyGen.PSy`
-
     '''
-    from psyclone.psyGen import TransInfo
-    from psyclone.nemo import NemoKern
-    # Get the transformation we will apply
-    ompt = TransInfo().get_trans_name('OMPParallelLoopTrans')
-    for invoke in psy.invokes.invoke_list:
-        # Get the Schedule of the target routine
-        sched = invoke.schedule
-        # Apply the OMP transformation to each loop over levels containing
-        # a kernel
-        for loop in sched.loops():
-            kernels = loop.walk(NemoKern)
-            if kernels and loop.loop_type == "levels":
-                ompt.apply(loop)
 
-    # Return the modified psy object
-    return psy
+    print("Invokes found:")
+    print("\n".join([str(name) for name in psy.invokes.names]))
+
+    for invoke in psy.invokes.invoke_list:
+
+        if not invoke.schedule:
+            print(f"Invoke {invoke.name} has no Schedule! Skipping...")
+            continue
+
+        add_kernels(invoke.schedule.children)
+        ACCEnterDataTrans().apply(invoke.schedule)
+        ACCUpdateTrans().apply(invoke.schedule)

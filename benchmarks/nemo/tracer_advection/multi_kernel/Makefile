@@ -36,7 +36,7 @@ tra_adv_serial: dl_timer
 # OpenACC version with timer around outer loop only.
 tra_adv_acc: dl_timer
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/kernels_trans.py -opsy \
+	${PSYCLONE} -s ../scripts/acc_kernels_unified_memory_trans.py -opsy \
             $@/tra_adv_compute.f90 ./tra_adv_compute.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.

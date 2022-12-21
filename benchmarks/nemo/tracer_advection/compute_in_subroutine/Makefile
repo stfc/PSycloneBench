@@ -45,7 +45,7 @@ tra_adv_no_auto_serial: dl_timer
 # OpenACC version with timer around outer loop only.
 tra_adv_acc: dl_timer
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/kernels_trans.py -opsy \
+	${PSYCLONE} -s ../scripts/acc_kernels_unified_memory_trans.py -opsy \
             $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
@@ -55,7 +55,7 @@ tra_adv_acc: dl_timer
 # OpenACC version with nvtx profiling instrumentation.
 tra_adv_acc_prof: dl_timer
 	mkdir -p $@
-	${PSYCLONE} --profile invokes -s ../scripts/kernels_trans.py -opsy \
+	${PSYCLONE} --profile invokes -s ../scripts/acc_kernels_unified_memory_trans.py -opsy \
             $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
