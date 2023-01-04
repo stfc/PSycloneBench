@@ -28,7 +28,9 @@ program tracer_advection
 
   CALL timer_init()
   CALL timer_register(init_timer, label='Initialisation')
-  CALL timer_register(step_timer, label='Time-stepping', num_repeats=itn_count)
+  ! We exclude the first step from the timed region.
+  CALL timer_register(step_timer, label='Time-stepping', &
+                      num_repeats=itn_count-1)
 
   ! Initialisation
 
@@ -91,11 +93,17 @@ program tracer_advection
 
   call timer_stop(init_timer)
 
+  jt = 1
+  call tra_adv_compute(zind, tsn, ztfreez, rnfmsk, rnfmsk_z, upsmsk, tmask, &
+          zwx, zwy, umask, vmask, mydomain, zslpx, zslpy, pun, pvn, pwn, &
+          jpi, jpj, jpk, jt)
+
   call timer_start(step_timer)
 
-  do jt = 1, itn_count
-      call tra_adv_compute(zind, tsn, ztfreez, rnfmsk, rnfmsk_z, upsmsk, tmask, zwx, zwy, umask, vmask, mydomain, zslpx, zslpy, pun, pvn, pwn, jpi, jpj, jpk, jt)
-
+  do jt = 2, itn_count
+      call tra_adv_compute(zind, tsn, ztfreez, rnfmsk, rnfmsk_z, upsmsk, &
+              tmask, zwx, zwy, umask, vmask, mydomain, zslpx, zslpy, &
+              pun, pvn, pwn, jpi, jpj, jpk, jt)
   end do
 
   call timer_stop(step_timer)
