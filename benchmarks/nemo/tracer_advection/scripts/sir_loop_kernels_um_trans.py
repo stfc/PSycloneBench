@@ -41,12 +41,6 @@ Representation (SIR) and then adds OpenACC Kernels regions to it.
 
 from acc_kernels_trans import add_kernels
 from sir_loop_trans import make_sir_compliant
-from psyclone.psyir.transformations import ACCUpdateTrans
-from psyclone.transformations import ACCEnterDataTrans
-
-
-UPDATE_TRANS = ACCUpdateTrans()
-EDATA_TRANS = ACCEnterDataTrans()
 
 
 def trans(psy):
@@ -71,6 +65,4 @@ def trans(psy):
 
         make_sir_compliant(sched)
         add_kernels(sched.children)
-        EDATA_TRANS.apply(sched)
-        UPDATE_TRANS.apply(sched)
         print(sched.view())

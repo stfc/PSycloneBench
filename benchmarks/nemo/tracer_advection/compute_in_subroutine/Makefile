@@ -93,14 +93,23 @@ tra_adv_sir: dl_timer ../scripts/sir_loop_trans.py
            LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
 # OpenACC added after transformation to SIR-compliant form.
+tra_adv_sir_acc_um: dl_timer ../scripts/sir_loop_kernels_um_trans.py
+	mkdir -p $@
+	${PSYCLONE} -s ../scripts/sir_loop_kernels_trans.py -opsy \
+            $@/tra_adv_compute.f90 ./tra_adv_compute_no_scalars.F90
+	cp Makefile_gen $@/Makefile
+	cp tra_adv_driver_no_scalars.F90 $@/tra_adv_driver.f90
+	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} ${UMEMFLAGS} -Mfma -I../${DL_TIMER_DIR}/src" \
+           LDFLAGS="${LDFLAGS} ${ACCFLAGS} ${UMEMFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" -C $@
+
 tra_adv_sir_acc: dl_timer ../scripts/sir_loop_kernels_trans.py
 	mkdir -p $@
 	${PSYCLONE} -s ../scripts/sir_loop_kernels_trans.py -opsy \
             $@/tra_adv_compute.f90 ./tra_adv_compute_no_scalars.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver_no_scalars.F90 $@/tra_adv_driver.f90
-	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} ${UMEMFLAGS} -I../${DL_TIMER_DIR}/src" \
-           LDFLAGS="${LDFLAGS} ${ACCFLAGS} ${UMEMFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" -C $@
+	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} -I../${DL_TIMER_DIR}/src" \
+           LDFLAGS="${LDFLAGS} ${ACCFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" -C $@
 
 tra_adv_sir_acc_prof: dl_timer
 	mkdir -p $@
