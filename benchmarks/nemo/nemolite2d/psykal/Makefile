@@ -45,7 +45,7 @@ COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 # The targets that this Makefile supports
 .PHONY: all nemolite2d_serial nemolite2d_omp nemolite2d_mpi nemolite2d_acc \
 	nemolite2d_hybrid nemolite2d_ocl nemolite2d_mpiocl nemolite2d_ompt \
-	nemolite2d_ompt_mpi
+	nemolite2d_ompt_mpi nemolite2d_omp_gpu
 
 # We don't include the OpenACC or OpenCL targets here as they
 # have specialist compiler requirements so we require the user
@@ -83,6 +83,20 @@ nemolite2d_omp: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_transform.py
 	cp Makefile_gen $@/Makefile
 	cd $@ && make nemolite2d
 	@echo "OpenMP version prepared."
+
+# OpenMP GPU offloading PSyclone code-generation of NemoLite2D with UM (not working)
+nemolite2d_omp_gpu: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_gpu_transform.py
+	@echo "Generating NemoLite2D with OpenMP GPU offloading using omp_gpu_transform.py"; rm -rf $@; mkdir -p $@
+	${PSYCLONE} -nodm -s psyclone_scripts/omp_gpu_transform.py \
+		-I ${COMMON_DIR} \
+		-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
+	# Each generated folder needs its purposely built inf_lib and timer_lib
+	cp ${INF_LIB} $@/.
+	cp ${TIMER_LIB} $@/libdl_timer.a
+	cp namelist $@/.
+	cp Makefile_gen $@/Makefile
+	cd $@ && make nemolite2dompgpu
+	@echo "OpenMP GPU offloading version prepared."
 
 # OpenMP task PSyclone code-generation of NemoLite2D
 nemolite2d_ompt: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_task_transform.py
@@ -136,8 +150,7 @@ nemolite2d_hybrid: parallel_libs nemolite2d_alg.f90 psyclone_scripts/omp_transfo
 	cd $@ && make nemolite2d
 	@echo "Hybrid: MPI+OpenMP version prepared."
 
-# OpenACC PSyclone code-generation of NemoLite2D (current PSyclone 1.9 will fail
-# to generate the OpenACC for the GOcean API)
+# OpenACC PSyclone code-generation of NemoLite2D (not working)
 nemolite2d_acc: serial_libs nemolite2d_alg.f90 psyclone_scripts/acc_transform.py
 	@echo "Generating NemoLite2D with OpenACC"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -nodm -s psyclone_scripts/acc_transform.py \
@@ -218,7 +231,7 @@ common_lib_mpi:
 clean: 
 	rm -rf nemolite2d_serial nemolite2d_omp nemolite2d_mpi
 	rm -rf nemolite2d_hybrid nemolite2d_acc nemolite2d_ocl nemolite2d_mpiocl
-	rm -rf nemolite2d_ompt nemolite2d_ompt_mpi
+	rm -rf nemolite2d_ompt nemolite2d_ompt_mpi nemolite2d_omp_gpu
 
 libclean:
 	${MAKE} -C ${INF_DIR} distclean

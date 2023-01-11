@@ -1,6 +1,7 @@
 '''Python script intended to be passed to PSyclone's generate()
 function via the -s option. Performs OpenACC transformations. '''
 
+from psyclone.domain.common.transformations import KernelModuleInlineTrans
 from psyclone.psyGen import TransInfo
 from psyclone.psyir.nodes import Loop
 
@@ -14,7 +15,7 @@ def trans(psy):
     enter_data_trans = tinfo.get_trans_name('ACCEnterDataTrans')
     routine_trans = tinfo.get_trans_name('ACCRoutineTrans')
     glo2arg_trans = tinfo.get_trans_name('KernelImportsToArguments')
-    inline_trans = tinfo.get_trans_name('KernelModuleInline')
+    inline_trans = KernelModuleInlineTrans()
 
     invoke = psy.invokes.get('invoke_0')
     schedule = invoke.schedule
