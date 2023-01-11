@@ -32,10 +32,10 @@ The Makefile supports many targets:
 - nemolite2d_omp - OpenMP version with static scheduling
 - nemolite2d_mpi - MPI version for distributed memory parallelism
 - nemolite2d_hybrid - MPI and OpenMP combined version
-- nemolite2d_acc - OpenACC offloading (Not working - issue with GPU routine with structures?)
-- nemolite2d_omp_gpu - OpenMP offloading (Not working - issue with GPU routine with structures?)
+- nemolite2d_acc - OpenACC (Not working - PSyclone will not generate it)
 - nemolite2d_ocl - OpenCL version
-- nemolite2_mpiocl - MPI and OpenCL combined version
+- nemolite2_mpiocl - MPI and OpenCL combined version (Not working - Psyclone
+will generate a OpenCL-only version)
 
 Executing `make <target>` will generate a folder with the same name as the
 target, containing at least a `alg.f90` and a `psy.f90` for the
