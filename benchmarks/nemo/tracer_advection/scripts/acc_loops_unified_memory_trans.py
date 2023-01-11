@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2022, Science and Technology Facilities Council.
+# Copyright (c) 2022-2023, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -58,16 +58,16 @@ def trans(psy):
         print(invoke.name)
 
         normalise_loops(
-                invoke.schedule,
-                unwrap_array_ranges=True,
-                hoist_expressions=True,
+            invoke.schedule,
+            unwrap_array_ranges=True,
+            hoist_expressions=True,
         )
 
         insert_explicit_loop_parallelism(
-                invoke.schedule,
-                region_directive_trans=acc_parallel_trans,
-                loop_directive_trans=acc_loop_trans,
-                collapse=True
+            invoke.schedule,
+            region_directive_trans=acc_parallel_trans,
+            loop_directive_trans=acc_loop_trans,
+            collapse=True
         )
 
     return psy

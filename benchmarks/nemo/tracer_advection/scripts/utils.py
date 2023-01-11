@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2022, Science and Technology Facilities Council.
+# Copyright (c) 2022-2023, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
-# Authors: S. Siso, STFC Daresbury Lab
+# Authors: R. W. Ford, A. R. Porter and S. Siso, STFC Daresbury Lab
 
 ''' Utilities file to parallelise Nemo code. '''
 
@@ -103,7 +103,8 @@ def insert_explicit_loop_parallelism(
             loop_directive_trans.apply(loop)
             # Only add the region directive if the loop was successfully
             # parallelised.
-            region_directive_trans.apply(loop.parent.parent)
+            if region_directive_trans is not None:
+                region_directive_trans.apply(loop.parent.parent)
         except TransformationError as err:
             # This loop can not be transformed, proceed to next loop
             print("Loop not parallelised because:", str(err))

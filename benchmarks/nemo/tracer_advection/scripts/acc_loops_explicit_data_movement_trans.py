@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2022, Science and Technology Facilities Council.
+# Copyright (c) 2022-2023, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,8 @@
 # Authors: S. Siso, STFC Daresbury Lab
 
 ''' PSyclone transformation script to insert OpenACC Parallel Loop directives
-to the outermost loop that is parallelisable, including implicit loops.'''
+to the outermost loop that is parallelisable, including implicit loops. This
+script also adds OpenACC explicit data movement directives.'''
 
 from psyclone.psyGen import TransInfo
 from psyclone.psyir.transformations import ACCUpdateTrans
@@ -44,10 +45,11 @@ from utils import insert_explicit_loop_parallelism, normalise_loops
 
 def trans(psy):
     ''' Add OpenACC Parallel Loop directive to all loops, including implicit
-    ones to target GPU parallelism.
+    ones, to target GPU parallelism and explicit data movement directives.
 
     :param psy: the PSy object which this script will transform.
     :type psy: :py:class:`psyclone.psyGen.PSy`
+
     :returns: the transformed PSy object.
     :rtype: :py:class:`psyclone.psyGen.PSy`
 
@@ -59,17 +61,18 @@ def trans(psy):
     for invoke in psy.invokes.invoke_list:
         print(invoke.name)
 
+        # Convert array and range notation to loops and hoist expressions
         normalise_loops(
-                invoke.schedule,
-                unwrap_array_ranges=True,
-                hoist_expressions=True,
+            invoke.schedule,
+            unwrap_array_ranges=True,
+            hoist_expressions=True,
         )
 
         insert_explicit_loop_parallelism(
-                invoke.schedule,
-                region_directive_trans=acc_parallel_trans,
-                loop_directive_trans=acc_loop_trans,
-                collapse=True
+            invoke.schedule,
+            region_directive_trans=acc_parallel_trans,
+            loop_directive_trans=acc_loop_trans,
+            collapse=True
         )
 
         ACCEnterDataTrans().apply(invoke.schedule)
