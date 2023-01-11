@@ -5,8 +5,12 @@ from psyclone.domain.common.transformations import KernelModuleInlineTrans
 
 
 def trans(psy):
-    ''' Transformation script entry function '''
+    ''' Transformation script entry function.
 
+    :param psy: The PSy layer object to apply transformations to.
+    :type psy: :py:class:`psyclone.psyGen.PSy`
+
+    '''
     itrans = KernelModuleInlineTrans()
 
     schedule = psy.invokes.get('invoke_0').schedule

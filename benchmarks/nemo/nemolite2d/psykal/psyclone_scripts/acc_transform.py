@@ -8,7 +8,12 @@ from psyclone.psyir.nodes import Loop
 
 def trans(psy):
     ''' Take the supplied psy object, apply OpenACC transformations
-    to the schedule of invoke_0 and return the new psy object '''
+    to the schedule of invoke_0 and return the new psy object
+
+    :param psy: The PSy layer object to apply transformations to.
+    :type psy: :py:class:`psyclone.psyGen.PSy`
+
+    '''
     tinfo = TransInfo()
     parallel_trans = tinfo.get_trans_name('ACCParallelTrans')
     loop_trans = tinfo.get_trans_name('ACCLoopTrans')

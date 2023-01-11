@@ -13,7 +13,12 @@ from psyclone.psyir.nodes import OMPTaskloopDirective, OMPTaskwaitDirective, \
 
 
 def trans(psy):
-    '''Transformation entry point'''
+    '''Transformation entry point.
+
+    :param psy: The PSy layer object to apply transformations to.
+    :type psy: :py:class:`psyclone.psyGen.PSy`
+
+    '''
     config = Config.get()
 
     schedule = psy.invokes.get('invoke_0').schedule

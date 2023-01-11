@@ -9,7 +9,12 @@ from psyclone.configuration import Config
 
 
 def trans(psy):
-    ''' Transformation entry point '''
+    ''' Transformation entry point.
+
+    :param psy: The PSy layer object to apply transformations to.
+    :type psy: :py:class:`psyclone.psyGen.PSy`
+
+    '''
     config = Config.get()
     tinfo = TransInfo()
     parallel_loop_trans = tinfo.get_trans_name('GOceanOMPParallelLoopTrans')

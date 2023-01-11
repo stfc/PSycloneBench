@@ -30,8 +30,12 @@ WORK_GROUP_SIZE = 64
 
 
 def trans(psy):
-    ''' Transform the schedule for OpenCL generation '''
+    ''' Transform the schedule for OpenCL generation.
 
+    :param psy: The PSy layer object to apply transformations to.
+    :type psy: :py:class:`psyclone.psyGen.PSy`
+
+    '''
     # Import transformations
     tinfo = TransInfo()
     globaltrans = tinfo.get_trans_name('KernelImportsToArguments')
