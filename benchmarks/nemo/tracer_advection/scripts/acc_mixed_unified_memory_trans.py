@@ -65,6 +65,7 @@ from psyclone.psyir.nodes import Assignment, CodeBlock, Call, Literal, Loop, \
     ACCLoopDirective
 from psyclone.transformations import ACCLoopTrans, TransformationError, \
     ACCKernelsTrans
+from utils import valid_kernel
 
 
 COLLAPSE_LOOPS = False
@@ -102,22 +103,6 @@ def trans(psy):
 
         add_kernels(sched.children)
         sched.view()
-
-
-def valid_kernel(node):
-    '''
-    Whether the sub-tree that has `node` at its root is eligible to be
-    enclosed within an OpenACC KERNELS directive.
-
-    :param node: the node in the PSyIR to check.
-    :type node: :py:class:`psyclone.psyir.nodes.Node`
-
-    :returns: True if the sub-tree can be enclosed in a KERNELS region.
-    :rtype: bool
-
-    '''
-    excluded_node_types = (CodeBlock, Call)
-    return node.walk(excluded_node_types) == []
 
 
 def add_kernels(children, default_present=True):
