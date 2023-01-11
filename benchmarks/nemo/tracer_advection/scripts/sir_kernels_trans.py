@@ -39,7 +39,7 @@ Representation (SIR) and then adds OpenACC Kernels regions to it.
 
 '''
 
-from kernels_trans import add_kernels
+from utils import add_kernels
 from sir_trans import make_sir_compliant
 
 
