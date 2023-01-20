@@ -1,5 +1,5 @@
 module continuity_mod
-  use kind_params_mod
+  use kind_params_mod, only: go_wp
   use kernel_mod
   use argument_mod
   use grid_mod
@@ -65,7 +65,7 @@ contains
   subroutine invoke_continuity_arrays(nx, ny, M, N, rdt, ssha, &
                                       sshn_t, sshn_u, sshn_v, &
                                       hu, hv, un, vn, area_t)
-    use kind_params_mod
+    use kind_params_mod, only: go_wp
     use dl_timer, only: timer_start, timer_stop, i_def64
     implicit none
     integer, intent(in) :: nx, ny, M, N
@@ -81,10 +81,10 @@ contains
     integer, save :: idxt
     integer(i_def64) :: nrepeat
     integer, parameter :: ALIGNMENT = 4
-!DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
-!DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
-!DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
-!DIR$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
+! !DIR$ ASSUME (MOD(NX,ALIGNMENT) .EQ. 0)
+! !DIR$ ASSUME (MOD(M,ALIGNMENT) .EQ. 0)
+! !DIR$ ASSUME_ALIGNED ssha:64, sshn_u:64, sshn_v:64, sshn_t:64
+! !DIR$ ASSUME_ALIGNED un:64, vn:64, hu:64, hv:64, area_t:64
 
 
     ! Runtime check
@@ -101,7 +101,7 @@ contains
    
     call timer_start(idxt, label='Continuity', num_repeats=nrepeat)
     !call likwid_markerStartRegion('Continuity')
-!DIR$ VECTOR ALIGNED
+! !DIR$ VECTOR ALIGNED
     !do ic = 1, nrepeat, 1
     do jj = 2, N, 1
 
@@ -138,7 +138,7 @@ contains
   subroutine invoke_continuity_arrays_basic(nx, ny, M, N, rdt, ssha, &
                                             sshn_t, sshn_u, sshn_v, &
                                             hu, hv, un, vn, area_t)
-    use kind_params_mod
+    use kind_params_mod, only: go_wp
     use dl_timer, only: timer_start, timer_stop, i_def64
     implicit none
     integer, intent(in) :: nx, ny, M, N

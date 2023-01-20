@@ -1,5 +1,5 @@
 module momentum_mod
-  use kind_params_mod
+  use kind_params_mod, only: go_wp
   use kernel_mod
   use argument_mod
   use grid_mod

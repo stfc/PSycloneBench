@@ -4,6 +4,7 @@ inlines all kernels in the schedule.'''
 
 from psyclone.psyGen import TransInfo
 from psyclone.psyir.nodes import Loop
+from psyclone.domain.common.transformations import KernelModuleInlineTrans
 from psyclone.configuration import Config
 
 
@@ -14,7 +15,8 @@ def trans(psy):
     parallel_loop_trans = tinfo.get_trans_name('GOceanOMPParallelLoopTrans')
     loop_trans = tinfo.get_trans_name('GOceanOMPLoopTrans')
     parallel_trans = tinfo.get_trans_name('OMPParallelTrans')
-    module_inline_trans = tinfo.get_trans_name('KernelModuleInline')
+#    module_inline_trans = tinfo.get_trans_name('KernelModuleInline')
+    module_inline_trans = KernelModuleInlineTrans()
 
     schedule = psy.invokes.get('invoke_0').schedule
 

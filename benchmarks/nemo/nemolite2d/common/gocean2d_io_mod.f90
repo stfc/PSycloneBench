@@ -1,5 +1,6 @@
 module gocean2d_io_mod
   use kind_params_mod
+  use grid_mod
   use field_mod
   implicit none
 

@@ -1,5 +1,5 @@
 module boundary_conditions_mod
-  use kind_params_mod
+  use kind_params_mod, only: go_wp
   use argument_mod, only: GO_READ, GO_READWRITE, GO_I_SCALAR, &
        GO_ARG, GO_R_SCALAR, GO_CU, GO_CV, GO_CT, GO_GRID_MASK_T, &
        GO_STENCIL

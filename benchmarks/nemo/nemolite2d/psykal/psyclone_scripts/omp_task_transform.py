@@ -9,6 +9,8 @@ from psyclone.domain.common.transformations import KernelModuleInlineTrans
 from psyclone.psyir.transformations import OMPTaskTrans, ChunkLoopTrans
 from psyclone.psyir.nodes import OMPParallelDirective, OMPTaskDirective, \
                                  OMPDirective
+from psyclone.transformations import \
+    KernelImportsToArguments
 
 
 def trans(psy):
@@ -19,11 +21,13 @@ def trans(psy):
 
     loop_trans = ChunkLoopTrans()
     task_trans = OMPTaskTrans()
+    imports_to_arguments = KernelImportsToArguments()
 
     module_inline_trans = KernelModuleInlineTrans()
 
     # Inline all kernels in this Schedule
-#    for kernel in schedule.kernels():
+    for kernel in schedule.kernels():
+        imports_to_arguments.apply(kernel)
 #        module_inline_trans.apply(kernel)
 
     applications = 0
@@ -32,7 +36,7 @@ def trans(psy):
         if isinstance(child, Loop):
             loop_trans.apply(child)
             assert isinstance(child.children[3].children[0], Loop)
-            task_trans.apply(child)
+            task_trans.apply(child, {"force": True})
             applications = applications + 1
 
     print(f"Applied task transformation {applications} times.")

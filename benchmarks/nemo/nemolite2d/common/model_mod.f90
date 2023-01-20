@@ -26,6 +26,7 @@ CONTAINS
   subroutine model_init(grid)
     use gocean2d_io_mod
     use parallel_comms_mod, only: map_comms
+    use grid_mod
     !use decomposition_mod, only: decomposition_type
     implicit none
     type(grid_type), intent(inout) :: grid
@@ -250,7 +251,7 @@ CONTAINS
 
   subroutine dump_tmask(grid, raw)
     use parallel_utils_mod, only: get_rank
-    use grid_mod, only: grid_type
+    use grid_mod
     implicit none
     type(grid_type), intent(in) :: grid
     logical, optional, intent(in) :: raw
