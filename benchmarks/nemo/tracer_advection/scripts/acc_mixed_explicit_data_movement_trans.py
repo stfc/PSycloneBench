@@ -47,6 +47,7 @@ preprocessed (if required).
 
 '''
 
+from psyclone.psyir.nodes import Directive
 from psyclone.psyir.transformations import ACCUpdateTrans
 from psyclone.transformations import ACCEnterDataTrans, ACCLoopTrans
 from utils import add_kernels, normalise_loops, \
@@ -90,5 +91,6 @@ def trans(psy):
         add_kernels(sched.children)
 
         # Add OpenACC data directives
-        ACCEnterDataTrans().apply(invoke.schedule)
-        ACCUpdateTrans().apply(invoke.schedule)
+        if invoke.schedule.walk(Directive):
+            ACCEnterDataTrans().apply(invoke.schedule)
+            ACCUpdateTrans().apply(invoke.schedule)

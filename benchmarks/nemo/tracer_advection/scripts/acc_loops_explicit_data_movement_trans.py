@@ -37,6 +37,7 @@
 to the outermost loop that is parallelisable, including implicit loops. This
 script also adds OpenACC explicit data movement directives.'''
 
+from psyclone.psyir.nodes import Directive
 from psyclone.psyGen import TransInfo
 from psyclone.psyir.transformations import ACCUpdateTrans
 from psyclone.transformations import ACCEnterDataTrans
@@ -75,7 +76,8 @@ def trans(psy):
             collapse=True
         )
 
-        ACCEnterDataTrans().apply(invoke.schedule)
-        ACCUpdateTrans().apply(invoke.schedule)
+        if invoke.schedule.walk(Directive):
+            ACCEnterDataTrans().apply(invoke.schedule)
+            ACCUpdateTrans().apply(invoke.schedule)
 
     return psy

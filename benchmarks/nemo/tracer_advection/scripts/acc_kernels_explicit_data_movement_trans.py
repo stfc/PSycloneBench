@@ -47,6 +47,7 @@ much code as possible in each Kernels region).
 
 '''
 
+from psyclone.psyir.nodes import Directive
 from psyclone.psyir.transformations import ACCUpdateTrans
 from psyclone.transformations import ACCEnterDataTrans
 from utils import add_kernels
@@ -70,5 +71,6 @@ def trans(psy):
             continue
 
         add_kernels(invoke.schedule.children)
-        ACCEnterDataTrans().apply(invoke.schedule)
-        ACCUpdateTrans().apply(invoke.schedule)
+        if invoke.schedule.walk(Directive):
+            ACCEnterDataTrans().apply(invoke.schedule)
+            ACCUpdateTrans().apply(invoke.schedule)
