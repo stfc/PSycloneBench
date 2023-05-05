@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2018-2022, Science and Technology Facilities Council
+# Copyright (c) 2018-2023, Science and Technology Facilities Council
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,12 +35,14 @@
 
 '''A simple transformation script for the introduction of OpenMP with PSyclone.
 
- >>> psyclone -api "nemo" -s ./omp_trans.py tra_adv.F90
+ >>> psyclone -api "nemo" -s ./omp_cpu_levels_trans.py tra_adv.F90
 
 This should produce a lot of output, ending with generated Fortran.
 
 '''
 
+from psyclone.psyGen import TransInfo
+from psyclone.nemo import NemoKern
 
 def trans(psy):
     ''' Transform a specific Schedule by making all loops
@@ -54,8 +56,6 @@ def trans(psy):
     :rtype:  :py:class:`psyclone.psyGen.PSy`
 
     '''
-    from psyclone.psyGen import TransInfo
-    from psyclone.nemo import NemoKern
     # Get the transformation we will apply
     ompt = TransInfo().get_trans_name('OMPParallelLoopTrans')
     for invoke in psy.invokes.invoke_list:

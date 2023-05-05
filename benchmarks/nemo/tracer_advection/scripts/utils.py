@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2022, Science and Technology Facilities Council.
+# Copyright (c) 2022-2023, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,14 +31,15 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
-# Authors: S. Siso, STFC Daresbury Lab
+# Authors: R. W. Ford, A. R. Porter and S. Siso, STFC Daresbury Lab
 
 ''' Utilities file to parallelise Nemo code. '''
 
-from psyclone.psyir.nodes import Loop, Assignment, Directive
-from psyclone.psyir.transformations import HoistLoopBoundExprTrans, HoistTrans
 from psyclone.domain.nemo.transformations import NemoAllArrayRange2LoopTrans
-from psyclone.transformations import TransformationError
+from psyclone.errors import InternalError
+from psyclone.psyir.nodes import Loop, Assignment, Directive, CodeBlock, Call
+from psyclone.psyir.transformations import HoistLoopBoundExprTrans, HoistTrans
+from psyclone.transformations import TransformationError, ACCKernelsTrans
 
 
 def normalise_loops(
@@ -102,7 +103,8 @@ def insert_explicit_loop_parallelism(
             loop_directive_trans.apply(loop)
             # Only add the region directive if the loop was successfully
             # parallelised.
-            region_directive_trans.apply(loop.parent.parent)
+            if region_directive_trans is not None:
+                region_directive_trans.apply(loop.parent.parent)
         except TransformationError as err:
             # This loop can not be transformed, proceed to next loop
             print("Loop not parallelised because:", str(err))
@@ -120,3 +122,68 @@ def insert_explicit_loop_parallelism(
 
             if num_nested_loops > 1:
                 loop.parent.parent.collapse = num_nested_loops
+
+
+def valid_kernel(node):
+    '''
+    Whether the sub-tree that has `node` at its root is eligible to be
+    enclosed within an OpenACC KERNELS directive.
+
+    :param node: the node in the PSyIR to check.
+    :type node: :py:class:`psyclone.psyir.nodes.Node`
+
+    :returns: True if the sub-tree can be enclosed in a KERNELS region.
+    :rtype: bool
+
+    '''
+    excluded_node_types = (CodeBlock, Call)
+    return node.walk(excluded_node_types) == []
+
+
+def add_kernels(children, default_present=True):
+    '''
+    Walks through the PSyIR inserting OpenACC KERNELS directives at as
+    high a level as possible.
+
+    :param children: list of sibling Nodes in PSyIR that are candidates for \
+                     inclusion in an ACC KERNELS region.
+    :type children: list of :py:class:`psyclone.psyir.nodes.Node`
+    :param bool default_present: whether or not to supply the \
+                          DEFAULT(PRESENT) clause to ACC KERNELS directives.
+
+    '''
+    if not children:
+        return
+
+    node_list = []
+    for child in children[:]:
+        # Can this node be included in a kernels region?
+        if not valid_kernel(child):
+            try_kernels_trans(node_list, default_present)
+            node_list = []
+            # It can't so go down a level and try again
+            add_kernels(child.children)
+        else:
+            node_list.append(child)
+    try_kernels_trans(node_list, default_present)
+
+
+def try_kernels_trans(nodes, default_present):
+    '''
+    Attempt to enclose the supplied list of nodes within a kernels
+    region. If the transformation fails then the error message is
+    reported but execution continues.
+
+    :param nodes: list of Nodes to enclose within a Kernels region.
+    :type nodes: list of :py:class:`psyclone.psyir.nodes.Node`
+    :param bool default_present: whether or not to supply the \
+                          DEFAULT(PRESENT) clause to ACC KERNELS directives.
+
+    '''
+    if not nodes:
+        return
+    try:
+        ACCKernelsTrans().apply(nodes, {"default_present": default_present})
+    except (TransformationError, InternalError) as err:
+        print(f"Failed to transform nodes: {nodes}")
+        print(f"Error was: {err}")
