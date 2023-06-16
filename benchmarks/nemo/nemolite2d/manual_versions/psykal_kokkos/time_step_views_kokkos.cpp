@@ -11,7 +11,7 @@
 #include "timing.h"
 #endif
 
-#define TILE {64,4}
+#define TILE {64,1}
 
 // Create 2D View types for the Fields and Grid arrays
 typedef Kokkos::View<double**> double_2dview;
@@ -116,6 +116,8 @@ extern "C" void c_invoke_time_step(
     // this file. e.g. `g++ -DEXEC_SPACE=OpenMP time_step_kokkos.cpp -c`
 #if defined (EXECUTION_SPACE)
     using execution_space = Kokkos::EXECUTION_SPACE;
+    // Replace execution_space with the line below for the HIP backend
+    // using execution_space = Kokkos::Experimental::EXECUTION_SPACE;
 #else
     using execution_space = Kokkos::DefaultExecutionSpace;
 #endif
@@ -699,8 +701,11 @@ extern "C" void kokkos_read_from_device(double_2dview from, double * to,
     // Then, we copy the data from the mirror to the original location.
     // Since the mirror data layout is decided by kokkos, we make explicit
     // copies of each element to its location.
-    for(int jj=starty; jj < starty+ny; jj++){
-        for(int ji=startx; ji < startx+nx; ji++){
+    // We need to adjust the provided Fortran bounds to 0-indexing
+    int starty0 = starty - 1;
+    int startx0 = startx - 1;
+    for(int jj=starty0; jj < starty0+ny-1; jj++){
+        for(int ji=startx0; ji < startx0+nx-1; ji++){
             int idx = (jj * fortran_array_width + ji);
             to[idx] = mirror(jj, ji);
         }

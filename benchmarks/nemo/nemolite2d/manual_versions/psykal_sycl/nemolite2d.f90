@@ -7,6 +7,7 @@ program gocean2d
   use gocean2d_io_mod, only: model_write
   use gocean_mod,      only: model_write_log, gocean_initialise, &
                              gocean_finalise
+  !use likwid
 
   !> A Horizontal 2D hydrodynamic ocean model which
   !!   1) using structured grid
@@ -30,7 +31,6 @@ program gocean2d
 
   ! time stepping index
   integer     :: istp  
-  real(go_wp) :: rstp 
   integer     :: itimer0
 
   ! Scratch space for logging messages
@@ -43,11 +43,13 @@ program gocean2d
   ! points immediately to the North and East of a T point all have the
   ! same i,j index).  This is the same offset scheme as used by NEMO.
   model_grid = grid_type(GO_ARAKAWA_C, &
+  !  BC_PERIODIC, BC_NON_PERIODIC ??
                          (/GO_BC_EXTERNAL,GO_BC_EXTERNAL,GO_BC_NONE/), &
                          GO_OFFSET_NE)
 
   !! read in model parameters and configure the model grid 
   CALL model_init(model_grid)
+  !call likwid_markerInit()
 
   ! Create fields on this grid
 
@@ -89,11 +91,25 @@ program gocean2d
   call model_write_log("((A))", TRIM(log_str))
 
   ! Start timer for time-stepping section
+  CALL timer_start(itimer0, label='Warm up', &
+                   num_repeats=INT(1,kind=i_def64) )
+
+  call step(nit000,                               &
+           ua_fld, va_fld, un_fld, vn_fld,     &
+           sshn_t_fld, sshn_u_fld, sshn_v_fld, &
+           ssha_t_fld, ssha_u_fld, ssha_v_fld, &
+           hu_fld, hv_fld, ht_fld)
+
+  ! Stop the timer for the time-stepping section
+  call timer_stop(itimer0)
+  ! Start timer for time-stepping section
   CALL timer_start(itimer0, label='Time-stepping', &
-                   num_repeats=INT(nitend-nit000+1,kind=i_def64) )
+                   num_repeats=INT(nitend-nit000,kind=i_def64) )
 
   !! time stepping 
-  do istp = nit000, nitend, 1
+  do istp = nit000+1, nitend, 1
+
+     !call model_write_log("('istp == ',I6)",istp)
 
      call step(istp,                               &
                ua_fld, va_fld, un_fld, vn_fld,     &
@@ -117,6 +133,7 @@ program gocean2d
 
   !! finalise the model run
   call model_finalise()
+  !call likwid_markerClose()
 
   call model_write_log("((A))", 'Simulation finished!!')
 
