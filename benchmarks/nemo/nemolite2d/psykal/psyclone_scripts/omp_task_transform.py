@@ -2,17 +2,26 @@
 function via the -s option. It applies OpenMP tasking to every loop
 and inlines all kernels in the schedule.'''
 
+from psyclone.domain.common.transformations import KernelModuleInlineTrans
 from psyclone.psyir.nodes import Loop
 from psyclone.configuration import Config
 from psyclone.transformations import OMPParallelTrans, OMPSingleTrans, \
-                                     OMPTaskloopTrans, KernelModuleInlineTrans
+                                     OMPTaskloopTrans
 from psyclone.psyir.transformations import OMPTaskwaitTrans
 from psyclone.psyir.nodes import OMPTaskloopDirective, OMPTaskwaitDirective, \
                                  OMPDirective, OMPParallelDirective
 
 
 def trans(psy):
-    '''Transformation entry point'''
+    '''Transformation entry point.
+
+    :param psy: The PSy layer object to apply transformations to.
+    :type psy: :py:class:`psyclone.psyGen.PSy`
+
+    :returns: the transformed PSy object.
+    :rtype: :py:class:`psyclone.psyGen.PSy`
+
+    '''
     config = Config.get()
 
     schedule = psy.invokes.get('invoke_0').schedule

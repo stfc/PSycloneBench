@@ -2,19 +2,28 @@
 function via the -s option. It applies OpenMP to every loop and
 inlines all kernels in the schedule.'''
 
+from psyclone.domain.common.transformations import KernelModuleInlineTrans
 from psyclone.psyGen import TransInfo
 from psyclone.psyir.nodes import Loop
 from psyclone.configuration import Config
 
 
 def trans(psy):
-    ''' Transformation entry point '''
+    ''' Transformation entry point.
+
+    :param psy: The PSy layer object to apply transformations to.
+    :type psy: :py:class:`psyclone.psyGen.PSy`
+
+    :returns: the transformed PSy object.
+    :rtype: :py:class:`psyclone.psyGen.PSy`
+
+    '''
     config = Config.get()
     tinfo = TransInfo()
     parallel_loop_trans = tinfo.get_trans_name('GOceanOMPParallelLoopTrans')
     loop_trans = tinfo.get_trans_name('GOceanOMPLoopTrans')
     parallel_trans = tinfo.get_trans_name('OMPParallelTrans')
-    module_inline_trans = tinfo.get_trans_name('KernelModuleInline')
+    module_inline_trans = KernelModuleInlineTrans()
 
     schedule = psy.invokes.get('invoke_0').schedule
 

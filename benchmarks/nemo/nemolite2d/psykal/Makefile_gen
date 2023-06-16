@@ -58,6 +58,11 @@ nemolite2d: ${KERNELS} psy.o alg.o
 		${TIMER_LIB} ${INF_LIB} $(LDFLAGS) ${OMPFLAGS}
 
 
+# Build NemoLite2d (this Makefile) but with the OMPTARGETFLAGS
+nemolite2dompgpu:
+	$(MAKE) F90FLAGS="$(F90FLAGS) ${OMPTARGETFLAGS} ${UMEMFLAGS}" \
+		    LDFLAGS="$(LDFLAGS) ${OMPTARGETFLAGS} ${UMEMFLAGS}" nemolite2d
+
 # Build NemoLite2D for OpenACC, uses the same target as NemoLite2D but with
 # additional Fortran flags.
 nemolite2dacc:
