@@ -1,0 +1,21 @@
+# Benchmark of the LFRic Matrix-Vector multiplication
+
+# Compile
+
+
+# TODO
+
+- [ ] Check size of x and MB usage is correct
+- [ ] Add OpenMP offloading version
+- [ ] Add options to run on cpu and gpu
+- [ ] Add a C++ version
+- [ ] Add a kokkos version
+- [ ] Add a RAJA version
+- [ ] Explore CHAI and Umpire alone
+- [ ] Add BLAS and libxsmm versions
+- [ ] Add nlayers first data layout to all versions
+- [ ] Add colouring options to all versions
+- [ ] Add tiled colouring options to all versions
+- [ ] Can colour maps be computed instead of lookup
+- [ ] Can field maps be computed instead of lookup
+- [ ] Add SPF traversal option

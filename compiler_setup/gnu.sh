@@ -4,7 +4,8 @@ CC=gcc
 CXX=g++
 
 # Common optimization flags for CFLAGS and F90FLAGS
-OPTFLAGS=" -Ofast -mtune=native -finline-limit=50000 -fopt-info-all=gnu_opt_report.txt"
+OPTFLAGS=" -Ofast -mtune=native -finline-limit=50000 "
+#"-fopt-info-all=gnu_opt_report.txt"
 
 CFLAGS=$OPTFLAGS
 F90FLAGS="-Wall -Wsurprising -Wuninitialized"
@@ -19,6 +20,8 @@ F90FLAGS+=" -ffree-line-length-none"
 OMPFLAGS=""
 OMPFLAGS+=" -fopenmp"
 
+OMPTARGETFLAGS=""
+
 LDFLAGS=""
 
 AR=ar
@@ -27,6 +30,7 @@ export F90
 export F90FLAGS
 export CFLAGS
 export OMPFLAGS
+export OMPTARGETFLAGS
 export LDFLAGS
 export AR
 export CC
