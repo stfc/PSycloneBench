@@ -12,7 +12,9 @@ module psy_layer
             ! matrix
             matrix, &
             ! x
-            x, map_x, ndf_x, undf_x &
+            x, map_x, ndf_x, undf_x, &
+            ! colour map
+            ncolour, ncp_colour, cmap &
         ) bind (C, name="c_psy_layer")
             use iso_c_binding
             character(kind=c_char), intent(in), dimension(*) :: traverse
@@ -21,6 +23,8 @@ module psy_layer
             real(kind=c_double), intent(in), dimension(*) :: x, matrix
             integer(kind=c_int), intent(in), dimension(*) :: map_lhs, map_x
             integer(kind=c_int), value :: ndf_lhs, undf_lhs, ndf_x, undf_x
+            integer(kind=c_int), value :: ncolour
+            integer(kind=c_int), intent(in), dimension(*) :: ncp_colour, cmap
         end subroutine wrapper_c_psy_layer
     end interface    
 
@@ -34,7 +38,9 @@ subroutine run_psy_layer( &
         ! matrix
         matrix, &
         ! x
-        x, map_x, ndf_x, undf_x)
+        x, map_x, ndf_x, undf_x, &
+        ! colour map
+        ncolour, ncp_colour, cmap)
 
     character(len=*), intent(in) :: traverse
     integer, intent(in) :: niters, nlayers, ncell, ncell_3d
@@ -44,11 +50,15 @@ subroutine run_psy_layer( &
     real(kind=r_def), dimension(ndf_lhs,ndf_x,ncell_3d), intent(in)    :: matrix
     integer, intent(in), allocatable, target :: map_lhs(:,:)
     integer, intent(in), allocatable, target :: map_x(:,:)
+    integer, intent(in) :: ncolour
+    integer, intent(in), dimension(:) :: ncp_colour
+    integer, intent(in), dimension(:,:) :: cmap
 
     call wrapper_c_psy_layer( &
         traverse, niters, ncell, nlayers, ncell_3d, &
         lhs, map_lhs, ndf_lhs, undf_lhs, &
-        matrix, x, map_x, ndf_x, undf_x)
+        matrix, x, map_x, ndf_x, undf_x, &
+        ncolour, ncp_colour, cmap)
 
 end subroutine run_psy_layer
 end module psy_layer

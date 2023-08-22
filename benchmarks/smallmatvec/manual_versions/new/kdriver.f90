@@ -112,7 +112,6 @@ subroutine main()
 
     call cpu_time(start)
     call system_mem_usage(memstart)
-    ! call random_init(.true., .true.) ! make random_number generation repeatable
 
     ! Allocate arrays
     allocate( map_any_space_1_theta_adv_term(ndf_any_space_1_theta_adv_term,ncell) ) 
@@ -125,15 +124,12 @@ subroutine main()
     allocate( x_data(undf_any_space_2_x) )
     call ascending_init(theta_adv_term_data)
     call ascending_init(x_data)
-    ! call random_number(theta_adv_term_data)
-    ! call random_number(x_data)
     call system_mem_usage(memend)
     memvectors = memend - memmaps
 
     allocate( ptheta_2_local_stencil( ndf_any_space_1_theta_adv_term, ndf_any_space_2_x, ncell_3d) )
     !allocate( nlayers_first(nlayers, ndf_any_space_2_x, ndf_any_space_1_theta_adv_term, ncell) )
     call ascending_init_matrix(ptheta_2_local_stencil)
-    ! call random_number(ptheta_2_local_stencil)
     call system_mem_usage(memend)
     memmatrix = memend - memvectors
 
@@ -167,7 +163,9 @@ subroutine main()
         ! matrix
         ptheta_2_local_stencil, &
         ! x
-        x_data, map_any_space_2_x, ndf_any_space_2_x, undf_any_space_2_x &
+        x_data, map_any_space_2_x, ndf_any_space_2_x, undf_any_space_2_x, &
+        ! colour map
+        ncolour, ncp_colour, cmap &
     )
     call cpu_time(end)
     totaltime = end-start

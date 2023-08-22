@@ -11,7 +11,9 @@ subroutine run_psy_layer( &
         ! matrix
         matrix, &
         ! x
-        x, map_x, ndf_x, undf_x)
+        x, map_x, ndf_x, undf_x, &
+        ! colour map
+        ncolour, ncp_colour, cmap)
 
     character(len=*), intent(in) :: traverse
     integer, intent(in) :: niters, nlayers, ncell, ncell_3d
@@ -21,8 +23,11 @@ subroutine run_psy_layer( &
     real(kind=r_def), dimension(ndf_lhs,ndf_x,ncell_3d), intent(in)    :: matrix
     integer, intent(in), allocatable, target :: map_lhs(:,:)
     integer, intent(in), allocatable, target :: map_x(:,:)
+    integer, intent(in) :: ncolour
+    integer, intent(in), dimension(:) :: ncp_colour
+    integer, intent(in), dimension(:,:) :: cmap
 
-    integer :: iter, cell
+    integer :: iter, cell, colour, ccell
         
     if (traverse.eq."linear") then  
         write(*,*) "Lineal traversing Version"
@@ -35,8 +40,21 @@ subroutine run_psy_layer( &
                         ndf_x, undf_x, map_x(:,cell) )
             enddo
         enddo
+    elseif (traverse.eq."colouring") then
+        write(*,*) "Starting computation with colouring"
+        do iter = 1, niters
+            do colour = 1, ncolour
+                do ccell = 1, ncp_colour(colour)
+                    cell = cmap(colour, ccell)
+                    call matrix_vector_code_original( &
+                        cell, nlayers, &
+                        lhs, x, ncell_3d, matrix, &
+                        ndf_lhs, undf_lhs, map_lhs(:,cell), &
+                        ndf_x, undf_x, map_x(:,cell) )
+                enddo
+            enddo
+        enddo
     else
-    ! write(*,*) "Starting computation with", ncolour, " -> ", ncp_colour
         write(*,*) "Not implemented:", traverse
     endif
 end subroutine run_psy_layer

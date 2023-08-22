@@ -19,3 +19,12 @@
 - [ ] Can colour maps be computed instead of lookup
 - [ ] Can field maps be computed instead of lookup
 - [ ] Add SPF traversal option
+
+# Questions
+
+- The order of colours is opposite than Fortran indices. Does it matter? Is LFRic the same?
+Starting computation with colouring
+           1           1
+           2           3
+           3           2
+           4           4
