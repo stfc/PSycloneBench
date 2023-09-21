@@ -24,9 +24,11 @@ F90FLAGS="-O3"
 # Flag to use when compiling with OpenMP support
 OMPFLAGS="-mp"
 # Flag to use when compiling with OpenMP GPU offloading support
-OMPTARGETFLAGS="-mp=gpu"
+OMPTARGETFLAGS="-mp=gpu -gpu=ccnative"
+# Flag to use to specify use of 'managed memory' (unified memory)
+UMEMFLAGS="-gpu=managed"
 # Flags to use when compiling with OpenACC support
-ACCFLAGS="-acc -ta=tesla"
+ACCFLAGS="-acc=gpu -gpu=ccnative"
 
 # Linker flags
 LDFLAGS=""
@@ -41,6 +43,7 @@ export CXX
 
 export OMPFLAGS
 export OMPTARGETFLAGS
+export UMEMFLAGS
 export ACCFLAGS
 
 export CFLAGS

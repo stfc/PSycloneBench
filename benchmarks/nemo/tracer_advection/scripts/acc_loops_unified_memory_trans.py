@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2018-2022, Science and Technology Facilities Council
+# Copyright (c) 2022-2023, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,42 +31,43 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
-# Authors: R. W. Ford, A. R. Porter and S. Siso, STFC Daresbury Lab
+# Authors: S. Siso, STFC Daresbury Lab
 
-'''A simple transformation script for the introduction of OpenMP with PSyclone.
+''' PSyclone transformation script to insert OpenACC Parallel Loop directives
+to the outermost loop that is parallelisable, including implicit loops.'''
 
- >>> psyclone -api "nemo" -s ./omp_trans.py tra_adv.F90
-
-This should produce a lot of output, ending with generated Fortran.
-
-'''
+from psyclone.psyGen import TransInfo
+from utils import insert_explicit_loop_parallelism, normalise_loops
 
 
 def trans(psy):
-    ''' Transform a specific Schedule by making all loops
-    over levels OpenMP parallel.
+    ''' Add OpenACC Parallel Loop directive to all loops, including implicit
+    ones to target GPU parallelism.
 
-    :param psy: the object holding all information on the PSy layer \
-                to be modified.
+    :param psy: the PSy object which this script will transform.
     :type psy: :py:class:`psyclone.psyGen.PSy`
-
-    :returns: the transformed PSy object
-    :rtype:  :py:class:`psyclone.psyGen.PSy`
+    :returns: the transformed PSy object.
+    :rtype: :py:class:`psyclone.psyGen.PSy`
 
     '''
-    from psyclone.psyGen import TransInfo
-    from psyclone.nemo import NemoKern
-    # Get the transformation we will apply
-    ompt = TransInfo().get_trans_name('OMPParallelLoopTrans')
-    for invoke in psy.invokes.invoke_list:
-        # Get the Schedule of the target routine
-        sched = invoke.schedule
-        # Apply the OMP transformation to each loop over levels containing
-        # a kernel
-        for loop in sched.loops():
-            kernels = loop.walk(NemoKern)
-            if kernels and loop.loop_type == "levels":
-                ompt.apply(loop)
+    acc_parallel_trans = TransInfo().get_trans_name('ACCParallelTrans')
+    acc_loop_trans = TransInfo().get_trans_name('ACCLoopTrans')
 
-    # Return the modified psy object
+    print("Invokes found:")
+    for invoke in psy.invokes.invoke_list:
+        print(invoke.name)
+
+        normalise_loops(
+            invoke.schedule,
+            unwrap_array_ranges=True,
+            hoist_expressions=True,
+        )
+
+        insert_explicit_loop_parallelism(
+            invoke.schedule,
+            region_directive_trans=acc_parallel_trans,
+            loop_directive_trans=acc_loop_trans,
+            collapse=True
+        )
+
     return psy

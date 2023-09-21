@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2022, Science and Technology Facilities Council.
+# Copyright (c) 2018-2023, Science and Technology Facilities Council
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,38 +31,42 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
-# Authors: R. W. Ford and A. R. Porter, STFC Daresbury Lab.
+# Authors: R. W. Ford, A. R. Porter and S. Siso, STFC Daresbury Lab
 
-'''Module providing a PSyclone transformation script that first converts
-the supplied PSyIR into a form compatible with the Stencil Intermediate
-Representation (SIR) and then adds OpenACC Kernels regions to it.
+'''A simple transformation script for the introduction of OpenMP with PSyclone.
+
+ >>> psyclone -api "nemo" -s ./omp_cpu_levels_trans.py tra_adv.F90
+
+This should produce a lot of output, ending with generated Fortran.
 
 '''
 
-from utils import add_kernels
-from sir_trans import make_sir_compliant
-
+from psyclone.psyGen import TransInfo
+from psyclone.nemo import NemoKern
 
 def trans(psy):
-    '''
-    Transformation routine for use with PSyclone. It calls
-    :py:func:`sir_trans.make_sir_compliant` and then
-    :py:func:`kernels_trans.add_kernels` for each schedule in each invoke.
+    ''' Transform a specific Schedule by making all loops
+    over levels OpenMP parallel.
 
-    :param psy: the PSy object which this script will transform.
+    :param psy: the object holding all information on the PSy layer \
+                to be modified.
     :type psy: :py:class:`psyclone.psyGen.PSy`
 
-    :returns: the transformed PSy object.
-    :rtype: :py:class:`psyclone.psyGen.PSy`
+    :returns: the transformed PSy object
+    :rtype:  :py:class:`psyclone.psyGen.PSy`
 
     '''
+    # Get the transformation we will apply
+    ompt = TransInfo().get_trans_name('OMPParallelLoopTrans')
     for invoke in psy.invokes.invoke_list:
-
+        # Get the Schedule of the target routine
         sched = invoke.schedule
-        if not sched:
-            print(f"Invoke {invoke.name} has no Schedule! Skipping...")
-            continue
+        # Apply the OMP transformation to each loop over levels containing
+        # a kernel
+        for loop in sched.loops():
+            kernels = loop.walk(NemoKern)
+            if kernels and loop.loop_type == "levels":
+                ompt.apply(loop)
 
-        make_sir_compliant(sched)
-        add_kernels(sched.children)
-        sched.view()
+    # Return the modified psy object
+    return psy

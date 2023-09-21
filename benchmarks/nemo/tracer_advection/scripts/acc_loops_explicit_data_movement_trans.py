@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2022, Science and Technology Facilities Council.
+# Copyright (c) 2022-2023, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,23 +31,22 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
-# Authors: R. W. Ford and A. R. Porter, STFC Daresbury Lab.
+# Authors: S. Siso, STFC Daresbury Lab
 
-'''Module providing a PSyclone transformation script that first converts
-the supplied PSyIR into a form compatible with the Stencil Intermediate
-Representation (SIR) and then adds OpenACC Kernels regions to it.
+''' PSyclone transformation script to insert OpenACC Parallel Loop directives
+to the outermost loop that is parallelisable, including implicit loops. This
+script also adds OpenACC explicit data movement directives.'''
 
-'''
-
-from utils import add_kernels
-from sir_trans import make_sir_compliant
+from psyclone.psyir.nodes import Directive
+from psyclone.psyGen import TransInfo
+from psyclone.psyir.transformations import ACCUpdateTrans
+from psyclone.transformations import ACCEnterDataTrans
+from utils import insert_explicit_loop_parallelism, normalise_loops
 
 
 def trans(psy):
-    '''
-    Transformation routine for use with PSyclone. It calls
-    :py:func:`sir_trans.make_sir_compliant` and then
-    :py:func:`kernels_trans.add_kernels` for each schedule in each invoke.
+    ''' Add OpenACC Parallel Loop directive to all loops, including implicit
+    ones, to target GPU parallelism and explicit data movement directives.
 
     :param psy: the PSy object which this script will transform.
     :type psy: :py:class:`psyclone.psyGen.PSy`
@@ -56,13 +55,29 @@ def trans(psy):
     :rtype: :py:class:`psyclone.psyGen.PSy`
 
     '''
+    acc_parallel_trans = TransInfo().get_trans_name('ACCParallelTrans')
+    acc_loop_trans = TransInfo().get_trans_name('ACCLoopTrans')
+
+    print("Invokes found:")
     for invoke in psy.invokes.invoke_list:
+        print(invoke.name)
 
-        sched = invoke.schedule
-        if not sched:
-            print(f"Invoke {invoke.name} has no Schedule! Skipping...")
-            continue
+        # Convert array and range notation to loops and hoist expressions
+        normalise_loops(
+            invoke.schedule,
+            unwrap_array_ranges=True,
+            hoist_expressions=True,
+        )
 
-        make_sir_compliant(sched)
-        add_kernels(sched.children)
-        sched.view()
+        insert_explicit_loop_parallelism(
+            invoke.schedule,
+            region_directive_trans=acc_parallel_trans,
+            loop_directive_trans=acc_loop_trans,
+            collapse=True
+        )
+
+        if invoke.schedule.walk(Directive):
+            ACCEnterDataTrans().apply(invoke.schedule)
+            ACCUpdateTrans().apply(invoke.schedule)
+
+    return psy
