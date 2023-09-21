@@ -6,9 +6,9 @@ from psyclone.psyir.nodes import Loop
 from psyclone.configuration import Config
 from psyclone.transformations import OMPParallelTrans, OMPSingleTrans
 from psyclone.domain.common.transformations import KernelModuleInlineTrans
-from psyclone.psyir.transformations import OMPTaskTrans, ChunkLoopTrans
+from psyclone.psyir.transformations import OMPTaskTrans, ChunkLoopTrans, InlineTrans
 from psyclone.psyir.nodes import OMPParallelDirective, OMPTaskDirective, \
-                                 OMPDirective
+                                 OMPDirective, Call
 from psyclone.transformations import \
     KernelImportsToArguments
 
@@ -21,19 +21,32 @@ def trans(psy):
 
     loop_trans = ChunkLoopTrans()
     task_trans = OMPTaskTrans()
-    imports_to_arguments = KernelImportsToArguments()
+    inline_trans = InlineTrans()
+#    imports_to_arguments = KernelImportsToArguments()
 
     module_inline_trans = KernelModuleInlineTrans()
 
     # Inline all kernels in this Schedule
     for kernel in schedule.kernels():
-        imports_to_arguments.apply(kernel)
-#        module_inline_trans.apply(kernel)
+#        imports_to_arguments.apply(kernel)
+        module_inline_trans.apply(kernel)
+        kernel.lower_to_language_level()
+#    for symbol in schedule.root.symbol_table.symbols:
+#        if symbol.name == "continuity_code":
+#            print(symbol)
+#            print(symbol.is_modulevar)
+#            print(symbol.is_unresolved)
+#            print(symbol.is_import)
+    for call in schedule.walk(Call):
+#        import pdb
+#        pdb.set_trace()
+        inline_trans.apply(call)
 
     applications = 0
 
     for child in schedule.children[:]:
         if isinstance(child, Loop):
+            print(child.debug_string())
             loop_trans.apply(child)
             assert isinstance(child.children[3].children[0], Loop)
             task_trans.apply(child, {"force": True})
@@ -45,9 +58,9 @@ def trans(psy):
     parallel_trans = OMPParallelTrans()
     sets = []
     if not config.distributed_memory:
-        single_trans.apply(schedule.children)
-        parallel_trans.apply(schedule.children)
-        print(f"Found {len(schedule.walk(OMPTaskDirective))} task directives.")
+#        single_trans.apply(schedule.children)
+#        parallel_trans.apply(schedule.children)
+#        print(f"Found {len(schedule.walk(OMPTaskDirective))} task directives.")
         return
     # Find all of the groupings of taskloop and taskwait directives. Each of
     # these groups needs its own parallel+single regions. This makes sure we
