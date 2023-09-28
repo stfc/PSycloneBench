@@ -32,6 +32,8 @@ subroutine run_psy_layer( &
     if (traverse.eq."linear") then  
         write(*,*) "Lineal traversing Version"
         do iter = 1, niters
+            ! openmp CPU
+            !$omp parallel do default(shared), private(cell)
             do cell = 1, ncell
                 call matrix_vector_code_original( &
                         cell, nlayers, &
@@ -39,11 +41,13 @@ subroutine run_psy_layer( &
                         ndf_lhs, undf_lhs, map_lhs(:,cell), &
                         ndf_x, undf_x, map_x(:,cell) )
             enddo
+            !$omp end parallel do
         enddo
     elseif (traverse.eq."colouring") then
         write(*,*) "Starting computation with colouring"
         do iter = 1, niters
             do colour = 1, ncolour
+                !$omp parallel do, private(ccell, cell)
                 do ccell = 1, ncp_colour(colour)
                     cell = cmap(colour, ccell)
                     call matrix_vector_code_original( &
@@ -52,6 +56,7 @@ subroutine run_psy_layer( &
                         ndf_lhs, undf_lhs, map_lhs(:,cell), &
                         ndf_x, undf_x, map_x(:,cell) )
                 enddo
+                !$omp end parallel do
             enddo
         enddo
     else
