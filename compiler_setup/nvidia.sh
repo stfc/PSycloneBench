@@ -9,7 +9,7 @@ CXX=nvc++
 # C and C++ flags
 CFLAGS="-O3"
 # Fortran compiler flags
-F90FLAGS="-O3"
+F90FLAGS="-O3 -Minfo=all"
 
 # Debugging options
 # The below flags used alongside the above

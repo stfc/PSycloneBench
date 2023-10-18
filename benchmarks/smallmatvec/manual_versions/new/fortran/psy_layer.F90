@@ -28,26 +28,43 @@ subroutine run_psy_layer( &
     integer, intent(in), dimension(:,:) :: cmap
 
     integer :: iter, cell, colour, ccell
-        
+    
+#ifdef TARGET_GPU
+    !$omp target enter data map(to: ncp_colour, cmap, x, matrix, map_x, lhs, map_lhs)
+#endif   
     if (traverse.eq."linear") then  
         write(*,*) "Lineal traversing Version"
         do iter = 1, niters
-            ! openmp CPU
+#ifdef TARGET_GPU
+            !$omp target loop
+#else 
             !$omp parallel do default(shared), private(cell)
+#endif
             do cell = 1, ncell
-                call matrix_vector_code_original( &
+                call matrix_vector_code_original_atomic( &
                         cell, nlayers, &
                         lhs, x, ncell_3d, matrix, &
                         ndf_lhs, undf_lhs, map_lhs(:,cell), &
                         ndf_x, undf_x, map_x(:,cell) )
             enddo
+#ifdef TARGET_GPU
+            !$omp end target loop
+#else
             !$omp end parallel do
+#endif
         enddo
+#ifdef TARGET_GPU        
+        !$omp target update from (x, matrix, map_x, lhs, map_lhs)
+#endif
     elseif (traverse.eq."colouring") then
         write(*,*) "Starting computation with colouring"
         do iter = 1, niters
             do colour = 1, ncolour
-                !$omp parallel do, private(ccell, cell)
+#ifdef TARGET_GPU
+            !$omp target loop
+#else 
+            !$omp parallel do default(shared), private(ccell, cell)
+#endif
                 do ccell = 1, ncp_colour(colour)
                     cell = cmap(colour, ccell)
                     call matrix_vector_code_original( &
@@ -56,9 +73,16 @@ subroutine run_psy_layer( &
                         ndf_lhs, undf_lhs, map_lhs(:,cell), &
                         ndf_x, undf_x, map_x(:,cell) )
                 enddo
-                !$omp end parallel do
+#ifdef TARGET_GPU
+            !$omp end target loop
+#else
+            !$omp end parallel do
+#endif
             enddo
         enddo
+#ifdef TARGET_GPU
+        !$omp target update from (cmap, ncp_colour, x, matrix, map_x, lhs, map_lhs)
+#endif
     else
         write(*,*) "Not implemented:", traverse
     endif
@@ -86,6 +110,8 @@ subroutine matrix_vector_code_original( &
                               ndf1, undf1, map1, &
                               ndf2, undf2, map2)
  
+
+! !$omp declare target
   !Arguments
   integer,                   intent(in)    :: cell, nlayers, ncell_3d
   integer,                   intent(in)    :: undf1, ndf1
@@ -100,14 +126,10 @@ subroutine matrix_vector_code_original( &
   integer                           :: df, k, ik
   real(kind=r_def), dimension(ndf2) :: x_e
   real(kind=r_def), dimension(ndf1) :: lhs_e
- 
+  
   do k = 0, nlayers-1
     do df = 1, ndf2  
        x_e(df) = x(map2(df)+k)
-    end do
-
-    do df = 1, ndf1
-       lhs_e(df) = lhs(map1(df)+k)
     end do
 
     ik = (cell-1)*nlayers + k + 1
@@ -119,5 +141,46 @@ subroutine matrix_vector_code_original( &
     end do
  end do
 end subroutine matrix_vector_code_original
+
+subroutine matrix_vector_code_original_atomic( &
+                              cell,        &
+                              nlayers,     &
+                              lhs, x,      &
+                              ncell_3d,    &
+                              matrix,      &
+                              ndf1, undf1, map1, &
+                              ndf2, undf2, map2)
+  
+  !!$omp declare target
+  !Arguments
+  integer,                   intent(in)    :: cell, nlayers, ncell_3d
+  integer,                   intent(in)    :: undf1, ndf1
+  integer,                   intent(in)    :: undf2, ndf2
+  integer, dimension(ndf1),  intent(in)    :: map1
+  integer, dimension(ndf2),  intent(in)    :: map2
+  real(kind=r_def), dimension(undf2),              intent(in)    :: x
+  real(kind=r_def), dimension(undf1),              intent(inout) :: lhs
+  real(kind=r_def), dimension(ndf1,ndf2,ncell_3d), intent(in)    :: matrix
+
+  !Internal variables
+  integer                           :: df, k, ik
+  real(kind=r_def), dimension(ndf2) :: x_e
+  real(kind=r_def), dimension(ndf1) :: lhs_e
+  
+  do k = 0, nlayers-1
+    do df = 1, ndf2
+       x_e(df) = x(map2(df)+k)
+    end do
+
+    ik = (cell-1)*nlayers + k + 1
+
+    lhs_e = matmul(matrix(:,:,ik),x_e)
+
+    do df = 1,ndf1
+       !$omp atomic
+       lhs(map1(df)+k) = lhs(map1(df)+k) + lhs_e(df)
+    end do
+ end do
+end subroutine matrix_vector_code_original_atomic
 
 end module psy_layer

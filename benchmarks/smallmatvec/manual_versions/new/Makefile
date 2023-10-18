@@ -5,15 +5,15 @@ bin:
 	mkdir bin
 
 # Fortran targets
-fortran: fortran/psy_layer.f90 kdriver.f90 bin fortran/Makefile
+fortran: fortran/psy_layer.F90 kdriver.f90 bin fortran/Makefile
 	$(MAKE) -C fortran
 	${F90} ${F90FLAGS} -Ifortran kdriver.f90 fortran/psy_layer.o -o bin/$@
 
-openmp_cpu: fortran/psy_layer.f90 kdriver.f90 bin fortran/Makefile
+openmp_cpu: fortran/psy_layer.F90 kdriver.f90 bin fortran/Makefile
 	$(MAKE) openmp_cpu -C fortran
 	${F90} ${F90FLAGS} ${OMPFLAGS} -Ifortran kdriver.f90 fortran/openmp_cpu_psy_layer.o -o bin/$@
 	
-openmp_gpu: fortran/psy_layer.f90 kdriver.f90 bin fortran/Makefile
+openmp_gpu: fortran/psy_layer.F90 kdriver.f90 bin fortran/Makefile
 	$(MAKE) openmp_gpu -C fortran
 	${F90} ${F90FLAGS} ${OMPTARGETFLAGS} -Ifortran kdriver.f90 fortran/openmp_gpu_psy_layer.o -o bin/$@
 
