@@ -19,6 +19,7 @@ subroutine main()
     integer(kind=i_def), allocatable :: cmap(:,:)
     integer(kind=i_def), allocatable,target :: map_any_space_1_theta_adv_term(:,:)
     integer(kind=i_def), allocatable,target :: map_any_space_2_x(:,:)
+    real :: problem_size
     real(kind=r_def), allocatable :: theta_adv_term_data(:), x_data(:)
     real(kind=r_def), allocatable :: ptheta_2_local_stencil(:,:,:)
     integer(kind=i_def) :: memstart, memend, memmaps, memmatrix, memvectors, memcmap, memtotal
@@ -98,6 +99,8 @@ subroutine main()
     undf_any_space_1_theta_adv_term = (nsize+1)*(nsize+1)*(nlayers+1)
     ndf_any_space_2_x = 6
     undf_any_space_2_x = (2*(nsize+1)*(nsize)*nlayers) + (nsize*nsize*(nlayers+1)) ! FIXME: This looks wrong
+    problem_size = (undf_any_space_1_theta_adv_term + undf_any_space_2_x + ndf_any_space_1_theta_adv_term * ndf_any_space_2_x &
+    & * ncell_3d) / 1000000 * 8
 
     ! Print benchmark info
     write(*,*) "LFRic Matrix-Vector Multiplication (lhs = matrix * x) with:"
@@ -109,6 +112,7 @@ subroutine main()
     write(*,*) " - matrix (8x6 per cell):             ", ndf_any_space_1_theta_adv_term * ndf_any_space_2_x * ncell_3d, " points"
     write(*,*) " - Time-steps:                        ", niters, " iterations"
     write(*,*) " - Each step does:                    ", ncell_3d, " small MV (8x6) * (6) multiplications"
+    write(*,*) " - Problem size:                      ", problem_size, " MB"
 
     call cpu_time(start)
     call system_mem_usage(memstart)
@@ -175,8 +179,7 @@ subroutine main()
     write(*,*) "Comutation time:   ", totaltime, " s"
     write(*,*) "Time/step:         ", totaltime/niters, " s"
     write(*,*) "Computation speed: ", (ncell_3d / 1000 * 6 * (2 * 8 - 1) * niters / totaltime) / 1000000 , " GFLOPs"
-    write(*,*) "Mem bandwith usage:", memtotal * niters / 1000000 / totaltime , " GB/s"
-
+    write(*,*) "Mem bandwith usage:", problem_size * niters / 1000 / totaltime , " GB/s"
 end subroutine main
 
 subroutine print_help_and_exit()
