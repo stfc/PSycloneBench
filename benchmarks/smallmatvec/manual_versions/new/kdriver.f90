@@ -22,12 +22,11 @@ subroutine main()
     real :: problem_size
     real(kind=r_def), allocatable :: theta_adv_term_data(:), x_data(:)
     real(kind=r_def), allocatable :: ptheta_2_local_stencil(:,:,:)
+    real(kind=r_def), allocatable :: ptheta_2_local_stencil_kinner(:,:,:,:)
     integer(kind=i_def) :: memstart, memend, memmaps, memmatrix, memvectors, memcmap, memtotal
     real(kind=r_def) :: start, end, totaltime
     integer(kind=i_def) :: niters, nsize, i
     character(len=32) :: arg, arg2, traverse 
-    ! real(kind=r_def), allocatable :: nlayers_first(:,:,:,:)
-    ! logical :: new_data_layout = .false.
 
     ! Default values
     nsize = 64
@@ -66,19 +65,13 @@ subroutine main()
             if (i + 1 <= command_argument_count()) then
                 call get_command_argument(i+1, arg2)
                 select case(arg2)
-                case ("linear")
-                    traverse = "linear"
-                case ("omp-locking")
-                    traverse = "omp-locking"
-                case ("ompall")
-                    traverse = "ompall"
-                case ("colouring")
-                    traverse = "colouring"
-                case ("colouring2")
-                    traverse = "colouring2"
-                case ("colouring-rows")
-                    traverse = "colouring-rows"
-                endselect
+                case ("linear", "linear-kinner", "colouring", "colouring-kinner")
+                    traverse = arg2
+                case DEFAULT
+                    write(*,*) "Invalid traversal name:", arg2
+                    write(*,*) "The valid options are: linear, linear-kinner, colouring, colouring-kinner"
+                    call exit(-1)
+                end select
             else
                 call print_help_and_exit()
             endif
@@ -131,13 +124,17 @@ subroutine main()
     call system_mem_usage(memend)
     memvectors = memend - memmaps
 
-    allocate( ptheta_2_local_stencil( ndf_any_space_1_theta_adv_term, ndf_any_space_2_x, ncell_3d) )
-    !allocate( nlayers_first(nlayers, ndf_any_space_2_x, ndf_any_space_1_theta_adv_term, ncell) )
-    call ascending_init_matrix(ptheta_2_local_stencil)
+    if (index(traverse,"-kinner") == 0) then
+        allocate( ptheta_2_local_stencil(ndf_any_space_1_theta_adv_term, ndf_any_space_2_x, ncell_3d) )
+        call ascending_init_matrix(ptheta_2_local_stencil)
+    else
+        allocate( ptheta_2_local_stencil_kinner(nlayers, ndf_any_space_1_theta_adv_term, ndf_any_space_2_x, ncell) )
+        call ascending_init_matrix_kinner(ptheta_2_local_stencil_kinner)
+    endif
     call system_mem_usage(memend)
     memmatrix = memend - memvectors
 
-    if (traverse.eq."colouring") then
+    if (index(traverse,"colouring") /= 0) then
         ! Number of cells per color = num times per row * num times per column
         ncp_colour(1) = ((nsize/2)+mod(nsize,2)) * ((nsize/2)+mod(nsize,2))
         ncp_colour(2) = ( nsize/2 )              * ((nsize/2)+mod(nsize,2))
@@ -164,8 +161,8 @@ subroutine main()
         ! lhs
         theta_adv_term_data, map_any_space_1_theta_adv_term, &
         ndf_any_space_1_theta_adv_term, undf_any_space_1_theta_adv_term, &
-        ! matrix
-        ptheta_2_local_stencil, &
+        ! matrix (only one of them is allocated)
+        ptheta_2_local_stencil, ptheta_2_local_stencil_kinner, &
         ! x
         x_data, map_any_space_2_x, ndf_any_space_2_x, undf_any_space_2_x, &
         ! colour map
@@ -358,13 +355,33 @@ end subroutine ascending_init
 subroutine ascending_init_matrix(array)
     real(kind=r_def), dimension(:,:,:) :: array
     integer :: i, j, k
-
+    integer :: acc
+    
+    acc = 1
     do i = 1, size(array, 1)
         do j = 1, size(array, 2)
             do k = 1, size(array, 3)
-                array(i, j, k) = i + j * size(array, 1) + k * size(array, 1) * size(array, 2)
+                array(i, j, k) = acc
+                acc = acc + 1
             enddo
         enddo
     enddo
 end subroutine ascending_init_matrix
+subroutine ascending_init_matrix_kinner(array)
+    real(kind=r_def), dimension(:,:,:,:) :: array
+    integer :: k, i, j, c
+    integer :: acc
+    
+    acc = 1
+    do i = 1, ubound(array, 2)
+        do j = 1, ubound(array, 3)
+            do c = 1, ubound(array, 4)
+                do k = 1, ubound(array, 1)
+                    array(k, i, j, c) = acc
+                acc = acc + 1
+                enddo
+            enddo
+        enddo
+    enddo
+end subroutine ascending_init_matrix_kinner
 end program kdriver
