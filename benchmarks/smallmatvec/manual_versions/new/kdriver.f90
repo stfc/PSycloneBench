@@ -24,7 +24,8 @@ subroutine main()
     real(kind=r_def), allocatable :: ptheta_2_local_stencil(:,:,:)
     real(kind=r_def), allocatable :: ptheta_2_local_stencil_kinner(:,:,:,:)
     integer(kind=i_def) :: memstart, memend, memmaps, memmatrix, memvectors, memcmap, memtotal
-    real(kind=r_def) :: start, end, totaltime
+    integer :: start, end, rate
+    real :: totaltime
     integer(kind=i_def) :: niters, nsize, i
     character(len=32) :: arg, arg2, traverse 
 
@@ -105,9 +106,10 @@ subroutine main()
     write(*,*) " - matrix (8x6 per cell):             ", ndf_any_space_1_theta_adv_term * ndf_any_space_2_x * ncell_3d, " points"
     write(*,*) " - Time-steps:                        ", niters, " iterations"
     write(*,*) " - Each step does:                    ", ncell_3d, " small MV (8x6) * (6) multiplications"
-    write(*,*) " - Problem size:                      ", problem_size, " KB"
+    write(*,*) " - Problem size:             ", problem_size, " KB"
 
-    call cpu_time(start)
+    call system_clock(count_rate=rate)
+    call system_clock(start)
     call system_mem_usage(memstart)
 
     ! Allocate arrays
@@ -147,14 +149,14 @@ subroutine main()
     call system_mem_usage(memend)
     memcmap = memend - memmatrix
     memtotal = memend - memstart
-    call cpu_time(end)
-    write(*,*) " - Allocation and init time:          " , ceiling((end - start) * 1000), " ms"
+    call system_clock(end)
+    write(*,*) " - Allocation and init time:     " , real(end - start)/real(rate), " s"
     write(*,*) " - Total memory allocated:            " , memtotal/1000, " MB  (", &
         memmaps/1000, "/", memvectors/1000, "/", memmatrix/1000, "/", memcmap/1000, ")"
     write(*,*) ""
 
     ! Starting computation phase
-    call cpu_time(start)
+    call system_clock(start)
     call run_psy_layer( &
         ! benchmark parameters
         traverse, niters, ncell, nlayers, ncell_3d, &
@@ -168,15 +170,15 @@ subroutine main()
         ! colour map
         ncolour, ncp_colour, cmap &
     )
-    call cpu_time(end)
-    totaltime = end-start
+    call system_clock(end)
+    totaltime = real(end-start)/real(rate)
 
     ! print out results
     write(*,*) "Reduction value:   ", sum(theta_adv_term_data)
     write(*,*) "Comutation time:   ", totaltime, " s"
     write(*,*) "Time/step:         ", totaltime/niters, " s"
     write(*,*) "Computation speed: ", (ncell_3d / 1000 * 6 * (2 * 8 - 1) * niters / totaltime) / 1000000 , " GFLOPs"
-    write(*,*) "Mem bandwith usage:", problem_size * niters / totaltime / 1000000 , " GB/s"
+    write(*,*) "Mem bandwidth usage:", real(problem_size * niters) / totaltime / 1000000 , " GB/s"
 end subroutine main
 
 subroutine print_help_and_exit()

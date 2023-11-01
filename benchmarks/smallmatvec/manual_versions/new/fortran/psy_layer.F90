@@ -81,11 +81,11 @@ subroutine run_psy_layer( &
    elseif (traverse.eq."linear-kinner") then
         write(*,*) "Starting computation with linear and kinner"
         do iter = 1, niters
- #ifdef TARGET_GPU
+#ifdef TARGET_GPU
         !$omp target loop
- #else
+#else
         !$omp parallel do default(shared), private(cell)
- #endif
+#endif
             do cell = 1, ncell
                 call matrix_vector_code_kinner_atomics( &
                         cell, nlayers, &
