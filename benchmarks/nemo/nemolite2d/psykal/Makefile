@@ -88,7 +88,7 @@ nemolite2d_omp: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_transform.py
 nemolite2d_ompt: serial_libs nemolite2d_alg.f90 psyclone_scripts/omp_task_transform.py
 	@echo "Generating NemoLite2D with OpenMP using omp_task_transform.py"; rm -rf $@; mkdir -p $@
 	${PSYCLONE} -nodm -s ./psyclone_scripts/omp_task_transform.py -I ${COMMON_DIR} \
-		-oalg $@/alg.f90 -opsy $@/psy.f90 nemolite2d_alg.f90
+		-oalg $@/alg.f90 -opsy $@/psy.f90 -I /home/achalk/PSycloneBench/shared/dl_esm_inf/finite_difference/src nemolite2d_alg.f90
 	# Each generated folder needs its purposely built inf_lib and timer_lib
 	cp ${INF_LIB} $@/.
 	cp ${TIMER_LIB} $@/libdl_timer.a
