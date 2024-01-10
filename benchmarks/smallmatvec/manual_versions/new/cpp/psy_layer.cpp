@@ -47,10 +47,6 @@ extern "C" void c_psy_layer(char *traverse, int niters, int ncell, int nlayers,
 		double *x, int *map_x, int ndf_x, int undf_x,
 		int ncolour, int *ncp_colour, int *cmap) {
 
-	// add array length
-	// #pragma omp target enter data map (to: ncp_colour, cmap, x, matrix, map_x, lhs, map_lhs)
-	//
-	//add colouring-kinner
 
 	printf("CPP Version\n");
 
@@ -69,26 +65,31 @@ extern "C" void c_psy_layer(char *traverse, int niters, int ncell, int nlayers,
 	}
 	else if (memcmp(traverse,"linear",5)==0){
 		printf("Linear traversing Version\n");
-		// #pragma omp target teams distribute parallel for collapse(2)
 		for (int iter=1; iter <= niters; iter ++){
-			//		printf("%d\n", iter);
 			for (int cell=1; cell <= ncell; cell ++){
 				matrix_vector_code_optimised(cell, nlayers, lhs, x, ncell_3d, matrix,
 						ndf_lhs, undf_lhs, &map_lhs[cell*ndf_lhs], ndf_x, undf_x, &map_x[cell*ndf_x]);
 			}
 		}
 	}
-	else if (memcmp(traverse,"colouring",5)==0){
-		printf("Starting computation with colouring\n");
-		// #pragma omp target teams distribute parallel for collapse(3)
+	else if (memcmp(traverse,"colouring-kinner",12)==0){
+                printf("Starting computation with colouring and kinner\n");
+                for (int iter = 1; iter <= niters; iter ++){
+                         for (int colour=1; colour <= ncolour; colour ++){
+                                 for (int ccell = 1; ccell <= ncp_colour[colour-1]; ccell ++){
+                                          int cell = cmap[(ccell-1)*4+(colour-1)];
+                                          matrix_vector_code_kinner_atomics(cell, nlayers, lhs, x, ncell_3d, matrix_kinner,
+                                                ndf_lhs, undf_lhs, &map_lhs[cell*ndf_lhs], ndf_x, undf_x, &map_x[cell*ndf_x]);
+                                 }
+                        }
+                }
+        }
+        else if (memcmp(traverse,"colouring",6)==0){
+		printf("Colouring traversing version\n");
 		for (int iter = 1; iter <= niters; iter ++){
-			//		printf("%d\n", iter);
 			for (int colour=1; colour <= ncolour; colour ++){
-				//	printf("%d\n", colour);
 				for (int ccell = 1; ccell <= ncp_colour[colour-1]; ccell ++){
-					//	printf("%d\n", ncp_colour[colour]);
 					int cell = cmap[(ccell-1)*4+(colour-1)];
-					//	printf("%d\n", cell);
 					matrix_vector_code_optimised(cell, nlayers, lhs, x, ncell_3d, matrix,
 							ndf_lhs, undf_lhs, &map_lhs[cell*ndf_lhs], ndf_x, undf_x, &map_x[cell*ndf_x]);
 
@@ -96,6 +97,5 @@ extern "C" void c_psy_layer(char *traverse, int niters, int ncell, int nlayers,
 			}
 		}
 	}
-
 
 }
