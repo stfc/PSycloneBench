@@ -7,6 +7,7 @@ CC=nvc
 CXX=nvc++
 
 # C and C++ flags
+CXXFLAGS="-O3 -Minfo=all"
 CFLAGS="-O3"
 # Fortran compiler flags
 F90FLAGS="-O3 -Minfo=all"
@@ -46,6 +47,7 @@ export OMPTARGETFLAGS
 export UMEMFLAGS
 export ACCFLAGS
 
+export CXXFLAGS
 export CFLAGS
 export F90FLAGS
 

@@ -338,13 +338,11 @@ subroutine matrix_vector_code_kinner_atomics(cell,        &
   integer                           :: df, k, df2, m1,m2
 
   do df2 = 1, ndf2
-      m2 = map2(df2)
       do df = 1, ndf1
-          m1 = map1(df)
-          !!$OMP SIMD
+          !$OMP LOOP BIND(PARALLEL) 
           do k = 1, nlayers
               !$OMP ATOMIC
-              lhs(m1+k-1) = lhs(m1+k-1) + matrix(k,df,df2,cell) * x(m2+k-1)
+              lhs(map1(df)+k-1) = lhs(map1(df)+k-1) + matrix(k,df,df2,cell) * x(map2(df2)+k-1)
           end do
       end do
   end do

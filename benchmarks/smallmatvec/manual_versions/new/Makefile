@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := fortran
-.PHONY: clean fortran openmp_cpu openmp_gpu cpp kokkos_cpu kokkos_gpu
+.PHONY: clean fortran openmp_cpu openmp_gpu cpp openmp_cpu_cpp openmp_gpu_cpp kokkos_cpu kokkos_gpu raja
 
 bin:
 	mkdir bin
@@ -18,9 +18,24 @@ openmp_gpu: fortran/psy_layer.F90 kdriver.f90 bin fortran/Makefile
 	${F90} ${F90FLAGS} ${OMPTARGETFLAGS} -Ifortran kdriver.f90 fortran/openmp_gpu_psy_layer.o -o bin/$@
 
 # C++ targets
-cpp: cpp/psy_layer.f90 cpp/psy_layer.cpp kdriver.f90 bin
+cpp: cpp/psy_layer.f90 cpp/psy_layer.cpp kdriver.f90 bin cpp/Makefile
 	$(MAKE) -C cpp
 	${F90} ${F90FLAGS} -Icpp kdriver.f90 cpp/psy_layer.o cpp/cpp_psy_layer.o -lstdc++ -o bin/$@
+
+
+openmp_cpu_cpp: cpp/psy_layer.f90 cpp/psy_layer.cpp kdriver.f90 bin cpp/Makefile
+	$(MAKE) openmp_cpu_cpp -C cpp
+	${F90} ${F90FLAGS} ${OMPFLAGS} -Icpp kdriver.f90  cpp/psy_layer.o cpp/openmp_cpu_psy_layer.o -lstdc++ -o bin/$@
+
+openmp_gpu_cpp: cpp/psy_layer.f90 cpp/psy_layer.cpp kdriver.f90 bin cpp/Makefile
+	$(MAKE) openmp_gpu_cpp -C cpp
+	${F90} ${F90FLAGS} ${OMPTARGETFLAGS} ${UMEMFLAGS} -Icpp kdriver.f90 cpp/psy_layer.o cpp/openmp_gpu_psy_layer.o -lstdc++ -o bin/$@
+
+# RAJA targets
+RAJA_LIB_DIR =/home/vatkinson/new_software/PSycloneBench/benchmarks/smallmatvec/manual_versions/new/raja-install/lib
+raja: raja/psy_layer.f90 raja/psy_layer.cpp kdriver.f90 bin
+	$(MAKE) -C raja
+	${F90} ${F90FLAGS} -Iraja kdriver.f90 raja/psy_layer.o raja/cpp_psy_layer.o -L ${RAJA_LIB_DIR} -lRAJA -lstdc++ -o bin/$@
 
 
 # Kokkos targets
