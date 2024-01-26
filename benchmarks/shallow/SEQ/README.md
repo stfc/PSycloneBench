@@ -19,8 +19,11 @@ will build the manual version of the code and produce `shallow_base.exe`.
 The Makefile also supports a second target, 'shallow_gen', which uses
 PSyclone to generate the Parallel-System (PSy) layer. For this to work
 your system must have PSyclone installed
-(see http://psyclone.readthedocs.io/en/stable/getting_going.html).
-Once you have PSyclone, doing:
+(see http://psyclone.readthedocs.io/en/stable/getting_going.html). A
+suitable version of PSyclone is included as a submodule in this repository
+under `PSycloneBench/shared/PSyclone`.
+
+Once you have installed PSyclone, doing:
 
     > make shallow_gen
 
