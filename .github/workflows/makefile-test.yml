@@ -60,4 +60,6 @@ jobs:
         sudo apt update && sudo apt install build-essential gfortran
         opencl-headers ocl-icd-opencl-dev pocl-opencl-icd
     - name: Build system
-      run: source compiler_setup/gnu.sh && make && make all_gen
+      run: source compiler_setup/gnu.sh && make
+    - name: Build with code-generation
+      run: source compiler_setup/gnu.sh && make all_gen
