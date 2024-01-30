@@ -32,11 +32,18 @@ openmp_gpu_cpp: cpp/psy_layer.f90 cpp/psy_layer.cpp kdriver.f90 bin cpp/Makefile
 	${F90} ${F90FLAGS} ${OMPTARGETFLAGS} ${UMEMFLAGS} -Icpp kdriver.f90 cpp/psy_layer.o cpp/openmp_gpu_psy_layer.o -lstdc++ -o bin/$@
 
 # RAJA targets
-RAJA_LIB_DIR =/home/vatkinson/new_software/PSycloneBench/benchmarks/smallmatvec/manual_versions/new/raja-install/lib
+RAJA_LIB_DIR =/apps/spack/spack-repo/opt/spack/linux-centos8-skylake_avx512/gcc-8.5.0/raja-2022.10.4-hjdblqvnrcjmczfjkclegnngdfg7f7md/lib
 raja: raja/psy_layer.f90 raja/psy_layer.cpp kdriver.f90 bin
-	$(MAKE) -C raja
+	$(MAKE) -C raja psy_layer
 	${F90} ${F90FLAGS} -Iraja kdriver.f90 raja/psy_layer.o raja/cpp_psy_layer.o -L ${RAJA_LIB_DIR} -lRAJA -lstdc++ -o bin/$@
 
+raja_omp: raja/psy_layer.f90 raja/psy_layer.cpp kdriver.f90 bin
+	$(MAKE) -C raja psy_layer_omp
+	${F90} ${F90FLAGS} ${OMPFLAGS} -Iraja kdriver.f90 raja/psy_layer.o raja/cpp_psy_layer_omp.o -L ${RAJA_LIB_DIR} -lRAJA -lstdc++ -o bin/$@
+
+raja_cuda: raja/psy_layer.f90 raja/psy_layer.cpp kdriver.f90 bin
+	        $(MAKE) -C raja psy_layer_cuda
+		        ${F90} ${F90FLAGS} ${OMPFLAGS} -Iraja kdriver.f90 raja/psy_layer.o raja/cpp_psy_layer_cuda.o -L ${RAJA_LIB_DIR} -lRAJA -lstdc++ -o bin/$@
 
 # Kokkos targets
 kokkos_cpu: kokkos/psy_layer.f90 kokkos/psy_layer.cpp kdriver.f90 bin kokkos/Makefile
