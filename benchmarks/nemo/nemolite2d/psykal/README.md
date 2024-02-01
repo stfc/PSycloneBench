@@ -24,7 +24,10 @@ when requesting a new `F90` compiler in order to compile all dependencies with
 the same parameters.
 
 Since the Makefile uses PSyclone you must have PSyclone installed on your
-system (see http://psyclone.readthedocs.io/en/stable/getting_going.html).
+system (see http://psyclone.readthedocs.io/en/stable/getting_going.html). An
+appropriate version of PSyclone is included in the
+`PSycloneBench/shared/PSyclone` repository, provided that you used the
+`--recursive` flag when cloning.
 
 The Makefile supports many targets:
 

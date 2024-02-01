@@ -50,7 +50,7 @@ COMMON_LIB = ${COMMON_DIR}/nemolite2d_common.a
 # We don't include the OpenACC or OpenCL targets here as they
 # have specialist compiler requirements so we require the user
 # to explicitly request that they be built.
-all: nemolite2d_serial
+all: nemolite2d_serial nemolite2d_omp
 
 # The kernels used by this application and their location
 KERNEL_DIR = ../kernels/fortran
