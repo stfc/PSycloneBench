@@ -11,7 +11,7 @@
 all: shallow_cpu nemolite_cpu tra_adv_cpu
 
 # All targets using PSyclone for code generation
-all_gen: shallow_gen nemolite_gen nemolite_cpu
+all_gen: shallow_gen nemolite_gen
 
 # All manual targets for CPU versions of Shallow
 shallow_cpu:
