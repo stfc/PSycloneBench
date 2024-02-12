@@ -3,7 +3,7 @@
 #include <cstring>
 #include "RAJA/RAJA.hpp"
 
-void matrix_vector_code_optimised(int cell, int nlayers, double *lhs, double *x, int ncell_3d, double *matrix, int ndf1, int undf1,
+RAJA_DEVICE void matrix_vector_code_optimised(int cell, int nlayers, double *lhs, double *x, int ncell_3d, double *matrix, int ndf1, int undf1,
 		int *map1, int ndf2, int undf2, int *map2){
 
 	int ik = (cell-1)*nlayers;
@@ -32,7 +32,6 @@ void matrix_vector_code_kinner_atomics(int cell, int nlayers, double *lhs, doubl
 			m1 = map1[df-1];
 			// #pragma omp simd
 			for (int k=1; k <= nlayers; k++){
-                                #pragma omp atomic
 				lhs[m1+k-2]= lhs[m1+k-2] + matrix[(k-1) + (cell-1)*nlayers*ndf1*ndf2 + (df2-1)*nlayers*ndf1 + (df-1)*nlayers] * x[m2+k-2];
 			}
 		}
@@ -87,7 +86,7 @@ printf("Using RAJA sequential version \n");
 		//	RAJA::kernel<EXEC_POL>(RAJA::make_tuple(RAJA::TypedRangeSegment<int>(1, ncell)),
                   //      [=] (int cell){
 			 //for (int cell=1; cell <= ncell; cell ++){
-		        RAJA::forall<policy>(RAJA::RangeSegment(1, ncell), [=] (int cell) {
+		        RAJA::forall<policy>(RAJA::RangeSegment(1, ncell), [=] RAJA_DEVICE (int cell) {
 				matrix_vector_code_optimised(cell, nlayers, lhs, x, ncell_3d, matrix,
 						ndf_lhs, undf_lhs, &map_lhs[cell*ndf_lhs], ndf_x, undf_x, &map_x[cell*ndf_x]);
 			}//);
@@ -148,16 +147,16 @@ printf("Using RAJA sequential version \n");
 
         else if (memcmp(traverse,"colouring",6)==0){
 		printf("Colouring traversing version\n");
-		for (int iter = 1; iter <= niters; iter ++){
-			for (int colour=1; colour <= ncolour; colour ++){
-				for (int ccell = 1; ccell <= ncp_colour[colour-1]; ccell ++){
-					int cell = cmap[(ccell-1)*4+(colour-1)];
-					matrix_vector_code_optimised(cell, nlayers, lhs, x, ncell_3d, matrix,
-							ndf_lhs, undf_lhs, &map_lhs[cell*ndf_lhs], ndf_x, undf_x, &map_x[cell*ndf_x]);
+		// for (int iter = 1; iter <= niters; iter ++){
+		// 	for (int colour=1; colour <= ncolour; colour ++){
+		// 		for (int ccell = 1; ccell <= ncp_colour[colour-1]; ccell ++){
+		// 			int cell = cmap[(ccell-1)*4+(colour-1)];
+		// 			matrix_vector_code_optimised(cell, nlayers, lhs, x, ncell_3d, matrix,
+		// 					ndf_lhs, undf_lhs, &map_lhs[cell*ndf_lhs], ndf_x, undf_x, &map_x[cell*ndf_x]);
 
-				}
-			}
-		}
+		// 		}
+		// 	}
+		// }
 	}
 
 }
