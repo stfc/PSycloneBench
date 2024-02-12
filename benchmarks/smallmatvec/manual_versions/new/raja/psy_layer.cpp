@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include "RAJA/RAJA.hpp"
-//#include "umpire/Umpire.hpp"
+#include "chai/ManagedArray.hpp"
 
 RAJA_DEVICE void matrix_vector_code_optimised(int cell, int nlayers, double *lhs, double *x, int ncell_3d, double *matrix, int ndf1, int undf1,
 		int *map1, int ndf2, int undf2, int *map2){
@@ -60,9 +60,7 @@ extern "C" void c_psy_layer(char *traverse, int niters, int ncell, int nlayers,
     printf("Using RAJA sequential version \n");
 #endif
 
-    //auto& rm = umpire::ResourceManager::getInstance();
-    //auto allocator = rm.getAllocator("HOST");
-    //void* memory = allocator.allocate(100);
+    chai::ManagedArray<double> chai_lhs(100);
 
 // Define RAJA typed variables for the loop index variables 
 // RAJA_INDEX_VALUE_T iter

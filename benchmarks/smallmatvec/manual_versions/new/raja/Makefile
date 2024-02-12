@@ -1,5 +1,5 @@
-INC_FLAGS=-I$(shell spack location -i raja -cuda)/include -I$(shell spack location -i umpire -cuda)/include -I$(shell spack location -i camp -cuda +openmp)/include
-INC_FLAGS_CUDA=-I$(shell spack location -i raja +cuda)/include -I$(shell spack location -i umpire +cuda)/include -I$(shell spack location -i camp +cuda)/include
+INC_FLAGS=-I$(shell spack location -i raja -cuda)/include -I$(shell spack location -i chai -cuda)/include -I$(shell spack location -i umpire -cuda)/include -I$(shell spack location -i camp -cuda +openmp)/include
+INC_FLAGS_CUDA=-I$(shell spack location -i raja +cuda)/include -I$(shell spack location -i chai +cuda)/include -I$(shell spack location -i umpire +cuda)/include -I$(shell spack location -i camp +cuda)/include
 
 psy_layer: psy_layer.f90 cpp_psy_layer.o
 	${F90} ${FFLAGS} -c $<
