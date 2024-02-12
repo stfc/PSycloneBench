@@ -45,7 +45,7 @@ raja_omp: raja/psy_layer.f90 raja/psy_layer.cpp kdriver.f90 bin
 raja_cuda: raja/psy_layer.f90 raja/psy_layer.cpp kdriver.f90 bin
 	$(MAKE) -C raja psy_layer_cuda
 	${F90} ${F90FLAGS} ${OMPFLAGS} ${UMEMFLAGS} -Iraja kdriver.f90 raja/psy_layer.o raja/cpp_psy_layer_cuda.o \
-	    -L${RAJA_LIB_DIR_CUDA} -lRAJA -L$(shell spack location -i cuda@11)/lib64 -lcudart -lstdc++ -o bin/$@
+	    -L${RAJA_LIB_DIR_CUDA} -lRAJA -L$(shell spack location -i cuda@12)/lib64 -lcudart -lstdc++ -o bin/$@
 
 # Kokkos targets
 kokkos_cpu: kokkos/psy_layer.f90 kokkos/psy_layer.cpp kdriver.f90 bin kokkos/Makefile

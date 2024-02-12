@@ -48,15 +48,15 @@ extern "C" void c_psy_layer(char *traverse, int niters, int ncell, int nlayers,
 
 	printf("CPP Version\n");
 
-#if defined(RAJA_ENABLE_CUDA)
-  using policy = RAJA::cuda_exec<256>;
-printf("Using RAJA cuda version \n");
-#elif defined(RAJA_ENABLE_OPENMP)
-  using policy = RAJA::omp_parallel_for_exec;
-printf("Using RAJA OpenMP version \n");
+#if defined(USE_CUDA_POLICY)
+    using policy = RAJA::cuda_exec<256>;
+    printf("Using RAJA cuda version \n");
+#elif defined(USE_OPENMP_POLICY)
+    using policy = RAJA::omp_parallel_for_exec;
+    printf("Using RAJA OpenMP version \n");
 #else
-  using policy = RAJA::loop_exec;
-printf("Using RAJA sequential version \n");
+    using policy = RAJA::loop_exec;
+    printf("Using RAJA sequential version \n");
 #endif
 
 // Define RAJA typed variables for the loop index variables 
