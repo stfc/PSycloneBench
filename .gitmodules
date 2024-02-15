@@ -10,6 +10,3 @@
 [submodule "shared/kokkos"]
 	path = shared/kokkos
 	url = https://github.com/kokkos/kokkos.git
-[submodule "shared/raja"]
-        path = shared/raja
-        url = https://github.com/LLNL/RAJA.git
