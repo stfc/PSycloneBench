@@ -32,8 +32,8 @@ RAJA_DEVICE void matrix_vector_code_kouter_atomics(
         int m2 = map2[df2] - 1; // -1 because map2 contains fortran 1-indexing references
         for (int df = 0; df < ndf1; df ++){
             int m1 = map1[df] - 1; // -1 because map2 contains fortran 1-indexing references
-            for (int k = 0; k < nlayers; k ++){
-                lhs[m1+k] = lhs[m1+k] + matrix[(ik+k)*ndf1*ndf2 + df2*ndf1 + df] * x[m2+k];
+            for (int k = 0; k < nlayers; k ++){    
+		RAJA::atomicAdd<RAJA::omp_atomic>(&lhs[m1+k], matrix[(ik+k)*ndf1*ndf2 + df2*ndf1 + df] * x[m2+k]);
             }
         }
     }
@@ -49,8 +49,7 @@ RAJA_DEVICE void matrix_vector_code_kinner(
         for (int df = 0; df < ndf1; df ++){
             int m1 = map1[df] - 1; // -1 because map2 contains fortran 1-indexing references
             for (int k = 0; k < nlayers; k++){
-                //#pragma omp atomic
-                lhs[m1+k]= lhs[m1+k] + matrix[k + cell*nlayers*ndf1*ndf2 + df2*nlayers*ndf1 + df*nlayers] * x[m2+k];
+                 lhs[m1+k]= lhs[m1+k] + matrix[k + cell*nlayers*ndf1*ndf2 + df2*nlayers*ndf1 + df*nlayers] * x[m2+k]; 
             }
         }
     }
@@ -66,8 +65,7 @@ RAJA_DEVICE void matrix_vector_code_kinner_atomics(
         for (int df = 0; df < ndf1; df ++){
             int m1 = map1[df] - 1; // -1 because map2 contains fortran 1-indexing references
             for (int k = 0; k < nlayers; k++){
-                //#pragma omp atomic
-                lhs[m1+k]= lhs[m1+k] + matrix[k + cell*nlayers*ndf1*ndf2 + df2*nlayers*ndf1 + df*nlayers] * x[m2+k];
+		RAJA::atomicAdd<RAJA::omp_atomic>(&lhs[m1+k], matrix[k + cell*nlayers*ndf1*ndf2 + df2*nlayers*ndf1 + df*nlayers] * x[m2+k]);
             }
         }
     }
