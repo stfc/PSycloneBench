@@ -115,14 +115,14 @@ extern "C" void c_psy_layer(char *traverse, int niters, int ncell, int nlayers,
     else if (memcmp(traverse,"colouring-kinner",12)==0){
         printf("Starting computation with colouring and kinner\n");
         for (int iter = 1; iter <= niters; iter ++){
-            for (int colour=1; colour <= ncolour; colour ++){
+            for (int colour = 0; colour < ncolour; colour ++){
 #ifdef TARGET_GPU
                 #pragma omp target loop
 #else
                 #pragma omp parallel for
 #endif
-                for (int ccell = 0; ccell < ncp_colour[colour-1]; ccell ++){
-                    int cell = cmap[(ccell)*4+(colour-1)] - 1;
+                for (int ccell = 0; ccell < ncp_colour[colour]; ccell ++){
+                    int cell = cmap[ccell*4 + colour] - 1;
                     matrix_vector_code_kinner(cell, nlayers, lhs, x, ncell_3d, matrix_kinner,
                             ndf_lhs, undf_lhs, &map_lhs[cell*ndf_lhs], ndf_x, undf_x, &map_x[cell*ndf_x]);
                 }
@@ -132,14 +132,14 @@ extern "C" void c_psy_layer(char *traverse, int niters, int ncell, int nlayers,
     else if (memcmp(traverse,"colouring",6)==0){
         printf("Colouring traversing version\n");
         for (int iter = 1; iter <= niters; iter ++){
-            for (int colour=1; colour <= ncolour; colour ++){
+            for (int colour = 0; colour < ncolour; colour ++){
 #ifdef TARGET_GPU
                 #pragma omp target loop
 #else
                 #pragma omp parallel for
 #endif
-                for (int ccell = 0; ccell < ncp_colour[colour-1]; ccell ++){
-                    int cell = cmap[(ccell)*4+(colour-1)] - 1;
+                for (int ccell = 0; ccell < ncp_colour[colour]; ccell ++){
+                    int cell = cmap[ccell*4 + colour] - 1;
                     matrix_vector_code_kouter_atomic(cell, nlayers, lhs, x, ncell_3d, matrix,
                             ndf_lhs, undf_lhs, &map_lhs[cell*ndf_lhs], ndf_x, undf_x, &map_x[cell*ndf_x]);
 
