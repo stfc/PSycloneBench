@@ -29,9 +29,7 @@ subroutine run_psy_layer( &
     integer, intent(in), dimension(:,:) :: cmap
 
     integer :: iter, cell, colour, ccell
-#ifdef TARGET_GPU
-   !$omp target enter data map(to: ncp_colour, cmap, x, matrix, map_x, lhs, map_lhs, matrix_kinner)
-#endif 
+
     if (traverse.eq."linear") then  
         write(*,*) "Lineal traversing Version"
         do iter = 1, niters
@@ -41,7 +39,7 @@ subroutine run_psy_layer( &
             !$omp parallel do default(shared), private(cell)
 #endif
             do cell = 1, ncell
-                call matrix_vector_code_optimised_atomic( &
+                call matrix_vector_code_kouter_atomic( &
                         cell, nlayers, &
                         lhs, x, ncell_3d, matrix, &
                         ndf_lhs, undf_lhs, map_lhs(:,cell), &
@@ -64,7 +62,7 @@ subroutine run_psy_layer( &
 #endif
                 do ccell = 1, ncp_colour(colour)
                     cell = cmap(colour, ccell)
-                    call matrix_vector_code_optimised( &
+                    call matrix_vector_code_kouter( &
                         cell, nlayers, &
                         lhs, x, ncell_3d, matrix, &
                         ndf_lhs, undf_lhs, map_lhs(:,cell), &
@@ -112,7 +110,7 @@ subroutine run_psy_layer( &
 #endif
                 do ccell = 1, ncp_colour(colour)
                     cell = cmap(colour, ccell)
-                    call matrix_vector_code_kinner_atomics( &
+                    call matrix_vector_code_kinner( &
                         cell, nlayers, &
                         lhs, x, ncell_3d, matrix_kinner, &
                         ndf_lhs, undf_lhs, map_lhs(:,cell), &
@@ -129,9 +127,6 @@ subroutine run_psy_layer( &
     else
         write(*,*) "Not implemented:", traverse
     endif
-#ifdef TARGET_GPU
-        !$omp target update from (lhs)
-#endif
 
 end subroutine run_psy_layer
 
@@ -188,19 +183,9 @@ subroutine matrix_vector_code_original( &
     end do
   end do
 
-  ! Optimised implementation (remove temporals by interleaving, bring k inside)
-  ! ik = (cell-1)*nlayers
-  ! do df = 1, ndf1
-  !     do df2 = 1, ndf2
-  !         !$OMP SIMD
-  !         do k = 1, nlayers
-  !             lhs(map1(df)+k-1) = lhs(map1(df)+k-1) + matrix(df,df2,ik+k) * x(map2(df2)+k-1)
-  !         end do
-  !     end do
-  ! end do
 end subroutine matrix_vector_code_original
 
-subroutine matrix_vector_code_optimised( &
+subroutine matrix_vector_code_kouter( &
                               cell,        &
                               nlayers,     &
                               lhs, x,      & 
@@ -236,9 +221,9 @@ subroutine matrix_vector_code_optimised( &
            end do
        end do
    end do
-end subroutine matrix_vector_code_optimised
+end subroutine matrix_vector_code_kouter
 
-subroutine matrix_vector_code_optimised_atomic( &
+subroutine matrix_vector_code_kouter_atomic( &
                               cell,        &
                               nlayers,     &
                               lhs, x,      &
@@ -268,14 +253,13 @@ subroutine matrix_vector_code_optimised_atomic( &
    ik = (cell-1)*nlayers
    do df = 1, ndf1
        do df2 = 1, ndf2
-    !       !$OMP SIMD
            do k = 1, nlayers
                !$OMP ATOMIC
                lhs(map1(df)+k-1) = lhs(map1(df)+k-1) + matrix(df,df2,ik+k) * x(map2(df2)+k-1)
            end do
        end do
    end do
-end subroutine matrix_vector_code_optimised_atomic
+end subroutine matrix_vector_code_kouter_atomic
 
 subroutine matrix_vector_code_original_atomic( &
                               cell,        &
@@ -318,6 +302,36 @@ subroutine matrix_vector_code_original_atomic( &
  end do
 end subroutine matrix_vector_code_original_atomic
 
+subroutine matrix_vector_code_kinner(cell,        &
+                              nlayers,     &
+                              lhs, x,      &
+                              ncell_3d,    &
+                              matrix,      &
+                              ndf1, undf1, map1, &
+                              ndf2, undf2, map2)
+  integer,                   intent(in)    :: cell, nlayers, ncell_3d
+  integer,                   intent(in)    :: undf1, ndf1
+  integer,                   intent(in)    :: undf2, ndf2
+  integer, dimension(ndf1),  intent(in)    :: map1
+  integer, dimension(ndf2),  intent(in)    :: map2
+  real(kind=r_def), dimension(undf2),              intent(in)    :: x
+  real(kind=r_def), dimension(undf1),              intent(inout) :: lhs
+  real(kind=r_def), dimension(nlayers,ndf1,ndf2,ncell_3d/nlayers), intent(in)    :: matrix
+
+  !Internal variables
+  integer                           :: df, k, df2, m1,m2
+
+  do df2 = 1, ndf2
+      do df = 1, ndf1
+          !$OMP SIMD
+          do k = 1, nlayers
+              lhs(map1(df)+k-1) = lhs(map1(df)+k-1) + matrix(k,df,df2,cell) * x(map2(df2)+k-1)
+          end do
+      end do
+  end do
+
+end subroutine matrix_vector_code_kinner
+
 subroutine matrix_vector_code_kinner_atomics(cell,        &
                               nlayers,     &
                               lhs, x,      &
@@ -339,7 +353,6 @@ subroutine matrix_vector_code_kinner_atomics(cell,        &
 
   do df2 = 1, ndf2
       do df = 1, ndf1
-          !$OMP LOOP BIND(PARALLEL) 
           do k = 1, nlayers
               !$OMP ATOMIC
               lhs(map1(df)+k-1) = lhs(map1(df)+k-1) + matrix(k,df,df2,cell) * x(map2(df2)+k-1)

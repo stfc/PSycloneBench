@@ -9,13 +9,13 @@ fortran: fortran/psy_layer.F90 kdriver.f90 bin fortran/Makefile
 	$(MAKE) -C fortran
 	${F90} ${F90FLAGS} -Ifortran kdriver.f90 fortran/psy_layer.o -o bin/$@
 
-openmp_cpu: fortran/psy_layer.F90 kdriver.f90 bin fortran/Makefile
+fortran_omp_cpu: fortran/psy_layer.F90 kdriver.f90 bin fortran/Makefile
 	$(MAKE) openmp_cpu -C fortran
 	${F90} ${F90FLAGS} ${OMPFLAGS} -Ifortran kdriver.f90 fortran/openmp_cpu_psy_layer.o -o bin/$@
 	
-openmp_gpu: fortran/psy_layer.F90 kdriver.f90 bin fortran/Makefile
+fortran_omp_gpu: fortran/psy_layer.F90 kdriver.f90 bin fortran/Makefile
 	$(MAKE) openmp_gpu -C fortran
-	${F90} ${F90FLAGS} ${OMPTARGETFLAGS} -Ifortran kdriver.f90 fortran/openmp_gpu_psy_layer.o -o bin/$@
+	${F90} ${F90FLAGS} ${OMPTARGETFLAGS} ${UMEMFLAGS} -Ifortran kdriver.f90 fortran/openmp_gpu_psy_layer.o -o bin/$@
 
 # C++ targets
 cpp: cpp/psy_layer.f90 cpp/psy_layer.cpp kdriver.f90 bin cpp/Makefile
@@ -23,11 +23,11 @@ cpp: cpp/psy_layer.f90 cpp/psy_layer.cpp kdriver.f90 bin cpp/Makefile
 	${F90} ${F90FLAGS} -Icpp kdriver.f90 cpp/psy_layer.o cpp/cpp_psy_layer.o -lstdc++ -o bin/$@
 
 
-openmp_cpu_cpp: cpp/psy_layer.f90 cpp/psy_layer.cpp kdriver.f90 bin cpp/Makefile
+cpp_omp_cpu: cpp/psy_layer.f90 cpp/psy_layer.cpp kdriver.f90 bin cpp/Makefile
 	$(MAKE) openmp_cpu_cpp -C cpp
 	${F90} ${F90FLAGS} ${OMPFLAGS} -Icpp kdriver.f90  cpp/psy_layer.o cpp/openmp_cpu_psy_layer.o -lstdc++ -o bin/$@
 
-openmp_gpu_cpp: cpp/psy_layer.f90 cpp/psy_layer.cpp kdriver.f90 bin cpp/Makefile
+cpp_omp_gpu: cpp/psy_layer.f90 cpp/psy_layer.cpp kdriver.f90 bin cpp/Makefile
 	$(MAKE) openmp_gpu_cpp -C cpp
 	${F90} ${F90FLAGS} ${OMPTARGETFLAGS} ${UMEMFLAGS} -Icpp kdriver.f90 cpp/psy_layer.o cpp/openmp_gpu_psy_layer.o -lstdc++ -o bin/$@
 
