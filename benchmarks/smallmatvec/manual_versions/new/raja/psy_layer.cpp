@@ -4,6 +4,16 @@
 #include "RAJA/RAJA.hpp"
 #include "chai/ManagedArray.hpp"
 
+#if defined(USE_CUDA_POLICY)
+    using policy = RAJA::cuda_exec<256>;
+    using atomic = RAJA::cuda_atomic;
+#elif defined(USE_OPENMP_POLICY)
+    using policy = RAJA::omp_parallel_for_exec;   
+    using atomic = RAJA::omp_atomic;
+#else
+    using policy = RAJA::loop_exec;
+    using atomic = RAJA::omp_atomic;
+#endif
 
 RAJA_DEVICE void matrix_vector_code_kouter(
         int cell, int nlayers, double *lhs, double *x, int ncell_3d, double *matrix, int ndf1, int undf1,
@@ -33,7 +43,7 @@ RAJA_DEVICE void matrix_vector_code_kouter_atomics(
         for (int df = 0; df < ndf1; df ++){
             int m1 = map1[df] - 1; // -1 because map2 contains fortran 1-indexing references
             for (int k = 0; k < nlayers; k ++){    
-		RAJA::atomicAdd<RAJA::omp_atomic>(&lhs[m1+k], matrix[(ik+k)*ndf1*ndf2 + df2*ndf1 + df] * x[m2+k]);
+		    RAJA::atomicAdd<atomic>(&lhs[m1+k], matrix[(ik+k)*ndf1*ndf2 + df2*ndf1 + df] * x[m2+k]);
             }
         }
     }
@@ -65,7 +75,7 @@ RAJA_DEVICE void matrix_vector_code_kinner_atomics(
         for (int df = 0; df < ndf1; df ++){
             int m1 = map1[df] - 1; // -1 because map2 contains fortran 1-indexing references
             for (int k = 0; k < nlayers; k++){
-		RAJA::atomicAdd<RAJA::omp_atomic>(&lhs[m1+k], matrix[k + cell*nlayers*ndf1*ndf2 + df2*nlayers*ndf1 + df*nlayers] * x[m2+k]);
+		    RAJA::atomicAdd<atomic>(&lhs[m1+k], matrix[k + cell*nlayers*ndf1*ndf2 + df2*nlayers*ndf1 + df*nlayers] * x[m2+k]);
             }
         }
     }
@@ -82,13 +92,10 @@ extern "C" void c_psy_layer(
     printf("CPP Version\n");
 
 #if defined(USE_CUDA_POLICY)
-    using policy = RAJA::cuda_exec<256>;
     printf("Using RAJA cuda version \n");
 #elif defined(USE_OPENMP_POLICY)
-    using policy = RAJA::omp_parallel_for_exec;
     printf("Using RAJA OpenMP version \n");
 #else
-    using policy = RAJA::loop_exec;
     printf("Using RAJA sequential version \n");
 #endif
 
