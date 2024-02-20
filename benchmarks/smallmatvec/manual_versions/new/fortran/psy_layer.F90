@@ -213,8 +213,8 @@ subroutine matrix_vector_code_kouter( &
 
    !Optimised implementation (remove temporals by interleaving, bring k inside)
    ik = (cell-1)*nlayers
-   do df = 1, ndf1
-       do df2 = 1, ndf2
+   do df2 = 1, ndf2
+       do df = 1, ndf1
            !$OMP SIMD
            do k = 1, nlayers
                lhs(map1(df)+k-1) = lhs(map1(df)+k-1) + matrix(df,df2,ik+k) * x(map2(df2)+k-1)
@@ -251,8 +251,8 @@ subroutine matrix_vector_code_kouter_atomic( &
 
    !Optimised implementation (remove temporals by interleaving, bring k inside)
    ik = (cell-1)*nlayers
-   do df = 1, ndf1
-       do df2 = 1, ndf2
+   do df2 = 1, ndf2
+       do df = 1, ndf1
            do k = 1, nlayers
                !$OMP ATOMIC
                lhs(map1(df)+k-1) = lhs(map1(df)+k-1) + matrix(df,df2,ik+k) * x(map2(df2)+k-1)

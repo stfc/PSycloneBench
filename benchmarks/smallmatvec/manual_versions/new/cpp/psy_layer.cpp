@@ -4,8 +4,8 @@
 
 
 void matrix_vector_code_kouter(
-        int cell, int nlayers, double *lhs, double *x, int ncell_3d, double *matrix, int ndf1, int undf1,
-        int *map1, int ndf2, int undf2, int *map2
+        int cell, int nlayers, double *restrict lhs, double *restrict x, int ncell_3d, double *restrict matrix, int ndf1, int undf1,
+        int *restrict map1, int ndf2, int undf2, int *restrict map2
 ){
 
     int ik = cell*nlayers;
@@ -22,8 +22,8 @@ void matrix_vector_code_kouter(
 }
 
 void matrix_vector_code_kouter_atomic(
-        int cell, int nlayers, double *lhs, double *x, int ncell_3d, double *matrix, int ndf1, int undf1,
-        int *map1, int ndf2, int undf2, int *map2
+        int cell, int nlayers, double *restrict lhs, double *restrict x, int ncell_3d, double *restrict matrix, int ndf1, int undf1,
+        int *restrict map1, int ndf2, int undf2, int *restrict map2
 ){
 
     int ik = cell*nlayers;
@@ -40,8 +40,8 @@ void matrix_vector_code_kouter_atomic(
 }
 
 void matrix_vector_code_kinner(
-        int cell, int nlayers, double *lhs, double *x, int ncell_3d,
-        double *matrix, int ndf1, int undf1, int *map1, int ndf2, int undf2, int *map2
+        int cell, int nlayers, double *restrict lhs, double *restrict x, int ncell_3d,
+        double *restrict matrix, int ndf1, int undf1, int *restrict map1, int ndf2, int undf2, int *restrict map2
 ){
 
     for (int df2 = 0; df2 < ndf2; df2 ++){
@@ -49,7 +49,6 @@ void matrix_vector_code_kinner(
         for (int df = 0; df < ndf1; df ++){
             int m1 = map1[df] - 1; // -1 because map2 contains fortran 1-indexing references
             for (int k = 0; k < nlayers; k++){
-                #pragma omp atomic
                 lhs[m1+k]= lhs[m1+k] + matrix[k + cell*nlayers*ndf1*ndf2 + df2*nlayers*ndf1 + df*nlayers] * x[m2+k];
             }
         }
@@ -57,8 +56,8 @@ void matrix_vector_code_kinner(
 }
 
 void matrix_vector_code_kinner_atomics(
-        int cell, int nlayers, double *lhs, double *x, int ncell_3d,
-        double *matrix, int ndf1, int undf1, int *map1, int ndf2, int undf2, int *map2
+        int cell, int nlayers, double *restrict lhs, double *restrict x, int ncell_3d,
+        double *restrict matrix, int ndf1, int undf1, int *restrict map1, int ndf2, int undf2, int *restrict map2
 ){
 
     for (int df2 = 0; df2 < ndf2; df2 ++){
@@ -140,7 +139,7 @@ extern "C" void c_psy_layer(char *traverse, int niters, int ncell, int nlayers,
 #endif
                 for (int ccell = 0; ccell < ncp_colour[colour]; ccell ++){
                     int cell = cmap[ccell*4 + colour] - 1;
-                    matrix_vector_code_kouter_atomic(cell, nlayers, lhs, x, ncell_3d, matrix,
+                    matrix_vector_code_kouter(cell, nlayers, lhs, x, ncell_3d, matrix,
                             ndf_lhs, undf_lhs, &map_lhs[cell*ndf_lhs], ndf_x, undf_x, &map_x[cell*ndf_x]);
 
                 }
