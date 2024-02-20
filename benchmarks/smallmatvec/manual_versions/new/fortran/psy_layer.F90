@@ -322,6 +322,9 @@ subroutine matrix_vector_code_kinner(cell,        &
   integer                           :: df, k, df2, m1,m2
 
   do df2 = 1, ndf2
+#ifdef TARGET_GPU
+          !$omp loop bind (parallel)
+#endif
       do df = 1, ndf1
           !$OMP SIMD
           do k = 1, nlayers
@@ -353,6 +356,9 @@ subroutine matrix_vector_code_kinner_atomics(cell,        &
 
   do df2 = 1, ndf2
       do df = 1, ndf1
+#ifdef TARGET_GPU
+          !$omp loop bind (parallel)
+#endif
           do k = 1, nlayers
               !$OMP ATOMIC
               lhs(map1(df)+k-1) = lhs(map1(df)+k-1) + matrix(k,df,df2,cell) * x(map2(df2)+k-1)
