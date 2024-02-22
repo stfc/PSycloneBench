@@ -60,8 +60,10 @@ void matrix_vector_code_kinner_atomics(
         double *restrict matrix, int ndf1, int undf1, int *restrict map1, int ndf2, int undf2, int *restrict map2
 ){
 
+    #pragma omp declare target
     for (int df2 = 0; df2 < ndf2; df2 ++){
-        int m2 = map2[df2] - 1; // -1 because map2 contains fortran 1-indexing references
+        int m2 = map2[df2] - 1; // -1 because map2 contains fortran 1-indexing references        
+        #pragma omp loop bind (parallel)
         for (int df = 0; df < ndf1; df ++){
             int m1 = map1[df] - 1; // -1 because map2 contains fortran 1-indexing references
             for (int k = 0; k < nlayers; k++){
@@ -85,18 +87,28 @@ extern "C" void c_psy_layer(char *traverse, int niters, int ncell, int nlayers,
         printf("Starting computation with linear and kinner\n");
         for (int iter = 1; iter <= niters; iter ++){
 #ifdef TARGET_GPU                        
-            #pragma omp target loop
+            #pragma omp target loop collapse(4)
 #else
             #pragma omp parallel for
 #endif
             for (int cell=0; cell < ncell; cell ++){
-                matrix_vector_code_kinner_atomics(cell, nlayers, lhs, x, ncell_3d, matrix_kinner,
-                        ndf_lhs, undf_lhs, &map_lhs[cell*ndf_lhs], ndf_x, undf_x, &map_x[cell*ndf_x]);
+                for (int df2 = 0; df2 < ndf_x; df2 ++){
+                    for (int df = 0; df < ndf_lhs; df ++){
+                        #pragma omp loop bind (parallel)
+                        for (int k = 0; k < nlayers; k++){
+                            int m2 = map_x[cell*ndf_x+ df2] - 1; // -1 because map2 contains fortran 1-indexing references        
+                            int m1 = map_lhs[cell*ndf_lhs+df] - 1; // -1 because map2 contains fortran 1-indexing references
+                            #pragma omp atomic
+                            lhs[m1+k]= lhs[m1+k] + matrix_kinner[k + cell*nlayers*ndf_lhs*ndf_x + df2*nlayers*ndf_lhs + df*nlayers] * x[m2+k];
+                        }
+                    }
+                }
             }
 
 
         }
     }
+    
     else if (memcmp(traverse,"linear",5)==0){
         printf("Linear traversing Version\n");
         for (int iter=1; iter <= niters; iter ++){
@@ -111,7 +123,8 @@ extern "C" void c_psy_layer(char *traverse, int niters, int ncell, int nlayers,
             }
         }
     }
-    else if (memcmp(traverse,"colouring-kinner",12)==0){
+    
+     else if (memcmp(traverse,"colouring-kinner",12)==0){
         printf("Starting computation with colouring and kinner\n");
         for (int iter = 1; iter <= niters; iter ++){
             for (int colour = 0; colour < ncolour; colour ++){
