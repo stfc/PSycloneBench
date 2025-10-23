@@ -22,7 +22,7 @@ DL_TIMER_DIR = ../../../../shared/dl_timer
 DL_TIMER_NAME = libdl_timer_omp.a
 
 # Shorthand for invoking PSyclone.
-PSYCLONE = psyclone -api nemo -l output
+PSYCLONE = psyclone -l output
 
 # Serial version.
 tra_adv_serial: dl_timer
@@ -36,7 +36,7 @@ tra_adv_serial: dl_timer
 # OpenACC version with timer around outer loop only.
 tra_adv_acc: dl_timer
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/acc_kernels_unified_memory_trans.py -opsy \
+	${PSYCLONE} -s ../scripts/acc_kernels_unified_memory_trans.py -o \
             $@/tra_adv_compute.f90 ./tra_adv_compute.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
@@ -49,7 +49,7 @@ ifndef PSYCLONE_NVIDIA_LIB_DIR
 	$(error The tra_adv_acc_prof must have the PSYCLONE_NVIDIA_LIB_DIR defined)
 endif
 	mkdir -p $@
-	${PSYCLONE} --profile invokes -s ../scripts/kernels_trans.py -opsy \
+	${PSYCLONE} --profile routines -s ../scripts/acc_kernels_unified_memory_trans.py -o \
             $@/tra_adv_compute.f90 ./tra_adv_compute.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
@@ -59,7 +59,7 @@ endif
 # Serial Fortran version after transformation to SIR-compliant form.
 tra_adv_sir: dl_timer
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/sir_trans.py -opsy $@/tra_adv_compute.f90 \
+	${PSYCLONE} -s ../scripts/sir_trans.py -o $@/tra_adv_compute.f90 \
             ./tra_adv_compute.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
@@ -69,7 +69,7 @@ tra_adv_sir: dl_timer
 # OpenACC added after transformation to SIR-compliant form.
 tra_adv_sir_acc: dl_timer
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/sir_kernels_trans.py -opsy \
+	${PSYCLONE} -s ../scripts/sir_kernels_trans.py -o \
             $@/tra_adv_compute.f90 ./tra_adv_compute.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.

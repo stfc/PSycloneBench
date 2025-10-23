@@ -58,7 +58,7 @@ ifndef PSYCLONE_NVIDIA_LIB_DIR
 	$(error The tra_adv_acc_prof must have the PSYCLONE_NVIDIA_LIB_DIR defined)
 endif
 	mkdir -p $@
-	${PSYCLONE} --profile invokes -s ../scripts/acc_kernels_unified_memory_trans.py -o \
+	${PSYCLONE} --profile routines -s ../scripts/acc_kernels_unified_memory_trans.py -o \
             $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
@@ -90,7 +90,7 @@ ifndef PSYCLONE_NVIDIA_LIB_DIR
 	$(error The tra_adv_sir_acc_prof must have the PSYCLONE_NVIDIA_LIB_DIR defined)
 endif
 	mkdir -p $@
-	${PSYCLONE} --profile invokes -s ../scripts/sir_kernels_trans.py -o \
+	${PSYCLONE} --profile routines -s ../scripts/sir_kernels_trans.py -o \
             $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
