@@ -38,12 +38,14 @@
 import os
 from typing import List, Union
 
+from psyclone.errors import InternalError
 from psyclone.psyir.nodes import (
     Assignment, Directive, CodeBlock, Call, IfBlock, IntrinsicCall, Loop, Node,
     Reference, Return, Routine, Schedule, StructureReference)
 from psyclone.psyir.symbols import DataSymbol
 from psyclone.psyir.transformations import (
-    ArrayAssignment2LoopsTrans, HoistLocalArraysTrans, HoistLoopBoundExprTrans,
+    ACCKernelsTrans, ArrayAssignment2LoopsTrans, HoistLocalArraysTrans,
+    HoistLoopBoundExprTrans,
     HoistTrans, Maxval2LoopTrans, OMPMinimiseSyncTrans, ProfileTrans,
     Reference2ArrayRangeTrans, ScalarisationTrans)
 from psyclone.transformations import TransformationError
@@ -307,3 +309,70 @@ def add_profile_region(nodes):
             ProfileTrans().apply(nodes)
         except TransformationError:
             pass
+
+
+def valid_kernel(node):
+    '''
+    Whether the sub-tree that has `node` at its root is eligible to be
+    enclosed within an OpenACC KERNELS directive.
+
+    :param node: the node in the PSyIR to check.
+    :type node: :py:class:`psyclone.psyir.nodes.Node`
+
+    :returns: True if the sub-tree can be enclosed in a KERNELS region.
+    :rtype: bool
+
+    '''
+    try:
+        ACCKernelsTrans().validate(node, {"disable_loop_check": True})
+    except TransformationError:
+        return False
+
+    return True
+
+
+def add_kernels(children: list[Node], default_present: bool = True):
+    '''
+    Walks through the PSyIR inserting OpenACC KERNELS directives at as
+    high a level as possible.
+
+    :param children: list of sibling Nodes in PSyIR that are candidates for
+                     inclusion in an ACC KERNELS region.
+    :param default_present: whether or not to supply the
+        DEFAULT(PRESENT) clause to ACC KERNELS directives.
+
+    '''
+    if not children:
+        return
+
+    node_list = []
+    for child in children[:]:
+        # Can this node be included in a kernels region?
+        if not valid_kernel(child):
+            try_kernels_trans(node_list, default_present)
+            node_list = []
+            # It can't so go down a level and try again
+            add_kernels(child.children)
+        else:
+            node_list.append(child)
+    try_kernels_trans(node_list, default_present)
+
+
+def try_kernels_trans(nodes: list[Node], default_present: bool):
+    '''
+    Attempt to enclose the supplied list of nodes within a kernels
+    region. If the transformation fails then the error message is
+    reported but execution continues.
+
+    :param nodes: list of Nodes to enclose within a Kernels region.
+    :param default_present: whether or not to supply the
+        DEFAULT(PRESENT) clause to ACC KERNELS directives.
+
+    '''
+    if not nodes:
+        return
+    try:
+        ACCKernelsTrans().apply(nodes, {"default_present": default_present})
+    except (TransformationError, InternalError) as err:
+        print(f"Failed to transform nodes: {nodes}")
+        print(f"Error was: {err}")
