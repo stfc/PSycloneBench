@@ -22,7 +22,7 @@ DL_TIMER_NAME = libdl_timer_omp.a
 
 # Shorthand for invoking PSyclone with line-length limiting applied
 # to the output Fortran.
-PSYCLONE = psyclone -api nemo -l output
+PSYCLONE = psyclone -l output
 
 # Serial version.
 tra_adv_serial: dl_timer
@@ -45,7 +45,7 @@ tra_adv_no_auto_serial: dl_timer
 # OpenACC version using Unified Memory with timer around outer loop only.
 tra_adv_acc: dl_timer
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/acc_kernels_unified_memory_trans.py -opsy \
+	${PSYCLONE} -s ../scripts/acc_kernels_unified_memory_trans.py -o \
             $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
@@ -58,7 +58,7 @@ ifndef PSYCLONE_NVIDIA_LIB_DIR
 	$(error The tra_adv_acc_prof must have the PSYCLONE_NVIDIA_LIB_DIR defined)
 endif
 	mkdir -p $@
-	${PSYCLONE} --profile invokes -s ../scripts/acc_kernels_unified_memory_trans.py -opsy \
+	${PSYCLONE} --profile invokes -s ../scripts/acc_kernels_unified_memory_trans.py -o \
             $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
@@ -68,7 +68,7 @@ endif
 # Serial Fortran version after transformation to SIR-compliant form.
 tra_adv_sir: dl_timer
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/sir_trans.py -opsy $@/tra_adv_compute.f90 \
+	${PSYCLONE} -s ../scripts/sir_trans.py -o $@/tra_adv_compute.f90 \
             ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
@@ -78,7 +78,7 @@ tra_adv_sir: dl_timer
 # OpenACC added after transformation to SIR-compliant form.
 tra_adv_sir_acc: dl_timer
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/sir_kernels_trans.py -opsy \
+	${PSYCLONE} -s ../scripts/sir_kernels_trans.py -o \
             $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
@@ -90,7 +90,7 @@ ifndef PSYCLONE_NVIDIA_LIB_DIR
 	$(error The tra_adv_sir_acc_prof must have the PSYCLONE_NVIDIA_LIB_DIR defined)
 endif
 	mkdir -p $@
-	${PSYCLONE} --profile invokes -s ../scripts/sir_kernels_trans.py -opsy \
+	${PSYCLONE} --profile invokes -s ../scripts/sir_kernels_trans.py -o \
             $@/tra_adv_compute.f90 ./tra_adv_compute_auto_arrays.F90
 	cp Makefile_gen $@/Makefile
 	cp tra_adv_driver.F90 $@/.
@@ -110,3 +110,4 @@ allclean: clean
 	rm -rf tra_adv_acc_prof
 	rm -rf tra_adv_sir
 	rm -rf tra_adv_sir_acc
+	rm -rf tra_adv_no_auto_serial
