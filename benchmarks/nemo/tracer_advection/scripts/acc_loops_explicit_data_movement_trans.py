@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2022-2023, Science and Technology Facilities Council.
+# Copyright (c) 2022-2025, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,47 +37,41 @@
 to the outermost loop that is parallelisable, including implicit loops. This
 script also adds OpenACC explicit data movement directives.'''
 
-from psyclone.psyir.nodes import Directive
-from psyclone.psyGen import TransInfo
+from psyclone.psyir.nodes import Directive, Node, Routine
 from psyclone.psyir.transformations import ACCUpdateTrans
-from psyclone.transformations import ACCEnterDataTrans
+from psyclone.transformations import (
+    ACCEnterDataTrans, ACCLoopTrans, ACCParallelTrans)
 from utils import insert_explicit_loop_parallelism, normalise_loops
 
 
-def trans(psy):
+def trans(psy: Node):
     ''' Add OpenACC Parallel Loop directive to all loops, including implicit
     ones, to target GPU parallelism and explicit data movement directives.
 
-    :param psy: the PSy object which this script will transform.
-    :type psy: :py:class:`psyclone.psyGen.PSy`
-
-    :returns: the transformed PSy object.
-    :rtype: :py:class:`psyclone.psyGen.PSy`
+    :param psy: the PSyIR which this script will transform.
 
     '''
-    acc_parallel_trans = TransInfo().get_trans_name('ACCParallelTrans')
-    acc_loop_trans = TransInfo().get_trans_name('ACCLoopTrans')
+    acc_parallel_trans = ACCParallelTrans()
+    acc_loop_trans = ACCLoopTrans()
 
-    print("Invokes found:")
-    for invoke in psy.invokes.invoke_list:
-        print(invoke.name)
+    print("Routines found:")
+    for routine in psy.walk(Routine):
+        print(routine.name)
 
         # Convert array and range notation to loops and hoist expressions
         normalise_loops(
-            invoke.schedule,
-            unwrap_array_ranges=True,
+            routine,
+            scalarise_loops=True,
             hoist_expressions=True,
         )
 
         insert_explicit_loop_parallelism(
-            invoke.schedule,
+            routine,
             region_directive_trans=acc_parallel_trans,
             loop_directive_trans=acc_loop_trans,
             collapse=True
         )
 
-        if invoke.schedule.walk(Directive):
-            ACCEnterDataTrans().apply(invoke.schedule)
-            ACCUpdateTrans().apply(invoke.schedule)
-
-    return psy
+        if routine.walk(Directive):
+            ACCEnterDataTrans().apply(routine)
+            ACCUpdateTrans().apply(routine)
