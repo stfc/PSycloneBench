@@ -2,14 +2,17 @@
 via the -s option. This script module-inline all kernels in the PSy-layer.'''
 
 from psyclone.domain.common.transformations import KernelModuleInlineTrans
+from psyclone.psyir.nodes import Node, Routine
 
 
-def trans(psy):
-    ''' Transformation script entry function '''
+def trans(psy: Node):
+    '''Entry point for PSyIR transformation. This script module-inlines
+    every user-supplied kernel that is called.
 
+    '''
     itrans = KernelModuleInlineTrans()
 
-    schedule = psy.invokes.get('invoke_0').schedule
+    schedule = psy.walk(Routine)[0]
 
     # Module-Inline all coded kernels in this Schedule
     for kernel in schedule.coded_kernels():

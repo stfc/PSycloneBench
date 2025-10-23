@@ -2,20 +2,21 @@
 function via the -s option. It applies OpenMP tasking to every loop
 and inlines all kernels in the schedule.'''
 
-from psyclone.psyir.nodes import Loop
+from psyclone.psyir.nodes import Loop, Routine
 from psyclone.configuration import Config
-from psyclone.transformations import OMPParallelTrans, OMPSingleTrans, \
-                                     OMPTaskloopTrans, KernelModuleInlineTrans
-from psyclone.psyir.transformations import OMPTaskwaitTrans
-from psyclone.psyir.nodes import OMPTaskloopDirective, OMPTaskwaitDirective, \
-                                 OMPDirective, OMPParallelDirective
+from psyclone.domain.common.transformations import KernelModuleInlineTrans
+from psyclone.transformations import (
+    OMPParallelTrans, OMPSingleTrans)
+from psyclone.psyir.transformations import OMPTaskloopTrans, OMPTaskwaitTrans
+from psyclone.psyir.nodes import (OMPTaskloopDirective, OMPTaskwaitDirective,
+                                  OMPDirective, OMPParallelDirective)
 
 
 def trans(psy):
     '''Transformation entry point'''
     config = Config.get()
 
-    schedule = psy.invokes.get('invoke_0').schedule
+    schedule = psy.walk(Routine)[0]
 
     loop_trans = OMPTaskloopTrans(grainsize=32, nogroup=True)
     wait_trans = OMPTaskwaitTrans()
@@ -28,7 +29,12 @@ def trans(psy):
 
     for child in schedule.children:
         if isinstance(child, Loop):
-            loop_trans.apply(child)
+            # We need to ignore dependencies on 'va' because PSyclone correctly
+            # spots that there is a dependence in the bc_flather_v kernel.
+            # However, we know that practically this isn't a problem
+            # because of the way the domain (mask) is configured.
+            loop_trans.apply(child,
+                             options={"ignore_dependencies_for": ["va"]})
 
     single_trans = OMPSingleTrans()
     parallel_trans = OMPParallelTrans()

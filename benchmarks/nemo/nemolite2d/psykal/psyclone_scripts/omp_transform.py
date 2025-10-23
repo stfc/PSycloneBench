@@ -5,7 +5,7 @@ inlines all kernels in the schedule.'''
 from psyclone.configuration import Config
 from psyclone.domain.common.transformations import KernelModuleInlineTrans
 from psyclone.psyGen import TransInfo
-from psyclone.psyir.nodes import Loop
+from psyclone.psyir.nodes import Loop, Routine
 
 
 def trans(psy):
@@ -17,7 +17,7 @@ def trans(psy):
     parallel_trans = tinfo.get_trans_name('OMPParallelTrans')
     module_inline_trans = KernelModuleInlineTrans()
 
-    schedule = psy.invokes.get('invoke_0').schedule
+    schedule = psy.walk(Routine)[0]
 
     # Inline all kernels in this Schedule
     for kernel in schedule.kernels():
@@ -30,7 +30,12 @@ def trans(psy):
             if isinstance(child, Loop):
                 parallel_loop_trans.apply(child)
         else:
-            loop_trans.apply(child)
+            # We need to ignore dependencies on 'va' because PSyclone correctly
+            # spots that there is a dependence in the bc_flather_v kernel.
+            # However, we know that practically this isn't a problem
+            # because of the way the domain (mask) is configured.
+            loop_trans.apply(child,
+                             options={"ignore_dependencies_for": ["va"]})
 
     if not config.distributed_memory:
         # If it is not distributed memory, enclose all of these loops

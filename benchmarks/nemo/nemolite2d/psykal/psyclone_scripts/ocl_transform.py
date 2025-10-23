@@ -3,10 +3,13 @@ function via the -s option. Applies OpenCL to the Schedule so
 that PSyclone will generate an OpenCL PSy layer. '''
 
 import os
-from psyclone.psyGen import TransInfo
-from psyclone.domain.gocean.transformations import \
-    GOMoveIterationBoundariesInsideKernelTrans, GOOpenCLTrans
+
+from psyclone.domain.gocean.transformations import (
+    GOMoveIterationBoundariesInsideKernelTrans, GOOpenCLTrans)
 from psyclone.configuration import Config
+from psyclone.psyir.nodes import Routine
+from psyclone.transformations import (
+    KernelImportsToArguments)
 
 
 # Global variables to configure the PSyclone OpenCL generation:
@@ -33,13 +36,12 @@ def trans(psy):
     ''' Transform the schedule for OpenCL generation '''
 
     # Import transformations
-    tinfo = TransInfo()
-    globaltrans = tinfo.get_trans_name('KernelImportsToArguments')
+    globaltrans = KernelImportsToArguments()
     move_boundaries_trans = GOMoveIterationBoundariesInsideKernelTrans()
     cltrans = GOOpenCLTrans()
 
-    # Get the invoke routine
-    schedule = psy.invokes.get('invoke_0').schedule
+    # Get the routine
+    schedule = psy.walk(Routine)[0]
 
     # Map the kernels by their name to different OpenCL queues. The multiple
     # command queues can be executed concurrently while each command queue

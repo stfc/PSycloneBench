@@ -18,7 +18,7 @@ def trans(psy):
     enter_data_trans = ACCEnterDataTrans()
     routine_trans = ACCRoutineTrans()
     glo2arg_trans = KernelImportsToArguments()
-    inline_trans = KernelModuleInlineTrans()
+    mod_inline_trans = KernelModuleInlineTrans()
 
     schedule = psy.walk(Routine)[0]
 
@@ -27,8 +27,8 @@ def trans(psy):
     for child in schedule.children:
         if isinstance(child, Loop):
             # We need to ignore dependencies on 'va' because PSyclone correctly
-            # spots that there is a dependence in one of the boundary-condition
-            # kernels. However, we know that practically this isn't a problem
+            # spots that there is a dependence in the bc_flather_v kernel.
+            # However, we know that practically this isn't a problem
             # because of the way the domain (mask) is configured.
             loop_trans.apply(child, {"collapse": 2,
                                      "ignore_dependencies_for": ["va"]})
@@ -44,6 +44,6 @@ def trans(psy):
     for kern in schedule.coded_kernels():
         glo2arg_trans.apply(kern)
         routine_trans.apply(kern)
-        inline_trans.apply(kern)
+        mod_inline_trans.apply(kern)
 
     return psy
