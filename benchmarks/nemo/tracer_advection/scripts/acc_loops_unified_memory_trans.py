@@ -42,18 +42,18 @@ from psyclone.transformations import ACCParallelTrans, ACCLoopTrans
 from utils import insert_explicit_loop_parallelism, normalise_loops
 
 
-def trans(psy: Node):
+def trans(psyir: Node) -> None:
     ''' Add OpenACC Parallel Loop directive to all loops, including implicit
     ones to target GPU parallelism.
 
-    :param psy: the PSyIR which this script will transform.
+    :param psyir: the PSyIR which this script will transform.
 
     '''
     acc_parallel_trans = ACCParallelTrans()
     acc_loop_trans = ACCLoopTrans()
 
     print("Routines found:")
-    for routine in psy.walk(Routine):
+    for routine in psyir.walk(Routine):
         print(routine.name)
 
         normalise_loops(

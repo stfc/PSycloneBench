@@ -41,7 +41,7 @@ from psyclone.transformations import OMPParallelTrans, OMPLoopTrans
 from utils import insert_explicit_loop_parallelism, normalise_loops
 
 
-def trans(psyir: Node):
+def trans(psyir: Node) -> None:
     ''' Add OpenMP Parallel Loop directive to all loops, including implicit
     ones to target CPU parallelism.
 

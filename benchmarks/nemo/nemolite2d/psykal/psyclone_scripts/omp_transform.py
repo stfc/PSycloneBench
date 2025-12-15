@@ -5,11 +5,14 @@ inlines all kernels in the schedule.'''
 from psyclone.configuration import Config
 from psyclone.domain.common.transformations import KernelModuleInlineTrans
 from psyclone.psyGen import TransInfo
-from psyclone.psyir.nodes import Loop, Routine
+from psyclone.psyir.nodes import Container, Loop, Routine
 
 
-def trans(psy):
-    ''' Transformation entry point '''
+def trans(psyir: Container) -> None:
+    '''
+    Transformation entry point.
+
+    '''
     config = Config.get()
     tinfo = TransInfo()
     parallel_loop_trans = tinfo.get_trans_name('GOceanOMPParallelLoopTrans')
@@ -17,7 +20,7 @@ def trans(psy):
     parallel_trans = tinfo.get_trans_name('OMPParallelTrans')
     module_inline_trans = KernelModuleInlineTrans()
 
-    schedule = psy.walk(Routine)[0]
+    schedule = psyir.walk(Routine)[0]
 
     # Inline all kernels in this Schedule
     for kernel in schedule.kernels():
@@ -46,5 +49,3 @@ def trans(psy):
         # If it is not distributed memory, enclose all of these loops
         # within a single OpenMP PARALLEL region
         parallel_trans.apply(schedule.children)
-
-    return psy

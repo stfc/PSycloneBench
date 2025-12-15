@@ -53,14 +53,14 @@ from psyclone.transformations import ACCEnterDataTrans
 from utils import add_kernels
 
 
-def trans(psy: Node):
+def trans(psyir: Node) -> None:
     '''A PSyclone-script compliant transformation function. Applies
     OpenACC 'kernels' and 'data movement' directives to generic code.
 
-    :param psy: The PSyIR to apply transformations to.
+    :param psyir: The PSyIR to apply transformations to.
 
     '''
-    for sched in psy.walk(Routine):
+    for sched in psyir.walk(Routine):
 
         if not sched.children:
             print(f"Routine {sched.name} is empty! Skipping...")

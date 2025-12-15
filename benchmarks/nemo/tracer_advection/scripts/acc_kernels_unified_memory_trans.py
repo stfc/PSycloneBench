@@ -52,16 +52,16 @@ from psyclone.psyir.nodes import Node, Routine
 from utils import add_kernels
 
 
-def trans(psy: Node):
+def trans(psyir: Node) -> None:
     '''A PSyclone-script compliant transformation function. Applies
     OpenACC 'kernels' to existing code.
 
-    :param psy: The PSyIR to apply transformations to.
+    :param psyir: The PSyIR to apply transformations to.
 
     '''
     print("Routines found:")
 
-    for routine in psy.walk(Routine):
+    for routine in psyir.walk(Routine):
         print(routine.name)
 
         if not routine.children:

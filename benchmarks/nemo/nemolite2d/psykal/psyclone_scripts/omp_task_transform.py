@@ -2,7 +2,7 @@
 function via the -s option. It applies OpenMP tasking to every loop
 and inlines all kernels in the schedule.'''
 
-from psyclone.psyir.nodes import Loop, Routine
+from psyclone.psyir.nodes import Container, Loop, Routine
 from psyclone.configuration import Config
 from psyclone.domain.common.transformations import KernelModuleInlineTrans
 from psyclone.transformations import (
@@ -12,11 +12,11 @@ from psyclone.psyir.nodes import (OMPTaskloopDirective, OMPTaskwaitDirective,
                                   OMPDirective, OMPParallelDirective)
 
 
-def trans(psy):
+def trans(psyir: Container) -> None:
     '''Transformation entry point'''
     config = Config.get()
 
-    schedule = psy.walk(Routine)[0]
+    schedule = psyir.walk(Routine)[0]
 
     loop_trans = OMPTaskloopTrans(grainsize=32, nogroup=True)
     wait_trans = OMPTaskwaitTrans()

@@ -54,17 +54,17 @@ from utils import add_kernels, normalise_loops, \
     insert_explicit_loop_parallelism
 
 
-def trans(psy: Node):
+def trans(psyir: Node) -> None:
     '''A PSyclone-script compliant transformation function. Applies
     OpenACC 'kernels', 'loop' and explicit 'data' directives to NEMO code.
 
-    :param psy: The PSyIR to apply transformations to.
+    :param psyir: The PSyIR to apply transformations to.
 
     '''
     print("Routines found:")
-    print("\n".join([rt.name for rt in psy.walk(Routine)]))
+    print("\n".join([rt.name for rt in psyir.walk(Routine)]))
 
-    for routine in psy.walk(Routine):
+    for routine in psyir.walk(Routine):
 
         if not routine.children:
             print("Routine {routine.name} is empty! Skipping...")

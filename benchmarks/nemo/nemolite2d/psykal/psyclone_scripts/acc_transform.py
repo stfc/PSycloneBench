@@ -3,15 +3,15 @@ function via the -s option. Performs OpenACC transformations. '''
 
 from psyclone.domain.common.transformations import KernelModuleInlineTrans
 from psyclone.psyGen import TransInfo
-from psyclone.psyir.nodes import Loop, Routine
+from psyclone.psyir.nodes import Container, Loop, Routine
 from psyclone.transformations import (
     ACCEnterDataTrans, ACCLoopTrans, ACCParallelTrans, ACCRoutineTrans,
     KernelImportsToArguments)
 
 
-def trans(psy):
-    ''' Take the supplied psy object, apply OpenACC transformations
-    to the schedule of invoke_0 and return the new psy object '''
+def trans(psyir: Container) -> None:
+    ''' Take the supplied psyir object, apply OpenACC transformations
+    to the schedule of invoke_0. '''
     tinfo = TransInfo()
     parallel_trans = tinfo.get_trans_name('ACCParallelTrans')
     loop_trans = tinfo.get_trans_name('ACCLoopTrans')
@@ -20,7 +20,7 @@ def trans(psy):
     glo2arg_trans = KernelImportsToArguments()
     mod_inline_trans = KernelModuleInlineTrans()
 
-    schedule = psy.walk(Routine)[0]
+    schedule = psyir.walk(Routine)[0]
 
     # Apply the OpenACC Loop transformation to *every* loop
     # in the schedule
@@ -49,5 +49,3 @@ def trans(psy):
         glo2arg_trans.apply(kern)
         routine_trans.apply(kern)
         mod_inline_trans.apply(kern)
-
-    return psy

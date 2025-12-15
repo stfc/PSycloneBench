@@ -41,12 +41,12 @@ from psyclone.psyir.transformations import OMPTargetTrans, OMPLoopTrans
 from utils import insert_explicit_loop_parallelism, normalise_loops
 
 
-def trans(psy: Node):
+def trans(psyir: Node) -> None:
     ''' Add OpenMP Target and Loop directives to all loops, including the
     implicit ones, to parallelise the code and execute it in an acceleration
     device.
 
-    :param psy: the PSyIR which this script will transform.
+    :param psyir: the PSyIR which this script will transform.
 
     '''
     omp_target_trans = OMPTargetTrans()
@@ -55,7 +55,7 @@ def trans(psy: Node):
     omp_loop_trans.omp_schedule = "none"
 
     print("Routines found:")
-    for routine in psy.walk(Routine):
+    for routine in psyir.walk(Routine):
         print(routine.name)
 
         normalise_loops(

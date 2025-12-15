@@ -54,16 +54,16 @@ Loop.set_loop_type_inference_rules({
 })
 
 
-def trans(psy: Node):
+def trans(psyir: Node) -> None:
     ''' Transform a specific Schedule by making all loops
     over levels OpenMP parallel.
 
-    :param psy: the PSyIR to be modified.
+    :param psyir: the PSyIR to be modified.
 
     '''
     # Get the transformation we will apply
     ompt = OMPParallelLoopTrans()
-    for sched in psy.walk(Routine):
+    for sched in psyir.walk(Routine):
         # Apply the OMP transformation to each loop over levels containing
         # a kernel
         for loop in sched.loops():
