@@ -41,10 +41,8 @@ OMPFLAGS="-qopenmp"
 LDFLAGS= 
 #LDFLAGS+= -fast
 
-# The archiver used to generate the API library. We must
-# use Intel's xiar if doing IPO as otherwise the library
-# doesn't contain the necessary symbols.
-AR=xiar
+# The archiver used to generate the API library.
+AR=ar
 ARFLAGS=cru
 
 export F90
