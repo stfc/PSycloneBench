@@ -26,12 +26,16 @@ def trans(psy):
     # in the schedule
     for child in schedule.children:
         if isinstance(child, Loop):
-            # We need to ignore dependencies on 'va' because PSyclone correctly
-            # spots that there is a dependence in the bc_flather_v kernel.
-            # However, we know that practically this isn't a problem
-            # because of the way the domain (mask) is configured.
-            loop_trans.apply(child, {"collapse": 2,
-                                     "ignore_dependencies_for": ["va"]})
+            opts = {"collapse": 2}
+            if child.kernels()[0].name == "bc_flather_v_code":
+                # We need to ignore dependencies on 'va' because PSyclone
+                # spots that there is a dependence in the bc_flather_v kernel.
+                # However, we know that practically this isn't a problem
+                # because of the way the domain (mask) is configured.
+                opts["ignore_dependencies_for"] = ["va%data"]
+            if child.kernels()[0].name == "bc_flather_u_code":
+                opts["ignore_dependencies_for"] = ["ua%data"]
+            loop_trans.apply(child, options=opts)
 
     # Put all of the loops in a single parallel region
     parallel_trans.apply(schedule)

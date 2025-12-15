@@ -26,16 +26,21 @@ def trans(psy):
     # Apply the OpenMPLoop transformation to every child in the schedule or
     # OpenMPParallelLoop to every Loop if it has distributed memory.
     for child in schedule.children:
+        # We need to ignore dependencies on '{u,v}a' because PSyclone correctly
+        # spots that there is a dependence in the bc_flather_{u,v} kernel.
+        # However, we know that practically this isn't a problem
+        # because these boundary-condition kernels only update values
+        # outside the domain.
+        options = {}
+        if child.kernels()[0].name == "bc_flather_v_code":
+            options["ignore_dependencies_for"] = ["va%data"]
+        if child.kernels()[0].name == "bc_flather_u_code":
+            options["ignore_dependencies_for"] = ["ua%data"]
         if config.distributed_memory:
             if isinstance(child, Loop):
-                parallel_loop_trans.apply(child)
+                parallel_loop_trans.apply(child, options=options)
         else:
-            # We need to ignore dependencies on 'va' because PSyclone correctly
-            # spots that there is a dependence in the bc_flather_v kernel.
-            # However, we know that practically this isn't a problem
-            # because of the way the domain (mask) is configured.
-            loop_trans.apply(child,
-                             options={"ignore_dependencies_for": ["va"]})
+            loop_trans.apply(child, options=options)
 
     if not config.distributed_memory:
         # If it is not distributed memory, enclose all of these loops
