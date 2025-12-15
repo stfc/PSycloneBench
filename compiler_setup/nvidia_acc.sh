@@ -11,11 +11,11 @@ CFLAGS="-g"
 F90FLAGS="-O3 -Minfo=all"
 # Debugging options
 #F90FLAGS"+=" -fcheck=all -fbacktrace -ffpe-trap=invalid -g -O0"
-# V100 with managed memory
-F90FLAGS+=" -acc=gpu -gpu=cc70,mem:managed"
+# managed memory
+F90FLAGS+=" -acc=gpu -gpu=mem:managed"
 # Linker flags
-# V100 with managed memory
-LDFLAGS="-acc=gpu -gpu=cc70,mem:managed"
+# managed memory
+LDFLAGS="-acc=gpu -gpu=mem:managed"
 # Location of various CUDA maths libraries. nvtx3interop is required when
 # using nvtx for profiling.
 LDFLAGS+=" -cuda -L${CUDA_MATH_DIR}/lib64 -lnvtx3interop"
