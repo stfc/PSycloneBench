@@ -36,19 +36,17 @@
 ''' PSyclone transformation script to insert OpenMP Target Loop directives
 to the outermost loop that is parallelisable, including implicit loops. '''
 
+from psyclone.psyir.nodes import Node, Routine
 from psyclone.psyir.transformations import OMPTargetTrans, OMPLoopTrans
 from utils import insert_explicit_loop_parallelism, normalise_loops
 
 
-def trans(psy):
+def trans(psyir: Node) -> None:
     ''' Add OpenMP Target and Loop directives to all loops, including the
     implicit ones, to parallelise the code and execute it in an acceleration
     device.
 
-    :param psy: the PSy object which this script will transform.
-    :type psy: :py:class:`psyclone.psyGen.PSy`
-    :returns: the transformed PSy object.
-    :rtype: :py:class:`psyclone.psyGen.PSy`
+    :param psyir: the PSyIR which this script will transform.
 
     '''
     omp_target_trans = OMPTargetTrans()
@@ -56,21 +54,17 @@ def trans(psy):
     omp_loop_trans.omp_directive = "teamsdistributeparalleldo"
     omp_loop_trans.omp_schedule = "none"
 
-    print("Invokes found:")
-    for invoke in psy.invokes.invoke_list:
-        print(invoke.name)
+    print("Routines found:")
+    for routine in psyir.walk(Routine):
+        print(routine.name)
 
         normalise_loops(
-                invoke.schedule,
-                unwrap_array_ranges=True,
-                hoist_expressions=True,
+                routine,
         )
 
         insert_explicit_loop_parallelism(
-                invoke.schedule,
+                routine,
                 region_directive_trans=omp_target_trans,
                 loop_directive_trans=omp_loop_trans,
                 collapse=True
         )
-
-    return psy

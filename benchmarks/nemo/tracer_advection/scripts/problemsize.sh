@@ -2,6 +2,8 @@
 
 # Bash script to execute the tracer-advection benchmark with increasing
 # domain sizes.
+# By default the process is pinned to core 0. Please edit the taskset
+# command below if you wish to change this.
 
 if [ "$#" -lt 1 ] || [ ! -x "$1" ]; then
     echo "Wrong arguments. Usage: ../../problemsize.sh ./executable"
@@ -24,7 +26,8 @@ for power in $(seq 4 9); do
     export JPI=${size}
     export JPJ=${size}
 
-    time=$(taskset -c 2 $@  | awk '{if ($1 == "Time-stepping") {print $5} }')
+    # Execute - use taskset to pin the process to a core.
+    time=$(taskset -c 0 $@  | awk '{if ($1 == "Time-stepping") {print $5} }')
 
     echo $size $time
 done

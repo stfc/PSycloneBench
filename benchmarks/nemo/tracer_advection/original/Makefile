@@ -49,7 +49,7 @@ DL_TIMER_DIR = ../../../../shared/dl_timer
 DL_TIMER_NAME = libdl_timer_omp.a
 
 # Shorthand for invoking PSyclone.
-PSYCLONE = psyclone -api nemo -l output ${PSYCLONE_PROFILE}
+PSYCLONE = psyclone -l output ${PSYCLONE_PROFILE}
 
 # Add necessary flags for Nvidia nvtx instrumentation
 ifeq ($(ENABLE_NVIDIA_PROFILE),yes)
@@ -71,14 +71,14 @@ tra_adv_serial: dl_timer ./tra_adv.F90
 
 tra_adv_omp_cpu_levels: dl_timer ./tra_adv.F90
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/omp_cpu_levels_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/omp_cpu_levels_trans.py -o $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} FORT_FLAGS="${F90FLAGS} ${OMPFLAGS} -I../${DL_TIMER_DIR}/src" \
             LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
 tra_adv_omp_cpu: dl_timer ./tra_adv.F90
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/omp_cpu_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/omp_cpu_trans.py -o $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} FORT_FLAGS="${F90FLAGS} ${OMPFLAGS} -I../${DL_TIMER_DIR}/src" \
             LDFLAGS="${LDFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
@@ -87,42 +87,42 @@ tra_adv_omp_cpu: dl_timer ./tra_adv.F90
 
 tra_adv_acc_kernels_unified_memory: dl_timer ./tra_adv.F90
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/acc_kernels_unified_memory_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/acc_kernels_unified_memory_trans.py -o $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} ${UMEMFLAGS} -I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ${ACCFLAGS} ${UMEMFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
 tra_adv_acc_kernels_explicit_data_movement: dl_timer ./tra_adv.F90
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/acc_kernels_explicit_data_movement_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/acc_kernels_explicit_data_movement_trans.py -o $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} -I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ${ACCFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
 tra_adv_acc_loops_unified_memory: dl_timer ./tra_adv.F90
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/acc_loops_unified_memory_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/acc_loops_unified_memory_trans.py -o $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} ${UMEMFLAGS} -I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ${ACCFLAGS} ${UMEMFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
 tra_adv_acc_loops_explicit_data_movement: dl_timer ./tra_adv.F90
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/acc_loops_explicit_data_movement_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/acc_loops_explicit_data_movement_trans.py -o $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} -I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ${ACCFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
 tra_adv_acc_mixed_unified_memory: dl_timer ./tra_adv.F90
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/acc_mixed_unified_memory_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/acc_mixed_unified_memory_trans.py -o $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} ${UMEMFLAGS} -I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ${ACCFLAGS} ${UMEMFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
 
 tra_adv_acc_mixed_explicit_data_movement: dl_timer ./tra_adv.F90
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/acc_mixed_explicit_data_movement_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/acc_mixed_explicit_data_movement_trans.py -o $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} FORT_FLAGS="${F90FLAGS} ${ACCFLAGS} -I../${DL_TIMER_DIR}/src" \
            LDFLAGS="${LDFLAGS} ${ACCFLAGS} ../${DL_TIMER_DIR}/${DL_TIMER_NAME}" -C $@
@@ -132,7 +132,7 @@ ifndef UMEMFLAGS
 	$(error The OMP offload target requires OpenMP unified memory but the UMEMFLAGS environment variable is not set)
 endif
 	mkdir -p $@
-	${PSYCLONE} -s ../scripts/omp_gpu_trans.py -opsy $@/tra_adv.f90 ./tra_adv.F90
+	${PSYCLONE} -s ../scripts/omp_gpu_trans.py -o $@/tra_adv.f90 ./tra_adv.F90
 	cp Makefile_gen $@/Makefile
 	${MAKE} PROF_LIB_INC="-I../${DL_TIMER_DIR}/src" \
             FORT_FLAGS="${F90FLAGS} ${OMPTARGETFLAGS} ${UMEMFLAGS} -I../${DL_TIMER_DIR}/src" \

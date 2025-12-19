@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2018-2022, Science and Technology Facilities Council.
+# Copyright (c) 2018-2025, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@ README.md in the top-level directory.
 
 Once you have psyclone installed, this may be used by doing:
 
- $ psyclone -api nemo -s <this_script> <target_source_file>
+ $ psyclone -s <this_script> <target_source_file>
 
 The transformation script attempts to insert Kernels directives at the
 highest possible location(s) in the schedule tree (i.e. to enclose as
@@ -47,30 +47,26 @@ much code as possible in each Kernels region).
 
 '''
 
-from psyclone.psyir.nodes import Directive
+from psyclone.psyir.nodes import Directive, Routine, Node
 from psyclone.psyir.transformations import ACCUpdateTrans
 from psyclone.transformations import ACCEnterDataTrans
 from utils import add_kernels
 
 
-def trans(psy):
+def trans(psyir: Node) -> None:
     '''A PSyclone-script compliant transformation function. Applies
-    OpenACC 'kernels' and 'data movement' directives to NEMO code.
+    OpenACC 'kernels' and 'data movement' directives to generic code.
 
-    :param psy: The PSy layer object to apply transformations to.
-    :type psy: :py:class:`psyclone.psyGen.PSy`
+    :param psyir: The PSyIR to apply transformations to.
+
     '''
+    for sched in psyir.walk(Routine):
 
-    print("Invokes found:")
-    print("\n".join([str(name) for name in psy.invokes.names]))
-
-    for invoke in psy.invokes.invoke_list:
-
-        if not invoke.schedule:
-            print(f"Invoke {invoke.name} has no Schedule! Skipping...")
+        if not sched.children:
+            print(f"Routine {sched.name} is empty! Skipping...")
             continue
 
-        add_kernels(invoke.schedule.children)
-        if invoke.schedule.walk(Directive):
-            ACCEnterDataTrans().apply(invoke.schedule)
-            ACCUpdateTrans().apply(invoke.schedule)
+        add_kernels(sched.children)
+        if sched.walk(Directive):
+            ACCEnterDataTrans().apply(sched)
+            ACCUpdateTrans().apply(sched)

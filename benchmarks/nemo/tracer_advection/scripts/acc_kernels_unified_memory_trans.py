@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2018-2022, Science and Technology Facilities Council.
+# Copyright (c) 2018-2025, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,12 +34,12 @@
 # Authors: R. W. Ford, A. R. Porter and S. Siso, STFC Daresbury Lab
 
 '''A transformation script that seeks to apply OpenACC KERNELS directives to
-NEMO style code. In order to use it you must first install PSyclone. See
+generic Fortran code. In order to use it you must first install PSyclone. See
 README.md in the top-level directory.
 
 Once you have psyclone installed, this may be used by doing:
 
- $ psyclone -api nemo -s <this_script> <target_source_file>
+ $ psyclone -s <this_script> <target_source_file>
 
 The transformation script attempts to insert Kernels directives at the
 highest possible location(s) in the schedule tree (i.e. to enclose as
@@ -47,24 +47,25 @@ much code as possible in each Kernels region).
 
 '''
 
+from psyclone.psyir.nodes import Node, Routine
+
 from utils import add_kernels
 
 
-def trans(psy):
+def trans(psyir: Node) -> None:
     '''A PSyclone-script compliant transformation function. Applies
-    OpenACC 'kernels' to NEMO code.
+    OpenACC 'kernels' to existing code.
 
-    :param psy: The PSy layer object to apply transformations to.
-    :type psy: :py:class:`psyclone.psyGen.PSy`
+    :param psyir: The PSyIR to apply transformations to.
+
     '''
+    print("Routines found:")
 
-    print("Invokes found:")
-    print("\n".join([str(name) for name in psy.invokes.names]))
+    for routine in psyir.walk(Routine):
+        print(routine.name)
 
-    for invoke in psy.invokes.invoke_list:
-
-        if not invoke.schedule:
-            print(f"Invoke {invoke.name} has no Schedule! Skipping...")
+        if not routine.children:
+            print(f"Routine {routine.name} is empty! Skipping...")
             continue
 
-        add_kernels(invoke.schedule.children)
+        add_kernels(routine.children)

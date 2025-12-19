@@ -26,7 +26,7 @@ OMPFLAGS="-mp"
 # Flag to use when compiling with OpenMP GPU offloading support
 OMPTARGETFLAGS="-mp=gpu -gpu=ccnative"
 # Flag to use to specify use of 'managed memory' (unified memory)
-UMEMFLAGS="-gpu=managed"
+UMEMFLAGS="-gpu=mem:managed"
 # Flags to use when compiling with OpenACC support
 ACCFLAGS="-acc=gpu -gpu=ccnative"
 

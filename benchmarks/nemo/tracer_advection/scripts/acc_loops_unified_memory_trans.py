@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2022-2023, Science and Technology Facilities Council.
+# Copyright (c) 2022-2025, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,38 +36,35 @@
 ''' PSyclone transformation script to insert OpenACC Parallel Loop directives
 to the outermost loop that is parallelisable, including implicit loops.'''
 
-from psyclone.psyGen import TransInfo
+from psyclone.psyir.nodes import Node, Routine
+from psyclone.transformations import ACCParallelTrans, ACCLoopTrans
+
 from utils import insert_explicit_loop_parallelism, normalise_loops
 
 
-def trans(psy):
+def trans(psyir: Node) -> None:
     ''' Add OpenACC Parallel Loop directive to all loops, including implicit
     ones to target GPU parallelism.
 
-    :param psy: the PSy object which this script will transform.
-    :type psy: :py:class:`psyclone.psyGen.PSy`
-    :returns: the transformed PSy object.
-    :rtype: :py:class:`psyclone.psyGen.PSy`
+    :param psyir: the PSyIR which this script will transform.
 
     '''
-    acc_parallel_trans = TransInfo().get_trans_name('ACCParallelTrans')
-    acc_loop_trans = TransInfo().get_trans_name('ACCLoopTrans')
+    acc_parallel_trans = ACCParallelTrans()
+    acc_loop_trans = ACCLoopTrans()
 
-    print("Invokes found:")
-    for invoke in psy.invokes.invoke_list:
-        print(invoke.name)
+    print("Routines found:")
+    for routine in psyir.walk(Routine):
+        print(routine.name)
 
         normalise_loops(
-            invoke.schedule,
-            unwrap_array_ranges=True,
+            routine,
             hoist_expressions=True,
         )
 
         insert_explicit_loop_parallelism(
-            invoke.schedule,
+            routine,
             region_directive_trans=acc_parallel_trans,
             loop_directive_trans=acc_loop_trans,
             collapse=True
         )
 
-    return psy

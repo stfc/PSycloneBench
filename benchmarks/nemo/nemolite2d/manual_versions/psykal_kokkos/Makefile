@@ -16,6 +16,9 @@ KOKKOS_PATH ?= $(SHARED_DIR)/kokkos
 KOKKOS_DEBUG ?= no  # Careful, 10x performance penalty in kernels.
 CXXFLAGS = $(CFLAGS)  # Use same CFLAGS to compile Kokkos library.
 
+# The Kokkos Makefile is deprecated, but we can still use it with:
+KOKKOS_USE_DEPRECATED_MAKEFILES=1
+
 # If no KOKKOS_DEVICES is specified, by default use the OpenMP
 KOKKOS_DEVICES ?= OpenMP
 
@@ -90,7 +93,7 @@ clean:
 	${MAKE} -C ${INF_DIR} clean
 	rm -f *.o *.mod *.MOD *~ *.dat
 	rm -f gnu_opt_report.txt *.optrpt
-	rm -rf KokkosCore_* Makefile.kokkos.f90
+	rm -rf KokkosCore_* Makefile.kokkos.f90 desul Desul_Config.tmp
 
 allclean: clean
 	rm -f *.exe fparser.log *.a

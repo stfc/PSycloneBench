@@ -3,28 +3,39 @@ function via the -s option. Performs OpenACC transformations. '''
 
 from psyclone.domain.common.transformations import KernelModuleInlineTrans
 from psyclone.psyGen import TransInfo
-from psyclone.psyir.nodes import Loop
+from psyclone.psyir.nodes import Container, Loop, Routine
+from psyclone.transformations import (
+    ACCEnterDataTrans, ACCLoopTrans, ACCParallelTrans, ACCRoutineTrans,
+    KernelImportsToArguments)
 
 
-def trans(psy):
-    ''' Take the supplied psy object, apply OpenACC transformations
-    to the schedule of invoke_0 and return the new psy object '''
+def trans(psyir: Container) -> None:
+    ''' Take the supplied psyir object, apply OpenACC transformations
+    to the schedule of invoke_0. '''
     tinfo = TransInfo()
     parallel_trans = tinfo.get_trans_name('ACCParallelTrans')
     loop_trans = tinfo.get_trans_name('ACCLoopTrans')
-    enter_data_trans = tinfo.get_trans_name('ACCEnterDataTrans')
-    routine_trans = tinfo.get_trans_name('ACCRoutineTrans')
-    glo2arg_trans = tinfo.get_trans_name('KernelImportsToArguments')
-    inline_trans = KernelModuleInlineTrans()
+    enter_data_trans = ACCEnterDataTrans()
+    routine_trans = ACCRoutineTrans()
+    glo2arg_trans = KernelImportsToArguments()
+    mod_inline_trans = KernelModuleInlineTrans()
 
-    invoke = psy.invokes.get('invoke_0')
-    schedule = invoke.schedule
+    schedule = psyir.walk(Routine)[0]
 
     # Apply the OpenACC Loop transformation to *every* loop
     # in the schedule
     for child in schedule.children:
         if isinstance(child, Loop):
-            loop_trans.apply(child, {"collapse": 2})
+            opts = {"collapse": 2}
+            if child.kernels()[0].name == "bc_flather_v_code":
+                # We need to ignore dependencies on 'va' because PSyclone
+                # spots that there is a dependence in the bc_flather_v kernel.
+                # However, we know that practically this isn't a problem
+                # because of the way the domain (mask) is configured.
+                opts["ignore_dependencies_for"] = ["va%data"]
+            if child.kernels()[0].name == "bc_flather_u_code":
+                opts["ignore_dependencies_for"] = ["ua%data"]
+            loop_trans.apply(child, options=opts)
 
     # Put all of the loops in a single parallel region
     parallel_trans.apply(schedule)
@@ -37,6 +48,4 @@ def trans(psy):
     for kern in schedule.coded_kernels():
         glo2arg_trans.apply(kern)
         routine_trans.apply(kern)
-        inline_trans.apply(kern)
-
-    return psy
+        mod_inline_trans.apply(kern)

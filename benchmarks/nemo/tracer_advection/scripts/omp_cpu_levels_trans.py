@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2018-2023, Science and Technology Facilities Council
+# Copyright (c) 2018-2025, Science and Technology Facilities Council
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,40 +33,43 @@
 # -----------------------------------------------------------------------------
 # Authors: R. W. Ford, A. R. Porter and S. Siso, STFC Daresbury Lab
 
-'''A simple transformation script for the introduction of OpenMP with PSyclone.
+'''A very simple transformation script for the introduction of OpenMP
+ to certain loops using PSyclone.
 
- >>> psyclone -api "nemo" -s ./omp_cpu_levels_trans.py tra_adv.F90
+ >>> psyclone -s ./omp_cpu_levels_trans.py tra_adv.F90
 
 This should produce a lot of output, ending with generated Fortran.
 
 '''
 
-from psyclone.psyGen import TransInfo
-from psyclone.nemo import NemoKern
+from psyclone.psyir.nodes import Loop, Node, Routine
+from psyclone.transformations import OMPParallelLoopTrans, TransformationError
 
-def trans(psy):
+# Set up some loop_type inference rules in order to reference useful domain
+# loop constructs by name
+Loop.set_loop_type_inference_rules({
+    "lon": {"variable": "ji"},
+    "lat": {"variable": "jj"},
+    "levels": {"variable": "jk"}
+})
+
+
+def trans(psyir: Node) -> None:
     ''' Transform a specific Schedule by making all loops
     over levels OpenMP parallel.
 
-    :param psy: the object holding all information on the PSy layer \
-                to be modified.
-    :type psy: :py:class:`psyclone.psyGen.PSy`
-
-    :returns: the transformed PSy object
-    :rtype:  :py:class:`psyclone.psyGen.PSy`
+    :param psyir: the PSyIR to be modified.
 
     '''
     # Get the transformation we will apply
-    ompt = TransInfo().get_trans_name('OMPParallelLoopTrans')
-    for invoke in psy.invokes.invoke_list:
-        # Get the Schedule of the target routine
-        sched = invoke.schedule
+    ompt = OMPParallelLoopTrans()
+    for sched in psyir.walk(Routine):
         # Apply the OMP transformation to each loop over levels containing
         # a kernel
         for loop in sched.loops():
-            kernels = loop.walk(NemoKern)
-            if kernels and loop.loop_type == "levels":
-                ompt.apply(loop)
-
-    # Return the modified psy object
-    return psy
+            if loop.loop_type == "levels":
+                try:
+                    ompt.apply(loop)
+                except TransformationError as err:
+                    loop.append_preceding_comment(
+                        f"Loop cannot be parallelised because: {err}")

@@ -5,7 +5,6 @@ module boundary_conditions_mod
        GO_STENCIL
   use kernel_mod, only: kernel_type, GO_POINTWISE, GO_DOFS, &
       GO_ALL_PTS, GO_INTERNAL_PTS
-  use physical_params_mod
   use grid_mod
   use field_mod
   implicit none

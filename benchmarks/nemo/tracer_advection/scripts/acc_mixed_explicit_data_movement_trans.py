@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # BSD 3-Clause License
 #
-# Copyright (c) 2018-2023, Science and Technology Facilities Council.
+# Copyright (c) 2018-2025, Science and Technology Facilities Council.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@ install PSyclone. See README.md in the top-level psyclone directory.
 
 Once you have psyclone installed, this may be used by doing:
 
- $ psyclone -api nemo -s ./acc_mixed_explicit_data_movement_trans.py <file>
+ $ psyclone -s ./acc_mixed_explicit_data_movement_trans.py <file>
 
 This should produce a lot of output, ending with generated Fortran. Note
 that the Fortran source files provided to PSyclone must have already been
@@ -47,50 +47,48 @@ preprocessed (if required).
 
 '''
 
-from psyclone.psyir.nodes import Directive
+from psyclone.psyir.nodes import Directive, Node, Routine
 from psyclone.psyir.transformations import ACCUpdateTrans
 from psyclone.transformations import ACCEnterDataTrans, ACCLoopTrans
 from utils import add_kernels, normalise_loops, \
     insert_explicit_loop_parallelism
 
 
-def trans(psy):
+def trans(psyir: Node) -> None:
     '''A PSyclone-script compliant transformation function. Applies
     OpenACC 'kernels', 'loop' and explicit 'data' directives to NEMO code.
 
-    :param psy: The PSy layer object to apply transformations to.
-    :type psy: :py:class:`psyclone.psyGen.PSy`
+    :param psyir: The PSyIR to apply transformations to.
+
     '''
+    print("Routines found:")
+    print("\n".join([rt.name for rt in psyir.walk(Routine)]))
 
-    print("Invokes found:")
-    print("\n".join([str(name) for name in psy.invokes.names]))
+    for routine in psyir.walk(Routine):
 
-    for invoke in psy.invokes.invoke_list:
-
-        sched = invoke.schedule
-        if not sched:
-            print("Invoke {invoke.name} has no Schedule! Skipping...")
+        if not routine.children:
+            print("Routine {routine.name} is empty! Skipping...")
             continue
 
         # Convert array and range syntax to explicit loops
         normalise_loops(
-            invoke.schedule,
-            unwrap_array_ranges=True,
+            routine,
+            scalarise_loops=True,
             hoist_expressions=True,
         )
 
         # Add OpenACC Loop directives
         insert_explicit_loop_parallelism(
-            invoke.schedule,
+            routine,
             region_directive_trans=None,
             loop_directive_trans=ACCLoopTrans(),
             collapse=True
         )
 
         # Add OpenACC Kernel directives
-        add_kernels(sched.children)
+        add_kernels(routine.children)
 
         # Add OpenACC data directives
-        if invoke.schedule.walk(Directive):
-            ACCEnterDataTrans().apply(invoke.schedule)
-            ACCUpdateTrans().apply(invoke.schedule)
+        if routine.walk(Directive):
+            ACCEnterDataTrans().apply(routine)
+            ACCUpdateTrans().apply(routine)
