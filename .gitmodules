@@ -3,7 +3,7 @@
 	url = https://github.com/stfc/dl_esm_inf.git
 [submodule "shared/dl_timer"]
 	path = shared/dl_timer
-	url = https://bitbucket.org/apeg/dl_timer
+	url = https://github.com/stfc/dl_timer.git
 [submodule "shared/FortCL"]
 	path = shared/FortCL
 	url = https://github.com/stfc/FortCL.git
