@@ -6,7 +6,7 @@ Various small benchmarks used to inform the development of the
 ## Obtaining the Code ##
 
 The benchmark codes contained in this project use the
-[dl_timer](https://bitbucket.org/apeg/dl_timer) library for execution
+[dl_timer](https://github.com/stfc/dl_timer) library for execution
 timing and the [dl_esm_inf](https://github.com/stfc/dl_esm_inf)
 infrastructure. Some implementation also have
 [PSyclone](https://github.com/stfc/PSyclone),
