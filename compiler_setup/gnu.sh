@@ -6,6 +6,9 @@ CXX=g++
 # Common optimization flags for CFLAGS and F90FLAGS
 OPTFLAGS=" -Ofast -mtune=native -finline-limit=50000 -fopt-info-all=gnu_opt_report.txt"
 
+# Vectorisation and extra math flags
+OPTFLAGS +="-ftree-vectorize -ffast-math"
+
 CFLAGS=$OPTFLAGS
 F90FLAGS="-Wall -Wsurprising -Wuninitialized"
 #F90FLAGS += -O0
