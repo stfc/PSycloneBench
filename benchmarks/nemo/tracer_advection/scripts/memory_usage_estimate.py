@@ -1,7 +1,9 @@
 ''' This script estimates the memory usage requirements of the
 tracer_advection benchmark. It uses the value of JPI, JPJ and JPK
 defined in environment variables as is used by the benchmark, and
-outputs the data usage for a single iteration.'''
+outputs the data usage (reads + writes) for a single iteration. This
+can be used to determine an estimated memory bandwidth for an execution,
+and compare to the cache size(s) of the architecture to tune performance.'''
 
 import os
 
@@ -10,7 +12,7 @@ JPJ = int(os.environ.get("JPJ"))
 JPK = int(os.environ.get("JPK"))
 
 VERBOSE = os.environ.get("VERBOSE", False)
-# ELEMENT_SIZE allows for modification of the datatype to be
+# ELEMENT_SIZE (in bytes) allows for modification of the datatype to be
 # other precisions, but assumes double precision by default.
 ELEMENT_SIZE = os.environ.get("ELEMENT_SIZE", 8)
 
@@ -352,7 +354,7 @@ def calculate_memory_usage_per_iteration() -> None:
     gb_used = byte_used / (1000*1000*1000)
 
     print(f"Tracer advection model with jpi={JPI}, jpj={JPJ}, and "
-          f"jpk={JPK} uses {gb_used}GB per iteration.")
+          f"jpk={JPK} uses (reads+writes) {gb_used}GB per iteration.")
 
 
 if __name__ == "__main__":
