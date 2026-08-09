@@ -152,12 +152,12 @@ do
 
 end
 
-task init_east( tmask_east : region(ispace(int2d), grid_fields)) where 
+task init_east( tmask_east : region(ispace(int2d), grid_fields), boundary_value : int1d) where 
                 writes(tmask_east.tmask) 
 do
 
   for point in tmask_east do
-    tmask_east[point].tmask = SOLID_BOUNDARY
+    tmask_east[point].tmask = boundary_value
   end
 end
 
@@ -169,10 +169,10 @@ do
     tmask_north[point].tmask = SOLID_BOUNDARY
   end
 end
-task init_south( tmask_south : region(ispace(int2d), grid_fields)) where writes(tmask_south.tmask) do
+task init_south( tmask_south : region(ispace(int2d), grid_fields), boundary_value : int1d) where writes(tmask_south.tmask) do
 
   for point in tmask_south do
-    tmask_south[point].tmask = TIDAL_MASK
+    tmask_south[point].tmask = boundary_value
   end
 end
 
@@ -342,7 +342,8 @@ end
 
 --This initialises the fields in the model grid.
 task model_init( grid : region(ispace(int2d), grid_fields),
-                 loop_conditions_data : region(ispace(int2d), loop_conditions)) where
+                 loop_conditions_data : region(ispace(int2d), loop_conditions),
+                 jphgr_msh : int32) where
                  writes(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_v, gphi_u, gphi_v, xt, yt, area_t, area_u, area_v}),
                  reads(grid.{tmask, dx_t, dx_u, dx_v, dy_t, dy_t, dy_u, dy_v, gphi_u, gphi_v, xt, yt, area_t ,area_u, area_v}),
                  writes( loop_conditions_data.{compute_vel_ufield, compute_vel_vfield, update_sea_surface_t, update_uvel_boundary,
@@ -359,12 +360,20 @@ do
     init_centre_launcher(centre_region[int2d({0,0})])
 
     init_west(west_region[int2d({0,0})]) 
-
-    init_east(east_region[int2d({0,0})])
+    
+    if( jphgr_msh == 2 or jphgr_msh == 3) then
+      init_east(east_region[int2d({0,0})], TIDAL_MASK)
+    else
+      init_east(east_region[int2d({0,0})], SOLID_BOUNDARY)
+    end
 
     init_north(north_region[int2d({0,0})])
 
-    init_south(south_region[int2d({0,0})])
+    if( jphgr_msh == 1 or jphgr_msh == 3) then
+      init_south(south_region[int2d({0,0})], TIDAL_MASK)
+    else
+      init_south(south_region[int2d({0,0})], SOLID_BOUNDARY)
+    end
 
 
     loop_bound_compute_vel_ufield(grid, loop_conditions_data)
