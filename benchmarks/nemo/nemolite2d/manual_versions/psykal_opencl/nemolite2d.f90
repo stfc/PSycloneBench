@@ -50,7 +50,6 @@ program gocean2d
 
   !! read in model parameters and configure the model grid 
   CALL model_init(model_grid)
-  !call likwid_markerInit()
 
   ! Create fields on this grid
 
@@ -91,15 +90,22 @@ program gocean2d
                        model_grid%subdomain%global%ystop
   call model_write_log("((A))", TRIM(log_str))
 
+  ! Warming up step
+  CALL timer_start(itimer0, label='Warm up step', &
+                   num_repeats=INT(1,kind=i_def64) )
+  call step(nit000,                               &
+            ua_fld, va_fld, un_fld, vn_fld,     &
+            sshn_t_fld, sshn_u_fld, sshn_v_fld, &
+            ssha_t_fld, ssha_u_fld, ssha_v_fld, &
+            hu_fld, hv_fld, ht_fld)
+  call timer_stop(itimer0)
+
   ! Start timer for time-stepping section
   CALL timer_start(itimer0, label='Time-stepping', &
-                   num_repeats=INT(nitend-nit000+1,kind=i_def64) )
+                   num_repeats=INT(nitend-nit000,kind=i_def64) )
 
   !! time stepping 
-  do istp = nit000, nitend, 1
-
-     !call model_write_log("('istp == ',I6)",istp)
-     rstp = real(istp, go_wp)
+  do istp = nit000+1, nitend, 1
 
      call step(istp,                               &
                ua_fld, va_fld, un_fld, vn_fld,     &

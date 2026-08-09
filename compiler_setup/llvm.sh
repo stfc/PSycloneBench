@@ -2,30 +2,30 @@
 # ================================================
 # This is an experimental file so other flags may be
 # needed for accelerated compilation
-# Alternative flags have been provided in the comments
-# where they have been found to be useful
 
 # Fortran compiler
 F90=flang
+# If flang is not available or causes compiler errors uncomment gfortran:
+# F90=gfortran
 # C and C++ compiler
 CC=clang
 CXX=clang++
 
 # C and C++ flags
-# note that -g is used for debugging information
-# as this is an experimental implementation
-CFLAGS="-O3 -march=native -g"
+CFLAGS="-O3"
 # Fortran compiler flags
-# As above, -g provides debugging information
-F90FLAGS="-O3 -march=native -g"
+F90FLAGS="-O3"
 # Flags to use when compiling with OpenMP support
 OMPFLAGS="-fopenmp"
 # Flags to use when compiling with OpenMP GPU offloading support
-OMPTARGETFLAGS="-fopenmp -fopenmp-targets=nvptx64"
-# OMPTARGETFLAGS="–fopenmp-targets=nvptx64-nvidia-cuda" 
+# For AMD Rocm (march is MI50: fgx906, MI100: gfx908):
+# OMPTARGETFLAGS="-target x86_64-pc-linux-gnu -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx908"
+# For NVIDIA:
+OMPTARGETFLAGS="–fopenmp-targets=nvptx64-nvidia-cuda"
 
 # Linker flags
-LDFLAGS="-lomp -lomptarget"
+LDFLAGS="-fopenmp"
+
 # Location of various CUDA maths libraries
 LDFLAGS+=" -L${CUDA_MATH_DIR}/lib64"
 

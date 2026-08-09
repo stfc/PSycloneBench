@@ -52,14 +52,18 @@ to the Kokkos parallel dispatch. This allows Kokkos to control the data layout,
 the padding, and the synchonization between host and device (GPU execution)
 but it requires to keep two copies of the simulation data.
 This version is available in `time_step_views_kokkos.cpp` and can be built
-with an OpenMP or a Cuda backend by setting the KOKKOS_DEVICES environment
-variable. Note that the Cuda back-end requires that the `nvcc` compiler is
-installed on the system and available in PATH. See below examples of how to
+with an OpenMP, Cuda or HIP backend by setting the `KOKKOS_DEVICES` environment
+variable. Note that the Cuda back-end requires that the `nvcc` compiler and
+the HIP back-end requires the `hipcc` compiler. These need to be
+installed on the system and the necessary paths be available in `PATH`,
+`CPATH` and `LD_LIBRARY_PATH`. See below examples of how to
 compile the Kokkos View version for different devices:
 
     > make nemolite2d_views_kokkos KOKKOS_DEVICES=OpenMP
 
     > make nemolite2d_views_kokkos KOKKOS_DEVICES=Cuda
+
+    > make nemolite2d_views_kokkos KOKKOS_DEVICES=HIP
 
 ## Running ##
 
